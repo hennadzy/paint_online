@@ -1,13 +1,18 @@
-const express = require('express')
-const app = express()
-const WSServer = require('express-ws')(app)
-const aWss = WSServer.getWss()
-const cors = require('cors')
-const PORT = process.env.PORT || 5000
-const fs = require('fs')
-const path = require('path')
-app.use(cors())
-app.use(express.json())
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const WSServer = require('express-ws')(app);
+const aWss = WSServer.getWss();
+const PORT = process.env.PORT || 5000;
+const fs = require('fs');
+const path = require('path');
+
+// Настройка CORS с указанием origin
+app.use(cors({
+    origin: 'https://blog.paint-art.ru/' //  фронтенд домен
+}));
+app.use(express.json({ limit: '10mb' })); // Увеличение лимита для base64
+
 
 app.ws('/', (ws, req) => {
     ws.on('message', (msg) => {
