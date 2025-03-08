@@ -20,28 +20,56 @@ const Canvas = observer(() => {
     const params = useParams()
     const [messages, setMessages] = useState([]);
 
+    const [canvasWidth, setCanvasWidth] = useState(600); // Начальная ширина канваса
+    const [canvasHeight, setCanvasHeight] = useState(400); // Начальная высота канваса
+
+    useEffect(() => {
+        const handleResize = () => {
+            // Вычисляем новую ширину канваса (например, 100% ширины экрана)
+            const newWidth = window.innerWidth * 0.95; // 95% ширины экрана, чтобы был небольшой отступ
+            const newHeight = newWidth * (400 / 600); // Сохраняем пропорции
+
+            setCanvasWidth(newWidth);
+            setCanvasHeight(newHeight);
+        };
+
+        // Вызываем handleResize при монтировании компонента и при изменении размера окна
+        handleResize();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
         let ctx = canvasRef.current.getContext('2d')
+
+        // Устанавливаем размеры канваса
+        canvasRef.current.width = canvasWidth;
+        canvasRef.current.height = canvasHeight;
+
         if (params.id) {
             axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
                 .then(response => {
                     const img = new Image()
                     img.src = response.data
                     img.onload = () => {
-                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-                        ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height)
+                        ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+                        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
                     }
                 })
                 .catch(error => console.error("Ошибка загрузки изображения:", error));
         } else {
             ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
         toolState.setTool(new Brush(canvasRef.current, null, params.id));
 
-    }, [params.id])
+    }, [params.id, canvasWidth, canvasHeight])
 
     useEffect(() => {
         if (canvasState.username) {
@@ -75,6 +103,20 @@ const Canvas = observer(() => {
     const drawHandler = (msg) => {
         const figure = msg.figure
         const ctx = canvasRef.current.getContext('2d')
+
+        // Получаем реальные размеры канваса
+        const realWidth = canvasRef.current.offsetWidth;
+        const realHeight = canvasRef.current.offsetHeight;
+
+        // Вычисляем масштаб
+        const scaleX = realWidth / 600;
+        const scaleY = realHeight / 400;
+
+        ctx.save(); // Сохраняем текущее состояние контекста
+
+        // Масштабируем контекст
+        ctx.scale(scaleX, scaleY);
+
         switch (figure.type) {
             case "brush":
                 Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle,)
@@ -95,6 +137,7 @@ const Canvas = observer(() => {
                 ctx.beginPath()
                 break
         }
+        ctx.restore(); // Восстанавливаем состояние контекста
     }
 
 
@@ -120,9 +163,21 @@ const Canvas = observer(() => {
 
     }
 
-    const mouseMoveHandler = (e) => {
+const mouseMoveHandler = (e) => {
         if (toolState.tool.mouseDown) {
-            toolState.tool.draw(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
+            // Получаем реальные размеры канваса
+            const realWidth = canvasRef.current.offsetWidth;
+            const realHeight = canvasRef.current.offsetHeight;
+
+            // Вычисляем масштаб
+            const scaleX = 600 / realWidth;
+            const scaleY = 400 / realHeight;
+
+            // Получаем координаты мыши относительно канваса
+            const x = (e.pageX - e.target.offsetLeft) * scaleX;
+            const y = (e.pageY - e.target.offsetTop) * scaleY;
+
+            toolState.tool.draw(x, y);
 
         }
     }
@@ -147,7 +202,12 @@ const Canvas = observer(() => {
                 onMouseDown={mouseDownHandler}
                 onMouseUp={mouseUpHandler}
                 onMouseMove={mouseMoveHandler}
-                ref={canvasRef} width={500} height={500} style={{ border: '1px solid black' }}/>
+                ref={canvasRef}
+                width={canvasWidth}  // Используем динамическую ширину
+                height={canvasHeight} // Используем динамическую высоту
+                style={{ border: '1px solid black', width: '100%', maxWidth: '600px' }}
+            />
+
             {/* Кнопка "Создать комнату" */}
             <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
                 Создать комнату
@@ -156,7 +216,7 @@ const Canvas = observer(() => {
                 {messages.map((message, index) => (
                     <div key={index}>{message}</div>
                 ))}
-            </div> 
+            </div>
         </div>
     );
 });
