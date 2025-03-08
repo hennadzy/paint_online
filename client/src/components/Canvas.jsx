@@ -147,8 +147,7 @@ const Canvas = observer(() => {
                 onMouseDown={mouseDownHandler}
                 onMouseUp={mouseUpHandler}
                 onMouseMove={mouseMoveHandler}
-                ref={canvasRef} width={600} height={400} style={{ border: '1px solid black' }}/>
-
+                ref={canvasRef} width={500} height={500} style={{ border: '1px solid black' }}/>
             {/* Кнопка "Создать комнату" */}
             <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
                 Создать комнату
