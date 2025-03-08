@@ -15,7 +15,7 @@ import axios from 'axios'
 const Canvas = observer(() => {
     const canvasRef = useRef()
     const usernameRef = useRef()
-    const [modal, setModal] = useState(true)
+    const [modal, setModal] = useState(false)
     const params = useParams()
 
     useEffect(() => {
@@ -97,6 +97,10 @@ const Canvas = observer(() => {
         setModal(false)
     }
 
+    const handleCreateRoomClick = () => {
+        setModal(true); // Показываем модальное окно при клике на "Создать комнату"
+      };
+
     return (
         <div className="canvas">
             <Modal show={modal} onHide={() => {}}>
@@ -111,8 +115,11 @@ const Canvas = observer(() => {
                         Войти
                     </Button>
                 </Modal.Footer>
-            </Modal>
+            </Modal>         
             <canvas onMouseDown={() => mouseDownHandler()} ref={canvasRef} width={600} height={400}/>
+            <Button variant="primary" onClick={handleCreateRoomClick}>
+                Создать комнату
+            </Button>
         </div>
     );
 });
