@@ -1,3 +1,4 @@
+
 import React, {useEffect, useRef, useState} from 'react';
 import  {Modal, Button} from "react-bootstrap";
 import "../styles/canvas.scss"
@@ -17,21 +18,30 @@ const Canvas = observer(() => {
     const usernameRef = useRef()
     const [modal, setModal] = useState(false)
     const params = useParams()
+    const [messages, setMessages] = useState([]);
 
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
         let ctx = canvasRef.current.getContext('2d')
-        canvasState.setUsername('default')
-        axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
-            .then(response => {
-                const img = new Image()
-                img.src = response.data
-                img.onload = () => {
-                    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-                    ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height)
-                }
-            })
-    }, [])
+        if (params.id) {
+            axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+                .then(response => {
+                    const img = new Image()
+                    img.src = response.data
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+                        ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height)
+                    }
+                })
+                .catch(error => console.error("Ошибка загрузки изображения:", error));
+        } else {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
+
+        toolState.setTool(new Brush(canvasRef.current, null, params.id));
+
+    }, [params.id])
 
     useEffect(() => {
         if (canvasState.username) {
@@ -51,7 +61,8 @@ const Canvas = observer(() => {
                 let msg = JSON.parse(event.data)
                 switch (msg.method) {
                     case "connection":
-                        console.log(`пользователь ${msg.username} присоединился`)
+                        // Обновляем сообщения с информацией о присоединившемся пользователе
+                        setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
                         break
                     case "draw":
                         drawHandler(msg)
@@ -59,9 +70,9 @@ const Canvas = observer(() => {
                 }
             }
         }
-    }, [canvasState.username])
+    }, [canvasState.username, params.id])
 
-    const drawHandler = (msg) => {      
+    const drawHandler = (msg) => {
         const figure = msg.figure
         const ctx = canvasRef.current.getContext('2d')
         switch (figure.type) {
@@ -100,27 +111,53 @@ const Canvas = observer(() => {
 
     const handleCreateRoomClick = () => {
         setModal(true); // Показываем модальное окно при клике на "Создать комнату"
-      };
+    };
+
+    const mouseUpHandler = () => {
+        toolState.tool.mouseDown = false; // Прекращаем рисование
+        let ctx = canvasRef.current.getContext('2d') // Заканчиваем отрисовку
+        ctx.beginPath()
+
+    }
+
+    const mouseMoveHandler = (e) => {
+        if (toolState.tool.mouseDown) {
+            toolState.tool.draw(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
+
+        }
+    }
 
     return (
-        <div className="canvas">
-            <Modal show={modal} onHide={() => {}}>
-                <Modal.Header >
+        <div className="canvas" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Modal show={modal} onHide={() => setModal(false)}>
+                <Modal.Header closeButton>
                     <Modal.Title>Введите ваше имя</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <input type="text" ref={usernameRef}/>
+                    <input type="text" ref={usernameRef} placeholder="Ваше имя"/>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={() => connectHandler()}>
+                    <Button variant="secondary" onClick={connectHandler}>
                         Войти
                     </Button>
                 </Modal.Footer>
-            </Modal>         
-            <canvas onMouseDown={() => mouseDownHandler()} ref={canvasRef} width={600} height={400}/>
-            <Button variant="primary" onClick={handleCreateRoomClick}>
+            </Modal>
+
+            <canvas
+                onMouseDown={mouseDownHandler}
+                onMouseUp={mouseUpHandler}
+                onMouseMove={mouseMoveHandler}
+                ref={canvasRef} width={600} height={400} style={{ border: '1px solid black' }}/>
+
+            {/* Кнопка "Создать комнату" */}
+            <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
                 Создать комнату
             </Button>
+            <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                {messages.map((message, index) => (
+                    <div key={index}>{message}</div>
+                ))}
+            </div> 
         </div>
     );
 });
