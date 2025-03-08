@@ -103,6 +103,20 @@ const Canvas = observer(() => {
     const drawHandler = (msg) => {
         const figure = msg.figure
         const ctx = canvasRef.current.getContext('2d')
+
+        // Получаем реальные размеры канваса
+        const realWidth = canvasRef.current.offsetWidth;
+        const realHeight = canvasRef.current.offsetHeight;
+
+        // Вычисляем масштаб
+        const scaleX = realWidth / 600;
+        const scaleY = realHeight / 400;
+
+        ctx.save(); // Сохраняем текущее состояние контекста
+
+        // Масштабируем контекст
+        ctx.scale(scaleX, scaleY);
+
         switch (figure.type) {
             case "brush":
                 Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle,)
@@ -123,6 +137,7 @@ const Canvas = observer(() => {
                 ctx.beginPath()
                 break
         }
+        ctx.restore(); // Восстанавливаем состояние контекста
     }
 
 
@@ -150,7 +165,19 @@ const Canvas = observer(() => {
 
     const mouseMoveHandler = (e) => {
         if (toolState.tool.mouseDown) {
-            toolState.tool.draw(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
+            // Получаем реальные размеры канваса
+            const realWidth = canvasRef.current.offsetWidth;
+            const realHeight = canvasRef.current.offsetHeight;
+
+            // Вычисляем масштаб
+            const scaleX = 600 / realWidth;
+            const scaleY = 400 / realHeight;
+
+            // Получаем координаты мыши относительно канваса
+            const x = (e.pageX - e.target.offsetLeft) * scaleX;
+            const y = (e.pageY - e.target.offsetTop) * scaleY;
+
+            toolState.tool.draw(x, y);
 
         }
     }
