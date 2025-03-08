@@ -19,8 +19,7 @@ const Canvas = observer(() => {
     const [modal, setModal] = useState(false)
     const params = useParams()
     const [messages, setMessages] = useState([]);
-    const [isRoomCreated, setIsRoomCreated] = useState(false); // Состояние для отслеживания создания комнаты
-
+    const [isRoomCreated, setIsRoomCreated] = useState(false);
 
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
@@ -108,25 +107,23 @@ const Canvas = observer(() => {
 
     const connectHandler = () => {
         canvasState.setUsername(usernameRef.current.value)
-        setModal(false)
     }
 
     const handleCreateRoomClick = () => {
-        setModal(true); // Показываем модальное окно при клике на "Создать комнату"
         setIsRoomCreated(true); // Устанавливаем состояние, что комната создана
+        setModal(true); // Показываем модальное окно при клике на "Создать комнату"
     };
 
-    const mouseUpHandler = () => {
-        toolState.tool.mouseDown = false; // Прекращаем рисование
-        let ctx = canvasRef.current.getContext('2d') // Заканчиваем отрисовку
-        ctx.beginPath()
 
+    const mouseUpHandler = () => {
+        toolState.tool.mouseDown = false;
+        let ctx = canvasRef.current.getContext('2d')
+        ctx.beginPath()
     }
 
     const mouseMoveHandler = (e) => {
         if (toolState.tool.mouseDown) {
             toolState.tool.draw(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
-
         }
     }
 
