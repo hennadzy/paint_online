@@ -24,15 +24,15 @@ const Canvas = observer(() => {
         canvasState.setCanvas(canvasRef.current);
         let ctx = canvasRef.current.getContext('2d');
         if (params.id) {
-            axios.get(https://paint-online-back.onrender.com/image?id=${params.id})
+            axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
                 .then(response => {
-                    const img = new Image();
-                    img.src = response.data;
-                    img.onload = () => {
-                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                        ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-                    };
-                })
+                const img = new Image();
+                img.src = response.data;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                    ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+                };
+            })
                 .catch(error => console.error("Ошибка загрузки изображения:", error));
         } else {
             ctx.fillStyle = "white";
@@ -60,7 +60,7 @@ const Canvas = observer(() => {
                 let msg = JSON.parse(event.data);
                 switch (msg.method) {
                     case "connection":
-                        setMessages(prevMessages => [...prevMessages, пользователь ${msg.username} присоединился]);
+                        setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
                         break;
                     case "draw":
                         drawHandler(msg);
@@ -71,7 +71,6 @@ const Canvas = observer(() => {
             };
         }
     }, [canvasState.username, params.id]);
-
     const drawHandler = (msg) => {
         const figure = msg.figure;
         const ctx = canvasRef.current.getContext('2d');
@@ -94,90 +93,90 @@ const Canvas = observer(() => {
             case "finish":
                 ctx.beginPath();
                 break;
-                default:
-                    break;
-            }
-        };
-    
-        const mouseDownHandler = (e) => {
-            if (toolState.tool) {
-                toolState.tool.mouseDown = true;
-                toolState.tool.setStartPosition && toolState.tool.setStartPosition(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
-                canvasState.pushToUndo(canvasRef.current.toDataURL());
-            }
-        };
-    
-        const mouseUpHandler = () => {
-            if (toolState.tool) {
-                toolState.tool.mouseDown = false;
-                canvasState.socket && canvasState.socket.send(JSON.stringify({
-                    method: 'draw',
-                    id: canvasState.sessionId,
-                    figure: { type: 'finish' }
-                }));
-            }
-        };
-    
-        const mouseMoveHandler = (e) => {
-            if (toolState.tool && toolState.tool.mouseDown) {
-                toolState.tool.draw(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
-            }
-        };
-    
-        const connectHandler = () => {
-            const username = usernameRef.current.value.trim();
-            if (username) {
-                canvasState.setUsername(username);
-                setModal(false);
-            } else {
-                alert("Введите ваше имя");
-            }
-        };
-    
-        const handleCreateRoomClick = () => {
-            setModal(true);
-            setIsRoomCreated(true);
-        };
-    
-        return (
-            <div className="canvas" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Modal show={modal} onHide={() => setModal(false)}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Введите ваше имя</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <input type="text" ref={usernameRef} placeholder="Ваше имя" />
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={connectHandler}>
-                            Войти
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-    
-                <canvas
-                    ref={canvasRef}
-                    width={600}
-                    height={400}
-                    style={{ border: '1px solid black' }}
-                    onMouseDown={mouseDownHandler}
-                    onMouseUp={mouseUpHandler}
-                    onMouseMove={mouseMoveHandler}
-                />
-    
-                {!isRoomCreated && (
-                    <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
-                        Создать комнату
+            default:
+                break;
+        }
+    };
+
+    const mouseDownHandler = (e) => {
+        if (toolState.tool) {
+            toolState.tool.mouseDown = true;
+            toolState.tool.setStartPosition && toolState.tool.setStartPosition(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
+            canvasState.pushToUndo(canvasRef.current.toDataURL());
+        }
+    };
+
+    const mouseUpHandler = () => {
+        if (toolState.tool) {
+            toolState.tool.mouseDown = false;
+            canvasState.socket && canvasState.socket.send(JSON.stringify({
+                method: 'draw',
+                id: canvasState.sessionId,
+                figure: { type: 'finish' }
+            }));
+        }
+    };
+
+    const mouseMoveHandler = (e) => {
+        if (toolState.tool && toolState.tool.mouseDown) {
+            toolState.tool.draw(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
+        }
+    };
+
+    const connectHandler = () => {
+        const username = usernameRef.current.value.trim();
+        if (username) {
+            canvasState.setUsername(username);
+            setModal(false);
+        } else {
+            alert("Введите ваше имя");
+        }
+    };
+
+    const handleCreateRoomClick = () => {
+        setModal(true);
+        setIsRoomCreated(true);
+    };
+
+    return (
+        <div className="canvas" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Modal show={modal} onHide={() => setModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Введите ваше имя</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <input type="text" ref={usernameRef} placeholder="Ваше имя" />
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={connectHandler}>
+                        Войти
                     </Button>
-                )}
-    
-                <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                    {messages.map((message, index) => (
-                        <div key={index}>{message}</div>
-                    ))}
-                </div>
+                </Modal.Footer>
+            </Modal>
+
+            <canvas
+                ref={canvasRef}
+                width={600}
+                height={400}
+                style={{ border: '1px solid black' }}
+                onMouseDown={mouseDownHandler}
+                onMouseUp={mouseUpHandler}
+                onMouseMove={mouseMoveHandler}
+            />
+
+            {!isRoomCreated && (
+                <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
+                    Создать комнату
+                </Button>
+            )}
+
+            <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                {messages.map((message, index) => (
+                    <div key={index}>{message}</div>
+                ))}
             </div>
-        );
-    });
-    
-    export default Canvas;
+        </div>
+    );
+});
+
+export default Canvas;
