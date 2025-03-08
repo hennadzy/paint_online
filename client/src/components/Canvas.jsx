@@ -19,7 +19,8 @@ const Canvas = observer(() => {
     const [modal, setModal] = useState(false)
     const params = useParams()
     const [messages, setMessages] = useState([]);
-    const [isRoomCreated, setIsRoomCreated] = useState(false);
+    const [isRoomCreated, setIsRoomCreated] = useState(false); // Состояние для отслеживания создания комнаты
+
 
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
@@ -99,31 +100,36 @@ const Canvas = observer(() => {
     }
 
 
-    const mouseDownHandler = () => {
-        canvasState.pushToUndo(canvasRef.current.toDataURL())
-        axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {img: canvasRef.current.toDataURL()})
-            .then(response => console.log(response.data))
+    const mouseDownHandler = (e) => {
+        if (toolState.tool) {
+           toolState.tool.mouseDown = true;
+           if(toolState.tool.setStartPosition){
+               toolState.tool.setStartPosition(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
+           }
+           canvasState.pushToUndo(canvasRef.current.toDataURL());
+        }
     }
 
     const connectHandler = () => {
         canvasState.setUsername(usernameRef.current.value)
+        setModal(false)
     }
 
     const handleCreateRoomClick = () => {
-        setIsRoomCreated(true); // Устанавливаем состояние, что комната создана
         setModal(true); // Показываем модальное окно при клике на "Создать комнату"
+        setIsRoomCreated(true); // Устанавливаем состояние, что комната создана
     };
-
 
     const mouseUpHandler = () => {
         toolState.tool.mouseDown = false;
-        let ctx = canvasRef.current.getContext('2d')
-        ctx.beginPath()
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.beginPath();
     }
 
     const mouseMoveHandler = (e) => {
         if (toolState.tool.mouseDown) {
             toolState.tool.draw(e.pageX-e.target.offsetLeft, e.pageY-e.target.offsetTop);
+
         }
     }
 
