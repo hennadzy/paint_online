@@ -22,22 +22,25 @@ const Canvas = observer(() => {
 
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current);
-        let ctx = canvasRef.current.getContext('2d');
+        const ctx = canvasRef.current.getContext('2d');
         if (params.id) {
             axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
                 .then(response => {
-                const img = new Image();
-                img.src = response.data;
-                img.onload = () => {
-                    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                    ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-                };
-            })
+                    const img = new Image();
+                    img.src = response.data;
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                        ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+                    };
+                })
                 .catch(error => console.error("Ошибка загрузки изображения:", error));
         } else {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
+
+        // Инструмент с null-сокетом (без WebSocket)
+        toolState.setTool(new Brush(canvasRef.current, null, params.id));
     }, [params.id]);
 
     useEffect(() => {
@@ -57,7 +60,7 @@ const Canvas = observer(() => {
             };
 
             socket.onmessage = (event) => {
-                let msg = JSON.parse(event.data);
+                const msg = JSON.parse(event.data);
                 switch (msg.method) {
                     case "connection":
                         setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
@@ -71,6 +74,7 @@ const Canvas = observer(() => {
             };
         }
     }, [canvasState.username, params.id]);
+
     const drawHandler = (msg) => {
         const figure = msg.figure;
         const ctx = canvasRef.current.getContext('2d');
@@ -82,7 +86,7 @@ const Canvas = observer(() => {
                 Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
                 break;
             case "circle":
-                Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.lineWidth, figure.strokeStyle);
+                Circle.staticDraw(ctx, figure.x, figure.y, figure.r,figure.color, figure.lineWidth, figure.strokeStyle);
                 break;
             case "eraser":
                 Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle);
