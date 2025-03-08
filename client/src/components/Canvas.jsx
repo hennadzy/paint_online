@@ -19,6 +19,8 @@ const Canvas = observer(() => {
     const [modal, setModal] = useState(false)
     const params = useParams()
     const [messages, setMessages] = useState([]);
+    const [isRoomCreated, setIsRoomCreated] = useState(false); // Состояние для отслеживания создания комнаты
+
 
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
@@ -111,6 +113,7 @@ const Canvas = observer(() => {
 
     const handleCreateRoomClick = () => {
         setModal(true); // Показываем модальное окно при клике на "Создать комнату"
+        setIsRoomCreated(true); // Устанавливаем состояние, что комната создана
     };
 
     const mouseUpHandler = () => {
@@ -150,9 +153,11 @@ const Canvas = observer(() => {
                 ref={canvasRef} width={600} height={400} style={{ border: '1px solid black' }}/>
 
             {/* Кнопка "Создать комнату" */}
-            <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
-                Создать комнату
-            </Button>
+            {!isRoomCreated && (
+                <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
+                    Создать комнату
+                </Button>
+            )}
             <div style={{ marginTop: '10px', textAlign: 'center' }}>
                 {messages.map((message, index) => (
                     <div key={index}>{message}</div>
