@@ -20,18 +20,20 @@ const Canvas = observer(() => {
     const params = useParams()
     const [messages, setMessages] = useState([]);
 
-    const [canvasWidth, setCanvasWidth] = useState(600);
-    const [canvasHeight, setCanvasHeight] = useState(400);
+    const [canvasWidth, setCanvasWidth] = useState(600); // Начальная ширина канваса
+    const [canvasHeight, setCanvasHeight] = useState(400); // Начальная высота канваса
 
     useEffect(() => {
         const handleResize = () => {
-            const newWidth = window.innerWidth * 0.95;
-            const newHeight = newWidth * (400 / 600);
+            // Вычисляем новую ширину канваса (например, 100% ширины экрана)
+            const newWidth = window.innerWidth * 0.95; // 95% ширины экрана, чтобы был небольшой отступ
+            const newHeight = newWidth * (400 / 600); // Сохраняем пропорции
 
             setCanvasWidth(newWidth);
             setCanvasHeight(newHeight);
         };
 
+        // Вызываем handleResize при монтировании компонента и при изменении размера окна
         handleResize();
         window.addEventListener('resize', handleResize);
 
@@ -40,23 +42,24 @@ const Canvas = observer(() => {
         };
     }, []);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        canvasState.setCanvas(canvas);
 
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
+    useEffect(() => {
+        canvasState.setCanvas(canvasRef.current)
+        let ctx = canvasRef.current.getContext('2d')
+
+        // Устанавливаем размеры канваса
+        canvasRef.current.width = canvasWidth;
+        canvasRef.current.height = canvasHeight;
 
         if (params.id) {
             axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
                 .then(response => {
-                    const img = new Image();
-                    img.src = response.data;
+                    const img = new Image()
+                    img.src = response.data
                     img.onload = () => {
-                        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-                    };
+                        ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+                        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
+                    }
                 })
                 .catch(error => console.error("Ошибка загрузки изображения:", error));
         } else {
@@ -66,7 +69,7 @@ const Canvas = observer(() => {
 
         toolState.setTool(new Brush(canvasRef.current, null, params.id));
 
-    }, [params.id, canvasWidth, canvasHeight]);
+    }, [params.id, canvasWidth, canvasHeight])
 
     useEffect(() => {
         if (canvasState.username) {
@@ -86,6 +89,7 @@ const Canvas = observer(() => {
                 let msg = JSON.parse(event.data)
                 switch (msg.method) {
                     case "connection":
+                        // Обновляем сообщения с информацией о присоединившемся пользователе
                         setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
                         break
                     case "draw":
@@ -100,24 +104,42 @@ const Canvas = observer(() => {
         const figure = msg.figure
         const ctx = canvasRef.current.getContext('2d')
 
+        // Получаем реальные размеры канваса
+        const realWidth = canvasRef.current.offsetWidth;
+        const realHeight = canvasRef.current.offsetHeight;
+
+        // Вычисляем масштаб
+        const scaleX = realWidth / 600;
+        const scaleY = realHeight / 400;
+
+        ctx.save(); // Сохраняем текущее состояние контекста
+
+        // Масштабируем контекст
+        ctx.scale(scaleX, scaleY);
+
         switch (figure.type) {
             case "brush":
-                Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.color)
+                Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle,)
                 break
             case "rect":
-                Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.fillColor)
+                Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle)
                 break
             case "circle":
-                Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.fillColor)
+                Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.lineWidth, figure.strokeStyle)
                 break
             case "eraser":
-                Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, 'white')
+                Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle)
                 break
             case "line":
-                Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.color, figure.lineWidth)
+                Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle)
+                break
+            case "finish":
+                ctx.beginPath()
                 break
         }
+        ctx.restore(); // Восстанавливаем состояние контекста
     }
+
 
     const mouseDownHandler = () => {
         canvasState.pushToUndo(canvasRef.current.toDataURL())
@@ -131,31 +153,37 @@ const Canvas = observer(() => {
     }
 
     const handleCreateRoomClick = () => {
-        setModal(true);
+        setModal(true); // Показываем модальное окно при клике на "Создать комнату"
     };
 
-    const getMousePosition = (e) => {
-        const canvas = canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
-        return {
-            x: (e.clientX - rect.left) * (canvasWidth / rect.width),
-            y: (e.clientY - rect.top) * (canvasHeight / rect.height)
-        };
-    }
-
     const mouseUpHandler = () => {
-        toolState.tool.mouseDown = false;
+        toolState.tool.mouseDown = false; // Прекращаем рисование
+        let ctx = canvasRef.current.getContext('2d') // Заканчиваем отрисовку
+        ctx.beginPath()
+
     }
 
-    const mouseMoveHandler = (e) => {
+const mouseMoveHandler = (e) => {
         if (toolState.tool.mouseDown) {
-            const {x, y} = getMousePosition(e);
+            // Получаем реальные размеры канваса
+            const realWidth = canvasRef.current.offsetWidth;
+            const realHeight = canvasRef.current.offsetHeight;
+
+            // Вычисляем масштаб
+            const scaleX = 600 / realWidth;
+            const scaleY = 400 / realHeight;
+
+            // Получаем координаты мыши относительно канваса
+            const x = (e.pageX - e.target.offsetLeft) * scaleX;
+            const y = (e.pageY - e.target.offsetTop) * scaleY;
+
             toolState.tool.draw(x, y);
+
         }
     }
 
     return (
-        <div className="canvas">
+        <div className="canvas" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Modal show={modal} onHide={() => setModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Введите ваше имя</Modal.Title>
@@ -171,20 +199,16 @@ const Canvas = observer(() => {
             </Modal>
 
             <canvas
-                onMouseDown={(e) => {
-                    mouseDownHandler();
-                    const {x, y} = getMousePosition(e);
-                    toolState.tool.mouseDownHandler(x, y)
-                }}
+                onMouseDown={mouseDownHandler}
                 onMouseUp={mouseUpHandler}
-                onMouseMove={(e) => {
-                    mouseMoveHandler(e)
-                }}
+                onMouseMove={mouseMoveHandler}
                 ref={canvasRef}
-                width={canvasWidth}
-                height={canvasHeight}
+                width={canvasWidth}  // Используем динамическую ширину
+                height={canvasHeight} // Используем динамическую высоту
+                style={{ border: '1px solid black', width: '100%', maxWidth: '600px' }}
             />
 
+            {/* Кнопка "Создать комнату" */}
             <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
                 Создать комнату
             </Button>
