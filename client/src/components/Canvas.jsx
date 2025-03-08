@@ -1,15 +1,15 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Button } from "react-bootstrap";
+import React, {useEffect, useRef, useState} from 'react';
+import  {Modal, Button} from "react-bootstrap";
 import "../styles/canvas.scss"
-import { observer } from "mobx-react-lite";
+import {observer} from "mobx-react-lite";
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
-import { useParams } from "react-router-dom"
+import {useParams} from "react-router-dom"
 import Rect from "../tools/Rect";
 import axios from 'axios'
 
@@ -20,14 +20,13 @@ const Canvas = observer(() => {
     const params = useParams()
     const [messages, setMessages] = useState([]);
 
-    const [canvasWidth, setCanvasWidth] = useState(600); // Initial canvas width
-    const [canvasHeight, setCanvasHeight] = useState(400); // Initial canvas height
+    const [canvasWidth, setCanvasWidth] = useState(600);
+    const [canvasHeight, setCanvasHeight] = useState(400);
 
     useEffect(() => {
         const handleResize = () => {
-            // Calculate new canvas width (e.g., 95% of the screen width)
             const newWidth = window.innerWidth * 0.95;
-            const newHeight = newWidth * (400 / 600); // Maintain aspect ratio
+            const newHeight = newWidth * (400 / 600);
 
             setCanvasWidth(newWidth);
             setCanvasHeight(newHeight);
@@ -41,17 +40,14 @@ const Canvas = observer(() => {
         };
     }, []);
 
-
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         canvasState.setCanvas(canvas);
 
-        // Set canvas dimensions
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
 
-        // Fetch image if ID is present
         if (params.id) {
             axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
                 .then(response => {
@@ -62,7 +58,7 @@ const Canvas = observer(() => {
                         ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
                     };
                 })
-                .catch(error => console.error("Image load error:", error));
+                .catch(error => console.error("Ошибка загрузки изображения:", error));
         } else {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -70,9 +66,7 @@ const Canvas = observer(() => {
 
         toolState.setTool(new Brush(canvasRef.current, null, params.id));
 
-
     }, [params.id, canvasWidth, canvasHeight]);
-
 
     useEffect(() => {
         if (canvasState.username) {
@@ -81,9 +75,9 @@ const Canvas = observer(() => {
             canvasState.setSessionId(params.id)
             toolState.setTool(new Brush(canvasRef.current, socket, params.id))
             socket.onopen = () => {
-                console.log('Connection established')
+                console.log('Подключение установлено')
                 socket.send(JSON.stringify({
-                    id: params.id,
+                    id:params.id,
                     username: canvasState.username,
                     method: "connection"
                 }))
@@ -92,8 +86,7 @@ const Canvas = observer(() => {
                 let msg = JSON.parse(event.data)
                 switch (msg.method) {
                     case "connection":
-                        // Update messages with information about the joined user
-                        setMessages(prevMessages => [...prevMessages, `User ${msg.username} joined`]);
+                        setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
                         break
                     case "draw":
                         drawHandler(msg)
@@ -109,62 +102,98 @@ const Canvas = observer(() => {
 
         switch (figure.type) {
             case "brush":
-                if (figure.type === 'moveTo') {
-                    Brush.moveTo(ctx, figure.x, figure.y, figure.color, figure.lineWidth);
-                } else if (figure.type === 'lineTo') {
-                    Brush.draw(ctx, figure.x, figure.y, figure.color, figure.lineWidth);
-                } else if (figure.type === 'finish') {
-                    Brush.finish(ctx);
-                }
-                break;
+                Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.color)
+                break
             case "rect":
-                Rect.draw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.fillColor)
+                Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.fillColor)
                 break
             case "circle":
-                Circle.draw(ctx, figure.x, figure.y, figure.r, figure.color, figure.fillColor)
+                Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.fillColor)
                 break
             case "eraser":
-                Eraser.draw(ctx, figure.x, figure.y, figure.lineWidth);
-                break;
+                Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, 'white')
+                break
             case "line":
-                Line.draw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.color, figure.lineWidth)
+                Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.color, figure.lineWidth)
                 break
         }
     }
 
     const mouseDownHandler = () => {
         canvasState.pushToUndo(canvasRef.current.toDataURL())
+        axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {img: canvasRef.current.toDataURL()})
+            .then(response => console.log(response.data))
     }
 
-    const connectionHandler = () => {
-        setModal(false)
+    const connectHandler = () => {
         canvasState.setUsername(usernameRef.current.value)
+        setModal(false)
     }
 
-    const download = () => {
-        const dataURL = canvasRef.current.toDataURL()
-        const link = document.createElement('a')
-        link.href = dataURL
-        link.download = "canvas_image.png";
-        link.click()
+    const handleCreateRoomClick = () => {
+        setModal(true);
+    };
+
+    const getMousePosition = (e) => {
+        const canvas = canvasRef.current;
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (e.clientX - rect.left) * (canvasWidth / rect.width),
+            y: (e.clientY - rect.top) * (canvasHeight / rect.height)
+        };
+    }
+
+    const mouseUpHandler = () => {
+        toolState.tool.mouseDown = false;
+    }
+
+    const mouseMoveHandler = (e) => {
+        if (toolState.tool.mouseDown) {
+            const {x, y} = getMousePosition(e);
+            toolState.tool.draw(x, y);
+        }
     }
 
     return (
-         <Modal show={modal} onHide={() => {}}>
-             <Modal.Header>
-             <Modal.Title>Enter your name</Modal.Title>
-                 </Modal.Header>
-              <Modal.Body>      
-          </Modal.Body>
-             <Modal.Footer>
-                 <Button variant="primary" onClick={() => connectionHandler()}>
-                 Join
-                </Button>
-            </Modal.Footer>
-      </Modal>
-          <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight}
-                onMouseDown={mouseDownHandler}
-          className="canvas"/>
+        <div className="canvas">
+            <Modal show={modal} onHide={() => setModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Введите ваше имя</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <input type="text" ref={usernameRef} placeholder="Ваше имя"/>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={connectHandler}>
+                        Войти
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <canvas
+                onMouseDown={(e) => {
+                    mouseDownHandler();
+                    const {x, y} = getMousePosition(e);
+                    toolState.tool.mouseDownHandler(x, y)
+                }}
+                onMouseUp={mouseUpHandler}
+                onMouseMove={(e) => {
+                    mouseMoveHandler(e)
+                }}
+                ref={canvasRef}
+                width={canvasWidth}
+                height={canvasHeight}
+            />
+
+            <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: '10px' }}>
+                Создать комнату
+            </Button>
+            <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                {messages.map((message, index) => (
+                    <div key={index}>{message}</div>
+                ))}
+            </div>
+        </div>
     );
 });
 
