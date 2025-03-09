@@ -4,20 +4,23 @@ export default class Tool {
         this.socket = socket;
         this.id = id;
         this.ctx = canvas.getContext('2d');
-
-        // Уничтожаем все текущие обработчики событий на канвасе перед созданием нового инструмента
-        this.clearAllCanvasEvents();
+        this.removeAllEventListeners(); // <-- очищаем обработчики при смене любого инструмента
     }
 
     set fillColor(color) { this.ctx.fillStyle = color; }
     set strokeColor(color) { this.ctx.strokeStyle = color; }
     set lineWidth(width) { this.ctx.lineWidth = width; }
 
-    clearAllCanvasEvents() {
-        // Клонируем канвас, чтобы гарантированно удалить все события разом
-        const newCanvas = this.canvas.cloneNode(true);
-        this.canvas.parentNode.replaceChild(newCanvas, this.canvas);
-        this.canvas = newCanvas;
-        this.ctx = newCanvas.getContext('2d');
+    removeAllEventListeners() {
+        const clone = this.canvas.cloneNode(true);
+        this.canvas.parentNode.replaceChild(clone, this.canvas);
+
+        // ВАЖНО: обновляем ссылку в глобальном состоянии
+        if (window.toolState) {
+            window.toolState.setCanvas(clone);
+        }
+
+        this.canvas = clone;
+        this.ctx = this.canvas.getContext('2d');
     }
 }
