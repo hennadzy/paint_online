@@ -1,110 +1,118 @@
 import Tool from "./Tool";
 
 export default class Brush extends Tool {
-    constructor(canvas, socket, id) {
-        super(canvas, socket, id);
-        this.mouseDown = false;
-        this.destroyEvents();
-        this.listen();
+  constructor(canvas, socket, id) {
+    super(canvas, socket, id);
+    this.mouseDown = false;
+    // this.username будет установлено извне (например, из Canvas)
+    this.username = null;
+    this.destroyEvents();
+    this.listen();
+  }
+
+  listen() {
+    // Навешиваем обработчики для мыши
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    // Навешиваем сенсорные обработчики
+    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.ctx.beginPath();
+    this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    this.draw(e.clientX - rect.left, e.clientY - rect.top);
+  }
+
+  mouseUpHandler() {
+    this.mouseDown = false;
+    if (this.socket) {
+      this.socket.send(
+        JSON.stringify({
+          method: "draw",
+          id: this.id,
+          figure: { type: "finish" },
+        })
+      );
     }
+  }
 
-    listen() {
-        // обработчики событий мыши
-        this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-        this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-        this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.ctx.beginPath();
+    this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
+}
 
-        // обработчики для сенсорных экранов
-        this.canvas.addEventListener('touchstart', this.touchStartHandler.bind(this), {passive: false});
-        this.canvas.addEventListener('touchmove', this.touchMoveHandler.bind(this), {passive: false});
-        this.canvas.addEventListener('touchend', this.touchEndHandler.bind(this), {passive: false});
-    }
+touchMoveHandler(e) {
+  e.preventDefault();
+  if (!this.mouseDown) return;
+  const rect = this.canvas.getBoundingClientRect();
+  this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+}
 
-    mouseDownHandler(e) {
-        this.mouseDown = true;
-        const rect = this.canvas.getBoundingClientRect();
-        this.ctx.beginPath();
-        this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
-    }
+touchEndHandler(e) {
+  e.preventDefault();
+  this.mouseDown = false;
+  if (this.socket) {
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" },
+      })
+    );
+  }
+}
 
-    mouseMoveHandler(e) {
-        if (this.mouseDown) {
-            const rect = this.canvas.getBoundingClientRect();
-            this.draw(e.clientX - rect.left, e.clientY - rect.top);
-        }
-    }
+draw(x, y) {
+  this.sendDrawData(x, y, false);
+}
 
-    mouseUpHandler() {
-        this.mouseDown = false;
-        if (this.socket) {
-            this.socket.send(JSON.stringify({
-                method: 'draw', id: this.id, figure: { type: 'finish' }
-            }));
-        }
-    }
+sendDrawData(x, y, isStart = false) {
+  const lineWidth = this.ctx.lineWidth;
+  const strokeStyle = this.ctx.strokeStyle;
+  if (this.socket) {
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username, // передаем имя отправителя для фильтрации echo
+        },
+      })
+    );
+  }
+  Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+}
 
-    touchStartHandler(e) {
-        e.preventDefault();
-        this.mouseDown = true;
-        const rect = this.canvas.getBoundingClientRect();
-        this.ctx.beginPath();
-        this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-        this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
-    }
-
-    touchMoveHandler(e) {
-        e.preventDefault();
-        if (this.mouseDown) {
-            const rect = this.canvas.getBoundingClientRect();
-            this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-        }
-    }
-
-    touchEndHandler(e) {
-        e.preventDefault();
-        this.mouseDown = false;
-        if (this.socket) {
-            this.socket.send(JSON.stringify({
-                method: 'draw', id: this.id, figure: { type: 'finish' }
-            }));
-        }
-    }
-
-    draw(x, y) {
-        this.sendDrawData(x, y, false);
-    }
-
-    sendDrawData(x, y, isStart = false) {
-        const lineWidth = this.ctx.lineWidth;
-        const strokeStyle = this.ctx.strokeStyle;
-
-        if (this.socket) {
-            this.socket.send(JSON.stringify({
-                method: 'draw',
-                id: this.id,
-                figure: {
-                    type: 'brush',
-                    x,
-                    y,
-                    lineWidth,
-                    strokeStyle,
-                    isStart
-                }
-            }));
-        }
-
-        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    }
-
-    static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-        if (isStart) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
-        ctx.lineTo(x, y);
-        ctx.lineWidth = lineWidth;
-        ctx.strokeStyle = strokeStyle;
-        ctx.stroke();
-    }
+static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  if (isStart) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+  ctx.lineTo(x, y);
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = strokeStyle;
+  ctx.stroke();
+}
 }
