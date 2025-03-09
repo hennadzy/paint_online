@@ -4,8 +4,6 @@ export default class Brush extends Tool {
   constructor(canvas, socket, id) {
     super(canvas, socket, id);
     this.mouseDown = false;
-    // this.username будет установлено извне (например, из Canvas)
-    this.username = null;
     this.destroyEvents();
     this.listen();
   }
