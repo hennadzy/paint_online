@@ -96,9 +96,9 @@ export default class Rect extends Tool {
             this.startY,
             this.width,
             this.height,
+            this.ctx.fillStyle,
             this.ctx.lineWidth,
-            this.ctx.strokeStyle,
-            this.ctx.fillStyle
+            this.ctx.strokeStyle
         );
     }
 
