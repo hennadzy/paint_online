@@ -1,3 +1,5 @@
+import Tool from "./Tool";
+
 export default class Brush extends Tool {
     constructor(canvas, socket, id) {
         super(canvas, socket, id);
@@ -6,7 +8,68 @@ export default class Brush extends Tool {
         this.listen();
     }
 
-    // ... (тут без изменений ваш существующий код listen(), mouseUpHandler и пр.)
+    listen() {
+        // обработчики событий мыши
+        this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+        this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+        this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+        // обработчики для сенсорных экранов
+        this.canvas.addEventListener('touchstart', this.touchStartHandler.bind(this), {passive: false});
+        this.canvas.addEventListener('touchmove', this.touchMoveHandler.bind(this), {passive: false});
+        this.canvas.addEventListener('touchend', this.touchEndHandler.bind(this), {passive: false});
+    }
+
+    mouseDownHandler(e) {
+        this.mouseDown = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.ctx.beginPath();
+        this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+    }
+
+    mouseMoveHandler(e) {
+        if (this.mouseDown) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.draw(e.clientX - rect.left, e.clientY - rect.top);
+        }
+    }
+
+    mouseUpHandler() {
+        this.mouseDown = false;
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw', id: this.id, figure: { type: 'finish' }
+            }));
+        }
+    }
+
+    touchStartHandler(e) {
+        e.preventDefault();
+        this.mouseDown = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.ctx.beginPath();
+        this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
+    }
+
+    touchMoveHandler(e) {
+        e.preventDefault();
+        if (this.mouseDown) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        }
+    }
+
+    touchEndHandler(e) {
+        e.preventDefault();
+        this.mouseDown = false;
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw', id: this.id, figure: { type: 'finish' }
+            }));
+        }
+    }
 
     draw(x, y) {
         this.sendDrawData(x, y, false);
