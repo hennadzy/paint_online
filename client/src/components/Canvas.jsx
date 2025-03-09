@@ -45,45 +45,50 @@ const Canvas = observer(() => {
     }, [params.id]);
   
     useEffect(() => {
-      if (canvasState.username) {
-        const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-        canvasState.setSocket(socket);
-        canvasState.setSessionId(params.id);
-        // Создаем инструмент кисти только после установки username и подключения сокета
-        const brushTool = new Brush(canvasRef.current, socket, params.id);
-        brushTool.username = canvasState.username; // сохраняем имя текущего пользователя
-        toolState.setTool(brushTool);
-  
-        socket.onopen = () => {
-          console.log("Подключение установлено");
-          socket.send(
-            JSON.stringify({
-              id: params.id,
-              username: canvasState.username,
-              method: "connection",
-            })
-          );
-        };
-  
-        socket.onmessage = (event) => {
-          const msg = JSON.parse(event.data);
-          // Фильтруем echo-сообщения: если сообщение пришло от того же пользователя, пропускаем его
-          if (msg.username && msg.username === canvasState.username) {
-            return;
+        if (canvasState.username) {
+          // Если инструмент уже выбран, удаляем его обработчики,
+          // чтобы случайно не осталось слушателей от предыдущей версии
+          if (toolState.tool && toolState.tool.destroyEvents) {
+            toolState.tool.destroyEvents();
           }
-          switch (msg.method) {
-            case "connection":
+          const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+          canvasState.setSocket(socket);
+          canvasState.setSessionId(params.id);
+          // Создаем инструмент кисти уже только один раз
+          const brushTool = new Brush(canvasRef.current, socket, params.id);
+          brushTool.username = canvasState.username; // сохраняем имя пользователя
+          toolState.setTool(brushTool);
+      
+          socket.onopen = () => {
+            console.log("Подключение установлено");
+            socket.send(
+              JSON.stringify({
+                id: params.id,
+                username: canvasState.username,
+                method: "connection",
+              })
+            );
+          };
+      
+          socket.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            // Фильтруем echo-сообщения: если сообщение пришло от текущего пользователя, пропускаем
+            if (msg.username && msg.username === canvasState.username) {
+              return;
+            }
+            switch (msg.method) {
+              case "connection":
                 setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
                 break;
-            case "draw":
-              drawHandler(msg);
-              break;
-            default:
-              break;
-          }
-        };
-      }
-    }, [canvasState.username, params.id]);
+              case "draw":
+                drawHandler(msg);
+                break;
+              default:
+                break;
+            }
+          };
+        }
+      }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
