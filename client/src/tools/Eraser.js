@@ -3,64 +3,97 @@ import Tool from "./Tool";
 export default class Eraser extends Tool {
     constructor(canvas, socket, id) {
         super(canvas, socket, id);
-        this.listen()
+        this.mouseDown = false;
+        this.destroyEvents();
+        this.listen();
     }
 
     listen() {
-        this.canvas.onmousemove = this.mouseMoveHandler.bind(this)
-        this.canvas.onmousedown = this.mouseDownHandler.bind(this)
-        this.canvas.onmouseup = this.mouseUpHandler.bind(this)
-    }
+        // обработка мыши
+        this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+        this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+        this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-    mouseUpHandler(e) {
-        this.mouseDown = false
-        this.socket.send(JSON.stringify({
-            method: 'draw',
-            id: this.id,
-            figure: {
-                type: 'finish',
-            }
-        }))
+        // обработка сенсорных устройств
+        this.canvas.addEventListener('touchstart', this.touchStartHandler.bind(this), {passive: false});
+        this.canvas.addEventListener('touchmove', this.touchMoveHandler.bind(this), {passive: false});
+        this.canvas.addEventListener('touchend', this.touchEndHandler.bind(this), {passive: false});
     }
 
     mouseDownHandler(e) {
+        this.mouseDown = true;
+        const rect = this.canvas.getBoundingClientRect();
         this.ctx.strokeStyle = "white";
-        this.mouseDown = true
-        this.ctx.beginPath()
-        this.ctx.moveTo(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop)
-        const lineWidth = this.ctx.lineWidth;
-        const strokeStyle = this.ctx.strokeStyle;
+        this.ctx.beginPath();
+        this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        this.sendEraseData(e.clientX - rect.left, e.clientY - rect.top, true);
+    }
+
+    mouseMoveHandler(e) {
+        if (this.mouseDown) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.sendEraseData(e.clientX - rect.left, e.clientY - rect.top);
+        }
+    }
+
+    mouseUpHandler() {
+        this.mouseDown = false;
+        this.socket.send(JSON.stringify({
+            method: 'draw', id: this.id, figure: { type: 'finish' }
+        }));
+    }
+
+    touchStartHandler(e) {
+        e.preventDefault();
+        this.mouseDown = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.ctx.strokeStyle = "white";
+        this.ctx.beginPath();
+        this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        this.sendEraseData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
+    }
+
+    touchMoveHandler(e) {
+        e.preventDefault();
+        if (this.mouseDown) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.sendEraseData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        }
+    }
+
+    touchEndHandler(e) {
+        e.preventDefault();
+        this.mouseDown = false;
+        this.socket.send(JSON.stringify({
+            method: 'draw', id: this.id, figure: { type: 'finish' }
+        }));
+    }
+
+    sendEraseData(x, y, isStart = false) {
         this.socket.send(JSON.stringify({
             method: 'draw',
             id: this.id,
             figure: {
                 type: 'eraser',
-                x: e.pageX - e.target.offsetLeft,
-                y: e.pageY - e.target.offsetTop,
-                lineWidth,
-                strokeStyle
+                x,
+                y,
+                isStart,
+                lineWidth: this.ctx.lineWidth,
             }
-        }))
+        }));
     }
 
-    mouseMoveHandler(e) {
-        if (this.mouseDown) {
-            this.socket.send(JSON.stringify({
-                method: 'draw',
-                id: this.id,
-                figure: {
-                    type: 'eraser',
-                    x: e.pageX - e.target.offsetLeft,
-                    y: e.pageY - e.target.offsetTop,
-                }
-            }))
-        }
-    }
-
-    static staticDraw(ctx, x, y, lineWidth, strokeStyle) {
-        ctx.lineTo(x, y)
+    static staticDraw(ctx, x, y, lineWidth, isStart) {
+        ctx.strokeStyle = 'white';
         ctx.lineWidth = lineWidth;
-        ctx.strokeStyle = strokeStyle;
-        ctx.stroke()
+        ctx.lineCap = 'round';
+
+        if (isStart) {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
     }
 }

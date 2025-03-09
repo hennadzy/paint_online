@@ -4,6 +4,7 @@ export default class Rect extends Tool {
     constructor(canvas, socket, id) {
         super(canvas, socket, id);
         this.mouseDown = false;
+        this.destroyEvents();
         this.listen();
     }
 

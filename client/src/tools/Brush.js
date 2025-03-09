@@ -4,6 +4,7 @@ export default class Brush extends Tool {
     constructor(canvas, socket, id) {
         super(canvas, socket, id);
         this.mouseDown = false;
+        this.destroyEvents();
         this.listen();
     }
 

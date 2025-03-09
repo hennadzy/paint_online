@@ -8,6 +8,7 @@ export default class Circle extends Tool {
         this.startY = 0;
         this.r = 0;
         this.saved = "";
+        this.destroyEvents();
         this.listen();
     }
 
