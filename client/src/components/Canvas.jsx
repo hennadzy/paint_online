@@ -39,7 +39,7 @@ const Canvas = observer(() => {
             ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         }
 
-        // Инструмент с null-сокетом (без WebSocket)
+        // Устанавливаем инструмент без сокета (обработчики событий будут навешаны внутри инструмента)
         toolState.setTool(new Brush(canvasRef.current, null, params.id));
     }, [params.id]);
 
@@ -48,6 +48,7 @@ const Canvas = observer(() => {
             const socket = new WebSocket("wss://paint-online-back.onrender.com/");
             canvasState.setSocket(socket);
             canvasState.setSessionId(params.id);
+            // При повторном выборе инструмента создаём экземпляр, который навешивает свои обработчики
             toolState.setTool(new Brush(canvasRef.current, socket, params.id));
 
             socket.onopen = () => {
@@ -86,7 +87,7 @@ const Canvas = observer(() => {
                 Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
                 break;
             case "circle":
-                Circle.staticDraw(ctx, figure.x, figure.y, figure.r,figure.color, figure.lineWidth, figure.strokeStyle);
+                Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.lineWidth, figure.strokeStyle);
                 break;
             case "eraser":
                 Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle);
@@ -99,31 +100,6 @@ const Canvas = observer(() => {
                 break;
             default:
                 break;
-        }
-    };
-
-    const mouseDownHandler = (e) => {
-        if (toolState.tool) {
-            toolState.tool.mouseDown = true;
-            toolState.tool.setStartPosition && toolState.tool.setStartPosition(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
-            canvasState.pushToUndo(canvasRef.current.toDataURL());
-        }
-    };
-
-    const mouseUpHandler = () => {
-        if (toolState.tool) {
-            toolState.tool.mouseDown = false;
-            canvasState.socket && canvasState.socket.send(JSON.stringify({
-                method: 'draw',
-                id: canvasState.sessionId,
-                figure: { type: 'finish' }
-            }));
-        }
-    };
-
-    const mouseMoveHandler = (e) => {
-        if (toolState.tool && toolState.tool.mouseDown) {
-            toolState.tool.draw(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
         }
     };
 
@@ -163,9 +139,7 @@ const Canvas = observer(() => {
                 width={600}
                 height={400}
                 style={{ border: '1px solid black' }}
-                onMouseDown={mouseDownHandler}
-                onMouseUp={mouseUpHandler}
-                onMouseMove={mouseMoveHandler}
+                // Удалили onMouseDown, onMouseUp, onMouseMove – события теперь обрабатываются непосредственно инструментом (например, Brush.listen())
             />
 
             {!isRoomCreated && (
@@ -182,5 +156,3 @@ const Canvas = observer(() => {
         </div>
     );
 });
-
-export default Canvas;
