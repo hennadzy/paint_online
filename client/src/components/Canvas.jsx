@@ -13,89 +13,85 @@ import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
-    const canvasRef = useRef();
-    const usernameRef = useRef();
-    const [modal, setModal] = useState(false);
-    const [messages, setMessages] = useState([]);
-    const [isRoomCreated, setIsRoomCreated] = useState(false);
-    const params = useParams();
-  
-    useEffect(() => {
-      canvasState.setCanvas(canvasRef.current);
-      const ctx = canvasRef.current.getContext("2d");
-      if (params.id) {
+  const canvasRef = useRef();
+  const usernameRef = useRef();
+  const [modal, setModal] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
+  const params = useParams();
+
+  useEffect(() => {
+    canvasState.setCanvas(canvasRef.current);
+    const ctx = canvasRef.current.getContext("2d");
+    if (params.id) {
         axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
         .then((response) => {
-            const img = new Image();
-            img.src = response.data;
-            img.onload = () => {
-              ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-              ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-            };
-          })
-          .catch((error) => console.error("Ошибка загрузки изображения:", error));
-      } else {
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          const img = new Image();
+          img.src = response.data;
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+          };
+        })
+        .catch((error) => console.error("Ошибка загрузки изображения:", error));
+    } else {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+    // Не создаем Brush без сокета – создаем его только когда введут имя
+    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
+  }, [params.id]);
+
+  useEffect(() => {
+    if (canvasState.username) {
+      // Если уже есть инструмент, удаляем его обработчики, чтобы не оставалось дублирования
+      if (toolState.tool && toolState.tool.destroyEvents) {
+        toolState.tool.destroyEvents();
       }
-  
-      // Убираем создание инструмента без сокета,
-      // чтобы не навешивались обработчики раньше подключения пользователя
-      // toolState.setTool(new Brush(canvasRef.current, null, params.id));
-    }, [params.id]);
-  
-    useEffect(() => {
-        if (canvasState.username) {
-          // Если инструмент уже выбран, удаляем его обработчики,
-          // чтобы случайно не осталось слушателей от предыдущей версии
-          if (toolState.tool && toolState.tool.destroyEvents) {
-            toolState.tool.destroyEvents();
-          }
-          const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-          canvasState.setSocket(socket);
-          canvasState.setSessionId(params.id);
-          // Создаем инструмент кисти уже только один раз
-          const brushTool = new Brush(canvasRef.current, socket, params.id);
-          brushTool.username = canvasState.username; // сохраняем имя пользователя
-          toolState.setTool(brushTool);
-      
-          socket.onopen = () => {
-            console.log("Подключение установлено");
-            socket.send(
-              JSON.stringify({
-                id: params.id,
-                username: canvasState.username,
-                method: "connection",
-              })
-            );
-          };
-      
-          socket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            // Фильтруем echo-сообщения: если сообщение пришло от текущего пользователя, пропускаем
-            if (msg.username && msg.username === canvasState.username) {
-              return;
-            }
-            switch (msg.method) {
-              case "connection":
-                setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
-                break;
-              case "draw":
-                drawHandler(msg);
-                break;
-              default:
-                break;
-            }
-          };
+      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+      canvasState.setSocket(socket);
+      canvasState.setSessionId(params.id);
+      // Создаем кисть только один раз
+      const brushTool = new Brush(canvasRef.current, socket, params.id);
+      brushTool.username = canvasState.username;
+      toolState.setTool(brushTool);
+
+      socket.onopen = () => {
+        console.log("Подключение установлено");
+        socket.send(
+          JSON.stringify({
+            id: params.id,
+            username: canvasState.username,
+            method: "connection",
+          })
+        );
+      };
+
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        // Фильтруем echo-сообщения
+        if (msg.username && msg.username === canvasState.username) {
+          return;
         }
-      }, [canvasState.username, params.id]);
+        switch (msg.method) {
+          case "connection":
+            setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
+            break;
+          case "draw":
+            drawHandler(msg);
+            break;
+          default:
+            break;
+        }
+      };
+    }
+  }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
     switch (figure.type) {
       case "brush":
-        // Обратите внимание: передаем isStart, чтобы корректно отрисовывать начало линии
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
         break;
       case "rect":
@@ -149,12 +145,7 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={400}
-        style={{ border: "1px solid black" }}
-      />
+      <canvas ref={canvasRef} width={600} height={400} style={{ border: "1px solid black" }} />
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
