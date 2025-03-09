@@ -40,7 +40,7 @@ const Canvas = observer(() => {
         }
 
         // Устанавливаем инструмент без сокета (обработчики событий будут навешаны внутри инструмента)
-        // toolState.setTool(new Brush(canvasRef.current, null, params.id));
+        toolState.setTool(new Brush(canvasRef.current, null, params.id));
     }, [params.id]);
 
     useEffect(() => {
