@@ -24,7 +24,6 @@ const Canvas = observer(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
-      axios
       axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
       .then((response) => {
           const img = new Image();
