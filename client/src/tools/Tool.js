@@ -4,7 +4,11 @@ export default class Tool {
         this.socket = socket;
         this.id = id;
         this.ctx = canvas.getContext('2d');
-        this.destroyEvents();
+
+        if (Tool.activeTool) {
+            Tool.activeTool.destroyEvents(); // Очистить события предыдущего инструмента
+        }
+        Tool.activeTool = this; // Запоминаем активный инструмент
     }
 
     set fillColor(color) {
@@ -20,20 +24,6 @@ export default class Tool {
     }
 
     destroyEvents() {
-        // Убираем стандартные обработчики
-        this.canvas.onmousemove = null;
-        this.canvas.onmousedown = null;
-        this.canvas.onmouseup = null;
-
-        // убираем сенсорные обработчики
-        this.canvas.ontouchstart = null;
-        this.canvas.ontouchmove = null;
-        this.canvas.ontouchend = null;
-        this.canvas.ontouchcancel = null;
-
-        // Убираем через removeEventListener (доп. страховка)
-        this.canvas.removeEventListener('touchstart', this.touchStartHandler);
-        this.canvas.removeEventListener('touchmove', this.touchMoveHandler);
-        this.canvas.removeEventListener('touchend', this.touchEndHandler);
+        // Пустой метод. Переопределяется в потомках.
     }
 }
