@@ -13,76 +13,77 @@ import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
-  const canvasRef = useRef();
-  const usernameRef = useRef();
-  const [modal, setModal] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [isRoomCreated, setIsRoomCreated] = useState(false);
-  const params = useParams();
-
-  useEffect(() => {
-    canvasState.setCanvas(canvasRef.current);
-    const ctx = canvasRef.current.getContext("2d");
-    if (params.id) {
-      axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
-      .then((response) => {
-          const img = new Image();
-          img.src = response.data;
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-          };
-        })
-        .catch((error) => console.error("Ошибка загрузки изображения:", error));
-    } else {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
-    // При отсутствии сокета назначаем кисть без него,
-    // чтобы не навешивались обработчики до подключения
-    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
-  }, [params.id]);
-
-  useEffect(() => {
-    if (canvasState.username) {
-      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-      canvasState.setSocket(socket);
-      canvasState.setSessionId(params.id);
-      // Создаем инструмент кисти с сокетом и устанавливаем username
-      const brushTool = new Brush(canvasRef.current, socket, params.id);
-      brushTool.username = canvasState.username; // сохраняем имя текущего пользователя
-      toolState.setTool(brushTool);
-
-      socket.onopen = () => {
-        console.log("Подключение установлено");
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
+    const canvasRef = useRef();
+    const usernameRef = useRef();
+    const [modal, setModal] = useState(false);
+    const [messages, setMessages] = useState([]);
+    const [isRoomCreated, setIsRoomCreated] = useState(false);
+    const params = useParams();
+  
+    useEffect(() => {
+      canvasState.setCanvas(canvasRef.current);
+      const ctx = canvasRef.current.getContext("2d");
+      if (params.id) {
+        axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+        .then((response) => {
+            const img = new Image();
+            img.src = response.data;
+            img.onload = () => {
+              ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+            };
           })
-        );
-      };
-
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        // Фильтруем echo-сообщения: если сообщение пришло от того же пользователя, пропускаем его
-        if (msg.username && msg.username === canvasState.username) {
-          return;
-        }
-        switch (msg.method) {
-          case "connection":
-            setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
-            break;
-          case "draw":
-            drawHandler(msg);
-            break;
-          default:
-            break;
-        }
-      };
-    }
-  }, [canvasState.username, params.id]);
+          .catch((error) => console.error("Ошибка загрузки изображения:", error));
+      } else {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+  
+      // Убираем создание инструмента без сокета,
+      // чтобы не навешивались обработчики раньше подключения пользователя
+      // toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    }, [params.id]);
+  
+    useEffect(() => {
+      if (canvasState.username) {
+        const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+        canvasState.setSocket(socket);
+        canvasState.setSessionId(params.id);
+        // Создаем инструмент кисти только после установки username и подключения сокета
+        const brushTool = new Brush(canvasRef.current, socket, params.id);
+        brushTool.username = canvasState.username; // сохраняем имя текущего пользователя
+        toolState.setTool(brushTool);
+  
+        socket.onopen = () => {
+          console.log("Подключение установлено");
+          socket.send(
+            JSON.stringify({
+              id: params.id,
+              username: canvasState.username,
+              method: "connection",
+            })
+          );
+        };
+  
+        socket.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+          // Фильтруем echo-сообщения: если сообщение пришло от того же пользователя, пропускаем его
+          if (msg.username && msg.username === canvasState.username) {
+            return;
+          }
+          switch (msg.method) {
+            case "connection":
+                setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
+                break;
+            case "draw":
+              drawHandler(msg);
+              break;
+            default:
+              break;
+          }
+        };
+      }
+    }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
