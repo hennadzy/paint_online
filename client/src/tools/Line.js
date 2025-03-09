@@ -67,20 +67,32 @@ export default class Line extends Tool {
     }
 
     sendLine() {
-        this.socket.send(JSON.stringify({
-            method: 'draw',
-            id: this.id,
-            figure: {
-                type: 'line',
-                x: this.startX,
-                y: this.startY,
-                x2: this.currentX,
-                y2: this.currentY,
-                lineWidth: this.ctx.lineWidth,
-                strokeStyle: this.ctx.strokeStyle,
-            }
-        }));
-        this.socket.send(JSON.stringify({ method: 'draw', id: this.id, figure: { type: 'finish' } }));
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'line',
+                    x: this.startX,
+                    y: this.startY,
+                    x2: this.currentX,
+                    y2: this.currentY,
+                    lineWidth: this.ctx.lineWidth,
+                    strokeStyle: this.ctx.strokeStyle,
+                }
+            }));
+            this.socket.send(JSON.stringify({ method: 'draw', id: this.id, figure: { type: 'finish' } }));
+        }
+    
+        Line.staticDraw(
+            this.ctx,
+            this.startX,
+            this.startY,
+            this.currentX,
+            this.currentY,
+            this.ctx.lineWidth,
+            this.ctx.strokeStyle
+        );
     }
 
     draw(x, y, x2, y2) {

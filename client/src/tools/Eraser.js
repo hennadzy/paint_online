@@ -38,9 +38,11 @@ export default class Eraser extends Tool {
 
     mouseUpHandler() {
         this.mouseDown = false;
-        this.socket.send(JSON.stringify({
-            method: 'draw', id: this.id, figure: { type: 'finish' }
-        }));
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw', id: this.id, figure: { type: 'finish' }
+            }));
+        }
     }
 
     touchStartHandler(e) {
@@ -64,27 +66,37 @@ export default class Eraser extends Tool {
     touchEndHandler(e) {
         e.preventDefault();
         this.mouseDown = false;
-        this.socket.send(JSON.stringify({
-            method: 'draw', id: this.id, figure: { type: 'finish' }
-        }));
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw', id: this.id, figure: { type: 'finish' }
+            }));
+        }
     }
 
     sendEraseData(x, y, isStart = false) {
-        this.socket.send(JSON.stringify({
-            method: 'draw',
-            id: this.id,
-            figure: {
-                type: 'eraser',
-                x,
-                y,
-                isStart,
-                lineWidth: this.ctx.lineWidth,
-            }
-        }));
+        const lineWidth = this.ctx.lineWidth;
+        const strokeStyle = "#FFFFFF"; // Белый цвет для ластика
+
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'eraser',
+                    x,
+                    y,
+                    isStart,
+                    lineWidth,
+                    strokeStyle
+                }
+            }));
+        }
+
+        Eraser.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
 
-    static staticDraw(ctx, x, y, lineWidth, isStart) {
-        ctx.strokeStyle = 'white';
+    static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart) {
+        ctx.strokeStyle = strokeStyle;
         ctx.lineWidth = lineWidth;
         ctx.lineCap = 'round';
 

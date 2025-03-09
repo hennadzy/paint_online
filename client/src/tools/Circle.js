@@ -89,20 +89,38 @@ export default class Circle extends Tool {
    }
 
      // Общая функция для отправки данных об окружности
-      sendCircleData() {
+     sendCircleData() {
+        if (this.socket) {
             this.socket.send(JSON.stringify({
-               method: 'draw',
-               id: this.id,
-               figure: {
-                   type: 'circle',
-                   x: this.startX,
-                   y: this.startY,
-                   r: this.r,
-                   color: this.ctx.fillStyle,
-               }
-           }))
-     }
-
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'circle',
+                    x: this.startX,
+                    y: this.startY,
+                    r: this.r,
+                    color: this.ctx.fillStyle,
+                    lineWidth: this.ctx.lineWidth,
+                    strokeStyle: this.ctx.strokeStyle
+                }
+            }));
+            this.socket.send(JSON.stringify({
+                method: 'draw', 
+                id: this.id, 
+                figure: { type: 'finish' }
+            }));
+        }
+    
+        Circle.staticDraw(
+            this.ctx,
+            this.startX,
+            this.startY,
+            this.r,
+            this.ctx.fillStyle,
+            this.ctx.lineWidth,
+            this.ctx.strokeStyle
+        );
+    }
       // Общая функция для отправки данных о начале рисования
    sendStartData(){
        const lineWidth = this.ctx.lineWidth;
