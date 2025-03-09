@@ -40,7 +40,7 @@ const Canvas = observer(() => {
     }
     // При отсутствии сокета назначаем кисть без него,
     // чтобы не навешивались обработчики до подключения
-    toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
   useEffect(() => {
