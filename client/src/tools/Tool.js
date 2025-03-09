@@ -5,25 +5,19 @@ export default class Tool {
         this.id = id;
         this.ctx = canvas.getContext('2d');
 
-        if (Tool.activeTool) {
-            Tool.activeTool.destroyEvents(); // Очистить события предыдущего инструмента
-        }
-        Tool.activeTool = this; // Запоминаем активный инструмент
+        // Уничтожаем все текущие обработчики событий на канвасе перед созданием нового инструмента
+        this.clearAllCanvasEvents();
     }
 
-    set fillColor(color) {
-        this.ctx.fillStyle = color;
-    }
+    set fillColor(color) { this.ctx.fillStyle = color; }
+    set strokeColor(color) { this.ctx.strokeStyle = color; }
+    set lineWidth(width) { this.ctx.lineWidth = width; }
 
-    set strokeColor(color) {
-        this.ctx.strokeStyle = color;
-    }
-
-    set lineWidth(width) {
-        this.ctx.lineWidth = width;
-    }
-
-    destroyEvents() {
-        // Пустой метод. Переопределяется в потомках.
+    clearAllCanvasEvents() {
+        // Клонируем канвас, чтобы гарантированно удалить все события разом
+        const newCanvas = this.canvas.cloneNode(true);
+        this.canvas.parentNode.replaceChild(newCanvas, this.canvas);
+        this.canvas = newCanvas;
+        this.ctx = newCanvas.getContext('2d');
     }
 }
