@@ -20,24 +20,22 @@ export default class Brush extends Tool {
         this.canvas.addEventListener('touchcancel', this.touchEndHandler.bind(this)); // На всякий случай
     }
 
-    // Общая функция рисования
-    sendDrawData(x, y, isStart = false) {
+     // Общая функция рисования
+     sendDrawData(x, y, isStart = false) {
         const lineWidth = this.ctx.lineWidth;
         const strokeStyle = this.ctx.strokeStyle;
-        if (this.socket) {
-            this.socket.send(JSON.stringify({
-                method: 'draw',
-                id: this.id,
-                figure: {
-                    type: 'brush',
-                    x,
-                    y,
-                    lineWidth,
-                    strokeStyle,
-                    isStart
-                }
-            }))
-        }
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            figure: {
+                type: 'brush',
+                x,
+                y,
+                lineWidth,
+                strokeStyle,
+                isStart
+            }
+        }))
     }
 
     // --- Обработчики событий мыши ---
@@ -56,12 +54,12 @@ export default class Brush extends Tool {
         this.mouseDown = true;
         this.ctx.beginPath();
         this.ctx.moveTo(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop);
-        this.sendDrawData(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop, true);
+       this.sendDrawData(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop, true);
     }
 
     mouseMoveHandler(e) {
         if (this.mouseDown) {
-            this.sendDrawData(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop)
+             this.sendDrawData(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop)
         }
     }
 
@@ -71,20 +69,20 @@ export default class Brush extends Tool {
         this.mouseDown = true;
         this.ctx.beginPath();
         this.ctx.moveTo(e.touches[0].pageX - e.target.offsetLeft, e.touches[0].pageY - e.target.offsetTop);
-        this.sendDrawData(e.touches[0].pageX - e.target.offsetLeft, e.touches[0].pageY - e.target.offsetTop, true)
+         this.sendDrawData(e.touches[0].pageX - e.target.offsetLeft, e.touches[0].pageY - e.target.offsetTop, true)
     }
 
 
     touchMoveHandler(e) {
         e.preventDefault(); // Предотвращаем прокрутку
         if (this.mouseDown) {
-            this.sendDrawData(e.touches[0].pageX - e.target.offsetLeft, e.touches[0].pageY - e.target.offsetTop)
+         this.sendDrawData(e.touches[0].pageX - e.target.offsetLeft, e.touches[0].pageY - e.target.offsetTop)
         }
     }
 
 
     touchEndHandler() {
-        this.mouseDown = false;
+      this.mouseDown = false;
         this.socket.send(JSON.stringify({
             method: 'draw',
             id: this.id,
@@ -96,11 +94,11 @@ export default class Brush extends Tool {
 
     // Статический метод для отрисовки
     static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-        if (isStart) {
+        if(isStart){
             ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.moveTo(x,y);
         }
-        ctx.lineTo(x, y);
+         ctx.lineTo(x, y);
         ctx.lineWidth = lineWidth;
         ctx.strokeStyle = strokeStyle;
         ctx.stroke();
