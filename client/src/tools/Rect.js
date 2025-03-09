@@ -71,21 +71,35 @@ export default class Rect extends Tool {
     }
 
     sendRect() {
-        this.socket.send(JSON.stringify({
-            method: 'draw',
-            id: this.id,
-            figure: {
-                type: 'rect',
-                x: this.startX,
-                y: this.startY,
-                width: this.width,
-                height: this.height,
-                color: this.ctx.fillStyle,
-                lineWidth: this.ctx.lineWidth,
-                strokeStyle: this.ctx.strokeStyle,
-            }
-        }));
-        this.socket.send(JSON.stringify({ method: 'draw', id: this.id, figure: { type: 'finish' } }));
+        if(this.socket){
+            this.socket.send(JSON.stringify({
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'rect',
+                    x: this.startX,
+                    y: this.startY,
+                    width: this.width,
+                    height: this.height,
+                    color: this.ctx.fillStyle,
+                    lineWidth: this.ctx.lineWidth,
+                    strokeStyle: this.ctx.strokeStyle,
+                }
+            }));
+            this.socket.send(JSON.stringify({ method: 'draw', id: this.id, figure: { type: 'finish' } }));
+        }
+    
+        // обязательно тут же самая локальная отрисовка
+        Rect.staticDraw(
+            this.ctx,
+            this.startX,
+            this.startY,
+            this.width,
+            this.height,
+            this.ctx.lineWidth,
+            this.ctx.strokeStyle,
+            this.ctx.fillStyle
+        );
     }
 
     draw(x, y, w, h) {

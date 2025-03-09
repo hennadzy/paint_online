@@ -25,18 +25,25 @@ export default class Brush extends Tool {
      sendDrawData(x, y, isStart = false) {
         const lineWidth = this.ctx.lineWidth;
         const strokeStyle = this.ctx.strokeStyle;
-        this.socket.send(JSON.stringify({
-            method: 'draw',
-            id: this.id,
-            figure: {
-                type: 'brush',
-                x,
-                y,
-                lineWidth,
-                strokeStyle,
-                isStart
-            }
-        }))
+    
+        // добавляем проверку сокета
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'brush',
+                    x,
+                    y,
+                    lineWidth,
+                    strokeStyle,
+                    isStart
+                }
+            }))
+        }
+    
+        // И тут же выполняем локальную отрисовку
+        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
 
     // --- Обработчики событий мыши ---
