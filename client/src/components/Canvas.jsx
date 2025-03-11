@@ -144,9 +144,13 @@ const Canvas = observer(() => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      <canvas ref={canvasRef} width={600} height={400} style={{ border: "1px solid black" }} />
-
+  
+      <canvas
+  ref={canvasRef}
+  width={600}
+  height={400}
+  style={{ border: '1px solid black' }}
+/>
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
