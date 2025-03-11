@@ -28,7 +28,7 @@ const Canvas = observer(() => {
         .then((response) => {
           const img = new Image();
           img.src = response.data;
-          img.onload = () => {
+          img.onload = () => { 
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
             ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
           };
@@ -39,7 +39,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     // Не создаем Brush без сокета – создаем его только когда введут имя
-    toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
   useEffect(() => {
