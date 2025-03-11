@@ -52,9 +52,9 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       // Создаем кисть только один раз
-    //   const brushTool = new Brush(canvasRef.current, socket, params.id);
-    //   brushTool.username = canvasState.username;
-    //   toolState.setTool(brushTool);
+      const brushTool = new Brush(canvasRef.current, socket, params.id);
+      brushTool.username = canvasState.username;
+      toolState.setTool(brushTool);
 
       socket.onopen = () => {
         console.log("Подключение установлено");
