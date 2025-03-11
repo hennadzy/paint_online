@@ -47,6 +47,7 @@ const Canvas = observer(() => {
       // Если уже есть инструмент, удаляем его обработчики, чтобы не оставалось дублирования
       if (toolState.tool && toolState.tool.destroyEvents) {
         toolState.tool.destroyEvents();
+        console.log ('обработчики удалены')
       }
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
