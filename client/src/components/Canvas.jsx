@@ -28,7 +28,7 @@ const Canvas = observer(() => {
         .then((response) => {
           const img = new Image();
           img.src = response.data;
-          img.onload = () => { 
+          img.onload = () => {
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
             ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
           };
@@ -47,15 +47,13 @@ const Canvas = observer(() => {
       // Если уже есть инструмент, удаляем его обработчики, чтобы не оставалось дублирования
       if (toolState.tool && toolState.tool.destroyEvents) {
         toolState.tool.destroyEvents();
-        console.log ('обработчики удалены')
       }
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       // Создаем кисть только один раз
-      const brushTool = new Brush(canvasRef.current, socket, params.id);
-      brushTool.username = canvasState.username;
-      toolState.setTool(brushTool);
+      toolState.setTool(new Brush(canvasRef.current, socket, params.id))
+
 
       socket.onopen = () => {
         console.log("Подключение установлено");
