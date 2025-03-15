@@ -78,7 +78,7 @@ export default class Brush extends Tool {
   }
 
   draw(x, y) {
-    this.sendDrawData(x, y, false);
+    // this.sendDrawData(x, y, false);
   }
 
   sendDrawData(x, y, isStart = false) {
@@ -101,7 +101,7 @@ export default class Brush extends Tool {
         })
       );
     }
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, false);
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
