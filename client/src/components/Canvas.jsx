@@ -74,7 +74,7 @@ const Canvas = observer(() => {
         }
         switch (msg.method) {
           case "connection":
-            setMessages(prevMessages => [...prevMessages, `пользователь ${msg.username} присоединился`]);
+            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в комнату`]);
             break;
           case "draw":
             drawHandler(msg);
