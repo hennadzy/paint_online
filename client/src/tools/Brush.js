@@ -1,20 +1,18 @@
 import Tool from "./Tool";
 
-class Brush extends Tool {
-  constructor(canvas, socket, id, username) {
-    super(canvas, socket, id, username);
+export default class Brush extends Tool {
+  constructor(canvas, socket, id) {
+    super(canvas, socket, id);
     this.mouseDown = false;
-
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.destroyEvents();
+    this.listen();
   }
 
   listen() {
     // Навешиваем обработчики для мыши
-    // this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    // this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    // this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     // Навешиваем сенсорные обработчики
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
@@ -38,15 +36,15 @@ class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
-    if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: { type: "finish" },
-        })
-      );
-    }
+    // if (this.socket) {
+    //   this.socket.send(
+    //     JSON.stringify({
+    //       method: "draw",
+    //       id: this.id,
+    //       figure: { type: "finish" },
+    //     })
+    //   );
+    // }
   }
 
   touchStartHandler(e) {
@@ -110,9 +108,10 @@ class Brush extends Tool {
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
     }
+    ctx.lineTo(x, y);
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.stroke();
   }
 }
