@@ -39,7 +39,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     // Не создаем Brush без сокета – создаем его только когда введут имя
-    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       // Создаем кисть только один раз
-      // toolState.setTool(new Brush(canvasRef.current, socket, params.id))
+      toolState.setTool(new Brush(canvasRef.current, null, params.id));
 
 
       socket.onopen = () => {
