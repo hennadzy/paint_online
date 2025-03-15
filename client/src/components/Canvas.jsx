@@ -51,10 +51,6 @@ const Canvas = observer(() => {
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
-//удаление обработчиков
-      // toolState.tool.destroyEvents();
-      // Создаем кисть только один раз
-  
       toolState.setTool(new Brush(canvasRef.current, socket, params.id))
 
 

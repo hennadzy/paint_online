@@ -71,7 +71,7 @@ export default class Rect extends Tool {
     }
 
     sendRect() {
-        if(this.socket){
+        if (this.socket) {
             this.socket.send(JSON.stringify({
                 method: 'draw',
                 id: this.id,
@@ -88,7 +88,7 @@ export default class Rect extends Tool {
             }));
             this.socket.send(JSON.stringify({ method: 'draw', id: this.id, figure: { type: 'finish' } }));
         }
-    
+
         // обязательно тут же самая локальная отрисовка
         Rect.staticDraw(
             this.ctx,
