@@ -24,7 +24,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+    this.draw(e.clientX - rect.left, e.clientY - rect.top, true);
   }
 
   mouseMoveHandler(e) {
