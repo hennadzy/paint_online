@@ -24,15 +24,13 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+    // this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
   }
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
-            this.currentX = e.clientX - rect.left;
-            this.currentY = e.clientY - rect.top;
-            this.draw(this.startX, this.startY, this.currentX, this.currentY);
+      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
     }
   }
 
