@@ -30,21 +30,21 @@ export default class Brush extends Tool {
   mouseMoveHandler(e) {
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
-      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
+      this.draw(e.clientX - rect.left, e.clientY - rect.top, false);
     }
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    // if (this.socket) {
-    //   this.socket.send(
-    //     JSON.stringify({
-    //       method: "draw",
-    //       id: this.id,
-    //       figure: { type: "finish" },
-    //     })
-    //   );
-    // }
+    if (this.socket) {
+      this.socket.send(
+        JSON.stringify({
+          method: "draw",
+          id: this.id,
+          figure: { type: "finish" },
+        })
+      );
+    }
   }
 
   touchStartHandler(e) {
