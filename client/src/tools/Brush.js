@@ -22,19 +22,19 @@ export default class Brush extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
-    this.startX = e.clientX - rect.left;
-    this.startY = e.clientY - rect.top;
-    this.saved = this.canvas.toDataURL();
-}
+    this.ctx.beginPath();
+    this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+  }
 
-mouseMoveHandler(e) {
+  mouseMoveHandler(e) {
     if (this.mouseDown) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.currentX = e.clientX - rect.left;
-        this.currentY = e.clientY - rect.top;
-        this.draw(this.startX, this.startY, this.currentX, this.currentY);
+      const rect = this.canvas.getBoundingClientRect();
+            this.currentX = e.clientX - rect.left;
+            this.currentY = e.clientY - rect.top;
+            this.draw(this.startX, this.startY, this.currentX, this.currentY);
     }
-}
+  }
 
   mouseUpHandler() {
     this.mouseDown = false;
