@@ -81,7 +81,7 @@ export default class Brush extends Tool {
     this.sendDrawData(x, y, false);
   }
 
-  sendDrawData(x, y, isStart = false) {
+  sendDrawData(x, y) {
     const lineWidth = this.ctx.lineWidth;
     const strokeStyle = this.ctx.strokeStyle;
     if (this.socket) {
@@ -95,7 +95,6 @@ export default class Brush extends Tool {
             y,
             lineWidth,
             strokeStyle,
-            isStart,
             username: this.username, // передаем имя отправителя для фильтрации echo
           },
         })
@@ -104,7 +103,7 @@ export default class Brush extends Tool {
     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  static staticDraw(ctx, x, y, lineWidth, strokeStyle) {
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
