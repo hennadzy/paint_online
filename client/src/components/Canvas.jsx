@@ -52,7 +52,8 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       // Создаем кисть только один раз
-      toolState.setTool(new Brush(canvasRef.current, null, params.id));
+      toolState.tool.destroyEvents();
+      toolState.setTool(new Brush(canvasRef.current, socket, params.id))
 
 
       socket.onopen = () => {
@@ -74,7 +75,7 @@ const Canvas = observer(() => {
         }
         switch (msg.method) {
           case "connection":
-            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в комнату`]);
+            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в`]);
             break;
           case "draw":
             drawHandler(msg);
