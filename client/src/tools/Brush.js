@@ -29,12 +29,10 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.currentX = e.clientX - rect.left;
-        this.currentY = e.clientY - rect.top;
-        this.draw(this.startX, this.startY, this.currentX, this.currentY);
+      const rect = this.canvas.getBoundingClientRect();
+      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
     }
-}
+  }
 
   mouseUpHandler() {
     this.mouseDown = false;
@@ -107,10 +105,10 @@ export default class Brush extends Tool {
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-    if (isStart) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
+    // if (isStart) {
+    //   ctx.beginPath();
+    //   ctx.moveTo(x, y);
+    // }
     ctx.lineTo(x, y);
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
