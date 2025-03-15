@@ -1,3 +1,5 @@
+import Tool from "./Tool";
+
 class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
@@ -7,7 +9,8 @@ class Brush extends Tool {
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
   }
-  
+
+
   mouseDownHandler(e) {
     this.mouseDown = true;
     this.ctx.beginPath();
