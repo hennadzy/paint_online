@@ -29,10 +29,10 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-      const rect = this.canvas.getBoundingClientRect();
-      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
+     const rect = this.canvas.getBoundingClientRect();
+     this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
     }
-  }
+   }
 
   mouseUpHandler() {
     this.mouseDown = false;
@@ -54,63 +54,66 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
-  }
+}
 
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
-  }
+touchMoveHandler(e) {
+  e.preventDefault();
+  if (!this.mouseDown) return;
+  const rect = this.canvas.getBoundingClientRect();
+  this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
+}
 
-  touchEndHandler(e) {
-    e.preventDefault();
-    this.mouseDown = false;
-    if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: { type: "finish" },
-        })
-      );
-    }
+touchEndHandler(e) {
+  e.preventDefault();
+  this.mouseDown = false;
+  if (this.socket) {
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" },
+      })
+    );
   }
+}
 
-  static draw(x, y) {
-    this.sendDrawData(x, y, false);
-  }
+draw(ctx, x, y) {
+  ctx.lineTo(x, y);
 
-  sendDrawData(x, y) {
-    const lineWidth = this.ctx.lineWidth;
-    const strokeStyle = this.ctx.strokeStyle;
-    if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: {
-            type: "brush",
-            x,
-            y,
-            lineWidth,
-            strokeStyle,
-            username: this.username, // передаем имя отправителя для фильтрации echo
-          },
-        })
-      );
-    }
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle);
-  }
+  ctx.stroke();
+}
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle) {
-    
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-   
-    ctx.lineTo(x, y);
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = strokeStyle;
-    ctx.stroke();
+sendDrawData(x, y, isStart = false) {
+  const lineWidth = this.ctx.lineWidth;
+  const strokeStyle = this.ctx.strokeStyle;
+  if (this.socket) {
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username, // передаем имя отправителя для фильтрации echo
+        },
+      })
+    );
   }
+  Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+}
+
+static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  if (isStart) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+  ctx.lineTo(x, y);
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = strokeStyle;
+  ctx.stroke();
+}
 }
