@@ -1,8 +1,8 @@
 import Tool from "./Tool";
 
 export default class Brush extends Tool {
-  constructor(canvas, socket, id) {
-    super(canvas, socket, id);
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
     this.mouseDown = false;
     this.destroyEvents();
     this.listen();
@@ -21,7 +21,7 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    // const rect = this.canvas.getBoundingClientRect();
+    const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
@@ -29,14 +29,22 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-    //  const rect = this.canvas.getBoundingClientRect();
+     const rect = this.canvas.getBoundingClientRect();
      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
     }
    }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    this.sendDrawData(e.clientX, e.clientY, false);
+    if (this.socket) {
+      this.socket.send(
+        JSON.stringify({
+          method: "draw",
+          id: this.id,
+          figure: { type: "finish" },
+        })
+      );
+    }
   }
 
   touchStartHandler(e) {
@@ -88,7 +96,7 @@ sendDrawData(x, y, isStart = false) {
           lineWidth,
           strokeStyle,
           isStart,
-          // username: this.username, // передаем имя отправителя для фильтрации echo
+          username: this.username, // передаем имя отправителя для фильтрации echo
         },
       })
     );
@@ -96,16 +104,15 @@ sendDrawData(x, y, isStart = false) {
   Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 }
 
-staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = strokeStyle;
-
+static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+ 
+ 
   if (isStart) {
     ctx.beginPath();
     ctx.moveTo(x, y);
-  } else {
-    ctx.lineTo(x, y);
-    ctx.stroke();
   }
+  ctx.lineTo(x, y);
+
+  ctx.stroke();
 }
 }
