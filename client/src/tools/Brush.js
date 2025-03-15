@@ -77,8 +77,9 @@ export default class Brush extends Tool {
     }
   }
 
-  draw(x, y) {
-    this.sendDrawData(x, y, false);
+  static draw(ctx, x, y) {
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }
 
   sendDrawData(x, y) {
