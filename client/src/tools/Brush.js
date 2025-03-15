@@ -101,7 +101,7 @@ export default class Brush extends Tool {
         })
       );
     }
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, false);
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
@@ -109,7 +109,7 @@ export default class Brush extends Tool {
       ctx.beginPath();
       ctx.moveTo(x, y);
     }
-    // ctx.lineTo(x, y);
+    ctx.lineTo(x, y);
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     ctx.stroke();
