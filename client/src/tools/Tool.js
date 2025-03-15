@@ -23,6 +23,7 @@ export default class Tool {
     draw(x, y) {}
 
     destroyEvents() {
+        console.log ("Удаление обработчиков")
         this.canvas.onmousemove = null;
         this.canvas.onmousedown = null;
         this.canvas.onmouseup = null;
