@@ -105,11 +105,11 @@ export default class Brush extends Tool {
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-    // if (isStart) {
-    //   ctx.beginPath();
-    //   ctx.moveTo(x, y);
-    // }
-    ctx.lineTo(x, y);
+    if (isStart) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+    // ctx.lineTo(x, y);
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     ctx.stroke();
