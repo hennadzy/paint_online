@@ -39,7 +39,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     // Не создаем Brush без сокета – создаем его только когда введут имя
-    // toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
   useEffect(() => {
@@ -122,6 +122,12 @@ const Canvas = observer(() => {
       alert("Введите ваше имя");
     }
   };
+
+      const mouseDownHandler = () => {
+          canvasState.pushToUndo(canvasRef.current.toDataURL())
+          axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}, {img: canvasRef.current.toDataURL()}`)
+              .then(response => console.log(response.data))
+      }
 
   const handleCreateRoomClick = () => {
     setModal(true);
