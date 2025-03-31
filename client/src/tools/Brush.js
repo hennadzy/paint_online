@@ -100,8 +100,9 @@ sendDrawData(x, y, isStart = false) {
         },
       })
     );
+  } else {
+  Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
-  // Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 }
 
 static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
