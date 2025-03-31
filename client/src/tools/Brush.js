@@ -34,18 +34,18 @@ export default class Brush extends Tool {
     }
    }
 
-  mouseUpHandler() {
-    this.mouseDown = false;
-    if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: { type: "finish" },
-        })
-      );
-    }
-  }
+  // mouseUpHandler() {
+  //   this.mouseDown = false;
+  //   if (this.socket) {
+  //     this.socket.send(
+  //       JSON.stringify({
+  //         method: "draw",
+  //         id: this.id,
+  //         figure: { type: "finish" },
+  //       })
+  //     );
+  //   }
+  // }
 
   touchStartHandler(e) {
     e.preventDefault();
