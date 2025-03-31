@@ -77,7 +77,7 @@ touchEndHandler(e) {
   }
 }
 
-draw(x, y) {
+draw(ctx, x, y) {
   ctx.beginPath();
   ctx.moveTo(x, y);
 
