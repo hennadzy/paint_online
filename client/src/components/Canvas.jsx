@@ -51,7 +51,7 @@ const Canvas = observer(() => {
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
-      toolState.setTool(new Brush(canvasRef.current, null, params.id))
+      toolState.setTool(new Brush(canvasRef.current, socket, params.id))
 
 
       socket.onopen = () => {
