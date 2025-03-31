@@ -78,7 +78,7 @@ touchEndHandler(e) {
 }
 
 draw(x, y) {
-  this.sendDrawData(x, y, false);
+  // this.sendDrawData(x, y, false);
   this.ctx.beginPath();
   this.ctx.moveTo(x, y);
   this.ctx.lineTo(x, y);
