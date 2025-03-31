@@ -78,7 +78,12 @@ touchEndHandler(e) {
 }
 
 draw(x, y) {
-  Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+
+ctx.lineTo(x, y);
+
+ctx.stroke();
 }
 
 sendDrawData(x, y, isStart = false) {
