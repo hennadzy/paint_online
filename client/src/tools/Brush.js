@@ -77,19 +77,14 @@ touchEndHandler(e) {
   }
 }
 
-draw(ctx, x, y) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-
-ctx.lineTo(x, y);
-
-ctx.stroke();
+draw(x, y) {
+  this.sendDrawData(x, y, false);
 }
 
 sendDrawData(x, y, isStart = false) {
   const lineWidth = this.ctx.lineWidth;
   const strokeStyle = this.ctx.strokeStyle;
-  if (this.socket) {
+  // if (this.socket) {
     this.socket.send(
       JSON.stringify({
         method: "draw",
@@ -105,7 +100,7 @@ sendDrawData(x, y, isStart = false) {
         },
       })
     );
-  }
+  // }
   // Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 }
 
