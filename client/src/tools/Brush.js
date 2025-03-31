@@ -84,7 +84,7 @@ draw(x, y) {
 sendDrawData(x, y, isStart = false) {
   const lineWidth = this.ctx.lineWidth;
   const strokeStyle = this.ctx.strokeStyle;
-  // if (this.socket) {
+  if (this.socket) {
     this.socket.send(
       JSON.stringify({
         method: "draw",
@@ -100,7 +100,7 @@ sendDrawData(x, y, isStart = false) {
         },
       })
     );
-  // }
+  }
   // Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 }
 
