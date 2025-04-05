@@ -70,6 +70,7 @@ export default class Brush extends Tool {
     e.preventDefault();
     this.mouseDown = false;
     if (this.socket) {
+      isLocal = false;
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -84,7 +85,7 @@ export default class Brush extends Tool {
     this.sendDrawData(x, y, false);
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = false) {
+  sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
     if (this.socket) {
       isLocal = false;
