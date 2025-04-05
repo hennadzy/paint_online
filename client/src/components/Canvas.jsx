@@ -65,20 +65,20 @@ const Canvas = observer(() => {
         );
       };
 
-     socket.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-
-    // Фильтрация сообщения рисующего пользователя
-    if (msg.id === canvasState.sessionid) return;
-
-    switch (msg.method) {
-        case "draw":
-            drawHandler(msg);
-            break;
-        default:
-            break;
-    }
-};
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+    
+        // Фильтрация сообщения рисующего пользователя
+        if (msg.id === canvasState.sessionid) return;
+    
+        switch (msg.method) {
+            case "draw":
+                drawHandler(msg);
+                break;
+            default:
+                break;
+        }
+    };
     }
   }, [canvasState.username, params.id]);
 
