@@ -85,6 +85,7 @@ draw(x, y) {
 sendDrawData(x, y, isStart = false, isLocal = false) { // добавление isLocal аргумента
   const { lineWidth, strokeStyle } = this.ctx;
   if (this.socket) {
+    isLocal = false;
     this.socket.send(
       JSON.stringify({
         method: "draw",
