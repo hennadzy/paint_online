@@ -123,6 +123,7 @@ export default class Brush extends Tool {
                     lineWidth,
                     strokeStyle,
                     isStart,
+                    username: this.username,
                 },
             })
         );
@@ -130,6 +131,7 @@ export default class Brush extends Tool {
 }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+    console.log("staticDraw called with:", { x, y, lineWidth, strokeStyle, isStart });
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     if (isStart) {
