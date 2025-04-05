@@ -13,10 +13,14 @@ export default class Brush extends Tool {
         console.log('WebSocket connected');
         this.websocketReady = true;
       };
-
+    
       this.socket.onclose = () => {
         console.log('WebSocket disconnected');
         this.websocketReady = false;
+      };
+    
+      this.socket.onerror = (error) => {
+        console.error('WebSocket Error: ', error);
       };
     }
     
