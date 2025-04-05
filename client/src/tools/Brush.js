@@ -1,17 +1,21 @@
-import Tool from "./Tool";
-
-export default class Brush extends Tool {
+class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.mouseDown = false;
     this.lastTouchMove = Date.now();
     this.websocketReady = false;
+    this.messageQueue = [];
 
-    // Настройка WebSocket
     if (this.socket) {
       this.socket.onopen = () => {
         console.log('WebSocket connected');
         this.websocketReady = true;
+
+        // Отправляем все сообщения из очереди
+        while (this.messageQueue.length > 0) {
+          const message = this.messageQueue.shift();
+          this.socket.send(message);
+        }
       };
 
       this.socket.onclose = () => {
@@ -22,11 +26,20 @@ export default class Brush extends Tool {
       this.socket.onerror = (error) => {
         console.error('WebSocket Error: ', error);
       };
+
+      this.socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.method === "draw" && msg.figure) {
+          const { x, y, lineWidth, strokeStyle, isStart } = msg.figure;
+          Brush.draw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+        }
+      };
     }
-    
+
     this.destroyEvents();
     this.listen();
   }
+
 
   listen() {
     // Обработчики для мыши
@@ -127,37 +140,38 @@ export default class Brush extends Tool {
   }
 
   sendDrawData(x, y, isStart = false) {
+    const { lineWidth, strokeStyle } = this.ctx;
+    const drawData = JSON.stringify({
+      method: "draw",
+      id: this.id,
+      figure: {
+        type: "brush",
+        x,
+        y,
+        lineWidth,
+        strokeStyle,
+        isStart,
+        username: this.username,
+      }
+    });
+    
     if (this.websocketReady) {
-      const { lineWidth, strokeStyle } = this.ctx;
-      const drawData = {
-        method: "draw",
-        id: this.id,
-        figure: {
-          type: "brush",
-          x,
-          y,
-          lineWidth,
-          strokeStyle,
-          isStart,
-          username: this.username,
-        }
-      };
-      
-      console.log("Отправка данных: ", drawData);
-      this.socket.send(JSON.stringify(drawData));
+      this.socket.send(drawData);
     } else {
-      console.warn("WebSocket не готов. Данные не отправлены.");
+      console.warn("WebSocket not ready. Queueing message.");
+      this.messageQueue.push(drawData);
     }
   }
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  static draw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+      ctx.stroke();
     }
-    ctx.lineTo(x, y);
-    ctx.stroke();
   }
 }
