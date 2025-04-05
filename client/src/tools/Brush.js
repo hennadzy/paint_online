@@ -62,7 +62,6 @@ export default class Brush extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
-    console.log("touchStartHandler:", e.touches[0].clientX, e.touches[0].clientY);
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
@@ -82,7 +81,7 @@ export default class Brush extends Tool {
 
     // Локальная отрисовка
     Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
-    console.log("touchMoveHandler:", x, y);
+
     // Отправка данных другим пользователям
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
   }
