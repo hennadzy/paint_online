@@ -35,17 +35,17 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+      const rect = this.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-        // Локальная отрисовка
-        Brush.staticDraw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
+      // Локальная отрисовка
+      Brush.staticDraw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
 
-        // Передача данных другим пользователям
-        this.sendDrawData(x, y, false);
+      // Передача данных другим пользователям
+      this.sendDrawData(x, y, false);
     }
-}
+  }
 
   mouseUpHandler() {
     this.mouseDown = false;
@@ -100,13 +100,15 @@ export default class Brush extends Tool {
     }
   }
 
-  sendDrawData(x, y, isStart = false) {
+  sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
 
-    // Локальная отрисовка для рисующего
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    // Локальная отрисовка
+    if (isLocal) {
+        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    }
 
-    // Передача данных через WebSocket другим пользователям
+    // Передача данных через WebSocket
     if (this.socket) {
         this.socket.send(
             JSON.stringify({
