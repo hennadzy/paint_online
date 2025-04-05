@@ -19,6 +19,8 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
+  if (!params)
+    params.id = 13;
   console.log(params.id);
 
   useEffect(() => {
