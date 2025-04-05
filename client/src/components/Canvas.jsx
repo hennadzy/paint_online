@@ -67,16 +67,16 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        // Фильтруем echo-сообщения
-        if (msg.username && msg.username === canvasState.username) {
-          return;
-        }
+  
+        // Если сообщение от самого рисующего, пропускаем обработку
+        if (msg.username === canvasState.username) return;
+  
         switch (msg.method) {
           case "connection":
-            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в комнату`]);
+            setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
             break;
           case "draw":
-            drawHandler(msg);
+            drawHandler(msg); // вызываем обработчик рисования
             break;
           default:
             break;
