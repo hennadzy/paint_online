@@ -81,7 +81,7 @@ draw(x, y) {
   this.sendDrawData(x, y, false);
   
 }
-sendDrawData(x, y, isStart = false, isLocal = false) { 
+sendDrawData(x, y, isStart = false, isLocal = true) { 
   const { lineWidth, strokeStyle } = this.ctx;
   if (this.socket) {
     isLocal = false;
