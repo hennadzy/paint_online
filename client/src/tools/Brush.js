@@ -8,7 +8,7 @@ class Brush {
     this.mouseDown = false;
 
     this.isOnlineMode = Boolean(this.id);
-    console.log (isOnlineMode);
+    console.log (this.isOnlineMode);
     this.listen();
   }
 
