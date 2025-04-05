@@ -101,7 +101,7 @@ sendDrawData(x, y, isStart = false, isLocal = false) { // добавление i
       })
     );
   }
-
+console.log ("isLocal=", isLocal);
   if (isLocal) {
     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
