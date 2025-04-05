@@ -121,8 +121,8 @@ if (this.socket) {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-  
-    if (this.websocketReady) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      isLocal = false;
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -138,18 +138,13 @@ if (this.socket) {
           },
         })
       );
-    } else {
-      // Сохранить вызов для обработки позднее
-      this.drawingQueue.push([x, y, isStart, isLocal]);
     }
-  
-    console.log('isLocal:', isLocal); // Для отладки
-  
+    console.log('Socket:', this.socket ? 'Connected' : 'Not Connected');
+    console.log('isLocal before send:', isLocal);
     if (isLocal) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
   }
-  
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
