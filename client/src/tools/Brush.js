@@ -53,7 +53,6 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
-    console.log('Touch Start', this.mouseDown);
   }
 
   touchMoveHandler(e) {
@@ -77,7 +76,6 @@ export default class Brush extends Tool {
         })
       );
     }
-    console.log('Touch End', this.mouseDown);
   }
 
   draw(x, y) {
@@ -110,6 +108,8 @@ export default class Brush extends Tool {
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+      ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
