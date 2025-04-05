@@ -27,7 +27,7 @@ export default class Brush extends Tool {
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
 
     // Локальная отрисовка
-    Brush.staticDraw(this.ctx, e.clientX - rect.left, e.clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
+    // Brush.staticDraw(this.ctx, e.clientX - rect.left, e.clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
 
     // Отправка данных другим пользователям
     this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
@@ -40,7 +40,7 @@ export default class Brush extends Tool {
       const y = e.clientY - rect.top;
 
       // Локальная отрисовка
-      Brush.staticDraw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
+      // Brush.staticDraw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
 
       // Передача данных другим пользователям
       this.sendDrawData(x, y, false);
@@ -104,9 +104,9 @@ export default class Brush extends Tool {
     const { lineWidth, strokeStyle } = this.ctx;
 
     // Локальная отрисовка
-    // if (isLocal) {
-    //     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    // }
+    if (isLocal) {
+        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    }
 
     // Передача данных через WebSocket
     if (this.socket) {
