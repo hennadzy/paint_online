@@ -40,8 +40,6 @@ const Canvas = observer(() => {
     }
     // Не создаем Brush без сокета – создаем его только когда введут имя
     console.log('1');
-    console.log('Canvas:', canvasRef.current);
-    console.log('Socket:', socket);
     console.log('Session ID:', params.id);
     toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
