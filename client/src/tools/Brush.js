@@ -35,15 +35,17 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-      const rect = this.canvas.getBoundingClientRect();
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-      // Локальная отрисовка
-      Brush.staticDraw(this.ctx, e.clientX - rect.left, e.clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
+        // Локальная отрисовка
+        Brush.staticDraw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
 
-      // Отправка данных другим пользователям
-      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
+        // Передача данных другим пользователям
+        this.sendDrawData(x, y, false);
     }
-  }
+}
 
   mouseUpHandler() {
     this.mouseDown = false;
