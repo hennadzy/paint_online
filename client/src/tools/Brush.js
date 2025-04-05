@@ -68,7 +68,7 @@ export default class Brush extends Tool {
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
 
     // Локальная отрисовка
-    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
+    // Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
 
     // Отправка данных другим пользователям
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
@@ -80,7 +80,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
 
     // Локальная отрисовка
-    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
+    // Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
 
     // Отправка данных другим пользователям
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
