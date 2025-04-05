@@ -53,22 +53,16 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
+    console.log('Touch Start', this.mouseDown);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
-    if (!this.mouseDown || this.touchMoveThrottle) return;
-  
+    if (!this.mouseDown) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-  
     this.sendDrawData(x, y, false, true);
-  
-    this.touchMoveThrottle = true;  // Начало троттлинга
-    setTimeout(() => {
-      this.touchMoveThrottle = false;
-    }, 50);  // 50 мс интервал (вы можете настроить этот интервал)
   }
 
   touchEndHandler(e) {
@@ -83,6 +77,7 @@ export default class Brush extends Tool {
         })
       );
     }
+    console.log('Touch End', this.mouseDown);
   }
 
   draw(x, y) {
