@@ -1,3 +1,4 @@
+
 class Brush {
   constructor(canvas, socket, sessionId) {
     this.canvas = canvas;
@@ -20,10 +21,10 @@ class Brush {
     this.canvas.ontouchmove = this.touchMoveHandler.bind(this);
   }
 
-  mouseDownHandler() {
+  mouseDownHandler(event) {
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
-    this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, true, true);
+    this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, true);
   }
 
   mouseUpHandler() {
@@ -33,14 +34,14 @@ class Brush {
   mouseMoveHandler(event) {
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
-      this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, false, true);
+      this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, false);
     }
   }
 
   touchStartHandler(event) {
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
-    this.sendDrawData(event.touches[0].clientX - rect.left, event.touches[0].clientY - rect.top, true, true);
+    this.sendDrawData(event.touches[0].clientX - rect.left, event.touches[0].clientY - rect.top, true);
   }
 
   touchEndHandler() {
@@ -50,15 +51,15 @@ class Brush {
   touchMoveHandler(event) {
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
-      this.sendDrawData(event.touches[0].clientX - rect.left, event.touches[0].clientY - rect.top, false, true);
+      this.sendDrawData(event.touches[0].clientX - rect.left, event.touches[0].clientY - rect.top, false);
     }
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = false) {
+  sendDrawData(x, y, isStart = false) {
     const { lineWidth, strokeStyle } = this.ctx;
 
-    if (this.isOnlineMode && this.socket && !isLocal) {
-      // Отправка на сервер только в online-режиме и не для локальных событий
+    if (this.isOnlineMode && this.socket) {
+      // Отправка на сервер только в online-режиме
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -75,10 +76,8 @@ class Brush {
       );
     }
 
-    // Локальная отрисовка
-    if (isLocal || !this.isOnlineMode) {
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    }
+    // Локальная отрисовка - всегда выполняется
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
