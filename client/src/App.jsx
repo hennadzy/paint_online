@@ -1,22 +1,26 @@
 import React from 'react';
-import "./styles/app.scss"
-import SettingBar from "./components/SettingBar";
-import Toolbar from "./components/Toolbar";
-import Canvas from "./components/Canvas";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Toolbar from './components/Toolbar';
+import SettingBar from './components/SettingBar';
+import Canvas from './components/Canvas';
 
 const App = () => {
+    const generateUniquePath = () => {
+        return (+new Date()).toString(16);
+    };
+
     return (
         <Router>
             <Routes>
-                <Route path='/' element={
+                <Route path='/:id' element={
                     <>
                         <Toolbar />
                         <SettingBar />
                         <Canvas />
                     </>
                 } />
-                <Route path='/:id' element={<Canvas />} /> {/* Замените на компонент, который рендерит что-то для /:id */}
+
+                <Route path='/' element={<Navigate to={`/${generateUniquePath()}`} replace />} />
             </Routes>
         </Router>
     );
