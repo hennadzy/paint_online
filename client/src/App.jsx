@@ -7,20 +7,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 const App = () => {
     return (
-        <Router>
-        <Routes>
-            <Route path='/' element={
-                <>
-                    <Toolbar />
-                    <SettingBar />
-                    <Canvas />
-                </>
-            } />
-            <Route path='/:id'>
-                <Route path="home" />
-            </Route>
-        </Routes>
-         </Router>
+     
+            <Routes>
+                <Route path='/' element={
+                    <>
+                        <Toolbar />
+                        <SettingBar />
+                        <Canvas />
+                    </>
+                } />
+                <Route path='/:id'>
+                    <Route path="home" />
+                </Route>
+            </Routes>
+      
         // <Routes>
         //     <Route path='/:id' element={
         //         <>
