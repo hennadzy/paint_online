@@ -71,13 +71,13 @@ const Canvas = observer(() => {
         console.log("msg.username =", msg.username);
         console.log("canvasState.username =", canvasState.username);
       
-        // Если username не определён, но метод "draw", обрабатываем сообщение
+        // Проверяем наличие username, иначе игнорируем сообщение
         if (!msg.username) {
-          console.warn("Получено сообщение без username, предполагаем 'анонимный' пользователь:", msg);
-          msg.username = "anonymous"; // Можем задать временное имя
+          console.warn("Получено сообщение без username, игнорируем:", msg);
+          return;
         }
       
-        // Исключаем echo-сообщения
+        // Исключаем собственные сообщения (echo)
         if (msg.username === canvasState.username) return;
       
         switch (msg.method) {
@@ -88,7 +88,7 @@ const Canvas = observer(() => {
             canvasRef.current.getContext("2d").beginPath();
             break;
           case "connection":
-            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в комнату`]);
+            setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
             break;
           default:
             console.warn("Неизвестный метод:", msg.method);
