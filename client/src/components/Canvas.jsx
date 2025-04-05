@@ -67,21 +67,18 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-  
-        // Если сообщение от самого рисующего, пропускаем обработку
-        if (msg.username === canvasState.username) return;
-  
+    
+        // Фильтрация сообщения рисующего пользователя
+        if (msg.id === canvasState.sessionid) return;
+    
         switch (msg.method) {
-          case "connection":
-            setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
-            break;
-          case "draw":
-            drawHandler(msg); // вызываем обработчик рисования
-            break;
-          default:
-            break;
+            case "draw":
+                drawHandler(msg);
+                break;
+            default:
+                break;
         }
-      };
+    };
     }
   }, [canvasState.username, params.id]);
 
