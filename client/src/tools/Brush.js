@@ -102,15 +102,17 @@ export default class Brush extends Tool {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-  
-    if (isLocal) {
-      // Локальная отрисовка
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-      console.log("Локальная отрисовка");
-    }
-  
+
+    console.log("Отправляем данные через WebSocket:", {
+      x,
+      y,
+      lineWidth,
+      strokeStyle,
+      isStart,
+      username: this.username || "undefined"
+    });
+
     if (this.socket) {
-      // Отправка данных другим пользователям
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -126,7 +128,10 @@ export default class Brush extends Tool {
           },
         })
       );
-      console.log("Данные отправлены через WebSocket");
+    }
+
+    if (isLocal) {
+      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
   }
 
