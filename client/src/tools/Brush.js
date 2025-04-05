@@ -1,3 +1,5 @@
+import Tool from "./Tool";
+
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
