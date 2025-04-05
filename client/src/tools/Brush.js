@@ -79,6 +79,7 @@ touchEndHandler(e) {
 
 draw(x, y) {
   this.sendDrawData(x, y, false);
+  console.log ("++");
 }
 
 sendDrawData(x, y, isStart = false) {
