@@ -3,24 +3,22 @@ import "./styles/app.scss"
 import SettingBar from "./components/SettingBar";
 import Toolbar from "./components/Toolbar";
 import Canvas from "./components/Canvas";
-import { BrowserRouter,Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 const App = () => {
     return (
-        <Router>
-            <Routes>
-                <Route path='/' element={
-                    <>
-                        <Toolbar />
-                        <SettingBar />
-                        <Canvas />
-                    </>
-                } />
-                <Route path='/:id'>
-                    <Route path="home" />
-                </Route>
-            </Routes>
-        </Router>
+        <Routes>
+            <Route path='/' element={
+                <>
+                    <Toolbar />
+                    <SettingBar />
+                    <Canvas />
+                </>
+            } />
+            <Route path='/:id'>
+                <Route path="home" />
+            </Route>
+        </Routes>
         // <Routes>
         //     <Route path='/:id' element={
         //         <>
