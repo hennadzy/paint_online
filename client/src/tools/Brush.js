@@ -100,9 +100,9 @@ export default class Brush extends Tool {
     }
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = true) {
+ sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-    console.log("sendDrawData called:", { x, y, isStart, isLocal, lineWidth, strokeStyle });
+
     // Локальная отрисовка
     if (isLocal) {
         Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
@@ -128,7 +128,6 @@ export default class Brush extends Tool {
 }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-    console.log("staticDraw called:", { x, y, lineWidth, strokeStyle, isStart });
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     if (isStart) {
