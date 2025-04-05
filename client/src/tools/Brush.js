@@ -104,7 +104,8 @@ export default class Brush extends Tool {
         })
       );
     }
-    console.log (isLocal);
+    console.log('Socket:', this.socket ? 'Connected' : 'Not Connected');
+    console.log('isLocal before send:', isLocal);
     if (isLocal) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
