@@ -69,7 +69,10 @@ const Canvas = observer(() => {
         const msg = JSON.parse(event.data);
   
         // Если сообщение от самого рисующего, пропускаем обработку
-        if (msg.username === canvasState.username) return;
+        if (msg.username === canvasState.username) 
+          {
+            console.log ('сообщение от самого рисующего');
+            return;}
   
         switch (msg.method) {
           case "connection":
