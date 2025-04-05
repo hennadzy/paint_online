@@ -104,9 +104,9 @@ export default class Brush extends Tool {
     const { lineWidth, strokeStyle } = this.ctx;
 
     // Локальная отрисовка
-    if (isLocal) {
-        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    }
+    // if (isLocal) {
+    //     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    // }
 
     // Передача данных через WebSocket
     if (this.socket) {
