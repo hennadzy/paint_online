@@ -39,6 +39,10 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     // Не создаем Brush без сокета – создаем его только когда введут имя
+    console.log('1');
+    console.log('Canvas:', canvasRef.current);
+    console.log('Socket:', socket);
+    console.log('Session ID:', params.id);
     toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
@@ -51,6 +55,10 @@ const Canvas = observer(() => {
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
+      console.log('2');
+      console.log('Canvas:', canvasRef.current);
+      console.log('Socket:', socket);
+      console.log('Session ID:', params.id);
       toolState.setTool(new Brush(canvasRef.current, socket, params.id))
 
 
