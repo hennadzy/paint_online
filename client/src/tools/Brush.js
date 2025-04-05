@@ -57,10 +57,14 @@ export default class Brush extends Tool {
 }
 
 touchMoveHandler(e) {
-  e.preventDefault();
-  if (!this.mouseDown) return;
+  e.preventDefault(); // Необходимо для предотвращения прокрутки
+  if (!this.mouseDown) return; // Проверка состояния
+
   const rect = this.canvas.getBoundingClientRect();
-  this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false, true);
+  const x = e.touches[0].clientX - rect.left;
+  const y = e.touches[0].clientY - rect.top;
+
+  this.sendDrawData(x, y, false, true); // Отправляем данные только при перемещении
 }
 
 touchEndHandler(e) {
@@ -83,7 +87,7 @@ draw(x, y) {
 }
 sendDrawData(x, y, isStart = false, isLocal = true) { 
   const { lineWidth, strokeStyle } = this.ctx;
-  if (this.socket) {
+  if (this.socket && !isLocal) {
     isLocal = false;
     this.socket.send(
       JSON.stringify({
