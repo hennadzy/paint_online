@@ -8,6 +8,7 @@ class Brush {
     this.mouseDown = false;
 
     this.isOnlineMode = Boolean(this.id);
+    console.log (isOnlineMode);
     this.listen();
   }
 
@@ -32,7 +33,7 @@ class Brush {
   }
 
   mouseMoveHandler(event) {
-    console.log (isOnlineMode);
+    
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
       this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, false);
