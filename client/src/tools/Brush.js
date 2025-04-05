@@ -104,6 +104,7 @@ export default class Brush extends Tool {
         })
       );
     }
+    console.log (isLocal);
     if (isLocal) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
