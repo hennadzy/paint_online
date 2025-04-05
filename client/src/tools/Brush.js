@@ -32,6 +32,7 @@ class Brush {
   }
 
   mouseMoveHandler(event) {
+    console.log (isOnlineMode);
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
       this.sendDrawData(event.clientX - rect.left, event.clientY - rect.top, false);
