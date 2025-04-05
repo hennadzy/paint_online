@@ -86,8 +86,10 @@ export default class Brush extends Tool {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-    if (this.socket) {
-      isLocal = false;
+  
+    // Проверить состояние WebSocket
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      isLocal = false; // Переопределяем isLocal на false, если сокет подключен
       this.socket.send(
         JSON.stringify({
           method: "draw",
