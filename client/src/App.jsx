@@ -7,34 +7,19 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 const App = () => {
     return (
+      <Router>
         <Routes>
-            <Route path='/' element={
-                <>
-                    <Toolbar />
-                    <SettingBar />
-                    <Canvas />
-                </>
-            } />
-            <Route path='/:id'>
-                <Route path="home" />
-            </Route>
+          <Route path='/' element={
+            <>
+              <Toolbar />
+              <SettingBar />
+              <Canvas />
+            </>
+          } />
+          <Route path='/:id' element={<Canvas />} />
         </Routes>
-        // <Routes>
-        //     <Route path='/:id' element={
-        //         <>
-        //             <Toolbar />
-        //             <SettingBar />
-        //             <Canvas />
-        //         </>
-        //     } />
-        //     <Route path='/' element={
-        //         <Navigate to={`f${(+new Date).toString(16)}`} />
-        //     }
-        //     />
-        // </Routes>
-
-
+      </Router>
     );
-};
+  };
 
-export default App;
+  export default App;
