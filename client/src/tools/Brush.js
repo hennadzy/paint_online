@@ -62,47 +62,42 @@ export default class Brush extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
+    console.log("touchStartHandler:", e.touches[0].clientX, e.touches[0].clientY);
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
+}
 
-    // Локальная отрисовка
-    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
-
-    // Отправка данных другим пользователям
-    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
-  }
-
-  touchMoveHandler(e) {
+touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
     const rect = this.canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+    console.log("touchMoveHandler:", x, y);
+    this.sendDrawData(x, y, false, true);
+}
 
-    // Локальная отрисовка
-    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
-
-    // Отправка данных другим пользователям
-    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
-  }
-
-  touchEndHandler(e) {
+touchEndHandler(e) {
     e.preventDefault();
+    console.log("touchEndHandler");
     this.mouseDown = false;
     if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: { type: "finish" },
-        })
-      );
+        this.socket.send(
+            JSON.stringify({
+                method: "draw",
+                id: this.id,
+                figure: { type: "finish" },
+            })
+        );
     }
-  }
+}
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-
+    console.log("sendDrawData called:", { x, y, isStart, isLocal, lineWidth, strokeStyle });
     // Локальная отрисовка
     if (isLocal) {
         Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
@@ -128,6 +123,7 @@ export default class Brush extends Tool {
 }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+    console.log("staticDraw called:", { x, y, lineWidth, strokeStyle, isStart });
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     if (isStart) {
