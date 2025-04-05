@@ -19,6 +19,7 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
+  console.log(params);
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
