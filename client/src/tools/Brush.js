@@ -31,6 +31,7 @@ export default class Brush extends Tool {
     if (this.mouseDown) {
      const rect = this.canvas.getBoundingClientRect();
      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false);
+     console.log ("++");
     }
    }
 
@@ -79,7 +80,7 @@ touchEndHandler(e) {
 
 draw(x, y) {
   this.sendDrawData(x, y, false);
-  console.log ("++");
+  
 }
 
 sendDrawData(x, y, isStart = false) {
