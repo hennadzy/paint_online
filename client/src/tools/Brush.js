@@ -4,15 +4,17 @@ export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.mouseDown = false;
-    this.touchMoveThrottle = false;  // Флаг троттлинга
     this.destroyEvents();
     this.listen();
   }
 
   listen() {
+    // Обработчики для мыши
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    // Обработчики для сенсорных событий
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
@@ -77,11 +79,11 @@ export default class Brush extends Tool {
       );
     }
   }
-
+  
   draw(x, y) {
     this.sendDrawData(x, y, false);
-
   }
+
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
     if (this.socket) {
@@ -108,8 +110,9 @@ export default class Brush extends Tool {
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-      ctx.lineWidth = lineWidth;
+    ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
+
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
