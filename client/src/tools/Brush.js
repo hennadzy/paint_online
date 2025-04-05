@@ -67,33 +67,39 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
-}
 
-touchMoveHandler(e) {
+    // Локальная отрисовка
+    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, true);
+
+    // Отправка данных другим пользователям
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
+  }
+
+  touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
     const rect = this.canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
-    console.log("touchMoveHandler:", x, y);
-    this.sendDrawData(x, y, false, true);
-}
 
-touchEndHandler(e) {
+    // Локальная отрисовка
+    Brush.staticDraw(this.ctx, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, this.ctx.lineWidth, this.ctx.strokeStyle, false);
+    console.log("touchMoveHandler:", x, y);
+    // Отправка данных другим пользователям
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
+  }
+
+  touchEndHandler(e) {
     e.preventDefault();
-    console.log("touchEndHandler");
     this.mouseDown = false;
     if (this.socket) {
-        this.socket.send(
-            JSON.stringify({
-                method: "draw",
-                id: this.id,
-                figure: { type: "finish" },
-            })
-        );
+      this.socket.send(
+        JSON.stringify({
+          method: "draw",
+          id: this.id,
+          figure: { type: "finish" },
+        })
+      );
     }
-}
+  }
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
