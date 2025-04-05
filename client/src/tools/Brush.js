@@ -6,7 +6,6 @@ export default class Brush extends Tool {
     this.mouseDown = false;
     this.destroyEvents();
     this.listen();
-    console.log (this.id);
   }
 
   listen() {
@@ -61,7 +60,7 @@ touchMoveHandler(e) {
   e.preventDefault();
   if (!this.mouseDown) return;
   const rect = this.canvas.getBoundingClientRect();
-  this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false, true);
+  this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false, true);
 }
 
 touchEndHandler(e) {
@@ -82,7 +81,7 @@ draw(x, y) {
   this.sendDrawData(x, y, false);
   
 }
-sendDrawData(x, y, isStart = false, isLocal = false) { // добавление isLocal аргумента
+sendDrawData(x, y, isStart = false, isLocal = false) { 
   const { lineWidth, strokeStyle } = this.ctx;
   if (this.socket) {
     isLocal = false;
@@ -102,7 +101,6 @@ sendDrawData(x, y, isStart = false, isLocal = false) { // добавление i
       })
     );
   }
-console.log ("isLocal=", isLocal);
   if (isLocal) {
     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
   }
