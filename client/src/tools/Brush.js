@@ -8,26 +8,33 @@ export default class Brush extends Tool {
     this.lastTouchMove = Date.now();
     this.websocketReady = false;
 
-    // Установим обработчики WebSocket
-    if (this.socket) {
-      console.log('WebSocket существует');
+// Очередь для событий рисования
+this.drawingQueue = [];
 
+// Новое событие при подключении
+if (this.socket) {
+  console.log('WebSocket существует');
+  
+  this.socket.onopen = () => {
+    console.log('WebSocket connected');
+    this.websocketReady = true;
+    
+    // Обработать все предыдущие действия
+    while (this.drawingQueue.length > 0) {
+      const drawArgs = this.drawingQueue.shift();
+      this.sendDrawData(...drawArgs);
+    }
+  };
 
-      this.socket.onopen = () => {
-        console.log('WebSocket connected');
-        this.websocketReady = true;
-      };
-    
-      this.socket.onclose = () => {
-        console.log('WebSocket disconnected');
-        this.websocketReady = false;
-      };
-    
-      this.socket.onerror = (error) => {
-        console.error('WebSocket Error: ', error);
-      };
-    }else 
-    console.log('WebSocket не существует');
+  this.socket.onclose = () => {
+    console.log('WebSocket disconnected');
+    this.websocketReady = false;
+  };
+
+  this.socket.onerror = (error) => {
+    console.error('WebSocket Error: ', error);
+  };
+}
 
 
 
@@ -114,8 +121,8 @@ export default class Brush extends Tool {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      isLocal = false;
+  
+    if (this.websocketReady) {
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -131,13 +138,18 @@ export default class Brush extends Tool {
           },
         })
       );
+    } else {
+      // Сохранить вызов для обработки позднее
+      this.drawingQueue.push([x, y, isStart, isLocal]);
     }
-    console.log('Socket:', this.socket ? 'Connected' : 'Not Connected');
-    console.log('isLocal before send:', isLocal);
+  
+    console.log('isLocal:', isLocal); // Для отладки
+  
     if (isLocal) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
   }
+  
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
