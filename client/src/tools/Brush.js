@@ -100,30 +100,32 @@ export default class Brush extends Tool {
     }
   }
 
-  sendDrawData(x, y, isStart = false) {
+ sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
 
-    // Локальная отрисовка для рисующего
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-
-    // Передача данных через WebSocket другим пользователям
-    if (this.socket) {
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          figure: {
-            type: "brush",
-            x,
-            y,
-            lineWidth,
-            strokeStyle,
-            isStart,
-          },
-        })
-      );
+    // Локальная отрисовка
+    if (isLocal) {
+        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
-  }
+
+    // Передача данных через WebSocket
+    if (this.socket) {
+        this.socket.send(
+            JSON.stringify({
+                method: "draw",
+                id: this.id,
+                figure: {
+                    type: "brush",
+                    x,
+                    y,
+                    lineWidth,
+                    strokeStyle,
+                    isStart,
+                },
+            })
+        );
+    }
+}
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
