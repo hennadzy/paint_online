@@ -65,23 +65,20 @@ const Canvas = observer(() => {
         );
       };
 
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        // Фильтруем echo-сообщения
-        if (msg.username && msg.username === canvasState.username) {
-          return;
-        }
-        switch (msg.method) {
-          case "connection":
-            setMessages(prevMessages => [...prevMessages, `${msg.username} вошел в комнату`]);
-            break;
-          case "draw":
+     socket.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+
+    // Фильтрация сообщения рисующего пользователя
+    if (msg.id === canvasState.sessionid) return;
+
+    switch (msg.method) {
+        case "draw":
             drawHandler(msg);
             break;
-          default:
+        default:
             break;
-        }
-      };
+    }
+};
     }
   }, [canvasState.username, params.id]);
 
