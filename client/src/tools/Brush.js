@@ -81,7 +81,7 @@ draw(x, y) {
   this.sendDrawData(x, y, false);
   
 }
-sendDrawData(x, y, isStart = false, isLocal = true) { // добавление isLocal аргумента
+sendDrawData(x, y, isStart = false, isLocal = false) { // добавление isLocal аргумента
   const { lineWidth, strokeStyle } = this.ctx;
   if (this.socket) {
     this.socket.send(
@@ -95,7 +95,7 @@ sendDrawData(x, y, isStart = false, isLocal = true) { // добавление is
           lineWidth,
           strokeStyle,
           isStart,
-          username: canvasState.username,
+          username: this.username,
         },
       })
     );
