@@ -78,11 +78,7 @@ touchEndHandler(e) {
 }
 
 draw(x, y) {
-  // this.sendDrawData(x, y, false);
-  this.ctx.beginPath();
-  this.ctx.moveTo(x, y);
-  this.ctx.lineTo(x, y);
-  this.ctx.stroke();
+  this.sendDrawData(x, y, false);
 }
 
 sendDrawData(x, y, isStart = false) {
@@ -105,8 +101,9 @@ sendDrawData(x, y, isStart = false) {
       })
     );
   }
-  // Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 
+  Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+console.log ("__");
 }
 
 static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
