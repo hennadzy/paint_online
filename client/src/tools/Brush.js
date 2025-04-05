@@ -54,7 +54,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, false);
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
   }
 
   touchMoveHandler(e) {
@@ -63,7 +63,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    this.sendDrawData(x, y, false, false);
+    this.sendDrawData(x, y, false, true);
   }
 
   touchEndHandler(e) {
@@ -84,7 +84,7 @@ export default class Brush extends Tool {
     this.sendDrawData(x, y, false);
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = true) {
+  sendDrawData(x, y, isStart = false, isLocal = false) {
     const { lineWidth, strokeStyle } = this.ctx;
     if (this.socket) {
       isLocal = false;
@@ -104,7 +104,7 @@ export default class Brush extends Tool {
         })
       );
     }
-    console.log (isLocal);
+    console.log (isLocal)
     if (isLocal) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
