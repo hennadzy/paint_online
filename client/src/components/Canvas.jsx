@@ -101,6 +101,8 @@ const Canvas = observer(() => {
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
+    console.log("Полученные данные:", figure);
+    if (msg.username === canvasState.username) return;
     switch (figure.type) {
       case "brush":
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
