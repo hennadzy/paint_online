@@ -60,7 +60,7 @@ touchMoveHandler(e) {
   e.preventDefault();
   if (!this.mouseDown) return;
   const rect = this.canvas.getBoundingClientRect();
-  this.draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false, true);
+  this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false, true);
 }
 
 touchEndHandler(e) {
