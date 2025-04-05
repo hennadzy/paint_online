@@ -95,7 +95,7 @@ sendDrawData(x, y, isStart = false, isLocal = true) { // добавление is
           lineWidth,
           strokeStyle,
           isStart,
-          username: this.username,
+          username: canvasState.username,
         },
       })
     );
