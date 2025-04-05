@@ -10,6 +10,9 @@ export default class Brush extends Tool {
 
     // Установим обработчики WebSocket
     if (this.socket) {
+      console.log('WebSocket существует');
+
+
       this.socket.onopen = () => {
         console.log('WebSocket connected');
         this.websocketReady = true;
@@ -23,7 +26,8 @@ export default class Brush extends Tool {
       this.socket.onerror = (error) => {
         console.error('WebSocket Error: ', error);
       };
-    }
+    }else 
+    console.log('WebSocket не существует');
 
 
 
