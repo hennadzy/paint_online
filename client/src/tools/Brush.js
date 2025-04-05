@@ -7,7 +7,6 @@ export default class Brush extends Tool {
     this.lastTouchMove = Date.now();
     this.websocketReady = false;
 
-    // Настройка WebSocket
     if (this.socket) {
       this.socket.onopen = () => {
         console.log('WebSocket connected');
@@ -45,7 +44,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    this.localDraw(x, y, true);
+    Brush.draw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle, true);
     this.sendDrawData(x, y, true);
   }
 
@@ -54,7 +53,7 @@ export default class Brush extends Tool {
       const rect = this.canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      this.localDraw(x, y);
+      Brush.draw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
       this.sendDrawData(x, y);
     }
   }
@@ -78,7 +77,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    this.localDraw(x, y, true);
+    Brush.draw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle, true);
     this.sendDrawData(x, y, true);
   }
 
@@ -95,7 +94,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    this.localDraw(x, y);
+    Brush.draw(this.ctx, x, y, this.ctx.lineWidth, this.ctx.strokeStyle);
     this.sendDrawData(x, y);
   }
 
@@ -113,19 +112,6 @@ export default class Brush extends Tool {
     }
   }
 
-  localDraw(x, y, isStart = false) {
-    const { lineWidth, strokeStyle } = this.ctx;
-    this.ctx.lineWidth = lineWidth;
-    this.ctx.strokeStyle = strokeStyle;
-    if (isStart) {
-      this.ctx.beginPath();
-      this.ctx.moveTo(x, y);
-    } else {
-      this.ctx.lineTo(x, y);
-      this.ctx.stroke();
-    }
-  }
-
   sendDrawData(x, y, isStart = false) {
     if (this.websocketReady) {
       const { lineWidth, strokeStyle } = this.ctx;
@@ -137,8 +123,8 @@ export default class Brush extends Tool {
             type: "brush",
             x,
             y,
-            lineWidth,strokeStyle,
-            isStart,
+            lineWidth,
+            strokeStyle,isStart,
             username: this.username,
           }
         })
@@ -146,14 +132,15 @@ export default class Brush extends Tool {
     }
   }
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  static draw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+      ctx.stroke();
     }
-    ctx.lineTo(x, y);
-    ctx.stroke();
   }
 }
