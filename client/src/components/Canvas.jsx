@@ -89,9 +89,9 @@ const Canvas = observer(() => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
     switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
+      // case "brush":
+        // Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        // break;
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
         break;
