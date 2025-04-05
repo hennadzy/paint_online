@@ -66,24 +66,34 @@ const Canvas = observer(() => {
       };
 
       socket.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-
-      // Если сообщение от самого рисующего, пропускаем обработку
-
-      console.log('msg.username =', msg.username);
-      console.log('canvasState.username =', canvasState.username);
-      if (msg.username === canvasState.username) return;
-
-      switch (msg.method) {
-        case "connection":
-          setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
-          break;
-        case "draw":
-          drawHandler(msg); // вызываем обработчик рисования
-          break;
-        default:
-          break;
-      }
+        const msg = JSON.parse(event.data);
+      
+        console.log("msg.username =", msg.username);
+        console.log("canvasState.username =", canvasState.username);
+      
+        // Проверяем наличие имени пользователя
+        if (!msg.username) {
+          console.warn("Получено сообщение без username, игнорируем:", msg);
+          return;
+        }
+      
+        // Исключаем собственные сообщения
+        if (msg.username === canvasState.username) return;
+      
+        switch (msg.method) {
+          case "draw":
+            drawHandler(msg); // Обрабатываем рисование
+            break;
+          case "finish":
+            canvasRef.current.getContext("2d").beginPath(); // Завершаем путь
+            break;
+          case "connection":
+            setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
+            break;
+          default:
+            console.warn("Неизвестный метод:", msg.method);
+            break;
+        }
       };
     }
   }, [canvasState.username, params.id]);
