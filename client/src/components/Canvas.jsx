@@ -66,19 +66,24 @@ const Canvas = observer(() => {
       };
 
       socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.username === canvasState.username) return;
-      
-        switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
-          case "finish":
-            canvasRef.current.getContext("2d").beginPath();
-            break;
-          default:
-            break;
-        }
+      const msg = JSON.parse(event.data);
+
+      // Если сообщение от самого рисующего, пропускаем обработку
+
+      console.log('msg.username =', msg.username);
+      console.log('canvasState.username =', canvasState.username);
+      if (msg.username === canvasState.username) return;
+
+      switch (msg.method) {
+        case "connection":
+          setMessages((prevMessages) => [...prevMessages, `${msg.username} вошел в комнату`]);
+          break;
+        case "draw":
+          drawHandler(msg); // вызываем обработчик рисования
+          break;
+        default:
+          break;
+      }
       };
     }
   }, [canvasState.username, params.id]);
