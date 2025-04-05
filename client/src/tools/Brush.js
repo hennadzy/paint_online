@@ -1,9 +1,23 @@
-import Tool from "./Tool";
-
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.mouseDown = false;
+    this.lastTouchMove = Date.now();
+    this.websocketReady = false;
+
+    // Установим обработчики WebSocket
+    if (this.socket) {
+      this.socket.onopen = () => {
+        console.log('WebSocket connected');
+        this.websocketReady = true;
+      };
+
+      this.socket.onclose = () => {
+        console.log('WebSocket disconnected');
+        this.websocketReady = false;
+      };
+    }
+    
     this.destroyEvents();
     this.listen();
   }
@@ -25,19 +39,19 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true, true);
+    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true, !this.websocketReady);
   }
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
       const rect = this.canvas.getBoundingClientRect();
-      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false, true);
+      this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, false, !this.websocketReady);
     }
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    if (this.socket) {
+    if (this.websocketReady) {
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -54,22 +68,29 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, true);
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true, !this.websocketReady);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
+
+    const now = Date.now();
+    if (now - this.lastTouchMove < 16) { // Обработка не чаще, чем раз в 16 мс (~60 FPS)
+      return;
+    }
+    this.lastTouchMove = now;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    this.sendDrawData(x, y, false, true);
+    this.sendDrawData(x, y, false, !this.websocketReady);
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    if (this.socket) {
+    if (this.websocketReady) {
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -86,10 +107,8 @@ export default class Brush extends Tool {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const { lineWidth, strokeStyle } = this.ctx;
-  
-    // Проверить состояние WebSocket
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      isLocal = false; // Переопределяем isLocal на false, если сокет подключен
+
+    if (this.websocketReady) {
       this.socket.send(
         JSON.stringify({
           method: "draw",
@@ -106,17 +125,17 @@ export default class Brush extends Tool {
         })
       );
     }
-    console.log('Socket:', this.socket ? 'Connected' : 'Not Connected');
-    console.log('isLocal before send:', isLocal);
+
+    console.log('isLocal:', isLocal); // Для отладки
+
     if (isLocal) {
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+      Brush.staticDraw(this.ctx, x, y, lineWidth,strokeStyle, isStart);
     }
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
-
     if (isStart) {
       ctx.beginPath();
       ctx.moveTo(x, y);
