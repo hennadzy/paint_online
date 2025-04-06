@@ -26,5 +26,4 @@ const SettingBar = () => {
         </div>
     );
 };
-co
 export default SettingBar;
