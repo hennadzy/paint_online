@@ -117,7 +117,7 @@ export default class Rect extends Tool {
       this.startY,
       this.width,
       this.height,
-      this.fillColor, // именно выбранный цвет заливки
+      // this.fillColor, // именно выбранный цвет заливки
       this.ctx.lineWidth,
       this.ctx.strokeStyle
     );
@@ -135,7 +135,7 @@ export default class Rect extends Tool {
           y: this.startY,
           width: this.width,
           height: this.height,
-          fillStyle: this.fillColor,
+          // fillStyle: this.fillColor,
           lineWidth: this.ctx.lineWidth,
           strokeStyle: this.ctx.strokeStyle,
         },

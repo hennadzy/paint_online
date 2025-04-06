@@ -107,7 +107,7 @@ export default class Circle extends Tool {
       this.startX,
       this.startY,
       this.radius,
-      this.fillColor,
+    //   this.fillColor,
       this.ctx.lineWidth,
       this.ctx.strokeStyle
     );
@@ -124,7 +124,7 @@ export default class Circle extends Tool {
             x: this.startX,
             y: this.startY,
             r: this.radius,
-            fillStyle: this.fillColor,
+            // fillStyle: this.fillColor,
             lineWidth: this.ctx.lineWidth,
             strokeStyle: this.ctx.strokeStyle,
           },
