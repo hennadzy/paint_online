@@ -18,7 +18,7 @@
     outline: none;
     cursor: pointer;
     background-size: cover;
-    margin-left: 20px;
+    margin-left: 10px;
   }
   .brush {
     background: url('../assets/img/brush.png') no-repeat center center;
@@ -56,12 +56,16 @@
   align-items: center;
   position: absolute;
   width: 100%;
-  box-shadow: 0 4px 0px gray;
+  box-shadow: 0 4px 5px gray;
   top:$toolbar-height;
 }
 
 @media only screen and (max-width: 768px) {
   .toolbar {
+    width: calc(100% + 20px); /* Тулбар длиннее холста на 20px */
+    left: -10px; /* Смещаем тулбар для центрирования */
+  }
+  .setting-bar {
     width: calc(100% + 20px); /* Тулбар длиннее холста на 20px */
     left: -10px; /* Смещаем тулбар для центрирования */
   }
