@@ -107,12 +107,6 @@ const Canvas = observer(() => {
       case "brush":
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
         break;
-      case "finish":
-        ctx.beginPath(); // Завершаем текущий путь
-        break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-        break;
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
         break;
@@ -126,9 +120,10 @@ const Canvas = observer(() => {
         Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
         break;
       case "finish":
-        ctx.beginPath();
+        ctx.beginPath(); // Завершаем текущий путь
         break;
       default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
         break;
     }
   };
