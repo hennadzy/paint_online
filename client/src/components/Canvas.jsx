@@ -24,7 +24,7 @@ const Canvas = observer(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
-        axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+      axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
         .then((response) => {
           const img = new Image();
           img.src = response.data;
@@ -67,19 +67,19 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-      
+
         console.log("msg.username =", msg.username);
         console.log("canvasState.username =", canvasState.username);
-      
+
         // Проверяем наличие username, иначе игнорируем сообщение
         if (!msg.username) {
           console.warn("Получено сообщение без username, игнорируем:", msg);
           return;
         }
-      
+
         // Исключаем собственные сообщения (echo)
         if (msg.username === canvasState.username) return;
-      
+
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
@@ -106,6 +106,12 @@ const Canvas = observer(() => {
     switch (figure.type) {
       case "brush":
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        break;
+      case "finish":
+        ctx.beginPath(); // Завершаем текущий путь
+        break;
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
         break;
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
@@ -137,11 +143,11 @@ const Canvas = observer(() => {
     }
   };
 
-      const mouseDownHandler = () => {
-          canvasState.pushToUndo(canvasRef.current.toDataURL())
-          axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}, {img: canvasRef.current.toDataURL()}`)
-              .then(response => console.log(response.data))
-      }
+  const mouseDownHandler = () => {
+    canvasState.pushToUndo(canvasRef.current.toDataURL())
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}, {img: canvasRef.current.toDataURL()}`)
+      .then(response => console.log(response.data))
+  }
 
   const handleCreateRoomClick = () => {
     setModal(true);
@@ -163,13 +169,13 @@ const Canvas = observer(() => {
           </Button>
         </Modal.Footer>
       </Modal>
-  
+
       <canvas
-  ref={canvasRef}
-  width={600}
-  height={400}
-  style={{ border: '1px solid black' }}
-/>
+        ref={canvasRef}
+        width={600}
+        height={400}
+        style={{ border: '1px solid black' }}
+      />
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
