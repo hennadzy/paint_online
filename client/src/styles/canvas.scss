@@ -31,7 +31,7 @@ button {
 }
 
 button:hover {
-  transform: scale(1.1); /* Увеличение при наведении */
+  transform: scale(1.05); /* Увеличение при наведении */
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Более заметная тень */
 }
 
@@ -42,15 +42,14 @@ button:active {
 .modal-content {
   font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
   background: #fff8e1; /* Светлый фон */
-  border-radius: 15px; /* Округлые углы */
+  border-radius: 10px; /* Округлые углы */
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Тень для объема */
   padding: 20px; /* Внутренние отступы */
 }
 
 .modal-header {
-  font-size: 20px;
+  font-size: 15px;
   color: #ff6699; /* Яркий акцент цвета */
-  border-bottom: 2px solid #ffcc00; /* Цветная граница */
   display: flex;
   justify-content: center;
 }
