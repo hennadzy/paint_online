@@ -7,6 +7,9 @@ class ToolState {
     }
 
     setTool(tool) {
+        if (this.tool && this.tool.destroyEvents) {
+            this.tool.destroyEvents();
+        }
         this.tool = tool
     }
     setFillColor(color) {
