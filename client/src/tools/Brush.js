@@ -21,13 +21,18 @@ export default class Brush extends Tool {
 }
 
 
-  mouseDownHandler(e) {
-    this.mouseDown = true;
-    const rect = this.canvas.getBoundingClientRect();
-    this.ctx.beginPath();
-    this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
-  }
+mouseDownHandler(e) {
+  this.mouseDown = true;
+
+  // Сохраняем текущее состояние в undoList перед изменениями
+  canvasState.pushToUndo(this.canvas.toDataURL());
+
+  const rect = this.canvas.getBoundingClientRect();
+  this.ctx.beginPath();
+  this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+}
+
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
