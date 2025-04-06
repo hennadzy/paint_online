@@ -137,7 +137,10 @@
   animation: bounce 0.3s ease;
 }
 
-
+.undo:focus, .redo:focus {
+  outline: none; /* Убираем стандартный фокус */
+  box-shadow: none; /* Убираем подсветку или тень */
+}
 
 
 
