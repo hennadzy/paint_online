@@ -22,27 +22,42 @@ const Canvas = observer(() => {
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
-    const aspectRatio = 600 / 400; // Пропорции холста: ширина/высота
+    const ctx = canvas.getContext("2d");
+
+    // Вычисляем соотношение пикселей устройства
+    const ratio = window.devicePixelRatio || 1;
 
     if (window.innerWidth < 768) { // Мобильные устройства
-        canvas.width = window.innerWidth; // Полная ширина экрана
-        canvas.height = window.innerWidth / aspectRatio; // Высота вычисляется пропорционально
+        canvas.style.width = `${window.innerWidth}px`; // Устанавливаем видимую ширину
+        const aspectRatio = 600 / 400; // Пропорции холста
+        canvas.style.height = `${window.innerWidth / aspectRatio}px`; // Высота пропорционально ширине
+
+        // Задаем реальную область рисования
+        canvas.width = window.innerWidth * ratio;
+        canvas.height = (window.innerWidth / aspectRatio) * ratio;
     } else {
-        canvas.width = 600; // Стандартная ширина для десктопа
-        canvas.height = 400; // Стандартная высота для десктопа
+        canvas.style.width = "600px"; // Ширина для десктопов
+        canvas.style.height = "400px"; // Высота для десктопов
+
+        // Задаем реальную область рисования
+        canvas.width = 600 * ratio;
+        canvas.height = 400 * ratio;
     }
-    canvasState.setCanvas(canvas);
-    const ctx = canvas.getContext("2d");
+
+    // Применяем масштабирование контекста
+    ctx.scale(ratio, ratio);
+
+    // Устанавливаем белый фон
     ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height); // Заполняем холст белым фоном
+    ctx.fillRect(0, 0, canvas.width / ratio, canvas.height / ratio);
 };
 
 useEffect(() => {
-  adjustCanvasSize(); // Устанавливаем размеры при загрузке компонента
-  window.addEventListener("resize", adjustCanvasSize); // Реакция на изменение размера окна
+  adjustCanvasSize(); // Устанавливаем начальный размер холста
+  window.addEventListener("resize", adjustCanvasSize); // Пересчёт при изменении размеров окна
 
   return () => {
-      window.removeEventListener("resize", adjustCanvasSize); // Удаляем обработчик при размонтировании
+      window.removeEventListener("resize", adjustCanvasSize); // Убираем обработчик при размонтировании
   };
 }, []);
 
