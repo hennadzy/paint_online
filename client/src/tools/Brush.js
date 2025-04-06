@@ -19,26 +19,30 @@ export default class Brush extends Tool {
     this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
     this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
     this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
-  }
+}
 
-  mouseDownHandler(e) {
-    this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
 
-    const { x, y } = this.getCoordinates(e);
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
-    this.sendDrawData(x, y, true);
-  }
+mouseDownHandler(e) {
+  this.mouseDown = true;
+
+  // Сохраняем текущее состояние в undoList перед изменениями
+  canvasState.pushToUndo(this.canvas.toDataURL());
+
+  const rect = this.canvas.getBoundingClientRect();
+  this.ctx.beginPath();
+  this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+}
+
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
-      const { x, y } = this.getCoordinates(e);
+      const rect = this.canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       this.sendDrawData(x, y, false);
     }
   }
-
-
 
   mouseUpHandler() {
     this.mouseDown = false;
@@ -55,21 +59,19 @@ export default class Brush extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
-    canvasState.pushToUndo(this.canvas.toDataURL());
+      canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
-
-    const { x, y } = this.getTouchCoordinates(e);
+    const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
-    this.sendDrawData(x, y, true);
+    this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
-
-    const { x, y } = this.getTouchCoordinates(e);
-    this.sendDrawData(x, y, false);
+    const rect = this.canvas.getBoundingClientRect();
+    this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, false);
   }
 
   touchEndHandler(e) {
@@ -90,29 +92,31 @@ export default class Brush extends Tool {
     const { lineWidth, strokeStyle } = this.ctx;
 
     if (isLocal) {
-      // Локальная отрисовка с текущим цветом
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+        // Локальная отрисовка с текущим цветом
+        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
 
     if (this.socket) {
-      // Отправка через WebSocket
-      this.socket.send(
-        JSON.stringify({
-          method: "draw",
-          id: this.id,
-          username: this.username,
-          figure: {
-            type: "brush",
-            x,
-            y,
-            lineWidth,
-            strokeStyle, // Передаётся текущий цвет рисующего
-            isStart,
-          },
-        })
-      );
+        // Отправка через WebSocket
+        this.socket.send(
+            JSON.stringify({
+                method: "draw",
+                id: this.id,
+                username: this.username,
+                figure: {
+                    type: "brush",
+                    x,
+                    y,
+                    lineWidth,
+                    strokeStyle, // Передаётся текущий цвет рисующего
+                    isStart,
+                    username: this.username,
+                },
+            })
+        );
     }
-  }
+}
+
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
@@ -124,22 +128,5 @@ export default class Brush extends Tool {
       ctx.lineTo(x, y);
       ctx.stroke();
     }
-  }
-  getCoordinates(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1; // Учитываем плотность пикселей
-    return {
-      x: (e.clientX - rect.left) * ratio,
-      y: (e.clientY - rect.top) * ratio,
-    };
-  }
-
-  getTouchCoordinates(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1; // Учитываем плотность пикселей
-    return {
-      x: (e.touches[0].clientX - rect.left) * ratio,
-      y: (e.touches[0].clientY - rect.top) * ratio,
-    };
   }
 }

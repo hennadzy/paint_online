@@ -22,35 +22,27 @@ const Canvas = observer(() => {
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const ratio = window.devicePixelRatio || 1;
-
-    if (window.innerWidth < 768) {
-        canvas.style.width = `${window.innerWidth}px`;
-        const aspectRatio = 600 / 400;
-        canvas.style.height = `${window.innerWidth / aspectRatio}px`;
-        canvas.width = window.innerWidth * ratio;
-        canvas.height = (window.innerWidth / aspectRatio) * ratio;
+    if (window.innerWidth < 768) { // Мобильные устройства
+      canvas.width = window.innerWidth - 20; // Ширина холста чуть меньше ширины экрана
+      canvas.height = window.innerHeight - 100; // Высота экрана минус тулбар и отступы
     } else {
-        canvas.style.width = "600px";
-        canvas.style.height = "400px";
-        canvas.width = 600 * ratio;
-        canvas.height = 400 * ratio;
+      canvas.width = 600; // Стандартная ширина для десктопа
+      canvas.height = 400; // Стандартная высота для десктопа
     }
-
-    ctx.scale(ratio, ratio);
+    canvasState.setCanvas(canvas);
+    const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width / ratio, canvas.height / ratio);
-};
-
-useEffect(() => {
-  adjustCanvasSize(); // Устанавливаем начальный размер холста
-  window.addEventListener("resize", adjustCanvasSize); // Пересчёт при изменении размеров окна
-
-  return () => {
-      window.removeEventListener("resize", adjustCanvasSize); // Убираем обработчик при размонтировании
+    ctx.fillRect(0, 0, canvas.width, canvas.height); // Заполняем холст белым фоном
   };
-}, []);
+
+  useEffect(() => {
+    adjustCanvasSize(); // Устанавливаем начальные размеры холста
+    window.addEventListener("resize", adjustCanvasSize); // Обработчик изменения размеров окна
+
+    return () => {
+      window.removeEventListener("resize", adjustCanvasSize); // Удаляем обработчик при размонтировании
+    };
+  }, []);
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
