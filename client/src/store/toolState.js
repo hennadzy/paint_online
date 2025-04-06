@@ -8,10 +8,14 @@ class ToolState {
 
     setTool(tool) {
         if (this.tool && this.tool.destroyEvents) {
-            this.tool.destroyEvents();
+            this.tool.destroyEvents(); // Удаляем обработчики старого инструмента
         }
-        this.tool = tool
+        this.tool = tool;
+        if (this.tool.listen) {
+            this.tool.listen(); // Назначаем новые обработчики
+        }
     }
+    
     setFillColor(color) {
         this.tool.fillColor = color
     }
