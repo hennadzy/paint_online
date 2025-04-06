@@ -19,14 +19,17 @@ class ToolState {
         }
     }
     
+    
     setFillColor(color) {
         this.tool.fillColor = color
     }
     setStrokeColor(color) {
         this.tool.strokeColor = color
     }
-    setLineWidth(width) {
-        this.tool.lineWidth = width
+    setLineWidth(lineWidth) {
+        if (this.tool) {
+            this.tool.lineWidth = lineWidth; // Устанавливаем толщину линии для активного инструмента
+        }
     }
 }
 

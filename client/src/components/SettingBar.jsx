@@ -2,19 +2,26 @@ import React from 'react';
 import toolState from "../store/toolState";
 
 const SettingBar = () => {
+    const handleLineWidthChange = (e) => {
+        const newLineWidth = e.target.value;
+        toolState.setLineWidth(newLineWidth); // Обновляем значение в toolState
+    };
+
     return (
         <div className="setting-bar">
             <label htmlFor="line-width">Толщина линии:</label>
             <input
-                onChange={e => toolState.setLineWidth(e.target.value)}
-                style={{margin: '0 10px'}}
+                onChange={handleLineWidthChange}
+                style={{ margin: '0 10px' }}
                 id="line-width"
                 type="range"
-                defaultValue={1}
+                defaultValue={toolState.tool?.lineWidth || 1} // Устанавливаем значение по умолчанию
                 min={1}
-                max={50} // Лимит толщины линии от 1 до 50 пикселей
+                max={50}
             />
-            <span style={{marginLeft: '10px'}}> {toolState.tool?.lineWidth || 1}px </span> {/* Показываем текущую толщину линии */}
+            <span style={{ marginLeft: '10px' }}>
+                {toolState.tool?.lineWidth || 1}px {/* Отображение текущего значения из состояния инструмента */}
+            </span>
         </div>
     );
 };
