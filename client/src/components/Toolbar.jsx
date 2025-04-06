@@ -10,10 +10,14 @@ import Eraser from "../tools/Eraser";
 
 const Toolbar = () => {
 
-    const changeColor = e => {
-        toolState.setStrokeColor(e.target.value)
-        toolState.setFillColor(e.target.value)
-    }
+    const changeColor = (e) => {
+        // Изменяем локальный цвет только для текущего инструмента
+        if (toolState.tool) {
+            toolState.tool.fillColor = e.target.value;
+            toolState.tool.strokeColor = e.target.value;
+        }
+    };
+    
 
     const download = () => {
         const dataUrl = canvasState.canvas.toDataURL()
