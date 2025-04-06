@@ -49,6 +49,28 @@
   }
 }
 
+.toolbar__btn:active {
+  animation: buttonPress 0.2s ease-out; /* Активируем анимацию при нажатии */
+}
+
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); } /* Эффект сжатия */
+  100% { transform: scale(1); }
+}
+
+.toolbar__btn:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* Добавление объёмной тени */
+  transition: all 0.2s ease;
+}
+
+.toolbar__btn:hover {
+  background-color: #ffd700; /* Золотистый цвет фона */
+  background-size: cover; /* Обеспечение сохранения размеров фона */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
 
 .setting-bar {
   font-family: "Comic Sans MS", "Comic Sans", cursive;
