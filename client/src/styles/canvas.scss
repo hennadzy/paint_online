@@ -17,6 +17,61 @@ canvas {
   touch-action: none;
 }
 
+button {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  background: linear-gradient(135deg, #ffcc00, #ff6699); /* Градиентный фон */
+  border: none; /* Убираем стандартные границы */
+  border-radius: 20px; /* Закругленные углы */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  color: white; /* Цвет текста */
+  font-size: 18px; /* Размер шрифта */
+  padding: 10px 20px; /* Внутренние отступы */
+  cursor: pointer; /* Указатель мыши для интерактивности */
+  transition: all 0.3s ease; /* Плавность переходов */
+}
+
+button:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Более заметная тень */
+}
+
+button:active {
+  transform: scale(0.9); /* Сжатие при нажатии */
+}
+
+.modal-content {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
+  background: #fff8e1; /* Светлый фон */
+  border-radius: 15px; /* Округлые углы */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Тень для объема */
+  padding: 20px; /* Внутренние отступы */
+}
+
+.modal-header {
+  font-size: 20px;
+  color: #ff6699; /* Яркий акцент цвета */
+  border-bottom: 2px solid #ffcc00; /* Цветная граница */
+  display: flex;
+  justify-content: center;
+}
+
+.modal-footer button {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  background: #ffcc00; /* Яркий фон кнопки */
+  color: #333; /* Цвет текста */
+  border-radius: 10px; /* Округление углов */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  transition: all 0.3s ease;
+}
+
+.modal-footer button:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  background: #ff6699; /* Смена цвета кнопки */
+}
+
+
+
+
 @media only screen and (max-width: 768px) {
   canvas {
     width: 100%; /* Холст занимает всю доступную ширину */
