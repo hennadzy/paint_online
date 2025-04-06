@@ -21,7 +21,6 @@ const SettingBar = () => {
             />
             <span style={{ marginLeft: '10px' }}>
                 {toolState.tool?.lineWidth || 1}px {/* Отображение текущего значения из состояния инструмента */}
-                {         console.log (toolState.tool.lineWidth)}
             </span>
         </div>
     );
