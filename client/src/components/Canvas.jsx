@@ -22,14 +22,14 @@ const Canvas = observer(() => {
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
-    const aspectRatio = 600 / 600; // Пропорции холста: ширина/высота
+    const aspectRatio = 550 / 550; // Пропорции холста: ширина/высота
 
     if (window.innerWidth < 768) { // Мобильные устройства
         canvas.width = window.innerWidth; // Полная ширина экрана
         canvas.height = window.innerWidth / aspectRatio; // Высота вычисляется пропорционально
     } else {
-        canvas.width = 600; // Стандартная ширина для десктопа
-        canvas.height = 600; // Стандартная высота для десктопа
+        canvas.width = 550; // Стандартная ширина для десктопа
+        canvas.height = 550; // Стандартная высота для десктопа
     }
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
