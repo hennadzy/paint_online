@@ -1,4 +1,5 @@
 import Tool from "./Tool";
+import canvasState from "../store/canvasState";
 
 export default class Line extends Tool {
   constructor(canvas, socket, id, username) {

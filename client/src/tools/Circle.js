@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import toolState from "../store/toolState";
+import canvasState from "../store/canvasState";
 
 export default class Circle extends Tool {
   constructor(canvas, socket, id, username) {

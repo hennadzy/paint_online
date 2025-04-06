@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import toolState from "../store/toolState"; // если у вас есть глобальное состояние для цвета
+import canvasState from "../store/canvasState";
 
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
