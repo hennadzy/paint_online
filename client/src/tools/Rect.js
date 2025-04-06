@@ -27,15 +27,14 @@ export default class Rect extends Tool {
   }
 
   listen() {
-    // Обработчики событий для мыши
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-    // Обработчики сенсорных событий с сохранёнными привязанными функциями
     this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
     this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
     this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
-  }
+}
+
 
   mouseDownHandler(e) {
     this.mouseDown = true;

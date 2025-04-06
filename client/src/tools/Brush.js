@@ -3,6 +3,9 @@ import Tool from "./Tool";
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
+    this._touchStartHandler = this.touchStartHandler.bind(this);
+    this._touchMoveHandler = this.touchMoveHandler.bind(this);
+    this._touchEndHandler = this.touchEndHandler.bind(this);
     this.mouseDown = false;
     this.destroyEvents();
     this.listen();
@@ -12,10 +15,11 @@ export default class Brush extends Tool {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
-  }
+    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+}
+
 
   mouseDownHandler(e) {
     this.mouseDown = true;

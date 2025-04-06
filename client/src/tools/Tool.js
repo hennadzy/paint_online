@@ -23,12 +23,11 @@ export default class Tool {
     draw(x, y) {}
 
     destroyEvents() {
-        console.log ("Удаление обработчиков")
         this.canvas.onmousemove = null;
         this.canvas.onmousedown = null;
         this.canvas.onmouseup = null;
-        this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-        this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-        this.canvas.removeEventListener("touchend", this.touchEndHandler);
+        this.canvas.removeEventListener("touchstart", this._touchStartHandler);
+        this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
+        this.canvas.removeEventListener("touchend", this._touchEndHandler);
     }
 }
