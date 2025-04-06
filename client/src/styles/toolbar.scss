@@ -1,6 +1,7 @@
 @import "./variables";
 
 .toolbar {
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
   width: 100%; /* Ширина тулбара равна ширине окна */
   height: $toolbar-height;
   background-color: #67676759;
