@@ -17,15 +17,26 @@ app.ws('/', (ws, req) => {
     ws.on('message', (msg) => {
         msg = JSON.parse(msg);
         switch (msg.method) {
-            case "connection":
-                connectionHandler(ws, msg);
+            case "undo":
+                broadcastUndo(ws, msg);
                 break;
             case "draw":
-                broadcastConnection(ws, msg);
+                broadcastDraw(ws, msg);
+                break;
+            case "connection":
+                connectionHandler(ws, msg);
                 break;
         }
     });
 });
+
+const broadcastUndo = (ws, msg) => {
+    aWss.clients.forEach(client => {
+        if (client.id === msg.id && client.username !== ws.username) {
+            client.send(JSON.stringify(msg));
+        }
+    });
+};
 
 app.post('/image', (req, res) => {
     try {
