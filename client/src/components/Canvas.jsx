@@ -90,6 +90,7 @@ const Canvas = observer(() => {
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
+    if (msg.username === canvasState.username) return;
 
     // Используем только цвет из WebSocket для отрисовки фигур, но не для изменения инструмента
     switch (figure.type) {
