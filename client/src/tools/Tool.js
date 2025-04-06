@@ -18,12 +18,10 @@ export default class Tool {
     set lineWidth(width) {
         this.ctx.lineWidth = width;
     }
-
-    // добавляем пустой метод-заглушку
     draw(x, y) {}
 
     destroyEvents() {
-        console.log("Удаление обработчиков...");
+
         this.canvas.onmousemove = null;
         this.canvas.onmousedown = null;
         this.canvas.onmouseup = null;

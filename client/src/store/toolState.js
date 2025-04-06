@@ -11,11 +11,11 @@ class ToolState {
             this.tool.restorePreviousColors();
           }
         if (this.tool && this.tool.destroyEvents) {
-            this.tool.destroyEvents(); // Удаляем обработчики старого инструмента
+            this.tool.destroyEvents(); 
         }
         this.tool = tool;
         if (this.tool.listen) {
-            this.tool.listen(); // Назначаем новые обработчики
+            this.tool.listen(); 
         }
     }
     
