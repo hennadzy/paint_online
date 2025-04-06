@@ -90,30 +90,33 @@ const Canvas = observer(() => {
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
+
+    // Используем только цвет из WebSocket для отрисовки фигур, но не для изменения инструмента
     switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
-      case "rect":
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.lineWidth, figure.strokeStyle);
-        break;
-      case "circle":
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.color, figure.lineWidth, figure.strokeStyle);
-        break;
-      case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
-      case "line":
-        Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
-        break;
-      case "finish":
-        ctx.beginPath();
-        break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-        break;
+        case "brush":
+            Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+            break;
+        case "rect":
+            Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
+            break;
+        case "circle":
+            Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
+            break;
+        case "eraser":
+            Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, "#FFFFFF", figure.isStart); // Ластик всегда белый
+            break;
+        case "line":
+            Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
+            break;
+        case "finish":
+            ctx.beginPath();
+            break;
+        default:
+            console.warn("Неизвестный тип фигуры:", figure.type);
+            break;
     }
-  };
+};
+
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
