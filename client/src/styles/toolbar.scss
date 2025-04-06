@@ -61,6 +61,66 @@
   top:$toolbar-height;
 }
 
+
+#line-width {
+  -webkit-appearance: none; /* Убираем стандартный стиль браузера */
+  appearance: none;
+  width: 100%; /* Длина ползунка */
+  height: 10px; /* Высота трека */
+  background: linear-gradient(to right, #ffcc00, #ff6699); /* Цветовая градиентная заливка */
+  border-radius: 10px; /* Округление краев */
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Тень для мультяшности */
+}
+
+#line-width::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #ff6699; /* Цвет ползунка */
+  border: 3px solid #fff; /* Белая окантовка */
+  border-radius: 50%; /* Круглый ползунок */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Тень для объема */
+  transition: transform 0.2s ease;
+}
+
+#line-width::-webkit-slider-thumb:hover {
+  transform: scale(1.2); /* Увеличение при наведении для мультяшного эффекта */
+}
+
+#line-width::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ff6699;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+#line-width::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+#line-width::-webkit-slider-thumb:active {
+  animation: bounce 0.3s ease;
+}
+
+
+
+
+
+
+
+
 @media only screen and (max-width: 768px) {
   // .toolbar {
   //   width: calc(100% + 20px); /* Тулбар длиннее холста на 20px */

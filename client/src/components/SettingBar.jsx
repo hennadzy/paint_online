@@ -1,5 +1,6 @@
 import React from 'react';
 import toolState from "../store/toolState";
+import '../styles/toolbar.scss'
 
 const SettingBar = () => {
     const handleLineWidthChange = (e) => {
