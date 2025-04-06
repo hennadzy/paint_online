@@ -36,20 +36,34 @@ class CanvasState {
     }
 
     undo() {
-        let ctx = this.canvas.getContext('2d')
+        let ctx = this.canvas.getContext('2d');
         if (this.undoList.length > 0) {
-            let dataUrl = this.undoList.pop()
-            this.redoList.push(this.canvas.toDataURL())
-            let img = new Image()
-            img.src = dataUrl
-            img.onload =  () => {
-                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            const lastAction = this.undoList.pop();
+            if (lastAction.username === this.username) {
+                this.redoList.push({
+                    username: this.username,
+                    data: this.canvas.toDataURL()
+                });
+                let img = new Image();
+                img.src = lastAction.data;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+    
+                    // Отправка изменений через WebSocket
+                    if (this.socket) {
+                        this.socket.send(JSON.stringify({
+                            method: "undo",
+                            id: this.sessionid,
+                            username: this.username,
+                            data: lastAction.data,
+                        }));
+                    }
+                };
             }
-        } else {
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.heigth)
         }
     }
+    
 
     redo() {
         let ctx = this.canvas.getContext('2d')

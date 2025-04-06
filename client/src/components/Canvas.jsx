@@ -70,6 +70,17 @@ const Canvas = observer(() => {
         }
         if (msg.username === canvasState.username) return;
         switch (msg.method) {
+          case "undo":
+            if (msg.username !== canvasState.username) { // Применяем откат только для чужих изменений
+                let ctx = canvasState.canvas.getContext('2d');
+                let img = new Image();
+                img.src = msg.data;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvasState.canvas.width, canvasState.canvas.height);
+                    ctx.drawImage(img, 0, 0, canvasState.canvas.width, canvasState.canvas.height);
+                };
+            }
+            break;
           case "draw":
             drawHandler(msg);
             break;
