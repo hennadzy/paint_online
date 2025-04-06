@@ -38,13 +38,11 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-    // Не создаем Brush без сокета – создаем его только когда введут имя
     toolState.setTool(new Brush(canvasRef.current, null, params.id));
   }, [params.id]);
 
   useEffect(() => {
     if (canvasState.username) {
-      // Если уже есть инструмент, удаляем его обработчики, чтобы не оставалось дублирования
       if (toolState.tool && toolState.tool.destroyEvents) {
         toolState.tool.destroyEvents();
       }
@@ -52,10 +50,7 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       toolState.setTool(new Brush(canvasRef.current, socket, params.id))
-
-
       socket.onopen = () => {
-        console.log("Подключение установлено");
         socket.send(
           JSON.stringify({
             id: params.id,
@@ -67,19 +62,10 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-
-        console.log("msg.username =", msg.username);
-        console.log("canvasState.username =", canvasState.username);
-
-        // Проверяем наличие username, иначе игнорируем сообщение
         if (!msg.username) {
-          console.warn("Получено сообщение без username, игнорируем:", msg);
           return;
         }
-
-        // Исключаем собственные сообщения (echo)
         if (msg.username === canvasState.username) return;
-
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
@@ -101,8 +87,6 @@ const Canvas = observer(() => {
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
-    // console.log("Полученные данные:", figure);
-    // if (msg.username === canvasState.username) return;
     switch (figure.type) {
       case "brush":
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
@@ -120,7 +104,7 @@ const Canvas = observer(() => {
         Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
         break;
       case "finish":
-        ctx.beginPath(); // Завершаем текущий путь
+        ctx.beginPath();
         break;
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
