@@ -7,6 +7,9 @@ class ToolState {
     }
 
     setTool(tool) {
+        if (this.tool && this.tool.restorePreviousColors) {
+            this.tool.restorePreviousColors();
+          }
         if (this.tool && this.tool.destroyEvents) {
             this.tool.destroyEvents(); // Удаляем обработчики старого инструмента
         }
