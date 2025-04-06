@@ -23,8 +23,6 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-
-    // Сохраняем текущее состояние в undoList перед изменениями
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const { x, y } = this.getCoordinates(e);
@@ -39,6 +37,8 @@ export default class Brush extends Tool {
       this.sendDrawData(x, y, false);
     }
   }
+
+
 
   mouseUpHandler() {
     this.mouseDown = false;
@@ -125,21 +125,18 @@ export default class Brush extends Tool {
       ctx.stroke();
     }
   }
-
-  // Получение координат мыши с учётом масштабирования
   getCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
+    const ratio = window.devicePixelRatio || 1; // Учитываем плотность пикселей
     return {
       x: (e.clientX - rect.left) * ratio,
       y: (e.clientY - rect.top) * ratio,
     };
   }
 
-  // Получение координат для сенсорных событий с учётом масштабирования
   getTouchCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
+    const ratio = window.devicePixelRatio || 1; // Учитываем плотность пикселей
     return {
       x: (e.touches[0].clientX - rect.left) * ratio,
       y: (e.touches[0].clientY - rect.top) * ratio,

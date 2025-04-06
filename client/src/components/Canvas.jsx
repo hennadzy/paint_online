@@ -23,31 +23,22 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-
-    // Вычисляем соотношение пикселей устройства
     const ratio = window.devicePixelRatio || 1;
 
-    if (window.innerWidth < 768) { // Мобильные устройства
-        canvas.style.width = `${window.innerWidth}px`; // Устанавливаем видимую ширину
-        const aspectRatio = 600 / 400; // Пропорции холста
-        canvas.style.height = `${window.innerWidth / aspectRatio}px`; // Высота пропорционально ширине
-
-        // Задаем реальную область рисования
+    if (window.innerWidth < 768) {
+        canvas.style.width = `${window.innerWidth}px`;
+        const aspectRatio = 600 / 400;
+        canvas.style.height = `${window.innerWidth / aspectRatio}px`;
         canvas.width = window.innerWidth * ratio;
         canvas.height = (window.innerWidth / aspectRatio) * ratio;
     } else {
-        canvas.style.width = "600px"; // Ширина для десктопов
-        canvas.style.height = "400px"; // Высота для десктопов
-
-        // Задаем реальную область рисования
+        canvas.style.width = "600px";
+        canvas.style.height = "400px";
         canvas.width = 600 * ratio;
         canvas.height = 400 * ratio;
     }
 
-    // Применяем масштабирование контекста
     ctx.scale(ratio, ratio);
-
-    // Устанавливаем белый фон
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width / ratio, canvas.height / ratio);
 };
