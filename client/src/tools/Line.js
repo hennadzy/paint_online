@@ -112,6 +112,7 @@ export default class Line extends Tool {
         JSON.stringify({
           method: "draw",
           id: this.id,
+          username: this.username,
           figure: {
             type: "line",
             x: this.startX,

@@ -119,6 +119,7 @@ export default class Circle extends Tool {
         JSON.stringify({
           method: "draw",
           id: this.id,
+          username: this.username,
           figure: {
             type: "circle",
             x: this.startX,

@@ -95,6 +95,7 @@ export default class Brush extends Tool {
             JSON.stringify({
                 method: "draw",
                 id: this.id,
+                username: this.username,
                 figure: {
                     type: "brush",
                     x,
