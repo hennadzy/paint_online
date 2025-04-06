@@ -1,23 +1,36 @@
-import {makeAutoObservable} from "mobx";
+// toolState.js
+import { makeAutoObservable } from "mobx";
 
 class ToolState {
-    tool = null
+    tool = null;
     constructor() {
-        makeAutoObservable(this)
+        makeAutoObservable(this);
     }
 
-    setTool(tool) {
-        this.tool = tool
+    setTool(newTool) {
+        if (this.tool && this.tool.destroyEvents) {
+            this.tool.destroyEvents();
+        }
+        this.tool = newTool;
     }
+    
     setFillColor(color) {
-        this.tool.fillColor = color
+        if (this.tool) {
+            this.tool.fillColor = color;
+        }
     }
+    
     setStrokeColor(color) {
-        this.tool.strokeColor = color
+        if (this.tool) {
+            this.tool.strokeColor = color;
+        }
     }
+    
     setLineWidth(width) {
-        this.tool.lineWidth = width
+        if (this.tool) {
+            this.tool.lineWidth = width;
+        }
     }
 }
 
-export default new ToolState()
+export default new ToolState();
