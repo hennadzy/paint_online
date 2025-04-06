@@ -1,34 +1,40 @@
 import Tool from "./Tool";
+import toolState from "../store/toolState"; // если у вас есть глобальное состояние для цвета
 
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
+    // Если у вас отдельно задают цвет заливки, его можно сохранить сюда:
+    this.fillColor = toolState.fillColor || this.ctx.strokeStyle; 
     this.mouseDown = false;
-    // Удаляем старые обработчики (важно при переключении инструментов)
+    // Привяжем функции для сенсорных событий, чтобы потом корректно их удалить
+    this._touchStartHandler = this.touchStartHandler.bind(this);
+    this._touchMoveHandler = this.touchMoveHandler.bind(this);
+    this._touchEndHandler = this.touchEndHandler.bind(this);
     this.destroyEvents();
     this.listen();
   }
 
   destroyEvents() {
-    // Удаляем обработчики мыши
+    // Убираем обычные обработчики
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
-    // Удаляем обработчики сенсорных событий
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this.touchEndHandler);
+    // Убираем обработчики сенсорных событий (используем сохранённые ссылки)
+    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this._touchEndHandler);
   }
 
   listen() {
-    // Назначение обработчиков мыши
+    // Обработчики событий для мыши
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-    // Назначение обработчиков для сенсорных событий
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
+    // Обработчики сенсорных событий с сохранёнными привязанными функциями
+    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
   }
 
   mouseDownHandler(e) {
@@ -47,7 +53,7 @@ export default class Rect extends Tool {
       const currentY = e.clientY - rectArea.top;
       this.width = currentX - this.startX;
       this.height = currentY - this.startY;
-      // Отрисовываем превью прямоугольника без остаточной линии кисти
+      // Выполняем предварительную отрисовку прямоугольника
       this.previewRect(this.startX, this.startY, this.width, this.height);
     }
   }
@@ -84,36 +90,42 @@ export default class Rect extends Tool {
     this.sendRect();
   }
 
+  // Предварительный просмотр: восстанавливаем сохранённое изображение и рисуем прямоугольник
   previewRect(x, y, width, height) {
     const img = new Image();
     img.src = this.saved;
     img.onload = () => {
-      // Очищаем холст и восстанавливаем сохранённое изображение для полного контроля над отрисовкой
+      // Очищаем холст полностью и восстанавливаем сохранённое изображение
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
-      // Отрисовываем прямоугольное превью
+      // Отрисовываем прямоугольник
       this.ctx.beginPath();
       this.ctx.rect(x, y, width, height);
-      // Если выбранный цвет заливки не установлен, используем цвет обводки
-      const fillColor = this.ctx.fillStyle || this.ctx.strokeStyle;
+      // Используем выбранный цвет заливки (если он установлен)
+      const fillColor = this.fillColor || this.ctx.strokeStyle;
       this.ctx.fillStyle = fillColor;
       this.ctx.fill();
       this.ctx.stroke();
     };
   }
 
+  // Отправка окончательных данных прямоугольника
   sendRect() {
-    // Финальная отрисовка прямоугольника на локальном холсте
+    // Финальные отрисовка локально – ставим окончательный прямоугольник и сбрасываем путь
     Rect.staticDraw(
       this.ctx,
       this.startX,
       this.startY,
       this.width,
       this.height,
-      this.ctx.fillStyle, // используем выбранный цвет заливки
+      this.fillColor, // именно выбранный цвет заливки
       this.ctx.lineWidth,
       this.ctx.strokeStyle
     );
+    // Немедленно сбрасываем текущий путь, чтобы не осталось предыдущей линии кисти
+    this.ctx.beginPath();
+
+    // Отправляем данные через WebSocket
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -124,18 +136,18 @@ export default class Rect extends Tool {
           y: this.startY,
           width: this.width,
           height: this.height,
-          fillStyle: this.ctx.fillStyle,
+          fillStyle: this.fillColor,
           lineWidth: this.ctx.lineWidth,
           strokeStyle: this.ctx.strokeStyle,
         },
       }));
-      // Отправляем сообщение о завершении отрисовки
+      // Сообщение о завершении отрисовки
       this.socket.send(JSON.stringify({ method: "draw", id: this.id, figure: { type: "finish" } }));
     }
   }
 
+  // Статическая функция для финальной отрисовки прямоугольника
   static staticDraw(ctx, x, y, width, height, fillStyle, lineWidth, strokeStyle) {
-    // Если цвет заливки не указан, подставляем цвет обводки
     ctx.fillStyle = fillStyle || strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
