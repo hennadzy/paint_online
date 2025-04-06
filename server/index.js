@@ -61,8 +61,8 @@ const broadcastConnection = (ws, msg) => {
     aWss.clients.forEach(client => {
         if (client.id === msg.id) {
             // Если в сообщении отсутствует username, подставляем сохранённое значение
-            if (!msg.username) {
-                msg.username = ws.username;
+            if (client.id === msg.id && client.username !== msg.username) {
+                client.send(JSON.stringify(msg));
             }
             client.send(JSON.stringify(msg));
         }
