@@ -59,6 +59,7 @@ mouseDownHandler(e) {
 
   touchStartHandler(e) {
     e.preventDefault();
+    canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();

@@ -54,6 +54,7 @@ export default class Eraser extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+      canvasState.pushToUndo(this.canvas.toDataURL());
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
@@ -82,6 +83,7 @@ export default class Eraser extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
+      canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();

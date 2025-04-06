@@ -33,6 +33,7 @@ export default class Circle extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+      canvasState.pushToUndo(this.canvas.toDataURL());
     const rectArea = this.canvas.getBoundingClientRect();
     this.startX = e.clientX - rectArea.left;
     this.startY = e.clientY - rectArea.top;
@@ -56,6 +57,7 @@ export default class Circle extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
+      canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rectArea = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rectArea.left;

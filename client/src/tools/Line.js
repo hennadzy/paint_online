@@ -36,6 +36,7 @@ export default class Line extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+      canvasState.pushToUndo(this.canvas.toDataURL());
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.clientX - rect.left;
     this.startY = e.clientY - rect.top;
@@ -58,6 +59,7 @@ export default class Line extends Tool {
 
   touchStartHandler(e) {
     e.preventDefault();
+      canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rect.left;
