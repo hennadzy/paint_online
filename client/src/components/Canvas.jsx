@@ -22,27 +22,29 @@ const Canvas = observer(() => {
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
+    const aspectRatio = 600 / 400; // Пропорции холста: ширина/высота
+
     if (window.innerWidth < 768) { // Мобильные устройства
-      canvas.width = window.innerWidth - 20; // Ширина холста чуть меньше ширины экрана
-      canvas.height = window.innerHeight - 100; // Высота экрана минус тулбар и отступы
+        canvas.width = window.innerWidth; // Полная ширина экрана
+        canvas.height = window.innerWidth / aspectRatio; // Высота вычисляется пропорционально
     } else {
-      canvas.width = 600; // Стандартная ширина для десктопа
-      canvas.height = 400; // Стандартная высота для десктопа
+        canvas.width = 600; // Стандартная ширина для десктопа
+        canvas.height = 400; // Стандартная высота для десктопа
     }
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height); // Заполняем холст белым фоном
-  };
+};
 
   useEffect(() => {
-    adjustCanvasSize(); // Устанавливаем начальные размеры холста
-    window.addEventListener("resize", adjustCanvasSize); // Обработчик изменения размеров окна
+    adjustCanvasSize(); // Устанавливаем размеры при загрузке компонента
+    window.addEventListener("resize", adjustCanvasSize); // Реакция на изменение размера окна
 
     return () => {
-      window.removeEventListener("resize", adjustCanvasSize); // Удаляем обработчик при размонтировании
+        window.removeEventListener("resize", adjustCanvasSize); // Удаляем обработчик при размонтировании
     };
-  }, []);
+}, []);
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
