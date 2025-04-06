@@ -20,6 +20,30 @@ const Canvas = observer(() => {
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
+  const adjustCanvasSize = () => {
+    const canvas = canvasRef.current;
+    if (window.innerWidth < 768) { // Мобильные устройства
+      canvas.width = window.innerWidth - 20; // Ширина холста чуть меньше ширины экрана
+      canvas.height = window.innerHeight - 100; // Высота экрана минус тулбар и отступы
+    } else {
+      canvas.width = 600; // Стандартная ширина для десктопа
+      canvas.height = 400; // Стандартная высота для десктопа
+    }
+    canvasState.setCanvas(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height); // Заполняем холст белым фоном
+  };
+
+  useEffect(() => {
+    adjustCanvasSize(); // Устанавливаем начальные размеры холста
+    window.addEventListener("resize", adjustCanvasSize); // Обработчик изменения размеров окна
+
+    return () => {
+      window.removeEventListener("resize", adjustCanvasSize); // Удаляем обработчик при размонтировании
+    };
+  }, []);
+
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
@@ -49,7 +73,6 @@ const Canvas = observer(() => {
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
-      // toolState.setTool(new Brush(canvasRef.current, socket, params.id))
       toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid));
       toolState.tool.listen();
 
@@ -92,32 +115,30 @@ const Canvas = observer(() => {
     const ctx = canvasRef.current.getContext("2d");
     if (msg.username === canvasState.username) return;
 
-    // Используем только цвет из WebSocket для отрисовки фигур, но не для изменения инструмента
     switch (figure.type) {
-        case "brush":
-            Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-            break;
-        case "rect":
-            Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
-            break;
-        case "circle":
-            Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
-            break;
-        case "eraser":
-            Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, "#FFFFFF", figure.isStart); // Ластик всегда белый
-            break;
-        case "line":
-            Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
-            break;
-        case "finish":
-            ctx.beginPath();
-            break;
-        default:
-            console.warn("Неизвестный тип фигуры:", figure.type);
-            break;
+      case "brush":
+        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        break;
+      case "rect":
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
+        break;
+      case "circle":
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
+        break;
+      case "eraser":
+        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, "#FFFFFF", figure.isStart);
+        break;
+      case "line":
+        Line.staticDraw(ctx, figure.x, figure.y, figure.x2, figure.y2, figure.lineWidth, figure.strokeStyle);
+        break;
+      case "finish":
+        ctx.beginPath();
+        break;
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+        break;
     }
-};
-
+  };
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
@@ -130,10 +151,10 @@ const Canvas = observer(() => {
   };
 
   const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasRef.current.toDataURL())
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}, {img: canvasRef.current.toDataURL()}`)
-      .then(response => console.log(response.data))
-  }
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, { img: canvasRef.current.toDataURL() })
+      .then(response => console.log(response.data));
+  };
 
   const handleCreateRoomClick = () => {
     setModal(true);
@@ -156,12 +177,7 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={400}
-        style={{ border: '1px solid black' }}
-      />
+      <canvas ref={canvasRef} style={{ border: '1px solid black' }} />
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату

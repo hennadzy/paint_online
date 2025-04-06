@@ -16,3 +16,10 @@ canvas {
   margin-bottom: 30px;
   touch-action: none;
 }
+
+@media only screen and (max-width: 768px) {
+  canvas {
+    width: 100%; /* Холст занимает всю доступную ширину */
+    height: auto; /* Высота сохраняет пропорции */
+  }
+}
