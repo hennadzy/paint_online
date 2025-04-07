@@ -8,13 +8,25 @@
   align-items: center;
 }
 
+
 canvas {
+  cursor: crosshair; /* Базовый стиль курсора для холста */
   border: 1px solid black;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   background-color: white;
   margin-top: 80px;
   margin-bottom: 10px;
   touch-action: none;
+}
+
+/* Специальный курсор для кисти */
+canvas.brush-cursor {
+  cursor: url('../assets/cursors/brush.png'), auto;
+}
+
+/* Специальный курсор для ластика */
+canvas.eraser-cursor {
+  cursor: url('../assets/cursors/eraser.png'), auto;
 }
 
 button {

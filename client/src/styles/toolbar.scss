@@ -49,6 +49,19 @@
   }
 }
 
+canvas {
+  cursor: crosshair; /* Базовый курсор для холста */
+}
+
+canvas.brush-cursor {
+  cursor: url('../assets/cursors/brush-cursor.png'), auto; /* Курсор кисти */
+}
+
+canvas.eraser-cursor {
+  cursor: url('../assets/cursors/eraser-cursor.png'), auto; /* Курсор ластика */
+}
+
+
 .toolbar__btn:active {
   animation: buttonPress 0.2s ease-out; /* Активируем анимацию при нажатии */
 }

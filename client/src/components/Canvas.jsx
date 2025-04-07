@@ -20,6 +20,17 @@ const Canvas = observer(() => {
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
+  const updateCursor = (tool) => {
+    const canvas = canvasRef.current;
+    canvas.classList.remove("brush-cursor", "eraser-cursor");
+
+    if (tool === "brush") {
+        canvas.classList.add("brush-cursor");
+    } else if (tool === "eraser") {
+        canvas.classList.add("eraser-cursor");
+    }
+};
+
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const aspectRatio = 600 / 400; // Пропорции холста: ширина/высота
@@ -65,6 +76,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
@@ -76,6 +88,7 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid));
+      updateCursor("brush");
       toolState.tool.listen();
 
       socket.onopen = () => {
