@@ -39,6 +39,37 @@ button:active {
   transform: scale(0.9); /* Сжатие при нажатии */
 }
 
+.btn-close {
+  position: absolute;
+  top: 10px; /* Расположение сверху */
+  right: 10px; /* Расположение справа */
+  width: 30px; /* Размер кнопки */
+  height: 30px; /* Размер кнопки */
+  background: transparent; /* Без фона */
+  border: none; /* Убираем стандартные границы */
+  cursor: pointer; /* Указатель мыши */
+}
+
+.btn-close::before, .btn-close::after {
+  content: '';
+  position: absolute;
+  width: 20px; /* Длина линии */
+  height: 3px; /* Толщина линии */
+  background-color: #ff6699; /* Цвет линий */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg); /* Первая линия */
+}
+
+.btn-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg); /* Вторая линия */
+}
+
+.btn-close:hover::before, .btn-close:hover::after {
+  background-color: #ffcc00; /* Цвет линий меняется на золотистый */
+  transition: background-color 0.3s ease;
+}
+
 .modal-content {
   font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
   background: #fff8e1; /* Светлый фон */
