@@ -18,6 +18,21 @@ const Toolbar = () => {
         }
     };
     
+    const changeTool = (tool, cursorClass) => {
+        toolState.setTool(tool);
+        
+        const canvas = canvasState.canvas;
+        if (canvas) {
+            canvas.classList.remove(
+                "brush-cursor",
+                "eraser-cursor",
+                "rect-cursor",
+                "circle-cursor",
+                "line-cursor"
+            );
+            canvas.classList.add(cursorClass);
+        }
+    };
 
     const download = () => {
         const dataUrl = canvasState.canvas.toDataURL()
@@ -32,10 +47,10 @@ const Toolbar = () => {
 
     return (
         <div className="toolbar">
-            <button className="toolbar__btn brush" onClick={() => toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
+            <button className="toolbar__btn brush" onClick={() => changeTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid), "brush-cursor")}/> 
             <button className="toolbar__btn rect" onClick={() => toolState.setTool(new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
             <button className="toolbar__btn circle" onClick={() => toolState.setTool(new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
-            <button className="toolbar__btn eraser" onClick={() => toolState.setTool(new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
+            <button className="toolbar__btn eraser" onClick={() => changeTool(new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid), "eraser-cursor")}/>
             <button className="toolbar__btn line" onClick={() => toolState.setTool(new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
             <input onChange={e => changeColor(e)} style={{marginLeft:10}} type="color"/>
             <button className="toolbar__btn undo" onClick={() => canvasState.undo()}/>
