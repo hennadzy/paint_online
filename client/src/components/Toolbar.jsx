@@ -30,7 +30,9 @@ const Toolbar = () => {
                 "circle-cursor",
                 "line-cursor"
             );
+            if(cursorClass){
             canvas.classList.add(cursorClass);
+            }
         }
     };
 
@@ -48,10 +50,10 @@ const Toolbar = () => {
     return (
         <div className="toolbar">
             <button className="toolbar__btn brush" onClick={() => changeTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid), "brush-cursor")}/> 
-            <button className="toolbar__btn rect" onClick={() => toolState.setTool(new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
-            <button className="toolbar__btn circle" onClick={() => toolState.setTool(new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
+            <button className="toolbar__btn rect" onClick={() => changeTool(new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid), "rect-cursor")}/>
+            <button className="toolbar__btn circle" onClick={() => changeTool(new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid), "circle-cursor")}/>
             <button className="toolbar__btn eraser" onClick={() => changeTool(new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid), "eraser-cursor")}/>
-            <button className="toolbar__btn line" onClick={() => toolState.setTool(new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid))}/>
+            <button className="toolbar__btn line" onClick={() => changeTool(new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid), "line-cursor")}/>
             <input onChange={e => changeColor(e)} style={{marginLeft:10}} type="color"/>
             <button className="toolbar__btn undo" onClick={() => canvasState.undo()}/>
             <button className="toolbar__btn redo" onClick={() => canvasState.redo()}/>

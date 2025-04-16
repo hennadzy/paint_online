@@ -19,6 +19,18 @@ canvas {
   touch-action: none;
 }
 
+canvas.rect-cursor {
+  cursor: crosshair; /*  или свой курсор для rect */
+}
+
+canvas.circle-cursor {
+  cursor: crosshair; /*  или свой курсор для circle */
+}
+
+canvas.line-cursor {
+  cursor: crosshair; /*  или свой курсор для line */
+}
+
 canvas.brush-cursor {
   cursor: url('../assets/img/brush.png') 0 25, auto; 
 }
