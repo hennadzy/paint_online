@@ -30,9 +30,7 @@ const Toolbar = () => {
                 "circle-cursor",
                 "line-cursor"
             );
-            if(cursorClass){
             canvas.classList.add(cursorClass);
-            }
         }
     };
 
