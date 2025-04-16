@@ -77,7 +77,7 @@ button:active {
   position: absolute;
   width: 20px; /* Длина линии */
   height: 3px; /* Толщина линии */
-  background-color: #ff6699; /* Цвет линий */
+  background-color: #ffcc00; /* Цвет линий */
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(45deg); /* Первая линия */
@@ -88,21 +88,21 @@ button:active {
 }
 
 .btn-close:hover::before, .btn-close:hover::after {
-  background-color: #ffcc00; /* Цвет линий меняется на золотистый */
+  background-color: #ff6699; /* Цвет линий меняется на золотистый */
   transition: background-color 0.3s ease;
 }
 
 .modal-content {
   font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
-  background: #67676759; 
+  background: #67676735; 
   border-radius: 10px; /* Округлые углы */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Тень для объема */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Тень для объема */
   padding: 20px; /* Внутренние отступы */
 }
 
 .modal-header {
   font-size: 15px;
-  color: #ff6699; /* Яркий акцент цвета */
+  color: #ffcc00; /* Яркий акцент цвета */
   display: flex;
   justify-content: center;
 }
