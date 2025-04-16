@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import toolState from "../store/toolState";
 import '../styles/toolbar.scss'
-import {observer} from "mobx-react-lite";
 
-const SettingBar = observer(() => {
-    const [lineWidth, setLineWidth] = useState(toolState.tool?.lineWidth || 1);
+const SettingBar = () => {
+    const [lineWidth, setLineWidth] = useState(toolState.tool?.lineWidth || 3); 
 
     useEffect(() => {
-        if (toolState.tool) {
-            setLineWidth(toolState.tool.lineWidth);
-        }
+        setLineWidth(toolState.tool?.lineWidth || 3);
     }, [toolState.tool]);
 
     const handleLineWidthChange = (e) => {
         const newLineWidth = parseInt(e.target.value, 10);
-        setLineWidth(newLineWidth);
-        toolState.setLineWidth(newLineWidth);
+        setLineWidth(newLineWidth); 
+        toolState.setLineWidth(newLineWidth); 
     };
 
     return (
@@ -26,14 +23,14 @@ const SettingBar = observer(() => {
                 style={{ margin: '0 10px' }}
                 id="line-width"
                 type="range"
-                value={lineWidth}
+                value={lineWidth} 
                 min={1}
                 max={50}
             />
             <span style={{ marginLeft: '10px' }}>
-                {lineWidth}px
+                {lineWidth}px 
             </span>
         </div>
     );
-});
+};
 export default SettingBar;
