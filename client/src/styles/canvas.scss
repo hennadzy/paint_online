@@ -20,15 +20,15 @@ canvas {
 }
 
 canvas.rect-cursor {
-  cursor: crosshair; /*  или свой курсор для rect */
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
 }
 
 canvas.circle-cursor {
-  cursor: crosshair; /*  или свой курсор для circle */
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
 }
 
 canvas.line-cursor {
-  cursor: crosshair; /*  или свой курсор для line */
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
 }
 
 canvas.brush-cursor {
