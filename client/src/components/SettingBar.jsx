@@ -16,12 +16,12 @@ const SettingBar = () => {
                 style={{ margin: '0 10px' }}
                 id="line-width"
                 type="range"
-                defaultValue={toolState.tool?.lineWidth || 3} // Устанавливаем значение по умолчанию
+                defaultValue={toolState.tool?.lineWidth || 1} // Устанавливаем значение по умолчанию
                 min={1}
                 max={50}
             />
             <span style={{ marginLeft: '10px' }}>
-                {toolState.tool?.lineWidth || 3}px {/* Отображение текущего значения из состояния инструмента */}
+                {toolState.tool?.lineWidth || 1}px {/* Отображение текущего значения из состояния инструмента */}
             </span>
         </div>
     );
