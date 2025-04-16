@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toolState from "../store/toolState";
 import '../styles/toolbar.scss'
+import {observer} from "mobx-react-lite";
 
 const SettingBar = observer(() => {
     const [lineWidth, setLineWidth] = useState(toolState.tool?.lineWidth || 1);
