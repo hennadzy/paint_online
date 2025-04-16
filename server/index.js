@@ -7,11 +7,10 @@ const PORT = process.env.PORT || 5000;
 const fs = require('fs');
 const path = require('path');
 
-// Настройка CORS с указанием origin
 app.use(cors({
-    origin: 'https://blog.paint-art.ru/' //  фронтенд домен
+    origin: 'https://paint-art.ru/' 
 }));
-app.use(express.json({ limit: '10mb' })); // Увеличение лимита для base64
+app.use(express.json({ limit: '10mb' })); 
 
 app.ws('/', (ws, req) => {
     ws.on('message', (msg) => {
@@ -51,7 +50,6 @@ app.get('/image', (req, res) => {
 app.listen(PORT, () => console.log(`server started on PORT ${PORT}`));
 
 const connectionHandler = (ws, msg) => {
-    // Сохраняем идентификатор и имя пользователя в объекте сокета
     ws.id = msg.id;
     ws.username = msg.username;
     broadcastConnection(ws, msg);
@@ -60,7 +58,6 @@ const connectionHandler = (ws, msg) => {
 const broadcastConnection = (ws, msg) => {
     aWss.clients.forEach(client => {
         if (client.id === msg.id) {
-            // Если в сообщении отсутствует username, подставляем сохранённое значение
             if (!msg.username) {
                 msg.username = ws.username;
             }
