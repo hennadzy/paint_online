@@ -23,9 +23,15 @@ class ToolState {
         }
 
         const toolName = tool.constructor.name.toLowerCase();
-        tool.lineWidth = this.lineWidths[toolName] || 3;
+        let lineWidth = this.lineWidths[toolName] || 3;
 
+        if (toolName === 'eraser') {
+            lineWidth = 10;
+        }
+
+        tool.lineWidth = lineWidth;
         this.tool = tool;
+
         if (this.tool.listen) {
             this.tool.listen();
         }
@@ -41,7 +47,7 @@ class ToolState {
         if (this.tool) {
             this.tool.lineWidth = lineWidth;
             const toolName = this.tool.constructor.name.toLowerCase();
-            this.lineWidths[toolName] = lineWidth;
+            this.lineWidths[toolName] = lineWidth; 
         }
     }
 }
