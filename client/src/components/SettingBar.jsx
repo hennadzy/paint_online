@@ -23,7 +23,7 @@ export const SettingBar = () => {
 
   return (
     <div className="setting-bar">
-      <label>Толщина линии:ъ</label>
+      <label>Толщина линии:</label>
       <input
         type="range"
         min={1}
