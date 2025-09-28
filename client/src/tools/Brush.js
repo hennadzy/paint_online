@@ -91,9 +91,8 @@ mouseDownHandler(e) {
 sendDrawData(x, y, isStart = false, isLocal = true) {
   const strokeStyle = this.ctx.strokeStyle;
   const lineWidth = this.lineWidth;
-
   if (isLocal) {
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart); // ✅ локальная отрисовка
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart); //локальная отрисовка
   }
 
   if (this.socket) {
