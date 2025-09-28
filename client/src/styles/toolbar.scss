@@ -1,8 +1,149 @@
 @import "./variables";
 
+.canvas {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;  /* Добавляем вертикальное расположение */
+  justify-content: center;
+  align-items: center;
+}
+
+
+canvas {
+  cursor: crosshair; /* Базовый стиль курсора для холста */
+  border: 1px solid black;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  background-color: white;
+  margin-top: 80px;
+  margin-bottom: 10px;
+  touch-action: none;
+}
+
+canvas.rect-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.circle-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.line-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.brush-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.eraser-cursor {
+  cursor: url('../assets/img/eraser.png') 0 25, auto; 
+}
+
+button {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  background: linear-gradient(135deg, #ffcc00, #ff6699); /* Градиентный фон */
+  border: none; /* Убираем стандартные границы */
+  border-radius: 10px; /* Закругленные углы */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  color: white; /* Цвет текста */
+  font-size: 18px; /* Размер шрифта */
+  padding: 5px 10px; /* Внутренние отступы */
+  cursor: pointer; /* Указатель мыши для интерактивности */
+  transition: all 0.3s ease; /* Плавность переходов */
+}
+
+button:hover {
+  transform: scale(1.05); /* Увеличение при наведении */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Более заметная тень */
+}
+
+button:active {
+  transform: scale(0.9); /* Сжатие при нажатии */
+}
+
+.btn-close {
+  position: absolute;
+  top: 10px; /* Расположение сверху */
+  right: 10px; /* Расположение справа */
+  width: 30px; /* Размер кнопки */
+  height: 30px; /* Размер кнопки */
+  background: transparent; /* Без фона */
+  border: none; /* Убираем стандартные границы */
+  cursor: pointer; /* Указатель мыши */
+}
+
+.btn-close::before, .btn-close::after {
+  content: '';
+  position: absolute;
+  width: 20px; /* Длина линии */
+  height: 3px; /* Толщина линии */
+  background-color: #ffcc00; /* Цвет линий */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg); /* Первая линия */
+}
+
+.btn-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg); /* Вторая линия */
+}
+
+.btn-close:hover::before, .btn-close:hover::after {
+  background-color: #ff6699; /* Цвет линий меняется на золотистый */
+  transition: background-color 0.3s ease;
+}
+
+.modal-content {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
+  background: #676767c3; 
+  border-radius: 10px; /* Округлые углы */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Тень для объема */
+  padding: 20px; /* Внутренние отступы */
+}
+
+.modal-header {
+  font-size: 15px;
+  color: #ffcc00; /* Яркий акцент цвета */
+  display: flex;
+  justify-content: center;
+}
+
+
+
+.modal-footer button {
+  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  background: #ffcc00; /* Яркий фон кнопки */
+  color: #333; /* Цвет текста */
+  border-radius: 10px; /* Округление углов */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  transition: all 0.3s ease;
+}
+
+.modal-footer button:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  background: #ff6699; /* Смена цвета кнопки */
+}
+
+
+
+
+@media only screen and (max-width: 768px) {
+  canvas {
+    width: 100%; /* Холст занимает всю доступную ширину */
+    height: auto; /* Высота сохраняет пропорции */
+  }
+}
+
+
+
+---
+File: /client/src/styles/toolbar.scss
+---
+
+@import "./variables";
+
 .toolbar {
   font-family: "Comic Sans MS", "Comic Sans", cursive;
-  width: 100%;
+  width: 100%; /* Ширина тулбара равна ширине окна */
   height: $toolbar-height;
   background-color: #67676759;
   display: flex;
@@ -10,6 +151,7 @@
   position: absolute;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
+
 
   &__btn {
     height: 25px;
@@ -20,7 +162,6 @@
     background-size: cover;
     margin-left: 10px;
   }
-
   .brush {
     background: url('../assets/img/brush.png') no-repeat center center;
   }
@@ -47,19 +188,43 @@
     background: url('../assets/img/save.png') no-repeat center center;
     margin-right: 10px;
   }
-
-  &__btn:active {
-    animation: buttonPress 0.2s ease-out;
-  }
-
-  &__btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-    background-color: #ffd700;
-    background-size: cover;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-  }
 }
+
+canvas {
+  cursor: crosshair; /* Базовый курсор для холста */
+}
+
+canvas.brush-cursor {
+  cursor: url('../assets/img/brush.png'), auto; /* Курсор кисти */
+}
+
+canvas.eraser-cursor {
+  cursor: url('../assets/img/eraser.png'), auto; /* Курсор ластика */
+}
+
+
+.toolbar__btn:active {
+  animation: buttonPress 0.2s ease-out; /* Активируем анимацию при нажатии */
+}
+
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); } /* Эффект сжатия */
+  100% { transform: scale(1); }
+}
+
+.toolbar__btn:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* Добавление объёмной тени */
+  transition: all 0.2s ease;
+}
+
+.toolbar__btn:hover {
+  background-color: #ffd700; /* Золотистый цвет фона */
+  background-size: cover; /* Обеспечение сохранения размеров фона */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
 
 .setting-bar {
   font-family: "Comic Sans MS", "Comic Sans", cursive;
@@ -70,69 +235,50 @@
   position: absolute;
   width: 100%;
   box-shadow: 0 4px 5px gray;
-  top: $toolbar-height;
-  gap: 10px;
-  padding: 0 20px;
-  color: #fff;
-  font-size: 14px;
-
-  label {
-    white-space: nowrap;
-  }
+  top:$toolbar-height;
 }
 
-.line-width-slider {
-  -webkit-appearance: none;
+
+#line-width {
+  -webkit-appearance: none; /* Убираем стандартный стиль браузера */
   appearance: none;
-  position: relative;
-  z-index: 1;
-  width: 200px;
-  height: 20px;
-  background: linear-gradient(to right, #ffcc00, #ff6699);
-  border-radius: 10px;
+  width: 50%; /* Длина ползунка */
+  height: 10px; /* Высота трека */
+  background: linear-gradient(to right, #ffcc00, #ff6699); /* Цветовая градиентная заливка */
+  border-radius: 10px; /* Округление краев */
   outline: none;
   cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  pointer-events: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Тень для мультяшности */
 }
 
-.line-width-slider::-webkit-slider-thumb {
+#line-width::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  background: #ff6699; /* Цвет ползунка */
+  border: 3px solid #fff; /* Белая окантовка */
+  border-radius: 50%; /* Круглый ползунок */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Тень для объема */
+  transition: transform 0.2s ease;
+}
+
+#line-width::-webkit-slider-thumb:hover {
+  transform: scale(1.2); /* Увеличение при наведении для мультяшного эффекта */
+}
+
+#line-width::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
   background: #ff6699;
   border: 3px solid #fff;
   border-radius: 50%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
 }
 
-
-.line-width-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  background: #ff6699;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-canvas {
-  cursor: crosshair;
-}
-
-canvas.brush-cursor {
-  cursor: url('../assets/img/brush.png'), auto;
-}
-
-canvas.eraser-cursor {
-  cursor: url('../assets/img/eraser.png'), auto;
-}
-
-@keyframes buttonPress {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.9); }
-  100% { transform: scale(1); }
+#line-width::-moz-range-thumb:hover {
+  transform: scale(1.2);
 }
 
 @keyframes bounce {
@@ -141,8 +287,12 @@ canvas.eraser-cursor {
   100% { transform: translateY(0); }
 }
 
-.undo:focus,
-.redo:focus {
-  outline: none;
-  background-color: transparent;
+#line-width::-webkit-slider-thumb:active {
+  animation: bounce 0.3s ease;
 }
+
+.undo:focus, .redo:focus {
+  outline: none; /* Убираем стандартный фокус */
+  background-color: transparent; 
+}
+
