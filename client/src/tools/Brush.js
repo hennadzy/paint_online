@@ -89,34 +89,35 @@ mouseDownHandler(e) {
   }
 
 sendDrawData(x, y, isStart = false, isLocal = true) {
-  const lineWidth = this.lineWidth; // ✅ Используем локальную толщину
   const strokeStyle = this.ctx.strokeStyle;
+  const lineWidth = this.lineWidth;
 
-    if (isLocal) {
-        // Локальная отрисовка с текущим цветом
-        Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    }
+  if (isLocal) {
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+  }
 
-    if (this.socket) {
-        // Отправка через WebSocket
-        this.socket.send(
-            JSON.stringify({
-                method: "draw",
-                id: this.id,
-                username: this.username,
-                figure: {
-                    type: "brush",
-                    x,
-                    y,
-                    lineWidth,
-                    strokeStyle, // Передаётся текущий цвет рисующего
-                    isStart,
-                    username: this.username,
-                },
-            })
-        );
-    }
+  if (this.socket) {
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username,
+        },
+      })
+    );
+  }
 }
+
+
+
 
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
@@ -136,18 +137,4 @@ sendDrawData(x, y, isStart = false, isLocal = true) {
 
 
 
-  const message = {
-    method: "draw",
-    id: this.socketId,
-    figure: {
-      type: "brush",
-      x,
-      y,
-      isStart,
-      strokeStyle,
-      lineWidth // ✅ передаём толщину
-    }
-  };
-
-  this.socket.send(JSON.stringify(message));
-}
+ 
