@@ -1,9 +1,8 @@
-
 @import "./variables";
 
 .toolbar {
   font-family: "Comic Sans MS", "Comic Sans", cursive;
-  width: 100%; /* Ширина тулбара равна ширине окна */
+  width: 100%;
   height: $toolbar-height;
   background-color: #67676759;
   display: flex;
@@ -11,7 +10,6 @@
   position: absolute;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
-
 
   &__btn {
     height: 25px;
@@ -22,6 +20,7 @@
     background-size: cover;
     margin-left: 10px;
   }
+
   .brush {
     background: url('../assets/img/brush.png') no-repeat center center;
   }
@@ -48,43 +47,31 @@
     background: url('../assets/img/save.png') no-repeat center center;
     margin-right: 10px;
   }
+
+  &__btn:active {
+    animation: buttonPress 0.2s ease-out;
+  }
+
+  &__btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    background-color: #ffd700;
+    background-size: cover;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
 }
 
 canvas {
-  cursor: crosshair; /* Базовый курсор для холста */
+  cursor: crosshair;
 }
 
 canvas.brush-cursor {
-  cursor: url('../assets/img/brush.png'), auto; /* Курсор кисти */
+  cursor: url('../assets/img/brush.png'), auto;
 }
 
 canvas.eraser-cursor {
-  cursor: url('../assets/img/eraser.png'), auto; /* Курсор ластика */
+  cursor: url('../assets/img/eraser.png'), auto;
 }
-
-
-.toolbar__btn:active {
-  animation: buttonPress 0.2s ease-out; /* Активируем анимацию при нажатии */
-}
-
-@keyframes buttonPress {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.9); } /* Эффект сжатия */
-  100% { transform: scale(1); }
-}
-
-.toolbar__btn:hover {
-  transform: scale(1.1); /* Увеличение при наведении */
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); /* Добавление объёмной тени */
-  transition: all 0.2s ease;
-}
-
-.toolbar__btn:hover {
-  background-color: #ffd700; /* Золотистый цвет фона */
-  background-size: cover; /* Обеспечение сохранения размеров фона */
-  transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
 
 .setting-bar {
   font-family: "Comic Sans MS", "Comic Sans", cursive;
@@ -95,50 +82,60 @@ canvas.eraser-cursor {
   position: absolute;
   width: 100%;
   box-shadow: 0 4px 5px gray;
-  top:$toolbar-height;
+  top: $toolbar-height;
+  gap: 10px;
+  padding: 0 20px;
+  color: #fff;
+  font-size: 14px;
+
+  label {
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 200px;
+    height: 20px;
+    background: linear-gradient(to right, #ffcc00, #ff6699);
+    border-radius: 10px;
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: #ff6699;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #ff6699;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"]::-webkit-slider-thumb:active {
+    animation: bounce 0.3s ease;
+  }
 }
 
-
-#line-width {
-  -webkit-appearance: none; /* Убираем стандартный стиль браузера */
-  appearance: none;
-  width: 50%; /* Длина ползунка */
-  height: 10px; /* Высота трека */
-  background: linear-gradient(to right, #ffcc00, #ff6699); /* Цветовая градиентная заливка */
-  border-radius: 10px; /* Округление краев */
-  outline: none;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Тень для мультяшности */
-}
-
-#line-width::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #ff6699; /* Цвет ползунка */
-  border: 3px solid #fff; /* Белая окантовка */
-  border-radius: 50%; /* Круглый ползунок */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Тень для объема */
-  transition: transform 0.2s ease;
-}
-
-#line-width::-webkit-slider-thumb:hover {
-  transform: scale(1.2); /* Увеличение при наведении для мультяшного эффекта */
-}
-
-#line-width::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: #ff6699;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease;
-}
-
-#line-width::-moz-range-thumb:hover {
-  transform: scale(1.2);
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 
 @keyframes bounce {
@@ -147,12 +144,8 @@ canvas.eraser-cursor {
   100% { transform: translateY(0); }
 }
 
-#line-width::-webkit-slider-thumb:active {
-  animation: bounce 0.3s ease;
+.undo:focus,
+.redo:focus {
+  outline: none;
+  background-color: transparent;
 }
-
-.undo:focus, .redo:focus {
-  outline: none; /* Убираем стандартный фокус */
-  background-color: transparent; 
-}
-
