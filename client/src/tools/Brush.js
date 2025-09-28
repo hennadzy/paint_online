@@ -25,8 +25,8 @@ export default class Brush extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     canvasState.pushToUndo(this.canvas.toDataURL());
-
     const rect = this.canvas.getBoundingClientRect();
+    this.ctx.strokeStyle = toolState.color;
     this.ctx.beginPath();
     this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
@@ -59,6 +59,7 @@ export default class Brush extends Tool {
     canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
+    this.ctx.strokeStyle = toolState.color;
     this.ctx.beginPath();
     this.ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
     this.sendDrawData(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, true);
