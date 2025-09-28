@@ -93,7 +93,7 @@ sendDrawData(x, y, isStart = false, isLocal = true) {
   const lineWidth = this.lineWidth;
 
   if (isLocal) {
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart); // ✅ локальная отрисовка
   }
 
   if (this.socket) {
@@ -115,6 +115,7 @@ sendDrawData(x, y, isStart = false, isLocal = true) {
     );
   }
 }
+
 
 
 
