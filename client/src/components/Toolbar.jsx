@@ -11,7 +11,7 @@ import Eraser from "../tools/Eraser";
 const Toolbar = () => {
   const changeColor = (e) => {
     const newColor = e.target.value;
-    toolState.setColor(newColor);
+    toolState.color = newColor;
     if (toolState.tool) {
       toolState.tool.color = newColor;
       toolState.tool.strokeColor = newColor;
