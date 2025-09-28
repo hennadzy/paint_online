@@ -34,3 +34,4 @@ export const SettingBar = () => {
     </div>
   );
 };
+export default SettingBar;
