@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
+import toolState from "../store/toolState";
 
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
@@ -19,21 +20,17 @@ export default class Brush extends Tool {
     this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
     this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
     this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
-}
+  }
 
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
 
-mouseDownHandler(e) {
-  this.mouseDown = true;
-
-  // Сохраняем текущее состояние в undoList перед изменениями
-  canvasState.pushToUndo(this.canvas.toDataURL());
-
-  const rect = this.canvas.getBoundingClientRect();
-  this.ctx.beginPath();
-  this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-  this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
-}
-
+    const rect = this.canvas.getBoundingClientRect();
+    this.ctx.beginPath();
+    this.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    this.sendDrawData(e.clientX - rect.left, e.clientY - rect.top, true);
+  }
 
   mouseMoveHandler(e) {
     if (this.mouseDown) {
@@ -59,7 +56,7 @@ mouseDownHandler(e) {
 
   touchStartHandler(e) {
     e.preventDefault();
-      canvasState.pushToUndo(this.canvas.toDataURL());
+    canvasState.pushToUndo(this.canvas.toDataURL());
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
     this.ctx.beginPath();
@@ -88,34 +85,33 @@ mouseDownHandler(e) {
     }
   }
 
-sendDrawData(x, y, isStart = false, isLocal = true) {
-  const strokeStyle = this.ctx.strokeStyle;
-  const lineWidth = this.lineWidth;
+  sendDrawData(x, y, isStart = false, isLocal = true) {
+    const strokeStyle = toolState.color;
+    const lineWidth = this.lineWidth;
 
-  if (isLocal) {
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-  }
+    if (isLocal) {
+      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+    }
 
-  if (this.socket) {
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
-        username: this.username,
-        figure: {
-          type: "brush",
-          x,
-          y,
-          lineWidth,
-          strokeStyle,
-          isStart,
+    if (this.socket) {
+      this.socket.send(
+        JSON.stringify({
+          method: "draw",
+          id: this.id,
           username: this.username,
-        },
-      })
-    );
+          figure: {
+            type: "brush",
+            x,
+            y,
+            lineWidth,
+            strokeStyle,
+            isStart,
+            username: this.username,
+          },
+        })
+      );
+    }
   }
-}
-
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
@@ -129,9 +125,3 @@ sendDrawData(x, y, isStart = false, isLocal = true) {
     }
   }
 }
-
-
-
-
-
- 
