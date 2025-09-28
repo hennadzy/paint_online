@@ -4,7 +4,7 @@ import canvasState from "../store/canvasState";
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.destroyEvents(); // очищаем старые события (например, от кисти)
+    this.destroyEvents();
     this.listen();
   }
 
@@ -44,7 +44,7 @@ export default class Rect extends Tool {
           y: this.startY,
           width,
           height,
-          strokeStyle: this.strokeColor,
+          strokeStyle: this.strokeColor || this.color,
           lineWidth: this.lineWidth,
           username: this.username,
         },
@@ -65,15 +65,7 @@ export default class Rect extends Tool {
     img.onload = () => {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.drawImage(img, 0, 0);
-      Rect.staticDraw(
-        this.ctx,
-        this.startX,
-        this.startY,
-        width,
-        height,
-        this.strokeColor,
-        this.lineWidth
-      );
+      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
     };
   }
 
@@ -83,15 +75,34 @@ export default class Rect extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rect.left;
     this.startY = e.touches[0].clientY - rect.top;
+    this.currentX = this.startX;
+    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    this.currentX = e.touches[0].clientX - rect.left;
+    this.currentY = e.touches[0].clientY - rect.top;
+    const width = this.currentX - this.startX;
+    const height = this.currentY - this.startY;
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
+    };
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    const rect = this.canvas.getBoundingClientRect();
-    const width = e.changedTouches[0].clientX - rect.left - this.startX;
-    const height = e.changedTouches[0].clientY - rect.top - this.startY;
+    const width = this.currentX - this.startX;
+    const height = this.currentY - this.startY;
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
@@ -106,38 +117,12 @@ export default class Rect extends Tool {
           y: this.startY,
           width,
           height,
-          strokeStyle: this.strokeColor,
+          strokeStyle: this.strokeColor || this.color,
           lineWidth: this.lineWidth,
           username: this.username,
         },
       })
     );
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    const currentX = e.touches[0].clientX - rect.left;
-    const currentY = e.touches[0].clientY - rect.top;
-    const width = currentX - this.startX;
-    const height = currentY - this.startY;
-
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.drawImage(img, 0, 0);
-      Rect.staticDraw(
-        this.ctx,
-        this.startX,
-        this.startY,
-        width,
-        height,
-        this.strokeColor,
-        this.lineWidth
-      );
-    };
   }
 
   static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
