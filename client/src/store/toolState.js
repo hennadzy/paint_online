@@ -2,13 +2,13 @@ import {makeAutoObservable} from "mobx";
 
 class ToolState {
     tool = null
-    lineWidths = {
-        brush: 1,
-        rect: 1,
-        circle: 1,
-        eraser: 10,
-        line: 1
-    };
+    // lineWidths = {
+    //     brush: 1,
+    //     rect: 1,
+    //     circle: 1,
+    //     eraser: 10,
+    //     line: 1
+    // };
 
     constructor() {
         makeAutoObservable(this)

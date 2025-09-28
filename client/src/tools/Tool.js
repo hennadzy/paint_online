@@ -1,39 +1,39 @@
 export default class Tool {
-    constructor(canvas, socket, id) {
-        this.canvas = canvas;
-        this.socket = socket;
-        this.id = id;
-        this.ctx = canvas.getContext('2d');
-        this.destroyEvents();
-    }
+  constructor(canvas, socket, id) {
+    this.canvas = canvas;
+    this.socket = socket;
+    this.id = id;
+    this.ctx = canvas.getContext("2d");
 
-    get lineWidth() {
-        return this.ctx.lineWidth;
-    }
+    this.destroyEvents();
+    this.listen();
+    this.lineWidth = 1; // ✅ Толщина по умолчанию — локальная
+  }
 
-    set fillColor(color) {
-        this.ctx.fillStyle = color;
-    }
+  set lineWidth(value) {
+    this._lineWidth = value;
+    this.ctx.lineWidth = value;
+  }
 
-    set strokeColor(color) {
-        this.ctx.strokeStyle = color;
-    }
+  get lineWidth() {
+    return this._lineWidth || 1;
+  }
 
-    set lineWidth(width) {
-        this.ctx.lineWidth = width;
-    }
-    draw(x, y) { }
+  set strokeStyle(color) {
+    this.ctx.strokeStyle = color;
+  }
 
-    destroyEvents() {
+  get strokeStyle() {
+    return this.ctx.strokeStyle;
+  }
 
-        this.canvas.onmousemove = null;
-        this.canvas.onmousedown = null;
-        this.canvas.onmouseup = null;
-        this.canvas.removeEventListener("touchstart", this._touchStartHandler);
-        this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
-        this.canvas.removeEventListener("touchend", this._touchEndHandler);
-    }
+  listen() {
+    // Переопределяется в наследниках
+  }
 
-
-
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmouseup = null;
+    this.canvas.onmousemove = null;
+  }
 }
