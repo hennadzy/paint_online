@@ -53,13 +53,6 @@ const Toolbar = () => {
             <button className="toolbar__btn eraser" onClick={() => changeTool(new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid), "eraser-cursor")}/>
             <button className="toolbar__btn line" onClick={() => changeTool(new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid), "line-cursor")}/>
             <input onChange={e => changeColor(e)} style={{marginLeft:10}} type="color"/>
-            <input
-  type="range"
-  min={1}
-  max={50}
-  value={canvasState.lineWidth}
-  onChange={(e) => canvasState.setLineWidth(e.target.value)}
-/>
             <button className="toolbar__btn undo" onClick={() => canvasState.undo()}/>
             <button className="toolbar__btn redo" onClick={() => canvasState.redo()}/>
             <button className="toolbar__btn save" onClick={() => download()}/>
