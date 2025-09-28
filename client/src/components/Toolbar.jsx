@@ -25,6 +25,11 @@ const Toolbar = () => {
     tool.strokeColor = currentColor;
     tool.fillColor = currentColor;
 
+    // ✅ Автотолщина для стерки
+    if (tool instanceof Eraser) {
+      tool.lineWidth = 10;
+    }
+
     toolState.setTool(tool);
 
     const canvas = canvasState.canvas;
