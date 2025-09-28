@@ -126,11 +126,11 @@ export default class Rect extends Tool {
     );
   }
 
-  static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = strokeStyle;
-    ctx.beginPath();
-    ctx.rect(x, y, width, height);
-    ctx.stroke();
-  }
+static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  ctx.rect(x, y, width, height);
+  ctx.stroke();
+}
 }

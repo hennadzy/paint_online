@@ -135,7 +135,7 @@ const Canvas = observer(() => {
         Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
         break;
       case "rect":
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
       case "circle":
         Circle.staticDraw(ctx, figure.x, figure.y, figure.r, figure.fillStyle, figure.lineWidth, figure.strokeStyle);
