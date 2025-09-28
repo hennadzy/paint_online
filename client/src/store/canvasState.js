@@ -4,7 +4,6 @@ class CanvasState {
     canvas = null
     socket = null
     sessionid = null
-    lineWidth = 1;
     undoList = []
     redoList = []
     username = ""
@@ -12,11 +11,6 @@ class CanvasState {
     constructor() {
         makeAutoObservable(this)
     }
-
-    setLineWidth(width) {
-  this.lineWidth = Number(width);
-}
-
 
     setSessionId(id) {
         this.sessionid = id
