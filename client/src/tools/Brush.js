@@ -88,8 +88,9 @@ mouseDownHandler(e) {
     }
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = true) {
-    const { lineWidth, strokeStyle } = this.ctx;
+sendDrawData(x, y, isStart = false, isLocal = true) {
+  const lineWidth = this.lineWidth; // ✅ Используем локальную толщину
+  const strokeStyle = this.ctx.strokeStyle;
 
     if (isLocal) {
         // Локальная отрисовка с текущим цветом

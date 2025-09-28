@@ -7,6 +7,10 @@ export default class Tool {
         this.destroyEvents();
     }
 
+    get lineWidth() {
+        return this.ctx.lineWidth;
+    }
+
     set fillColor(color) {
         this.ctx.fillStyle = color;
     }
@@ -18,7 +22,7 @@ export default class Tool {
     set lineWidth(width) {
         this.ctx.lineWidth = width;
     }
-    draw(x, y) {}
+    draw(x, y) { }
 
     destroyEvents() {
 
@@ -29,7 +33,7 @@ export default class Tool {
         this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
         this.canvas.removeEventListener("touchend", this._touchEndHandler);
     }
-    
+
 
 
 }
