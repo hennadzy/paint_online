@@ -4,6 +4,7 @@ class CanvasState {
     canvas = null
     socket = null
     sessionid = null
+    lineWidth = 1;
     undoList = []
     redoList = []
     username = ""
@@ -47,7 +48,7 @@ class CanvasState {
                 ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
             }
         } else {
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.heigth)
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
         }
     }
 
