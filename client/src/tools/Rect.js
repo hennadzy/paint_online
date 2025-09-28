@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
+import toolState from "../store/toolState";
 
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
