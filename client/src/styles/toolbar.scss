@@ -79,52 +79,54 @@
   label {
     white-space: nowrap;
   }
+}
 
-  .line-width-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 200px;
-    height: 10px;
-    background: linear-gradient(to right, #ffcc00, #ff6699);
-    border-radius: 10px;
-    outline: none;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.line-width-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  z-index: 1;
+  width: 200px;
+  height: 20px;
+  background: linear-gradient(to right, #ffcc00, #ff6699);
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
 
-    &::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      background: #ff6699;
-      border: 3px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s ease;
-    }
+.line-width-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #ff6699;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
 
-    &::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
+.line-width-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
 
-    &::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      background: #ff6699;
-      border: 3px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s ease;
-    }
+.line-width-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #ff6699;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
 
-    &::-moz-range-thumb:hover {
-      transform: scale(1.2);
-    }
+.line-width-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
 
-    &::-webkit-slider-thumb:active {
-      animation: bounce 0.3s ease;
-    }
-  }
+.line-width-slider::-webkit-slider-thumb:active {
+  animation: bounce 0.3s ease;
 }
 
 canvas {
