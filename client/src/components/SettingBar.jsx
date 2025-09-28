@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import toolState from "../store/toolState";
+import Eraser from "../tools/Eraser";
 import '../styles/toolbar.scss'
 
 
