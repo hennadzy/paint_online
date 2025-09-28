@@ -116,8 +116,6 @@ sendDrawData(x, y, isStart = false, isLocal = true) {
   }
 }
 
-
-
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
