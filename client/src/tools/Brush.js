@@ -87,7 +87,7 @@ export default class Brush extends Tool {
   }
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
-    const strokeStyle = toolState.color;
+    const strokeStyle = this.color;
     const lineWidth = this.lineWidth;
 
     if (isLocal) {
