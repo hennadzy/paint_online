@@ -21,32 +21,14 @@
     margin-left: 10px;
   }
 
-  .brush {
-    background: url('../assets/img/brush.png') no-repeat center center;
-  }
-  .rect {
-    background: url('../assets/img/rect.png') no-repeat center center;
-  }
-  .circle {
-    background: url('../assets/img/circle.png') no-repeat center center;
-  }
-  .eraser {
-    background: url('../assets/img/eraser.png') no-repeat center center;
-  }
-  .line {
-    background: url('../assets/img/line.png') no-repeat center center;
-  }
-  .undo {
-    margin-left: auto;
-    background: url('../assets/img/undo.png') no-repeat center center;
-  }
-  .redo {
-    background: url('../assets/img/redo.png') no-repeat center center;
-  }
-  .save {
-    background: url('../assets/img/save.png') no-repeat center center;
-    margin-right: 10px;
-  }
+  .brush { background: url('../assets/img/brush.png') no-repeat center center; }
+  .rect { background: url('../assets/img/rect.png') no-repeat center center; }
+  .circle { background: url('../assets/img/circle.png') no-repeat center center; }
+  .eraser { background: url('../assets/img/eraser.png') no-repeat center center; }
+  .line { background: url('../assets/img/line.png') no-repeat center center; }
+  .undo { margin-left: auto; background: url('../assets/img/undo.png') no-repeat center center; }
+  .redo { background: url('../assets/img/redo.png') no-repeat center center; }
+  .save { background: url('../assets/img/save.png') no-repeat center center; margin-right: 10px; }
 
   &__btn:active {
     animation: buttonPress 0.2s ease-out;
@@ -64,11 +46,9 @@
 canvas {
   cursor: crosshair;
 }
-
 canvas.brush-cursor {
   cursor: url('../assets/img/brush.png'), auto;
 }
-
 canvas.eraser-cursor {
   cursor: url('../assets/img/eraser.png'), auto;
 }
@@ -83,13 +63,28 @@ canvas.eraser-cursor {
   width: 100%;
   box-shadow: 0 4px 5px gray;
   top: $toolbar-height;
-  gap: 10px;
+  gap: 20px;
   padding: 0 20px;
   color: #fff;
   font-size: 14px;
 
-  label {
+  .line-width-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .line-width-label {
+    font-size: 16px;
+    color: #fff;
     white-space: nowrap;
+  }
+
+  .line-width-value {
+    font-size: 16px;
+    color: #fff;
+    white-space: nowrap;
+    margin-left: 10px;
   }
 
   input[type="range"] {
