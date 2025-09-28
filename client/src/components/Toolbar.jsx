@@ -11,7 +11,7 @@ import Eraser from "../tools/Eraser";
 const Toolbar = () => {
   const changeColor = (e) => {
     const newColor = e.target.value;
-    toolState.setColor(newColor);
+    toolState.color = newColor;
     if (toolState.tool) {
       toolState.tool.color = newColor;
       toolState.tool.strokeColor = newColor;
@@ -27,10 +27,7 @@ const Toolbar = () => {
 
     // ✅ Автотолщина для стерки
     if (tool instanceof Eraser) {
-      tool.lineWidth = toolState.eraserWidth;
-      toolState.setLineWidth(toolState.eraserWidth);
-    } else {
-      tool.lineWidth = toolState.lineWidth;
+      tool.lineWidth = 10;
     }
 
     toolState.setTool(tool);
@@ -109,7 +106,6 @@ const Toolbar = () => {
         type="color"
         onChange={changeColor}
         style={{ marginLeft: 10 }}
-        value={toolState.color}
       />
       <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
       <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
