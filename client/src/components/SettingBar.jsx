@@ -1,8 +1,9 @@
-import React from "react";
-import "../styles/settingsbar.scss";
+import React, { useEffect, useState } from 'react';
 import toolState from "../store/toolState";
+import '../styles/toolbar.scss'
 
-const SettingsBar = () => {
+
+const SettingBar = () => {
   const changeLineWidth = (e) => {
     const newWidth = +e.target.value;
     if (toolState.tool instanceof Eraser) {
@@ -34,5 +35,4 @@ const SettingsBar = () => {
     </div>
   );
 };
-
-export default SettingsBar;
+export default SettingBar;
