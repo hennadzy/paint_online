@@ -23,7 +23,7 @@ export const SettingBar = () => {
 
   return (
     <div className="setting-bar">
-      <label>Толщина линии: {lineWidth}</label>
+      <label>Толщина линии:ъ</label>
       <input
         type="range"
         min={1}
@@ -31,7 +31,8 @@ export const SettingBar = () => {
         value={lineWidth}
         onChange={handleChange}
       />
-    </div>
+      <span className="line-width-label">{lineWidth}px</span>
+    </div>   
   );
 };
 export default SettingBar;
