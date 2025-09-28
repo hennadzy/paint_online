@@ -13,6 +13,11 @@ class CanvasState {
         makeAutoObservable(this)
     }
 
+    setLineWidth(width) {
+  this.lineWidth = Number(width);
+}
+
+
     setSessionId(id) {
         this.sessionid = id
     }

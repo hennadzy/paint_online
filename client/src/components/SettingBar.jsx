@@ -1,36 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from "react";
+import { observer } from "mobx-react-lite";
 import toolState from "../store/toolState";
-import '../styles/toolbar.scss'
+import "../styles/toolbar.scss";
 
-const SettingBar = () => {
-    const [lineWidth, setLineWidth] = useState(toolState.tool?.lineWidth || 3); 
+const SettingBar = observer(() => {
+  const handleLineWidthChange = (e) => {
+    const newLineWidth = parseInt(e.target.value, 10);
+    toolState.setLineWidth(newLineWidth);
+  };
 
-    useEffect(() => {
-        setLineWidth(toolState.tool?.lineWidth || 3);
-    }, [toolState.tool]);
+  return (
+    <div className="setting-bar">
+      <label htmlFor="line-width">Толщина линии:</label>
+      <input
+        id="line-width"
+        type="range"
+        min={1}
+        max={50}
+        value={toolState.tool?.lineWidth || 1}
+        onChange={handleLineWidthChange}
+      />
+      <span>{toolState.tool?.lineWidth || 1}px</span>
+    </div>
+  );
+});
 
-    const handleLineWidthChange = (e) => {
-        const newLineWidth = parseInt(e.target.value, 10);
-        setLineWidth(newLineWidth); 
-        toolState.setLineWidth(newLineWidth); 
-    };
-
-    return (
-        <div className="setting-bar">
-            <label htmlFor="line-width">Толщина линии:</label>
-            <input
-                onChange={handleLineWidthChange}
-                style={{ margin: '0 10px' }}
-                id="line-width"
-                type="range"
-                value={lineWidth} 
-                min={1}
-                max={50}
-            />
-            <span style={{ marginLeft: '10px' }}>
-                {lineWidth}px 
-            </span>
-        </div>
-    );
-};
 export default SettingBar;
