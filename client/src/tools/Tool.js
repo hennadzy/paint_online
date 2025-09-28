@@ -32,8 +32,11 @@ export default class Tool {
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmouseup = null;
-    this.canvas.onmousemove = null;
+   this.canvas.onmousedown = null;
+  this.canvas.onmouseup = null;
+  this.canvas.onmousemove = null;
+  this.canvas.ontouchstart = null;
+  this.canvas.ontouchmove = null;
+  this.canvas.ontouchend = null;
   }
 }
