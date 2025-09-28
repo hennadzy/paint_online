@@ -13,6 +13,12 @@ export default class Brush extends Tool {
     this.listen();
   }
 
+  removeTouchEvents() {
+    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this._touchEndHandler);
+  }
+
   listen() {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);

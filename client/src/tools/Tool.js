@@ -8,7 +8,7 @@ export default class Tool {
     this.username = username;
     this.ctx = canvas.getContext("2d");
 
-    // ✅ Автоматическая установка текущих настроек
+    // ✅ Устанавливаем настройки по умолчанию
     this.color = toolState.color;
     this.strokeColor = toolState.color;
     this.fillColor = toolState.color;
@@ -17,7 +17,7 @@ export default class Tool {
     this.mouseDown = false;
   }
 
-  // ✅ Очистка событий при смене инструмента
+  // ✅ Очищаем события, включая addEventListener
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmouseup = null;
@@ -25,5 +25,9 @@ export default class Tool {
     this.canvas.ontouchstart = null;
     this.canvas.ontouchmove = null;
     this.canvas.ontouchend = null;
+
+    if (typeof this.removeTouchEvents === "function") {
+      this.removeTouchEvents();
+    }
   }
 }
