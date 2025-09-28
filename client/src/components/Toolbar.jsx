@@ -20,7 +20,6 @@ const Toolbar = () => {
   };
 
   const changeTool = (tool, cursorClass) => {
-    // применяем текущий цвет к новому инструменту
     const currentColor = toolState.color;
     tool.color = currentColor;
     tool.strokeColor = currentColor;
