@@ -1,38 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React from "react";
+import "../styles/settingsbar.scss";
 import toolState from "../store/toolState";
-import '../styles/toolbar.scss'
 
-
-export const SettingBar = () => {
-  const [lineWidth, setLineWidth] = useState(1); // ✅ локальное состояние
-
-  useEffect(() => {
-    const tool = toolState.tool;
-    if (tool) {
-      setLineWidth(tool.lineWidth || 1); // ✅ обновляем при смене инструмента
+const SettingsBar = () => {
+  const changeLineWidth = (e) => {
+    const newWidth = +e.target.value;
+    if (toolState.tool instanceof Eraser) {
+      toolState.setEraserWidth(newWidth);
+    } else {
+      toolState.setLineWidth(newWidth);
     }
-  }, [toolState.tool]);
-
-  const handleChange = (e) => {
-    const value = +e.target.value;
-    setLineWidth(value);
     if (toolState.tool) {
-      toolState.tool.lineWidth = value; // ✅ меняем только локально
+      toolState.tool.lineWidth = newWidth;
     }
   };
 
+  const currentWidth = toolState.tool instanceof Eraser
+    ? toolState.eraserWidth
+    : toolState.lineWidth;
+
   return (
-    <div className="setting-bar">
-      <label>Толщина линии:</label>
+    <div className="settings-bar">
+      <label htmlFor="line-width">Толщина линии</label>
       <input
+        id="line-width"
         type="range"
         min={1}
         max={50}
-        value={lineWidth}
-        onChange={handleChange}
+        value={currentWidth}
+        onChange={changeLineWidth}
       />
-      <span className="line-width-label">{lineWidth}px</span>
-    </div>   
+      <span style={{ marginLeft: 10 }}>{currentWidth}px</span>
+    </div>
   );
 };
-export default SettingBar;
+
+export default SettingsBar;
