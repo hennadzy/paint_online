@@ -5,9 +5,14 @@ import '../styles/toolbar.scss'
 const SettingBar = () => {
     const [lineWidth, setLineWidth] = useState(toolState.tool?.lineWidth || 1); 
 
-    useEffect(() => {
-        setLineWidth(toolState.tool?.lineWidth || 1);
-    }, [toolState.tool]);
+   useEffect(() => {
+    const interval = setInterval(() => {
+        if (toolState.tool) {
+            setLineWidth(toolState.tool.lineWidth); // ✅ Обновляем ползунок при смене инструмента
+        }
+    }, 300);
+    return () => clearInterval(interval);
+}, []);
 
     const handleLineWidthChange = (e) => {
         const newLineWidth = parseInt(e.target.value, 10);
