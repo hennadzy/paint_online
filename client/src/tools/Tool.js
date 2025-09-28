@@ -1,42 +1,29 @@
+import toolState from "../store/toolState";
+
 export default class Tool {
-  constructor(canvas, socket, id) {
+  constructor(canvas, socket, id, username) {
     this.canvas = canvas;
     this.socket = socket;
     this.id = id;
+    this.username = username;
     this.ctx = canvas.getContext("2d");
 
-    this.destroyEvents();
-    this.listen();
-    this.lineWidth = 1; // ✅ Толщина по умолчанию — локальная
+    // ✅ Автоматическая установка текущих настроек
+    this.color = toolState.color;
+    this.strokeColor = toolState.color;
+    this.fillColor = toolState.color;
+    this.lineWidth = toolState.lineWidth || 1;
+
+    this.mouseDown = false;
   }
 
-  set lineWidth(value) {
-    this._lineWidth = value;
-    this.ctx.lineWidth = value;
-  }
-
-  get lineWidth() {
-    return this._lineWidth || 1;
-  }
-
-  set strokeStyle(color) {
-    this.ctx.strokeStyle = color;
-  }
-
-  get strokeStyle() {
-    return this.ctx.strokeStyle;
-  }
-
-  listen() {
-    // Переопределяется в наследниках
-  }
-
+  // ✅ Очистка событий при смене инструмента
   destroyEvents() {
-   this.canvas.onmousedown = null;
-  this.canvas.onmouseup = null;
-  this.canvas.onmousemove = null;
-  this.canvas.ontouchstart = null;
-  this.canvas.ontouchmove = null;
-  this.canvas.ontouchend = null;
+    this.canvas.onmousedown = null;
+    this.canvas.onmouseup = null;
+    this.canvas.onmousemove = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
   }
 }
