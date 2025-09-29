@@ -34,8 +34,12 @@ class ToolState {
     tool.lineWidth = savedWidth;
 
     // ✅ Применяем текущие цвета
-    tool.strokeColor = this.strokeColor;
-    tool.fillColor = this.fillColor;
+  if (this.tool?.strokeColor) {
+        tool.strokeColor = this.tool.strokeColor;
+    }
+    if (this.tool?.fillColor) {
+        tool.fillColor = this.tool.fillColor;
+    }
 
     this.tool = tool;
 
