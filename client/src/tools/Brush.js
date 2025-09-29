@@ -11,6 +11,7 @@ export default class Brush extends Tool {
     this.mouseDown = false;
     this.destroyEvents();
     this.listen();
+      this.strokeColor = '#000000'; // при создании
   }
 
   removeTouchEvents() {
