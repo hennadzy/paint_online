@@ -2,7 +2,7 @@ import { makeAutoObservable } from "mobx";
 
 class ToolState {
     tool = null;
-
+strokeColor = "#000000"; fillColor = "#000000";
 
     lineWidths = {
         brush: 1,
