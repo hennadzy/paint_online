@@ -164,5 +164,5 @@ export default class Brush extends Tool {
       ctx.lineTo(x, y);
       ctx.stroke();
     }
-  }
+  } 
 }
