@@ -14,6 +14,11 @@ export default class Brush extends Tool {
       this.strokeColor = '#000000'; // при создании
   }
 
+  setStrokeColor(color) {
+  this.strokeColor = color;
+}
+
+
   removeTouchEvents() {
     this.canvas.removeEventListener("touchstart", this._touchStartHandler);
     this.canvas.removeEventListener("touchmove", this._touchMoveHandler);

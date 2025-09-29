@@ -45,12 +45,12 @@ class ToolState {
     }
   }
 
-  setStrokeColor(color) {
-    this.strokeColor = color;
-    if (this.tool) {
-      this.tool.strokeColor = color;
-    }
+setStrokeColor(color) {
+  if (this.tool?.setStrokeColor) {
+    this.tool.setStrokeColor(color);
   }
+}
+
 
   setFillColor(color) {
     this.fillColor = color;
