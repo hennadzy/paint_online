@@ -9,6 +9,10 @@ export default class Rect extends Tool {
     this.listen();
   }
 
+  setStrokeColor(color) {
+  this.strokeColor = color;
+}
+
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);

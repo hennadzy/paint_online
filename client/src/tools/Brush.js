@@ -4,7 +4,7 @@ import canvasState from "../store/canvasState";
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-   this.strokeColor = this.strokeColor ?? "#000000";
+  //  this.strokeColor = this.strokeColor ?? "#000000";
     this.lineWidth = 1;           // ✅ локальная толщина
     this.mouseDown = false;
 
