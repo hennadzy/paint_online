@@ -1,47 +1,55 @@
-import { makeAutoObservable } from "mobx";
+import {makeAutoObservable} from "mobx";
 
 class ToolState {
-  tool = null;
-  lineWidth = 1;
-  hasUsedEraser = false;
+    tool = null
+    lineWidths = {
+        brush: 1,
+        rect: 1,
+        circle: 1,
+        eraser: 10,
+        line: 1
+    };
 
-  constructor() {
-    makeAutoObservable(this);
-  }
-
-  setTool(tool) {
-    const toolName = tool.constructor.name.toLowerCase();
-
-    // ✅ Если это стерка и она выбрана впервые — установить 10px
-    if (toolName === "eraser" && !this.hasUsedEraser) {
-      tool.lineWidth = 10;
-      this.lineWidth = 10;
-      this.hasUsedEraser = true;
-    } else {
-      tool.lineWidth = this.lineWidth;
+    constructor() {
+        makeAutoObservable(this)
     }
 
-    this.tool = tool;
-  }
+    setTool(tool) {
+        if (this.tool && this.tool.restorePreviousColors) {
+            this.tool.restorePreviousColors();
+        }
+        if (this.tool && this.tool.destroyEvents) {
+            this.tool.destroyEvents();
+        }
 
-  setLineWidth(width) {
-    this.lineWidth = width;
-    if (this.tool) {
-      this.tool.lineWidth = width;
+        const toolName = tool.constructor.name.toLowerCase();
+        let lineWidth = this.lineWidths[toolName] || 1;
+
+        if (toolName === 'eraser') {
+            lineWidth = 10;
+        }
+
+        tool.lineWidth = lineWidth;
+        this.tool = tool;
+
+        if (this.tool.listen) {
+            this.tool.listen();
+        }
     }
-  }
 
-  getCurrentLineWidth() {
-    return this.lineWidth;
-  }
-
-  setStrokeColor(color) {
-    if (this.tool) this.tool.strokeColor = color;
-  }
-
-  setFillColor(color) {
-    if (this.tool) this.tool.fillColor = color;
-  }
+    setFillColor(color) {
+        this.tool.fillColor = color
+    }
+    setStrokeColor(color) {
+        this.tool.strokeColor = color
+    }
+    setLineWidth(lineWidth) {
+        if (this.tool) {
+            this.tool.lineWidth = lineWidth;
+            const toolName = this.tool.constructor.name.toLowerCase();
+            this.lineWidths[toolName] = lineWidth; 
+        }
+    }
 }
 
-export default new ToolState();
+export default new ToolState()

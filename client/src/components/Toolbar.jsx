@@ -16,6 +16,13 @@ const Toolbar = () => {
   };
 
   const changeTool = (tool, cursorClass) => {
+    const toolName = tool.constructor.name.toLowerCase();
+
+    // ✅ Только при первом выборе стерки — установить 10px
+    if (tool instanceof Eraser && toolState.tool?.constructor.name !== "Eraser") {
+      tool.lineWidth = 10;
+    }
+
     toolState.setTool(tool);
 
     const canvas = canvasState.canvas;
@@ -43,25 +50,56 @@ const Toolbar = () => {
 
   return (
     <div className="toolbar">
-      <button className="toolbar__btn brush" onClick={() =>
-        changeTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid), "brush-cursor")
-      } />
-      <button className="toolbar__btn rect" onClick={() =>
-        changeTool(new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid), "rect-cursor")
-      } />
-      <button className="toolbar__btn circle" onClick={() =>
-        changeTool(new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid), "circle-cursor")
-      } />
-      <button className="toolbar__btn eraser" onClick={() =>
-        changeTool(new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid), "eraser-cursor")
-      } />
-      <button className="toolbar__btn line" onClick={() =>
-        changeTool(new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid), "line-cursor")
-      } />
+      <button
+        className="toolbar__btn brush"
+        onClick={() =>
+          changeTool(
+            new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "brush-cursor"
+          )
+        }
+      />
+      <button
+        className="toolbar__btn rect"
+        onClick={() =>
+          changeTool(
+            new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "rect-cursor"
+          )
+        }
+      />
+      <button
+        className="toolbar__btn circle"
+        onClick={() =>
+          changeTool(
+            new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "circle-cursor"
+          )
+        }
+      />
+      <button
+        className="toolbar__btn eraser"
+        onClick={() =>
+          changeTool(
+            new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "eraser-cursor"
+          )
+        }
+      />
+      <button
+        className="toolbar__btn line"
+        onClick={() =>
+          changeTool(
+            new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "line-cursor"
+          )
+        }
+      />
       <input
         type="color"
         onChange={changeColor}
         style={{ marginLeft: 10 }}
+        value={toolState.lineWidths[toolState.tool?.constructor.name.toLowerCase()] ?? "#000000"}
       />
       <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
       <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
