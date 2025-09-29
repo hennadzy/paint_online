@@ -14,28 +14,27 @@ class ToolState {
         makeAutoObservable(this)
     }
 
-    setTool(tool) {
-        if (this.tool && this.tool.restorePreviousColors) {
-            this.tool.restorePreviousColors();
-        }
-        if (this.tool && this.tool.destroyEvents) {
-            this.tool.destroyEvents();
-        }
+setTool(tool) {
+  if (this.tool?.restorePreviousColors) {
+    this.tool.restorePreviousColors();
+  }
+  if (this.tool?.destroyEvents) {
+    this.tool.destroyEvents();
+  }
 
-        const toolName = tool.constructor.name.toLowerCase();
-        let lineWidth = this.lineWidths[toolName] || 1;
+  const toolName = tool.constructor.name.toLowerCase();
+  const savedWidth = this.lineWidths[toolName] ?? 1;
+  tool.lineWidth = savedWidth;
 
-        if (toolName === 'eraser') {
-            lineWidth = 10;
-        }
+  tool.strokeColor = this.strokeColor;
+  tool.fillColor = this.fillColor;
 
-        tool.lineWidth = lineWidth;
-        this.tool = tool;
+  this.tool = tool;
 
-        if (this.tool.listen) {
-            this.tool.listen();
-        }
-    }
+  if (this.tool.listen) {
+    this.tool.listen();
+  }
+}
 
     setFillColor(color) {
         this.tool.fillColor = color
@@ -43,13 +42,13 @@ class ToolState {
     setStrokeColor(color) {
         this.tool.strokeColor = color
     }
-    setLineWidth(lineWidth) {
-        if (this.tool) {
-            this.tool.lineWidth = lineWidth;
-            const toolName = this.tool.constructor.name.toLowerCase();
-            this.lineWidths[toolName] = lineWidth; 
-        }
-    }
+   setLineWidth(lineWidth) {
+  if (this.tool) {
+    const toolName = this.tool.constructor.name.toLowerCase();
+    this.tool.lineWidth = lineWidth;
+    this.lineWidths[toolName] = lineWidth;
+  }
+}
 }
 
 export default new ToolState()
