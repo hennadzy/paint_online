@@ -3,6 +3,8 @@ import { makeAutoObservable } from "mobx";
 class ToolState {
   tool = null;
 
+    strokeColor = "#000000";
+  fillColor = "#000000";
 
   lineWidths = {
     brush: 1,
@@ -34,12 +36,8 @@ class ToolState {
     tool.lineWidth = savedWidth;
 
     // ✅ Применяем текущие цвета
-  if (this.tool?.strokeColor) {
-        tool.strokeColor = this.tool.strokeColor;
-    }
-    if (this.tool?.fillColor) {
-        tool.fillColor = this.tool.fillColor;
-    }
+  tool.strokeColor = this.strokeColor;
+    tool.fillColor = this.fillColor;
 
     this.tool = tool;
 
