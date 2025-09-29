@@ -47,12 +47,12 @@ class ToolState {
     }
   }
 
-  setStrokeColor(color) {
-    this.strokeColor = color; // ✅ сохраняем цвет
-    if (this.tool?.setStrokeColor) {
-      this.tool.setStrokeColor(color);
-    }
-  }
+//   setStrokeColor(color) {
+//     this.strokeColor = color; // ✅ сохраняем цвет
+//     if (this.tool?.setStrokeColor) {
+//       this.tool.setStrokeColor(color);
+//     }
+//   }
 
 
   setFillColor(color) {
