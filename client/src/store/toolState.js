@@ -1,55 +1,65 @@
-import {makeAutoObservable} from "mobx";
+import { makeAutoObservable } from "mobx";
 
 class ToolState {
-    tool = null
-    lineWidths = {
-        brush: 1,
-        rect: 1,
-        circle: 1,
-        eraser: 10,
-        line: 1
-    };
+  tool = null;
 
-    constructor() {
-        makeAutoObservable(this)
+  // ✅ Толщина по умолчанию для каждого инструмента
+  lineWidths = {
+    brush: 1,
+    rect: 1,
+    circle: 1,
+    eraser: 10,
+    line: 1
+  };
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setTool(tool) {
+    // ✅ Сохраняем цвета предыдущего инструмента
+    if (this.tool?.restorePreviousColors) {
+      this.tool.restorePreviousColors();
     }
 
-    setTool(tool) {
-        if (this.tool && this.tool.restorePreviousColors) {
-            this.tool.restorePreviousColors();
-        }
-        if (this.tool && this.tool.destroyEvents) {
-            this.tool.destroyEvents();
-        }
-
-        const toolName = tool.constructor.name.toLowerCase();
-        let lineWidth = this.lineWidths[toolName] || 1;
-
-        if (toolName === 'eraser') {
-            lineWidth = 10;
-        }
-
-        tool.lineWidth = lineWidth;
-        this.tool = tool;
-
-        if (this.tool.listen) {
-            this.tool.listen();
-        }
+    // ✅ Удаляем события предыдущего инструмента
+    if (this.tool?.destroyEvents) {
+      this.tool.destroyEvents();
     }
 
-    setFillColor(color) {
-        this.tool.fillColor = color
+    const toolName = tool.constructor.name.toLowerCase();
+
+    // ✅ Применяем сохранённую толщину
+    const savedWidth = this.lineWidths[toolName] ?? 1;
+    tool.lineWidth = savedWidth;
+
+    this.tool = tool;
+
+    // ✅ Назначаем события нового инструмента
+    if (this.tool.listen) {
+      this.tool.listen();
     }
-    setStrokeColor(color) {
-        this.tool.strokeColor = color
+  }
+
+  setFillColor(color) {
+    if (this.tool) {
+      this.tool.fillColor = color;
     }
-    setLineWidth(lineWidth) {
-        if (this.tool) {
-            this.tool.lineWidth = lineWidth;
-            const toolName = this.tool.constructor.name.toLowerCase();
-            this.lineWidths[toolName] = lineWidth; 
-        }
+  }
+
+  setStrokeColor(color) {
+    if (this.tool) {
+      this.tool.strokeColor = color;
     }
+  }
+
+  setLineWidth(lineWidth) {
+    if (this.tool) {
+      const toolName = this.tool.constructor.name.toLowerCase();
+      this.tool.lineWidth = lineWidth;
+      this.lineWidths[toolName] = lineWidth; // ✅ Сохраняем толщину для текущего инструмента
+    }
+  }
 }
 
-export default new ToolState()
+export default new ToolState();
