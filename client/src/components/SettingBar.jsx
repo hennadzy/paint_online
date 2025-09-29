@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import toolState from '../store/toolState';
-import '../styles/toolbar.scss';
+import toolState from "../store/toolState";
+import '../styles/toolbar.scss'
+
 
 export const SettingBar = () => {
-  const [lineWidth, setLineWidth] = useState(1);
+  const [lineWidth, setLineWidth] = useState(1); // ✅ локальное состояние
 
   useEffect(() => {
     const tool = toolState.tool;
-    if (tool && typeof tool.lineWidth === 'number') {
-      setLineWidth(tool.lineWidth);
+    if (tool) {
+      setLineWidth(tool.lineWidth || 1); // ✅ обновляем при смене инструмента
     }
   }, [toolState.tool]);
 
   const handleChange = (e) => {
     const value = +e.target.value;
     setLineWidth(value);
-    toolState.setLineWidth(value); // сохраняем в toolState
+    if (toolState.tool) {
+      toolState.tool.lineWidth = value; // ✅ меняем только локально
+    }
   };
 
   return (
@@ -29,8 +32,8 @@ export const SettingBar = () => {
         onChange={handleChange}
       />
       <span className="line-width-label">{lineWidth}px</span>
-    </div>
+    </div>   
   );
 };
-
 export default SettingBar;
+
