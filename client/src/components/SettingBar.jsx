@@ -1,38 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React from "react";
 import toolState from "../store/toolState";
-import '../styles/toolbar.scss'
 
-
-export const SettingBar = () => {
-  const [lineWidth, setLineWidth] = useState(1); // ✅ локальное состояние
-
-  useEffect(() => {
-    const tool = toolState.tool;
-    if (tool) {
-      setLineWidth(tool.lineWidth || 1); // ✅ обновляем при смене инструмента
-    }
-  }, [toolState.tool]);
-
-  const handleChange = (e) => {
-    const value = +e.target.value;
-    setLineWidth(value);
-    if (toolState.tool) {
-      toolState.tool.lineWidth = value; // ✅ меняем только локально
-    }
+const SettingBar = () => {
+  const changeLineWidth = (e) => {
+    const newWidth = +e.target.value;
+    toolState.setLineWidth(newWidth);
   };
 
   return (
-    <div className="setting-bar">
-      <label>Толщина линии:</label>
+    <div className="settings-bar">
+      <label htmlFor="line-width">Толщина линии</label>
       <input
+        id="line-width"
         type="range"
         min={1}
         max={50}
-        value={lineWidth}
-        onChange={handleChange}
+        value={toolState.getCurrentLineWidth()}
+        onChange={changeLineWidth}
       />
-      <span className="line-width-label">{lineWidth}px</span>
-    </div>   
+      <span style={{ marginLeft: 10 }}>{toolState.getCurrentLineWidth()}px</span>
+    </div>
   );
 };
+
 export default SettingBar;
