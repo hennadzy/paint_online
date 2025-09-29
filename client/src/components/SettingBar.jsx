@@ -15,7 +15,7 @@ export const SettingBar = () => {
   const handleChange = (e) => {
     const value = +e.target.value;
     setLineWidth(value);
-    toolState.setLineWidth(value);
+    toolState.setLineWidth(value); // сохраняем в toolState
   };
 
   return (
