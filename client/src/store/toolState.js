@@ -3,11 +3,10 @@ import { makeAutoObservable } from "mobx";
 class ToolState {
   tool = null;
 
-  // ✅ Цвета — локальные, только для текущего клиента
+  // ✅ Цвета и толщина по умолчанию
   strokeColor = '#000000';
   fillColor = '#000000';
 
-  // ✅ Толщины — сохраняются по типу инструмента
   lineWidths = {
     brush: 1,
     rect: 1,
@@ -21,10 +20,12 @@ class ToolState {
   }
 
   setTool(tool) {
-    // ✅ Очистка предыдущего инструмента
+    // ✅ Сохраняем цвета предыдущего инструмента
     if (this.tool?.restorePreviousColors) {
       this.tool.restorePreviousColors();
     }
+
+    // ✅ Удаляем события предыдущего инструмента
     if (this.tool?.destroyEvents) {
       this.tool.destroyEvents();
     }
@@ -35,13 +36,13 @@ class ToolState {
     const savedWidth = this.lineWidths[toolName] ?? 1;
     tool.lineWidth = savedWidth;
 
-    // ✅ Применяем локальные цвета
+    // ✅ Применяем текущие цвета
     tool.strokeColor = this.strokeColor;
     tool.fillColor = this.fillColor;
 
     this.tool = tool;
 
-    // ✅ Назначаем события
+    // ✅ Назначаем события нового инструмента
     if (this.tool.listen) {
       this.tool.listen();
     }
