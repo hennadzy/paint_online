@@ -1,7 +1,7 @@
 @import "./variables";
 
 .toolbar {
-  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   width: 100%;
   height: $toolbar-height;
   background-color: #67676759;
@@ -74,7 +74,7 @@ canvas.eraser-cursor {
 }
 
 .setting-bar {
-  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   height: $toolbar-height;
   background-color: #67676759;
   display: flex;

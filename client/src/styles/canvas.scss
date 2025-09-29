@@ -40,7 +40,7 @@ canvas.eraser-cursor {
 }
 
 button {
-  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   background: linear-gradient(135deg, #ffcc00, #ff6699); /* Градиентный фон */
   border: none; /* Убираем стандартные границы */
   border-radius: 10px; /* Закругленные углы */
@@ -93,7 +93,7 @@ button:active {
 }
 
 .modal-content {
-  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный стиль текста */
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   background: #676767c3; 
   border-radius: 10px; /* Округлые углы */
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Тень для объема */
@@ -110,7 +110,7 @@ button:active {
 
 
 .modal-footer button {
-  font-family: "Comic Sans MS", "Comic Sans", cursive; /* Мультяшный шрифт */
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   background: #ffcc00; /* Яркий фон кнопки */
   color: #333; /* Цвет текста */
   border-radius: 10px; /* Округление углов */
