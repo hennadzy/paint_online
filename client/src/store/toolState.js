@@ -33,9 +33,13 @@ strokeColor = "#000000"; fillColor = "#000000";
         const savedWidth = this.lineWidths[toolName] ?? 1;
         tool.lineWidth = savedWidth;
 
-        // ✅ Применяем текущие цвета
-        tool.strokeColor = this.strokeColor;
-        tool.fillColor = this.fillColor;
+     // ✅ передаём сохранённые цвета
+    if (tool.setStrokeColor) {
+      tool.setStrokeColor(this.strokeColor);
+    }
+    if (tool.setFillColor) {
+      tool.setFillColor(this.fillColor);
+    }
 
         this.tool = tool;
 
@@ -45,16 +49,13 @@ strokeColor = "#000000"; fillColor = "#000000";
         }
     }
 
-    // setStrokeColor(color) {
-    //     this.strokeColor = color; // ✅ сохраняем цвет
-    //     if (this.tool?.setStrokeColor) {
-    //         this.tool.setStrokeColor(color);
-    //     }
-    // }
-
-    setStrokeColor(color) { if (this.tool?.setStrokeColor) { this.tool.setStrokeColor(color); } }
-
-
+ 
+  setStrokeColor(color) {
+    this.strokeColor = color; // ✅ сохраняем цвет
+    if (this.tool?.setStrokeColor) {
+      this.tool.setStrokeColor(color);
+    }
+  }
 
 
     setFillColor(color) {
