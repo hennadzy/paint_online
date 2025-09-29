@@ -7,7 +7,7 @@ export default class Circle extends Tool {
     super(canvas, socket, id, username);
     this.destroyEvents();
     this.listen();
-    this.strokeColor = '#000000'; // при создании
+   
   }
 
   listen() {

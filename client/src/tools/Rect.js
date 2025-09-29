@@ -7,7 +7,6 @@ export default class Rect extends Tool {
     super(canvas, socket, id, username);
     this.destroyEvents();
     this.listen();
-    this.strokeColor = '#000000'; // при создании
   }
 
   listen() {
