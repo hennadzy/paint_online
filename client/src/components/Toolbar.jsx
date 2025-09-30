@@ -11,21 +11,11 @@ import Eraser from "../tools/Eraser";
 const Toolbar = () => {
   const changeColor = (e) => {
     const newColor = e.target.value;
-    toolState.color = newColor;
-    if (toolState.tool) {
-      toolState.tool.color = newColor;
-      toolState.tool.strokeColor = newColor;
-      toolState.tool.fillColor = newColor;
-    }
+    toolState.setStrokeColor(newColor); // ✅ централизованное обновление
   };
 
   const changeTool = (tool, cursorClass) => {
-    const currentColor = toolState.color;
-    tool.color = currentColor;
-    tool.strokeColor = currentColor;
-    tool.fillColor = currentColor;
-
-    // ✅ Автотолщина для стерки
+    // ✅ инструмент получит цвет из toolState внутри setTool()
     if (tool instanceof Eraser) {
       tool.lineWidth = 10;
     }
@@ -104,6 +94,7 @@ const Toolbar = () => {
       />
       <input
         type="color"
+        value={toolState.strokeColor} // ✅ синхронизировано с текущим цветом
         onChange={changeColor}
         style={{ marginLeft: 10 }}
       />
