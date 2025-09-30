@@ -5,14 +5,12 @@ import { makeAutoObservable } from "mobx";
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#000000"; // ✅ локальный цвет по умолчанию
-    this.lineWidth = 1;           // ✅ локальная толщина
+    this.strokeColor = "#000000";
+    this.lineWidth = 1;
     this.mouseDown = false;
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
-    this.destroyEvents();
-    this.listen();
     makeAutoObservable(this);
   }
 
@@ -35,15 +33,10 @@ export default class Brush extends Tool {
   }
 
   destroyEvents() {
-  this.canvas.onmousedown = null;
-  this.canvas.onmousemove = null;
-  this.canvas.onmouseup = null;
-  this.canvas.ontouchstart = null;
-  this.canvas.ontouchmove = null;
-  this.canvas.ontouchend = null;
-}
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
 
-  removeTouchEvents() {
     this.canvas.removeEventListener("touchstart", this._touchStartHandler);
     this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
     this.canvas.removeEventListener("touchend", this._touchEndHandler);
