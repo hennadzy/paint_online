@@ -12,7 +12,8 @@ export default class Tool {
     this.color = toolState.color;
     this.strokeColor = toolState.color;
     this.fillColor = toolState.color;
-    this.lineWidth = toolState.lineWidth || 1;
+   const toolName = this.constructor.name.toLowerCase();
+this.lineWidth = toolState.lineWidths[toolName] ?? 1;
 
     this.mouseDown = false;
   }
