@@ -24,8 +24,7 @@ export default class Rect extends Tool {
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.ontouchstart = this.touchStartHandler.bind(this);
-    this.canvas.ontouchmove = this.touchMoveHandler.bind(this);
-    this.canvas.ontouchend = this.touchEndHandler.bind(this);
+    this.canvas.ontouchend = this.touchEndHandler.bind(this); // ❌ touchmove удалён
   }
 
   mouseDownHandler(e) {
@@ -91,27 +90,12 @@ export default class Rect extends Tool {
     this.saved = this.canvas.toDataURL();
   }
 
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.currentX = e.touches[0].clientX - rect.left;
-    this.currentY = e.touches[0].clientY - rect.top;
-    const width = this.currentX - this.startX;
-    const height = this.currentY - this.startY;
-
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.drawImage(img, 0, 0);
-      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
-    };
-  }
-
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    this.currentX = e.changedTouches[0].clientX - rect.left;
+    this.currentY = e.changedTouches[0].clientY - rect.top;
     const width = this.currentX - this.startX;
     const height = this.currentY - this.startY;
 
