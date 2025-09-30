@@ -1,26 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { observer } from 'mobx-react-lite';
 import toolState from '../store/toolState';
 import '../styles/toolbar.scss';
 
-export const SettingBar = () => {
-  const [lineWidth, setLineWidth] = useState(1);
-
-  useEffect(() => {
-    const tool = toolState.tool;
-    if (tool && typeof tool.lineWidth === 'number') {
-      setLineWidth(tool.lineWidth);
-    }
-  }, [toolState.tool?.lineWidth]); // ✅ отслеживаем только lineWidth
+export const SettingBar = observer(() => {
+  const lineWidth = toolState.tool?.lineWidth ?? 1;
 
   const handleChange = (e) => {
     const value = +e.target.value;
-    setLineWidth(value);
     toolState.setLineWidth(value); // сохраняем в toolState
   };
 
   return (
     <div className="setting-bar">
-      {/* <label>Толщина линии:</label> */}
       <input
         type="range"
         min={1}
@@ -31,6 +23,6 @@ export const SettingBar = () => {
       <span className="line-width-label">{lineWidth}px</span>
     </div>
   );
-};
+});
 
 export default SettingBar;
