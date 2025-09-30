@@ -7,8 +7,9 @@ export default class Eraser extends Tool {
     super(canvas, socket, id, username);
     this.strokeColor = "#ffffff";
     this.mouseDown = false;
-    makeAutoObservable(this);
+   
     this.lineWidth = 10;
+     makeAutoObservable(this);
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
