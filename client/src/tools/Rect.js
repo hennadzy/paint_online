@@ -6,6 +6,7 @@ import { makeAutoObservable } from "mobx";
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
+    this.strokeColor = "#000000"
     this.destroyEvents();
     this.listen();
        makeAutoObservable(this);
