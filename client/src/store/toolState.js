@@ -19,19 +19,15 @@ class ToolState {
   }
 
   setTool(tool) {
-    // Удаляем события предыдущего инструмента
     this.tool?.destroyEvents?.();
-
-    // Сохраняем новый инструмент
     this.tool = observable(tool);
 
-    // Применяем цвет и толщину
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
+
     const toolName = tool.constructor.name.toLowerCase();
     this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 1);
 
-    // Навешиваем события только после очистки
     this.tool.listen?.();
   }
 
