@@ -1,4 +1,5 @@
 import React from 'react';
+import { observer } from "mobx-react-lite"; // ✅ добавлено
 import '../styles/toolbar.scss';
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
@@ -8,14 +9,13 @@ import Line from "../tools/Line";
 import Circle from "../tools/Circle";
 import Eraser from "../tools/Eraser";
 
-const Toolbar = () => {
+const Toolbar = observer(() => {
   const changeColor = (e) => {
     const newColor = e.target.value;
     toolState.setStrokeColor(newColor); // ✅ централизованное обновление
   };
 
   const changeTool = (tool, cursorClass) => {
-    // ✅ инструмент получит цвет из toolState внутри setTool()
     if (tool instanceof Eraser) {
       tool.lineWidth = 10;
     }
@@ -94,7 +94,7 @@ const Toolbar = () => {
       />
       <input
         type="color"
-        value={toolState.strokeColor} // ✅ синхронизировано с текущим цветом
+        value={toolState.strokeColor} // ✅ теперь реактивно
         onChange={changeColor}
         style={{ marginLeft: 10 }}
       />
@@ -103,6 +103,6 @@ const Toolbar = () => {
       <button className="toolbar__btn save" onClick={download} />
     </div>
   );
-};
+});
 
 export default Toolbar;
