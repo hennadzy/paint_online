@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, observable } from "mobx";
 
 class ToolState {
   tool = null;
@@ -38,7 +38,7 @@ class ToolState {
       tool.setFillColor(this.fillColor);
     }
 
-    this.tool = tool;
+     this.tool = observable(tool);
 
     if (this.tool.listen) {
       this.tool.listen();
