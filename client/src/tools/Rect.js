@@ -24,7 +24,7 @@ export default class Rect extends Tool {
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.ontouchstart = this.touchStartHandler.bind(this);
-    this.canvas.ontouchend = this.touchEndHandler.bind(this); // ❌ touchmove удалён
+    this.canvas.ontouchend = this.touchEndHandler.bind(this);
   }
 
   mouseDownHandler(e) {
@@ -43,23 +43,21 @@ export default class Rect extends Tool {
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "rect",
-          x: this.startX,
-          y: this.startY,
-          width,
-          height,
-          strokeStyle: this.strokeColor || this.color || toolState.color,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   mouseMoveHandler(e) {
@@ -85,8 +83,6 @@ export default class Rect extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rect.left;
     this.startY = e.touches[0].clientY - rect.top;
-    this.currentX = this.startX;
-    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
   }
 
@@ -94,30 +90,28 @@ export default class Rect extends Tool {
     e.preventDefault();
     this.mouseDown = false;
     const rect = this.canvas.getBoundingClientRect();
-    this.currentX = e.changedTouches[0].clientX - rect.left;
-    this.currentY = e.changedTouches[0].clientY - rect.top;
-    const width = this.currentX - this.startX;
-    const height = this.currentY - this.startY;
+    const endX = e.changedTouches[0].clientX - rect.left;
+    const endY = e.changedTouches[0].clientY - rect.top;
+    const width = endX - this.startX;
+    const height = endY - this.startY;
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "rect",
-          x: this.startX,
-          y: this.startY,
-          width,
-          height,
-          strokeStyle: this.strokeColor || this.color || toolState.color,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {

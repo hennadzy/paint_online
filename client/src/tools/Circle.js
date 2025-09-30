@@ -24,7 +24,6 @@ export default class Circle extends Tool {
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.ontouchstart = this.touchStartHandler.bind(this);
-    this.canvas.ontouchmove = this.touchMoveHandler.bind(this);
     this.canvas.ontouchend = this.touchEndHandler.bind(this);
   }
 
@@ -45,22 +44,20 @@ export default class Circle extends Tool {
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "circle",
+        x: this.startX,
+        y: this.startY,
+        radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "circle",
-          x: this.startX,
-          y: this.startY,
-          radius,
-          strokeStyle: this.strokeColor || this.color || toolState.color,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   mouseMoveHandler(e) {
@@ -85,51 +82,33 @@ export default class Circle extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rect.left;
     this.startY = e.touches[0].clientY - rect.top;
-    this.currentX = this.startX;
-    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.currentX = e.touches[0].clientX - rect.left;
-    this.currentY = e.touches[0].clientY - rect.top;
-    const radius = Math.sqrt((this.currentX - this.startX) ** 2 + (this.currentY - this.startY) ** 2);
-
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.drawImage(img, 0, 0);
-      Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
-    };
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    const radius = Math.sqrt((this.currentX - this.startX) ** 2 + (this.currentY - this.startY) ** 2);
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.changedTouches[0].clientX - rect.left;
+    const currentY = e.changedTouches[0].clientY - rect.top;
+    const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "circle",
+        x: this.startX,
+        y: this.startY,
+        radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "circle",
-          x: this.startX,
-          y: this.startY,
-          radius,
-          strokeStyle: this.strokeColor || this.color || toolState.color,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   static staticDraw(ctx, x, y, radius, strokeStyle, lineWidth) {
