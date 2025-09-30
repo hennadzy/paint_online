@@ -2,7 +2,7 @@ import { makeAutoObservable } from "mobx";
 
 class ToolState {
     tool = null;
-strokeColor = "#000000"; fillColor = "#000000";
+    strokeColor = "#000000"; fillColor = "#000000";
 
     lineWidths = {
         brush: 1,
@@ -33,13 +33,13 @@ strokeColor = "#000000"; fillColor = "#000000";
         const savedWidth = this.lineWidths[toolName] ?? 1;
         tool.lineWidth = savedWidth;
 
-     // ✅ передаём сохранённые цвета
-    if (tool.setStrokeColor) {
-      tool.setStrokeColor(this.strokeColor);
-    }
-    if (tool.setFillColor) {
-      tool.setFillColor(this.fillColor);
-    }
+        // ✅ передаём сохранённые цвета
+        if (tool.setStrokeColor) {
+            tool.setStrokeColor(this.strokeColor);
+        }
+        if (tool.setFillColor) {
+            tool.setFillColor(this.fillColor);
+        }
 
         this.tool = tool;
 
@@ -49,13 +49,13 @@ strokeColor = "#000000"; fillColor = "#000000";
         }
     }
 
- 
-  setStrokeColor(color) {
-    this.strokeColor = color; // ✅ сохраняем цвет
-    if (this.tool?.setStrokeColor) {
-      this.tool.setStrokeColor(color);
+
+    setStrokeColor(color) {
+        this.strokeColor = color; // ✅ сохраняем цвет
+        if (this.tool?.setStrokeColor) {
+            this.tool.setStrokeColor(color);
+        }
     }
-  }
 
 
     setFillColor(color) {

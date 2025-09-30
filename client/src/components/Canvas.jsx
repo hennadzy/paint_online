@@ -174,16 +174,16 @@ const Canvas = observer(() => {
         </Modal.Header>
         <Modal.Body>
           <input
-  type="text"
-  autoFocus
-  ref={usernameRef}
-  placeholder="Ваше имя"
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      connectHandler();
-    }
-  }}
-/>
+            type="text"
+            autoFocus
+            ref={usernameRef}
+            placeholder="Ваше имя"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                connectHandler();
+              }
+            }}
+          />
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={connectHandler}>

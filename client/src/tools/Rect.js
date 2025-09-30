@@ -9,9 +9,7 @@ export default class Rect extends Tool {
     this.listen();
   }
 
-//   setStrokeColor(color) {
-//   this.strokeColor = color;
-// }
+
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
@@ -130,11 +128,11 @@ export default class Rect extends Tool {
     );
   }
 
-static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = lineWidth;
-  ctx.beginPath();
-  ctx.rect(x, y, width, height);
-  ctx.stroke();
-}
+  static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.stroke();
+  }
 }

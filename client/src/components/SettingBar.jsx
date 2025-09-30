@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { autorun } from 'mobx';
 import toolState from '../store/toolState';
 import '../styles/toolbar.scss';
 
 export const SettingBar = () => {
   const [lineWidth, setLineWidth] = useState(1);
 
-  useEffect(() => {
+  // реактивно отслеживаем смену инструмента и обновляем ползунок
+  autorun(() => {
     const tool = toolState.tool;
     if (tool && typeof tool.lineWidth === 'number') {
       setLineWidth(tool.lineWidth);
     }
-  }, [toolState.tool]);
+  });
 
   const handleChange = (e) => {
     const value = +e.target.value;
