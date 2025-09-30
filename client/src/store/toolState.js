@@ -38,13 +38,7 @@ class ToolState {
             tool.setFillColor(this.fillColor);
         }
 
-        this.canvas.onmousedown = null;
-        this.canvas.onmousemove = null;
-        this.canvas.onmouseup = null;
-        this.canvas.ontouchstart = null;
-        this.canvas.ontouchmove = null;
-        this.canvas.ontouchend = null;
-
+        
         this.tool = observable(tool);
 
         if (this.tool.listen) {
