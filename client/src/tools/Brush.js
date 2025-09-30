@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
 
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
@@ -7,17 +8,15 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000"; // ✅ локальный цвет по умолчанию
     this.lineWidth = 1;           // ✅ локальная толщина
     this.mouseDown = false;
-
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
-
     this.destroyEvents();
     this.listen();
+    makeAutoObservable(this);
   }
 
-
- setLineWidth(width) {
+  setLineWidth(width) {
     this.lineWidth = width;
   }
 

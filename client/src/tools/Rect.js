@@ -1,12 +1,14 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
+import { makeAutoObservable } from "mobx";
 
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.destroyEvents();
     this.listen();
+    makeAutoObservable(this);
   }
 
   setLineWidth(width) {
@@ -16,8 +18,6 @@ export default class Rect extends Tool {
   setStrokeColor(color) {
     this.strokeColor = color;
   }
-
-
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);

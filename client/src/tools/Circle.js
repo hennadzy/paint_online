@@ -1,15 +1,15 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
+import { makeAutoObservable } from "mobx";
 
 export default class Circle extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.destroyEvents();
     this.listen();
-   
+    makeAutoObservable(this);
   }
-
 
   setLineWidth(width) {
     this.lineWidth = width;
