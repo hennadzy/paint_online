@@ -10,6 +10,14 @@ export default class Line extends Tool {
  
   }
 
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);

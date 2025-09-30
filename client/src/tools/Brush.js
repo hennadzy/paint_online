@@ -17,8 +17,12 @@ export default class Brush extends Tool {
   }
 
 
-  setLineWidth(width) {
+ setLineWidth(width) {
     this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
   }
 
   listen() {

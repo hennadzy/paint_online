@@ -9,6 +9,14 @@ export default class Rect extends Tool {
     this.listen();
   }
 
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
 
 
   listen() {
