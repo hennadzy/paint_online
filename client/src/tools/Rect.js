@@ -105,7 +105,7 @@ export default class Rect extends Tool {
     const height = endY - this.startY;
 
     canvasState.pushToUndo(this.canvas.toDataURL());
-
+    Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
     this.socket.send(JSON.stringify({
       method: "draw",
       id: this.id,

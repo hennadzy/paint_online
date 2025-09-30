@@ -102,6 +102,7 @@ export default class Circle extends Tool {
     const radius = Math.sqrt((endX - this.startX) ** 2 + (endY - this.startY) ** 2);
 
     canvasState.pushToUndo(this.canvas.toDataURL());
+    Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
 
     this.socket.send(JSON.stringify({
       method: "draw",
