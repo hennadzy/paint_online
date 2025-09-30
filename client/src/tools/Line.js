@@ -30,6 +30,15 @@ export default class Line extends Tool {
     this.canvas.ontouchend = this.touchEndHandler.bind(this);
   }
 
+  destroyEvents() {
+  this.canvas.onmousedown = null;
+  this.canvas.onmousemove = null;
+  this.canvas.onmouseup = null;
+  this.canvas.ontouchstart = null;
+  this.canvas.ontouchmove = null;
+  this.canvas.ontouchend = null;
+}
+
   mouseDownHandler(e) {
     this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
