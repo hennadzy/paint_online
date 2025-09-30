@@ -7,6 +7,7 @@ export default class Circle extends Tool {
     super(canvas, socket, id, username);
     this.strokeColor = "#000000";
     this.lineWidth = 1;
+    this.mouseDown = false;
     makeAutoObservable(this);
   }
 
@@ -23,6 +24,7 @@ export default class Circle extends Tool {
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.ontouchstart = this.touchStartHandler.bind(this);
+    this.canvas.ontouchmove = this.touchMoveHandler.bind(this); // ✅ добавлено
     this.canvas.ontouchend = this.touchEndHandler.bind(this);
   }
 
@@ -41,6 +43,22 @@ export default class Circle extends Tool {
     this.startX = e.clientX - rect.left;
     this.startY = e.clientY - rect.top;
     this.saved = this.canvas.toDataURL();
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
+    };
   }
 
   mouseUpHandler(e) {
@@ -68,11 +86,22 @@ export default class Circle extends Tool {
     }));
   }
 
-  mouseMoveHandler(e) {
-    if (!this.mouseDown) return;
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
     const rect = this.canvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    this.startX = e.touches[0].clientX - rect.left;
+    this.startY = e.touches[0].clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.touches[0].clientX - rect.left;
+    const currentY = e.touches[0].clientY - rect.top;
     const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
 
     const img = new Image();
@@ -82,15 +111,6 @@ export default class Circle extends Tool {
       this.ctx.drawImage(img, 0, 0);
       Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
     };
-  }
-
-  touchStartHandler(e) {
-    e.preventDefault();
-    this.mouseDown = true;
-    const rect = this.canvas.getBoundingClientRect();
-    this.startX = e.touches[0].clientX - rect.left;
-    this.startY = e.touches[0].clientY - rect.top;
-    this.saved = this.canvas.toDataURL();
   }
 
   touchEndHandler(e) {
