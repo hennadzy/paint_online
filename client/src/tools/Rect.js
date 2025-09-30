@@ -8,7 +8,7 @@ export default class Rect extends Tool {
     super(canvas, socket, id, username);
     this.destroyEvents();
     this.listen();
-    makeAutoObservable(this);
+       makeAutoObservable(this);
   }
 
   setLineWidth(width) {
@@ -18,6 +18,7 @@ export default class Rect extends Tool {
   setStrokeColor(color) {
     this.strokeColor = color;
   }
+
 
 
   listen() {
