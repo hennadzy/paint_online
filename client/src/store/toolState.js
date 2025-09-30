@@ -1,75 +1,57 @@
 import { makeAutoObservable, observable } from "mobx";
 
 class ToolState {
-    tool = null;
+  tool = null;
 
-    strokeColor = "#000000";
-    fillColor = "#000000";
+  strokeColor = "#000000";
+  fillColor = "#000000";
 
-    lineWidths = {
-        brush: 1,
-        rect: 1,
-        circle: 1,
-        eraser: 10,
-        line: 1
-    };
+  lineWidths = {
+    brush: 1,
+    rect: 1,
+    circle: 1,
+    eraser: 10,
+    line: 1
+  };
 
-    constructor() {
-        makeAutoObservable(this);
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setTool(tool) {
+    // Удаляем события предыдущего инструмента
+    this.tool?.destroyEvents?.();
+
+    // Сохраняем новый инструмент
+    this.tool = observable(tool);
+
+    // Применяем цвет и толщину
+    this.tool.setStrokeColor?.(this.strokeColor);
+    this.tool.setFillColor?.(this.fillColor);
+    const toolName = tool.constructor.name.toLowerCase();
+    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 1);
+
+    // Навешиваем события только после очистки
+    this.tool.listen?.();
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+    this.tool?.setStrokeColor?.(color);
+  }
+
+  setFillColor(color) {
+    this.fillColor = color;
+    this.tool?.setFillColor?.(color);
+  }
+
+  setLineWidth(lineWidth) {
+    if (this.tool) {
+      const toolName = this.tool.constructor.name.toLowerCase();
+      this.tool.setLineWidth?.(lineWidth);
+      this.lineWidths[toolName] = lineWidth;
     }
-
-    setTool(tool) {
-        if (this.tool?.restorePreviousColors) {
-            this.tool.restorePreviousColors();
-        }
-
-        if (this.tool?.destroyEvents) {
-            this.tool.destroyEvents();
-        }
-
-        const toolName = tool.constructor.name.toLowerCase();
-        const savedWidth = this.lineWidths[toolName] ?? 1;
-        tool.lineWidth = savedWidth;
-
-        if (tool.setStrokeColor) {
-            tool.setStrokeColor(this.strokeColor);
-        }
-        if (tool.setFillColor) {
-            tool.setFillColor(this.fillColor);
-        }
-
-        
-        this.tool = observable(tool);
-
-        if (this.tool.listen) {
-            this.tool.listen();
-        }
-
-
-
-    }
-
-    setStrokeColor(color) {
-        this.strokeColor = color;
-        if (this.tool?.setStrokeColor) {
-            this.tool.setStrokeColor(color);
-        }
-    }
-
-    setFillColor(color) {
-        this.fillColor = color;
-        if (this.tool?.setFillColor) {
-            this.tool.setFillColor(color);
-        }
-    }
-
-    setLineWidth(lineWidth) {
-        if (this.tool) {
-            const toolName = this.tool.constructor.name.toLowerCase();
-            this.tool.lineWidth = lineWidth;
-            this.lineWidths[toolName] = lineWidth;
-        }
-    }
+  }
 }
 
 export default new ToolState();
