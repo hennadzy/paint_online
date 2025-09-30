@@ -5,13 +5,14 @@ import { makeAutoObservable } from "mobx";
 export default class Eraser extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#ffffff"; // ✅ фиксированный белый цвет
-    this.lineWidth = 10;          // ✅ начальная толщина
+    this.strokeColor = "#ffffff";
     this.mouseDown = false;
+    makeAutoObservable(this);
+    this.lineWidth = 10;
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
-    makeAutoObservable(this);
+
   }
 
   setLineWidth(width) {
