@@ -6,10 +6,9 @@ import { makeAutoObservable } from "mobx";
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#000000"
-    this.destroyEvents();
-    this.listen();
-       makeAutoObservable(this);
+    this.strokeColor = "#000000";
+    this.lineWidth = 1;
+    makeAutoObservable(this);
   }
 
   setLineWidth(width) {
@@ -20,15 +19,21 @@ export default class Rect extends Tool {
     this.strokeColor = color;
   }
 
-
-
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.ontouchstart = this.touchStartHandler.bind(this);
-    this.canvas.ontouchmove = this.touchMoveHandler.bind(this);
     this.canvas.ontouchend = this.touchEndHandler.bind(this);
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
   }
 
   mouseDownHandler(e) {
@@ -47,23 +52,21 @@ export default class Rect extends Tool {
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "rect",
-          x: this.startX,
-          y: this.startY,
-          width,
-          height,
-          strokeStyle: this.strokeColor,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   mouseMoveHandler(e) {
@@ -89,54 +92,35 @@ export default class Rect extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.touches[0].clientX - rect.left;
     this.startY = e.touches[0].clientY - rect.top;
-    this.currentX = this.startX;
-    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.currentX = e.touches[0].clientX - rect.left;
-    this.currentY = e.touches[0].clientY - rect.top;
-    const width = this.currentX - this.startX;
-    const height = this.currentY - this.startY;
-
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.drawImage(img, 0, 0);
-      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
-    };
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    const width = this.currentX - this.startX;
-    const height = this.currentY - this.startY;
+    const rect = this.canvas.getBoundingClientRect();
+    const endX = e.changedTouches[0].clientX - rect.left;
+    const endY = e.changedTouches[0].clientY - rect.top;
+    const width = endX - this.startX;
+    const height = endY - this.startY;
 
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    this.socket.send(
-      JSON.stringify({
-        method: "draw",
-        id: this.id,
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
         username: this.username,
-        figure: {
-          type: "rect",
-          x: this.startX,
-          y: this.startY,
-          width,
-          height,
-          strokeStyle: this.strokeColor,
-          lineWidth: this.lineWidth,
-          username: this.username,
-        },
-      })
-    );
+      },
+    }));
   }
 
   static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
