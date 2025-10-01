@@ -82,9 +82,9 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
       toolState.setTool(
-  new Brush(canvasState.canvas, socket, params.id, canvasState.username),
-  "brush"
-);
+        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
+        "brush"
+      );
 
       updateCursor("brush");
       toolState.tool.listen();
@@ -139,7 +139,7 @@ const Canvas = observer(() => {
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
       case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, "#FFFFFF", figure.isStart);
+        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
       case "finish":
         ctx.beginPath();
