@@ -68,7 +68,8 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-    toolState.setTool(new Brush(canvasRef.current, null, params.id));
+    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
+
     updateCursor("brush");
   }, [params.id]);
 
