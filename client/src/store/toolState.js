@@ -24,6 +24,7 @@ class ToolState {
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
+console.log("toolName:", tool.constructor.name);
 
     const toolName = tool.constructor.name.toLowerCase();
     this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 2);
