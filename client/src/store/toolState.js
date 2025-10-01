@@ -24,9 +24,10 @@ class ToolState {
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
-console.log("toolName:", tool.constructor.name);
+
 // console.log("lineWidths[toolName]:", this.lineWidths[toolName]);
     const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
+    console.log("toolName:", tool.constructor.name);
     this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 2);
 
     this.tool.listen?.();
