@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable } from "mobx";
+import { makeAutoObservable } from "mobx";
 
 class ToolState {
   tool = null;
@@ -18,14 +18,18 @@ class ToolState {
     makeAutoObservable(this);
   }
 
- setTool(tool, toolNameOverride) {
+  setTool(tool, toolNameOverride) {
     this.tool?.destroyEvents?.();
-   this.tool = tool;
+    this.tool = tool;
+
+    const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
-    const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
-    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 1);
+
+    // Всегда восстанавливаем сохранённую толщину
+    const savedWidth = this.lineWidths[toolName] ?? 1;
+    this.tool.setLineWidth?.(savedWidth);
 
     this.tool.listen?.();
   }
