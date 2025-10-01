@@ -10,7 +10,7 @@ class ToolState {
     brush: 1,
     rect: 1,
     circle: 1,
-    eraser: 10,
+    eraser: 15,
     line: 1
   };
 
