@@ -20,7 +20,6 @@ export default class Eraser extends Tool {
     this.lineWidth = width;
   }
 
-  // ❌ Не реализуем setStrokeColor — цвет не должен меняться
   setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
   }
