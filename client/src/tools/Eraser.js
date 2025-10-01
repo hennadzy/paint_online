@@ -7,23 +7,29 @@ export default class Eraser extends Tool {
     super(canvas, socket, id, username);
     this.strokeColor = "#ffffff";
     this.mouseDown = false;
-   
     this.lineWidth = 10;
-   makeAutoObservable(this, {
-  lineWidth: observable,
-  setLineWidth: action
-});
+    console.log ("1", this.lineWidth);
+    makeAutoObservable(this, {
+      lineWidth: observable,
+      setLineWidth: action
+    });
+    console.log ("2", this.lineWidth);
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
 
   }
+console.log ("3", this.lineWidth);
 
   setLineWidth(width) {
     this.lineWidth = width;
+    console.log ("4", this.lineWidth);
   }
 
-  setStrokeColor() {
+console.log ("5", this.lineWidth);
+
+  
+setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
   }
 
