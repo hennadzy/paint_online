@@ -15,25 +15,22 @@ const Toolbar = observer(() => {
         toolState.setStrokeColor(newColor); // ✅ централизованное обновление
     };
 
-    const changeTool = (tool, cursorClass) => {
-        if (tool instanceof Eraser) {
-            tool.lineWidth = 10;
-        }
+const changeTool = (tool, cursorClass, toolNameOverride) => {
+  toolState.setTool(tool, toolNameOverride);
 
-        toolState.setTool(tool);
+  const canvas = canvasState.canvas;
+  if (canvas) {
+    canvas.classList.remove(
+      "brush-cursor",
+      "eraser-cursor",
+      "rect-cursor",
+      "circle-cursor",
+      "line-cursor"
+    );
+    canvas.classList.add(cursorClass);
+  }
+};
 
-        const canvas = canvasState.canvas;
-        if (canvas) {
-            canvas.classList.remove(
-                "brush-cursor",
-                "eraser-cursor",
-                "rect-cursor",
-                "circle-cursor",
-                "line-cursor"
-            );
-            canvas.classList.add(cursorClass);
-        }
-    };
 
     const download = () => {
         const dataUrl = canvasState.canvas.toDataURL();
