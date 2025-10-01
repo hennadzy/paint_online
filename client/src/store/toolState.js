@@ -25,10 +25,7 @@ class ToolState {
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
     const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
-    if (typeof tool.lineWidth !== "number" || isNaN(tool.lineWidth)) {
-    const defaultWidth = this.lineWidths[toolName] ?? 1;
-    this.tool.setLineWidth?.(defaultWidth);
-  }
+    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 1);
 
     this.tool.listen?.();
   }
