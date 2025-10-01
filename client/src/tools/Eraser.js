@@ -1,6 +1,6 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, observable, action } from "mobx";
 
 export default class Eraser extends Tool {
   constructor(canvas, socket, id, username) {
