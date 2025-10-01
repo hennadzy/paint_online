@@ -7,8 +7,8 @@ class ToolState {
   fillColor = "#000000";
 
   lineWidths = {
-    brush: 5,
-    rect: 5,
+    brush: 1,
+    rect: 1,
     circle: 1,
     eraser: 15,
     line: 1
