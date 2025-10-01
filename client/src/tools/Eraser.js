@@ -9,16 +9,16 @@ export default class Eraser extends Tool {
     this.mouseDown = false;
    
     this.lineWidth = 10;
-     makeAutoObservable(this);
+    //  makeAutoObservable(this);
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
 
   }
 
-  // setLineWidth(width) {
-  //   this.lineWidth = width;
-  // }
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
 
   setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
