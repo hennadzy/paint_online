@@ -7,7 +7,7 @@ export default class Eraser extends Tool {
     super(canvas, socket, id, username);
     this.strokeColor = "#ffffff";
     this.mouseDown = false;
-    // this.lineWidth = 10;
+    this.lineWidth = 10;
     makeAutoObservable(this, {
       lineWidth: observable,
       setLineWidth: action
@@ -26,7 +26,7 @@ export default class Eraser extends Tool {
 
   setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
-
+    
   }
 
   listen() {
