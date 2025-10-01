@@ -18,7 +18,7 @@ class ToolState {
     makeAutoObservable(this);
   }
 
-  setTool(tool) {
+ setTool(tool, toolNameOverride) {
     this.tool?.destroyEvents?.();
    this.tool = tool;
 
