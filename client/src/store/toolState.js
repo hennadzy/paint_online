@@ -27,9 +27,12 @@ class ToolState {
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
 
+console.log("Restoring lineWidth for", toolName, "→", savedWidth);
+
     // Всегда восстанавливаем сохранённую толщину
     const savedWidth = this.lineWidths[toolName] ?? 1;
     this.tool.setLineWidth?.(savedWidth);
+console.log("Restoring lineWidth for", toolName, "→", savedWidth);
 
     this.tool.listen?.();
   }

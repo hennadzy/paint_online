@@ -20,7 +20,11 @@ export default class Eraser extends Tool {
   }
 
   setLineWidth(width) {
+    console.log("Eraser.setLineWidth called with:", width);
+
     this.lineWidth = width;
+    console.log("Eraser.setLineWidth called with:", width);
+
 
   }
 
