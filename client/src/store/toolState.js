@@ -8,7 +8,7 @@ class ToolState {
 
   lineWidths = {
     brush: 5,
-    rect: 1,
+    rect: 5,
     circle: 1,
     eraser: 15,
     line: 1
@@ -24,10 +24,7 @@ class ToolState {
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
-
-// console.log("lineWidths[toolName]:", this.lineWidths[toolName]);
     const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
-   console.log("toolName:", toolName);
     this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 2);
 
     this.tool.listen?.();
