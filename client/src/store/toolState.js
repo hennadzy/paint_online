@@ -20,7 +20,7 @@ class ToolState {
 
   setTool(tool) {
     this.tool?.destroyEvents?.();
-    this.tool = observable(tool);
+   this.tool = tool;
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
