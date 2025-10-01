@@ -15,6 +15,7 @@ export default class Brush extends Tool {
   }
 
   setLineWidth(width) {
+     console.log("Brush.setLineWidth called with:", width);
     this.lineWidth = width;
   }
 
