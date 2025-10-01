@@ -26,6 +26,7 @@ export default class Eraser extends Tool {
 
   setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
+    
   }
 
   listen() {
