@@ -10,7 +10,7 @@ class ToolState {
     brush: 1,
     rect: 1,
     circle: 1,
-    eraser: 15,
+    eraser: 10,
     line: 1
   };
 
@@ -25,7 +25,10 @@ class ToolState {
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
     const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
-    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 2);
+    if (typeof tool.lineWidth !== "number" || isNaN(tool.lineWidth)) {
+    const defaultWidth = this.lineWidths[toolName] ?? 1;
+    this.tool.setLineWidth?.(defaultWidth);
+  }
 
     this.tool.listen?.();
   }
