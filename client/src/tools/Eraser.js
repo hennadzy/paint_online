@@ -19,14 +19,14 @@ export default class Eraser extends Tool {
     this._touchEndHandler = this.touchEndHandler.bind(this);
 
   }
-console.log ("3", this.lineWidth);
+
 
   setLineWidth(width) {
     this.lineWidth = width;
-    console.log ("4", this.lineWidth);
+    console.log ("3", this.lineWidth);
   }
 
-console.log ("5", this.lineWidth);
+
 
   
 setStrokeColor() {
