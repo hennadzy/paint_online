@@ -7,7 +7,7 @@ class ToolState {
   fillColor = "#000000";
 
   lineWidths = {
-    brush: 1,
+    brush: 5,
     rect: 1,
     circle: 1,
     eraser: 15,
@@ -26,7 +26,7 @@ class ToolState {
     this.tool.setFillColor?.(this.fillColor);
 
     const toolName = tool.constructor.name.toLowerCase();
-    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 1);
+    this.tool.setLineWidth?.(this.lineWidths[toolName] ?? 2);
 
     this.tool.listen?.();
   }
