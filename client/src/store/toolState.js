@@ -19,6 +19,7 @@ class ToolState {
   }
 
   setTool(tool, toolNameOverride) {
+    console.log("setTool called with:", toolNameOverride);
     this.tool?.destroyEvents?.();
     this.tool = tool;
 
