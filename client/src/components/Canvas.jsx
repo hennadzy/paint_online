@@ -5,12 +5,6 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
 import Toolbar from "./Toolbar";
-import toolState from "../store/toolState";
-import Brush from "../tools/Brush";
-import Circle from "../tools/Circle";
-import Rect from "../tools/Rect";
-import Eraser from "../tools/Eraser";
-import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
@@ -20,13 +14,6 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
-
-  const updateCursor = (tool) => {
-    const canvas = canvasRef.current;
-    canvas.classList.remove("brush-cursor", "eraser-cursor");
-    if (tool === "brush") canvas.classList.add("brush-cursor");
-    else if (tool === "eraser") canvas.classList.add("eraser-cursor");
-  };
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
@@ -69,26 +56,13 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
-
-    updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
     if (canvasState.username) {
-      if (toolState.tool?.destroyEvents) {
-        toolState.tool.destroyEvents();
-      }
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
-      toolState.setTool(
-        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
-        "brush"
-      );
-
-      updateCursor("brush");
-      toolState.tool.listen();
 
       socket.onopen = () => {
         socket.send(
@@ -140,7 +114,7 @@ const Canvas = observer(() => {
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
       case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
+        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, "#FFFFFF", figure.isStart);
         break;
       case "finish":
         ctx.beginPath();
@@ -199,7 +173,8 @@ const Canvas = observer(() => {
       </Modal>
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
-      {canvasState.canvas && <Toolbar />}
+      {canvasState.canvas && <Toolbar />} {/* ✅ отложенный рендер */}
+
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
