@@ -67,7 +67,8 @@ export default class Rect extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const width = e.clientX - rect.left - this.startX;
     const height = e.clientY - rect.top - this.startY;
-
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     this.socket.send(JSON.stringify({
@@ -87,16 +88,16 @@ export default class Rect extends Tool {
     }));
 
     if (this.username === canvasState.username) {
-  canvasState.addFigure({
-    type: "rect",
-    x: this.startX,
-    y: this.startY,
-    width: currentX - this.startX,
-    height: currentY - this.startY,
-    strokeStyle: this.strokeColor,
-    lineWidth: this.lineWidth
-  });
-}
+      canvasState.addFigure({
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width: currentX - this.startX,
+        height: currentY - this.startY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth
+      });
+    }
 
   }
 

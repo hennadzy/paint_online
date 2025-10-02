@@ -123,73 +123,74 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-  const figure = msg.figure;
-  const ctx = canvasRef.current.getContext("2d");
-  if (msg.username === canvasState.username) return;
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
+    if (msg.username === canvasState.username) return;
 
-  ctx.strokeStyle = figure.strokeStyle;
-  ctx.lineWidth = figure.lineWidth;
-  ctx.lineCap = "round";
+    ctx.strokeStyle = figure.strokeStyle;
+    ctx.lineWidth = figure.lineWidth;
+    ctx.lineCap = "round";
 
-  switch (figure.type) {
-   case "brush":
-  if (!userPaths.current[msg.username]) {
-    userPaths.current[msg.username] = true;
-    ctx.beginPath();
-    ctx.moveTo(figure.x, figure.y);
-  } else {
-    ctx.lineTo(figure.x, figure.y);
-    ctx.stroke();
-  }
-  break;
+    switch (figure.type) {
+      case "brush":
+        if (!userPaths.current[msg.username]) {
+          userPaths.current[msg.username] = true;
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+          ctx.stroke();
+        }
+        break;
 
-    case "rect":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.rect(figure.x, figure.y, figure.width, figure.height);
-      ctx.stroke();
-      break;
-
-    case "circle":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
-      ctx.stroke();
-      break;
-
-    case "line":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.moveTo(figure.x1, figure.y1);
-      ctx.lineTo(figure.x2, figure.y2);
-      ctx.stroke();
-      break;
-
-    case "eraser":
-      if (figure.isStart) {
+      case "rect":
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      } else {
-        ctx.lineTo(figure.x, figure.y);
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
-        ctx.lineCap = "round";
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.rect(figure.x, figure.y, figure.width, figure.height);
         ctx.stroke();
-      }
-      break;
+        break;
 
- case "finish":
-  delete userPaths.current[msg.username];
-  ctx.beginPath();
-  break;
+      case "circle":
+        ctx.beginPath();
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        break;
 
-    default:
-      console.warn("Неизвестный тип фигуры:", figure.type);
-  }
-};
+      case "line":
+        ctx.beginPath();
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.moveTo(figure.x1, figure.y1);
+        ctx.lineTo(figure.x2, figure.y2);
+        ctx.stroke();
+        break;
+
+      case "eraser":
+        if (figure.isStart || !userPaths.current[msg.username]) {
+          userPaths.current[msg.username] = true;
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
+        break;
+
+      case "finish":
+        delete userPaths.current[msg.username];
+        ctx.beginPath();
+        break;
+
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+  };
 
 
   const connectHandler = () => {

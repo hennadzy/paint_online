@@ -31,13 +31,13 @@ export default class Line extends Tool {
   }
 
   destroyEvents() {
-  this.canvas.onmousedown = null;
-  this.canvas.onmousemove = null;
-  this.canvas.onmouseup = null;
-  this.canvas.ontouchstart = null;
-  this.canvas.ontouchmove = null;
-  this.canvas.ontouchend = null;
-}
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+  }
 
   mouseDownHandler(e) {
     this.mouseDown = true;
@@ -79,6 +79,8 @@ export default class Line extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const endX = e.clientX - rect.left;
     const endY = e.clientY - rect.top;
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
 
     const img = new Image();
     img.src = this.saved;
@@ -90,16 +92,16 @@ export default class Line extends Tool {
 
 
     if (this.username === canvasState.username) {
-  canvasState.addFigure({
-    type: "line",
-    x1: this.startX,
-    y1: this.startY,
-    x2: currentX,
-    y2: currentY,
-    strokeStyle: this.strokeColor,
-    lineWidth: this.lineWidth
-  });
-}
+      canvasState.addFigure({
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: currentX,
+        y2: currentY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth
+      });
+    }
 
   }
 
