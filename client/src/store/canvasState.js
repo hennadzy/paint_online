@@ -1,4 +1,5 @@
-import {makeAutoObservable} from "mobx";
+import { makeAutoObservable, observable } from "mobx";
+
 
 class CanvasState {
     canvas = null
