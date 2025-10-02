@@ -121,33 +121,72 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-    const figure = msg.figure;
-    const ctx = canvasRef.current.getContext("2d");
-    if (msg.username === canvasState.username) return;
+  const figure = msg.figure;
+  const ctx = canvasRef.current.getContext("2d");
+  if (msg.username === canvasState.username) return;
 
-    switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
-      case "rect":
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "circle":
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "line":
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
-        break;
-      case "finish":
+  ctx.strokeStyle = figure.strokeStyle;
+  ctx.lineWidth = figure.lineWidth;
+  ctx.lineCap = "round";
+
+  switch (figure.type) {
+    case "brush":
+      if (figure.isStart) {
         ctx.beginPath();
-        break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-    }
-  };
+        ctx.moveTo(figure.x, figure.y);
+      } else {
+        ctx.lineTo(figure.x, figure.y);
+        ctx.stroke();
+      }
+      break;
+
+    case "rect":
+      ctx.beginPath();
+      ctx.strokeStyle = figure.strokeStyle;
+      ctx.lineWidth = figure.lineWidth;
+      ctx.rect(figure.x, figure.y, figure.width, figure.height);
+      ctx.stroke();
+      break;
+
+    case "circle":
+      ctx.beginPath();
+      ctx.strokeStyle = figure.strokeStyle;
+      ctx.lineWidth = figure.lineWidth;
+      ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
+      ctx.stroke();
+      break;
+
+    case "line":
+      ctx.beginPath();
+      ctx.strokeStyle = figure.strokeStyle;
+      ctx.lineWidth = figure.lineWidth;
+      ctx.moveTo(figure.x1, figure.y1);
+      ctx.lineTo(figure.x2, figure.y2);
+      ctx.stroke();
+      break;
+
+    case "eraser":
+      if (figure.isStart) {
+        ctx.beginPath();
+        ctx.moveTo(figure.x, figure.y);
+      } else {
+        ctx.lineTo(figure.x, figure.y);
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
+      break;
+
+    case "finish":
+      ctx.beginPath(); // сбрасываем текущий путь
+      break;
+
+    default:
+      console.warn("Неизвестный тип фигуры:", figure.type);
+  }
+};
+
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
