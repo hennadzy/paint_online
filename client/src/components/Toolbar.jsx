@@ -74,6 +74,7 @@ const changeTool = (tool, cursorClass, toolNameOverride) => {
             <button
                 className="toolbar__btn eraser"
                 onClick={() =>
+                    console.log("Eraser button clicked");
                     changeTool(
                         new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
                         "eraser-cursor",
