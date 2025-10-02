@@ -84,6 +84,22 @@ export default class Circle extends Tool {
         username: this.username,
       },
     }));
+
+    if (this.username === canvasState.username) {
+  const radius = Math.sqrt(
+    Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2)
+  );
+
+  canvasState.addFigure({
+    type: "circle",
+    x: this.startX,
+    y: this.startY,
+    radius,
+    strokeStyle: this.strokeColor,
+    lineWidth: this.lineWidth
+  });
+}
+
   }
 
   touchStartHandler(e) {

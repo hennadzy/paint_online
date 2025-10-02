@@ -85,6 +85,19 @@ export default class Rect extends Tool {
         username: this.username,
       },
     }));
+
+    if (this.username === canvasState.username) {
+  canvasState.addFigure({
+    type: "rect",
+    x: this.startX,
+    y: this.startY,
+    width: currentX - this.startX,
+    height: currentY - this.startY,
+    strokeStyle: this.strokeColor,
+    lineWidth: this.lineWidth
+  });
+}
+
   }
 
   touchStartHandler(e) {

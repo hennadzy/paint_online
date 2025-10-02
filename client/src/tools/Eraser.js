@@ -22,12 +22,12 @@ export default class Eraser extends Tool {
   setLineWidth(width) {
     console.log("Eraser.setLineWidth called with:", width);
     this.lineWidth = width;
-  
+
   }
 
   setStrokeColor() {
     // Игнорируем любые попытки изменить цвет
-    
+
   }
 
   listen() {
@@ -152,6 +152,16 @@ export default class Eraser extends Tool {
           username: this.username
         }
       }));
+    }
+
+    if (this.username === canvasState.username) {
+      canvasState.addFigure({
+        type: "eraser",
+        x,
+        y,
+        lineWidth,
+        isStart
+      });
     }
   }
 

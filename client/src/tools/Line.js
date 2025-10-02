@@ -87,6 +87,20 @@ export default class Line extends Tool {
       this.ctx.drawImage(img, 0, 0);
       Line.staticDraw(this.ctx, this.startX, this.startY, endX, endY, this.strokeColor, this.lineWidth);
     };
+
+
+    if (this.username === canvasState.username) {
+  canvasState.addFigure({
+    type: "line",
+    x1: this.startX,
+    y1: this.startY,
+    x2: currentX,
+    y2: currentY,
+    strokeStyle: this.strokeColor,
+    lineWidth: this.lineWidth
+  });
+}
+
   }
 
   touchStartHandler(e) {
