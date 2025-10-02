@@ -7,23 +7,31 @@ const SettingBar = observer(() => {
     const value = +e.target.value;
     toolState.setLineWidth(value);
   };
-
+const lineWidth = toolState.tool?.lineWidth ?? 1;
   const currentToolName = toolState.toolName;
   const currentWidth = currentToolName ? toolState.lineWidths[currentToolName] : 1;
 
-   return (
+  return (
     <div className="setting-bar">
+      <label htmlFor="line-width">Толщина линии</label>
       <input
+        id="line-width"
         type="range"
         min={1}
         max={50}
-        value={lineWidth}
+        value={currentWidth}
         onChange={handleChange}
       />
       <span className="line-width-label">{lineWidth}px</span>
     </div>
   );
-
 });
 
 export default SettingBar;
+
+
+
+
+
+
+
