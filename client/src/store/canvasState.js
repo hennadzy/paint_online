@@ -9,8 +9,10 @@ class CanvasState {
     username = ""
 
     constructor() {
-        makeAutoObservable(this)
-    }
+  makeAutoObservable(this, {
+    canvas: observable, // ← теперь canvas реактивен
+  });
+}
 
     setSessionId(id) {
         this.sessionid = id

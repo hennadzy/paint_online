@@ -15,7 +15,7 @@ const Toolbar = observer(() => {
         const newColor = e.target.value;
         toolState.setStrokeColor(newColor); // ✅ централизованное обновление
     };
-
+console.log("canvasState.canvas is:", canvasState.canvas);
     const changeTool = (tool, cursorClass, toolNameOverride) => {
         console.log("changeTool called with:", toolNameOverride);
         toolState.setTool(tool, toolNameOverride);
