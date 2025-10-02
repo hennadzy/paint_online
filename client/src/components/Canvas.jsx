@@ -10,6 +10,7 @@ import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
 import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
+import Toolbar from "./Toolbar"; // ✅ подключено
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
@@ -69,7 +70,6 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
-
     updateCursor("brush");
   }, [params.id]);
 
@@ -85,7 +85,6 @@ const Canvas = observer(() => {
         new Brush(canvasState.canvas, socket, params.id, canvasState.username),
         "brush"
       );
-
       updateCursor("brush");
       toolState.tool.listen();
 
@@ -198,6 +197,8 @@ const Canvas = observer(() => {
       </Modal>
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
+      {canvasState.canvas && <Toolbar />} {/* ✅ отложенный рендер */}
+
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
