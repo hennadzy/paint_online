@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
 import Toolbar from "./Toolbar";
+import SettingBar from "./SettingBar";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
@@ -21,61 +22,15 @@ const Canvas = observer(() => {
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
-  const connectHandler = () => {
-    const username = usernameRef.current.value.trim();
-    if (username) {
-      canvasState.setUsername(username);
-      setModal(false);
-    } else {
-      alert("Введите ваше имя");
-    }
+  const updateCursor = (tool) => {
+    const canvas = canvasRef.current;
+    canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
+    canvas.classList.add(`${tool}-cursor`);
   };
 
-  const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasRef.current.toDataURL());
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
-    });
-  };
-
-  const handleCreateRoomClick = () => {
-    setModal(true);
-    setIsRoomCreated(true);
-  };
-
-  const drawHandler = (msg) => {
-    const figure = msg.figure;
-    const ctx = canvasRef.current.getContext("2d");
-    if (msg.username === canvasState.username) return;
-
-    switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
-      case "rect":
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "circle":
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "line":
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
-        break;
-      case "finish":
-        ctx.beginPath();
-        break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-    }
-  };
-
-  useEffect(() => {
+  const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const aspectRatio = 600 / 400;
-
     if (window.innerWidth < 768) {
       canvas.width = window.innerWidth;
       canvas.height = window.innerWidth / aspectRatio;
@@ -83,13 +38,21 @@ const Canvas = observer(() => {
       canvas.width = 600;
       canvas.height = 400;
     }
-
+    canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
 
-    canvasState.setCanvas(canvas); // ✅ canvas устанавливается один раз
+  useEffect(() => {
+    adjustCanvasSize();
+    window.addEventListener("resize", adjustCanvasSize);
+    return () => window.removeEventListener("resize", adjustCanvasSize);
+  }, []);
 
+  useEffect(() => {
+    canvasState.setCanvas(canvasRef.current);
+    const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
       axios
         .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
@@ -97,12 +60,20 @@ const Canvas = observer(() => {
           const img = new Image();
           img.src = response.data;
           img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
           };
         })
         .catch((error) => console.error("Ошибка загрузки изображения:", error));
+    } else {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
+
+    // ✅ Инициализация инструмента с сохранением толщины
+    const brush = new Brush(canvasRef.current, null, params.id);
+    toolState.setTool(brush, "brush");
+    updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
@@ -110,6 +81,11 @@ const Canvas = observer(() => {
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
+
+      const brush = new Brush(canvasState.canvas, socket, params.id, canvasState.username);
+      toolState.setTool(brush, "brush");
+      updateCursor("brush");
+      brush.listen();
 
       socket.onopen = () => {
         socket.send(
@@ -142,6 +118,52 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
+  const drawHandler = (msg) => {
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
+    if (msg.username === canvasState.username) return;
+
+    switch (figure.type) {
+      case "brush":
+        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        break;
+      case "rect":
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "circle":
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "line":
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "eraser":
+        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
+        break;
+      case "finish":
+        ctx.beginPath();
+        break;
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+  };
+
+  const connectHandler = () => {
+    const username = usernameRef.current.value.trim();
+    if (username) {
+      canvasState.setUsername(username);
+      setModal(false);
+    } else {
+      alert("Введите ваше имя");
+    }
+  };
+
+  const mouseDownHandler = () => {
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+      img: canvasRef.current.toDataURL(),
+    });
+  };
+
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
@@ -168,8 +190,9 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
+      <Toolbar />
+      <SettingBar />
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
-      {canvasState.canvas && <Toolbar />} {/* ✅ строго один тулбар */}
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
