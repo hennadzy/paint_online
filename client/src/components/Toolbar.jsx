@@ -10,16 +10,12 @@ import Line from "../tools/Line";
 import Eraser from "../tools/Eraser";
 
 const Toolbar = observer(() => {
-  console.log("Toolbar rendered");
-  console.log("canvasState.canvas is:", canvasState.canvas);
-
   const changeColor = (e) => {
     const newColor = e.target.value;
     toolState.setStrokeColor(newColor);
   };
 
   const changeTool = (tool, cursorClass, toolNameOverride) => {
-    console.log("changeTool called with:", toolNameOverride);
     toolState.setTool(tool, toolNameOverride);
 
     const canvas = canvasState.canvas;

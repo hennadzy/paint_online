@@ -5,7 +5,6 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
 import Toolbar from "./Toolbar";
-import SettingBar from "./SettingBar";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
@@ -24,8 +23,9 @@ const Canvas = observer(() => {
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
-    canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
-    canvas.classList.add(`${tool}-cursor`);
+    canvas.classList.remove("brush-cursor", "eraser-cursor");
+    if (tool === "brush") canvas.classList.add("brush-cursor");
+    else if (tool === "eraser") canvas.classList.add("eraser-cursor");
   };
 
   const adjustCanvasSize = () => {
@@ -69,23 +69,25 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-
-    // ✅ Инициализация инструмента с сохранением толщины
-    const brush = new Brush(canvasRef.current, null, params.id);
-    toolState.setTool(brush, "brush");
+    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
     updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
     if (canvasState.username) {
+      if (toolState.tool?.destroyEvents) {
+        toolState.tool.destroyEvents();
+      }
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
+      toolState.setTool(
+        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
+        "brush"
+      );
 
-      const brush = new Brush(canvasState.canvas, socket, params.id, canvasState.username);
-      toolState.setTool(brush, "brush");
       updateCursor("brush");
-      brush.listen();
+      toolState.tool.listen();
 
       socket.onopen = () => {
         socket.send(
@@ -164,6 +166,11 @@ const Canvas = observer(() => {
     });
   };
 
+  const handleCreateRoomClick = () => {
+    setModal(true);
+    setIsRoomCreated(true);
+  };
+
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
@@ -190,10 +197,8 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <Toolbar />
-      <SettingBar />
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
-
+      {canvasState.canvas && <Toolbar />}
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
