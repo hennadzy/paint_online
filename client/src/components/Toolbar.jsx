@@ -16,6 +16,7 @@ const Toolbar = observer(() => {
     };
 
 const changeTool = (tool, cursorClass, toolNameOverride) => {
+    console.log("changeTool called with:", toolNameOverride);
   toolState.setTool(tool, toolNameOverride);
 
   const canvas = canvasState.canvas;
