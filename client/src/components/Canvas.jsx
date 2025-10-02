@@ -20,6 +20,8 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
+  const userPaths = useRef({});
+
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -130,15 +132,16 @@ const Canvas = observer(() => {
   ctx.lineCap = "round";
 
   switch (figure.type) {
-    case "brush":
-      if (figure.isStart) {
-        ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      } else {
-        ctx.lineTo(figure.x, figure.y);
-        ctx.stroke();
-      }
-      break;
+   case "brush":
+  if (!userPaths.current[msg.username]) {
+    userPaths.current[msg.username] = true;
+    ctx.beginPath();
+    ctx.moveTo(figure.x, figure.y);
+  } else {
+    ctx.lineTo(figure.x, figure.y);
+    ctx.stroke();
+  }
+  break;
 
     case "rect":
       ctx.beginPath();
@@ -178,9 +181,10 @@ const Canvas = observer(() => {
       }
       break;
 
-    case "finish":
-      ctx.beginPath(); // сбрасываем текущий путь
-      break;
+ case "finish":
+  delete userPaths.current[msg.username];
+  ctx.beginPath();
+  break;
 
     default:
       console.warn("Неизвестный тип фигуры:", figure.type);
