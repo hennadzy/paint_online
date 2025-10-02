@@ -23,6 +23,7 @@ class ToolState {
     this.tool = tool;
 
     const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
+    console.log("toolName resolved as:", toolName);
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
