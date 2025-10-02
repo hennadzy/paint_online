@@ -10,6 +10,7 @@ import Circle from "../tools/Circle";
 import Eraser from "../tools/Eraser";
 
 const Toolbar = observer(() => {
+    console.log("Toolbar rendered");
     const changeColor = (e) => {
         const newColor = e.target.value;
         toolState.setStrokeColor(newColor); // ✅ централизованное обновление
