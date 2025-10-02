@@ -151,7 +151,9 @@ canvas.eraser-cursor {
 }
 
 .toolbar__btn.active {
-  box-shadow: 0 0 0 2px #ffcc00 inset;
-  transform: scale(1.1);
-  background-color: #ffd700;
+  outline: 2px solid #ffcc00; /* Яркая рамка */
+  outline-offset: 2px;
+  box-shadow: none; /* Убираем тень, если мешает */
+  transform: none; /* Без масштабирования */
+  background-color: transparent; /* Не перекрывает иконку */
 }
