@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
+import Toolbar from "./Toolbar";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
