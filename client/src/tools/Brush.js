@@ -145,6 +145,17 @@ export default class Brush extends Tool {
         }
       }));
     }
+
+    if (this.username === canvasState.username) {
+      canvasState.addFigure({
+        type: "brush",
+        x,
+        y,
+        lineWidth,
+        strokeStyle,
+        isStart
+      });
+    }
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
