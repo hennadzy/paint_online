@@ -13,7 +13,6 @@ const lineWidth = toolState.tool?.lineWidth ?? 1;
 
   return (
     <div className="setting-bar">
-      <label htmlFor="line-width">Толщина линии</label>
       <input
         id="line-width"
         type="range"
