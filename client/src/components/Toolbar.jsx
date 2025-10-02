@@ -15,22 +15,22 @@ const Toolbar = observer(() => {
         toolState.setStrokeColor(newColor); // ✅ централизованное обновление
     };
 
-const changeTool = (tool, cursorClass, toolNameOverride) => {
-    console.log("changeTool called with:", toolNameOverride);
-  toolState.setTool(tool, toolNameOverride);
+    const changeTool = (tool, cursorClass, toolNameOverride) => {
+        console.log("changeTool called with:", toolNameOverride);
+        toolState.setTool(tool, toolNameOverride);
 
-  const canvas = canvasState.canvas;
-  if (canvas) {
-    canvas.classList.remove(
-      "brush-cursor",
-      "eraser-cursor",
-      "rect-cursor",
-      "circle-cursor",
-      "line-cursor"
-    );
-    canvas.classList.add(cursorClass);
-  }
-};
+        const canvas = canvasState.canvas;
+        if (canvas) {
+            canvas.classList.remove(
+                "brush-cursor",
+                "eraser-cursor",
+                "rect-cursor",
+                "circle-cursor",
+                "line-cursor"
+            );
+            canvas.classList.add(cursorClass);
+        }
+    };
 
 
     const download = () => {
@@ -74,14 +74,15 @@ const changeTool = (tool, cursorClass, toolNameOverride) => {
             />
             <button
                 className="toolbar__btn eraser"
-                onClick={() =>
+                onClick={() => {
                     console.log("Eraser button clicked");
                     changeTool(
                         new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
                         "eraser-cursor",
                         "eraser"
-                    )
-                }
+                    );
+                }}
+
             />
             <button
                 className="toolbar__btn line"
