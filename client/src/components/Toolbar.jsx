@@ -50,7 +50,7 @@ const Toolbar = observer(() => {
                 onClick={() =>
                     changeTool(
                         new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-                        "brush-cursor"
+                        "brush-cursor", "brush"
                     )
                 }
             />
@@ -59,7 +59,7 @@ const Toolbar = observer(() => {
                 onClick={() =>
                     changeTool(
                         new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-                        "rect-cursor"
+                       "rect-cursor", "rect"
                     )
                 }
             />
@@ -68,7 +68,7 @@ const Toolbar = observer(() => {
                 onClick={() =>
                     changeTool(
                         new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-                        "circle-cursor"
+                        "circle-cursor", "circle"
                     )
                 }
             />
@@ -89,7 +89,7 @@ const Toolbar = observer(() => {
                 onClick={() =>
                     changeTool(
                         new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-                        "line-cursor"
+                        "line-cursor", "line"
                     )
                 }
             />
