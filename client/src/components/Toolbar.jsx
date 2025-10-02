@@ -11,8 +11,7 @@ import Eraser from "../tools/Eraser";
 
 const Toolbar = observer(() => {
   const changeColor = (e) => {
-    const newColor = e.target.value;
-    toolState.setStrokeColor(newColor);
+    toolState.setStrokeColor(e.target.value);
   };
 
   const changeTool = (tool, cursorClass, toolNameOverride) => {
@@ -41,10 +40,12 @@ const Toolbar = observer(() => {
     document.body.removeChild(a);
   };
 
+  const current = toolState.toolName;
+
   return (
     <div className="toolbar">
       <button
-        className="toolbar__btn brush"
+        className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
         onClick={() =>
           changeTool(
             new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
@@ -53,7 +54,7 @@ const Toolbar = observer(() => {
         }
       />
       <button
-        className="toolbar__btn rect"
+        className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
         onClick={() =>
           changeTool(
             new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
@@ -62,7 +63,7 @@ const Toolbar = observer(() => {
         }
       />
       <button
-        className="toolbar__btn circle"
+        className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
         onClick={() =>
           changeTool(
             new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
@@ -71,7 +72,7 @@ const Toolbar = observer(() => {
         }
       />
       <button
-        className="toolbar__btn eraser"
+        className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
         onClick={() =>
           changeTool(
             new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
@@ -80,7 +81,7 @@ const Toolbar = observer(() => {
         }
       />
       <button
-        className="toolbar__btn line"
+        className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
         onClick={() =>
           changeTool(
             new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
