@@ -198,6 +198,7 @@ const Canvas = observer(() => {
       </Modal>
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
+      {canvasState.canvas && <Toolbar />}
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату

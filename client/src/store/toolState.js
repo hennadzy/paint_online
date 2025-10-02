@@ -51,6 +51,7 @@ class ToolState {
   setLineWidth(lineWidth) {
     if (this.tool) {
       const toolName = this.tool.constructor.name.toLowerCase();
+          console.log("toolState → saving lineWidth", lineWidth, "for", toolName); // ← добавь это
       this.tool.setLineWidth?.(lineWidth);
       this.lineWidths[toolName] = lineWidth;
     }
