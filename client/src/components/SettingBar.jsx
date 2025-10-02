@@ -1,26 +1,27 @@
-import React from 'react';
-import { observer } from 'mobx-react-lite';
-import toolState from '../store/toolState';
-import '../styles/toolbar.scss';
+import React from "react";
+import { observer } from "mobx-react-lite";
+import toolState from "../store/toolState";
 
-export const SettingBar = observer(() => {
-  const lineWidth = toolState.tool?.lineWidth ?? 1;
-
+const SettingBar = observer(() => {
   const handleChange = (e) => {
     const value = +e.target.value;
-    toolState.setLineWidth(value); // сохраняем в toolState
+    toolState.setLineWidth(value);
   };
+
+  const currentToolName = toolState.toolName;
+  const currentWidth = currentToolName ? toolState.lineWidths[currentToolName] : 1;
 
   return (
     <div className="setting-bar">
+      <label htmlFor="line-width">Толщина линии</label>
       <input
-        type="range"
+        id="line-width"
+        type="number"
         min={1}
         max={50}
-        value={lineWidth}
+        value={currentWidth}
         onChange={handleChange}
       />
-      <span className="line-width-label">{lineWidth}px</span>
     </div>
   );
 });

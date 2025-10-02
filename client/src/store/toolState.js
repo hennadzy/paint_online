@@ -2,7 +2,7 @@ import { makeAutoObservable } from "mobx";
 
 class ToolState {
   tool = null;
-
+  toolName = null;
   strokeColor = "#000000";
   fillColor = "#000000";
 
@@ -19,23 +19,24 @@ class ToolState {
   }
 
   setTool(tool, toolNameOverride) {
-    console.log("setTool called with:", toolNameOverride);
     this.tool?.destroyEvents?.();
     this.tool = tool;
-
-    const toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
-    console.log("toolName resolved as:", toolName);
+    this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
 
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
 
-    // Всегда восстанавливаем сохранённую толщину
-    const savedWidth = this.lineWidths[toolName] ?? 1;
-    console.log("Restoring lineWidth for", toolName, "→", savedWidth);
+    const savedWidth = this.lineWidths[this.toolName] ?? 1;
     this.tool.setLineWidth?.(savedWidth);
 
-
     this.tool.listen?.();
+  }
+
+  setLineWidth(lineWidth) {
+    if (this.tool && this.toolName) {
+      this.tool.setLineWidth?.(lineWidth);
+      this.lineWidths[this.toolName] = lineWidth;
+    }
   }
 
   setStrokeColor(color) {
@@ -46,15 +47,6 @@ class ToolState {
   setFillColor(color) {
     this.fillColor = color;
     this.tool?.setFillColor?.(color);
-  }
-
-  setLineWidth(lineWidth) {
-    if (this.tool) {
-      const toolName = this.tool.constructor.name.toLowerCase();
-          console.log("toolState → saving lineWidth", lineWidth, "for", toolName); // ← добавь это
-      this.tool.setLineWidth?.(lineWidth);
-      this.lineWidths[toolName] = lineWidth;
-    }
   }
 }
 
