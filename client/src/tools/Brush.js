@@ -50,6 +50,7 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
     this._send(x, y, true);
+    this.firstMoveSent = true;
   }
 
   mouseMoveHandler(e) {
@@ -60,8 +61,7 @@ export default class Brush extends Tool {
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.lineCap = "round";
     this.ctx.stroke();
-    this._send(x, y, !this.firstMoveSent);
-    this.firstMoveSent = true;
+    this._send(x, y, false);
   }
 
   mouseUpHandler() {
@@ -80,6 +80,7 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
     this._send(x, y, true);
+    this.firstMoveSent = true;
   }
 
   touchMoveHandler(e) {
@@ -91,8 +92,7 @@ export default class Brush extends Tool {
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.lineCap = "round";
     this.ctx.stroke();
-    this._send(x, y, !this.firstMoveSent);
-    this.firstMoveSent = true;
+    this._send(x, y, false);
   }
 
   touchEndHandler(e) {
