@@ -8,9 +8,12 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
+    this.localPathStarted = false;
+
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
+
     makeAutoObservable(this);
   }
 
@@ -44,16 +47,12 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    this.localPathStarted = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
 
     this.sendDrawData(x, y, true);
   }
@@ -68,31 +67,29 @@ export default class Brush extends Tool {
     this.sendDrawData(x, y, false);
   }
 
-mouseUpHandler() {
-  this.mouseDown = false;
-  if (this.socket) {
-    this.socket.send(JSON.stringify({
-      method: "draw",
-      id: this.id,
-      username: this.username,
-      figure: { type: "finish" }
-    }));
+  mouseUpHandler() {
+    this.mouseDown = false;
+    this.localPathStarted = false;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: { type: "finish" }
+      }));
+    }
   }
-}
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+    this.localPathStarted = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
 
     this.sendDrawData(x, y, true);
   }
@@ -111,6 +108,7 @@ mouseUpHandler() {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    this.localPathStarted = false;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -126,7 +124,17 @@ mouseUpHandler() {
     const lineWidth = this.lineWidth;
 
     if (isLocal) {
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
+      if (isStart || !this.localPathStarted) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+        this.localPathStarted = true;
+      } else {
+        this.ctx.lineTo(x, y);
+        this.ctx.strokeStyle = strokeStyle;
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.lineCap = "round";
+        this.ctx.stroke();
+      }
     }
 
     if (this.socket) {
@@ -145,6 +153,7 @@ mouseUpHandler() {
         }
       }));
     }
+
     if (this.username === canvasState.username) {
       canvasState.addFigure({
         type: "brush",
@@ -155,21 +164,5 @@ mouseUpHandler() {
         isStart
       });
     }
-
   }
-
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineCap = "round";
-
-  if (isStart) {
-    ctx.beginPath(); // ← обязательно при старте
-    ctx.moveTo(x, y);
-  } else {
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  }
-}
-
 }
