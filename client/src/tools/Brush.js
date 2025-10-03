@@ -134,6 +134,8 @@ export default class Brush extends Tool {
         this.ctx.lineWidth = lineWidth;
         this.ctx.lineCap = "round";
         this.ctx.stroke();
+        this.ctx.beginPath(); // ← сброс после stroke
+
       }
     }
 

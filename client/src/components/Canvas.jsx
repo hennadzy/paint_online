@@ -137,11 +137,15 @@ const Canvas = observer(() => {
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[msg.username].active = true;
         } else {
-          ctx.lineTo(figure.x, figure.y);
+          // ctx.lineTo(figure.x, figure.y);
           ctx.strokeStyle = figure.strokeStyle;
           ctx.lineWidth = figure.lineWidth;
           ctx.lineCap = "round";
+          ctx.lineTo(figure.x, figure.y);
           ctx.stroke();
+          ctx.beginPath();
+
+          // ctx.stroke();
         }
         break;
 
