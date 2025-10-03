@@ -127,9 +127,23 @@ const Canvas = observer(() => {
     if (msg.username === canvasState.username) return;
 
     switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+      case "brush": {
+        const isStart = figure.isStart || !userPaths.current[username].active;
+
+        if (isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          userPaths.current[username].active = true;
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+        }
+
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.lineCap = "round";
+        ctx.stroke();
         break;
+      }
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
