@@ -159,16 +159,17 @@ mouseUpHandler() {
   }
 
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineCap = "round";
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineCap = "round";
 
-    if (isStart) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
+  if (isStart) {
+    ctx.beginPath(); // ← обязательно при старте
+    ctx.moveTo(x, y);
+  } else {
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }
+}
+
 }
