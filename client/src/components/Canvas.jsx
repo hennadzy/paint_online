@@ -4,13 +4,8 @@ import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
-import Toolbar from "./Toolbar";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
-import Circle from "../tools/Circle";
-import Rect from "../tools/Rect";
-import Eraser from "../tools/Eraser";
-import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
@@ -22,190 +17,113 @@ const Canvas = observer(() => {
   const params = useParams();
   const userPaths = useRef({});
 
-  const updateCursor = (tool) => {
+  useEffect(() => {
     const canvas = canvasRef.current;
-    canvas.classList.remove("brush-cursor", "eraser-cursor");
-    if (tool === "brush") canvas.classList.add("brush-cursor");
-    else if (tool === "eraser") canvas.classList.add("eraser-cursor");
-  };
-
-  const adjustCanvasSize = () => {
-    const canvas = canvasRef.current;
-    const aspectRatio = 600 / 400;
-    if (window.innerWidth < 768) {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerWidth / aspectRatio;
-    } else {
-      canvas.width = 600;
-      canvas.height = 400;
-    }
+    canvas.width = 600;
+    canvas.height = 400;
     canvasState.setCanvas(canvas);
+
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  };
 
-  useEffect(() => {
-    adjustCanvasSize();
-    window.addEventListener("resize", adjustCanvasSize);
-    return () => window.removeEventListener("resize", adjustCanvasSize);
-  }, []);
-
-  useEffect(() => {
-    canvasState.setCanvas(canvasRef.current);
-    const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
       axios
         .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
-        .then((response) => {
+        .then((res) => {
           const img = new Image();
-          img.src = response.data;
+          img.src = res.data;
           img.onload = () => {
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           };
-        })
-        .catch((error) => console.error("Ошибка загрузки изображения:", error));
-    } else {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        });
     }
-    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
-    updateCursor("brush");
+
+    toolState.setTool(new Brush(canvas, null, params.id), "brush");
   }, [params.id]);
 
   useEffect(() => {
-    if (canvasState.username) {
-      if (toolState.tool?.destroyEvents) {
-        toolState.tool.destroyEvents();
-      }
-      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-      canvasState.setSocket(socket);
-      canvasState.setSessionId(params.id);
-      toolState.setTool(
-        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
-        "brush"
-      );
+    if (!canvasState.username) return;
 
-      updateCursor("brush");
-      toolState.tool.listen();
+    const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+    canvasState.setSocket(socket);
+    canvasState.setSessionId(params.id);
 
-      socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
-          })
-        );
-      };
+    const brush = new Brush(canvasState.canvas, socket, params.id, canvasState.username);
+    toolState.setTool(brush, "brush");
 
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        method: "connection",
+        username: canvasState.username,
+        id: params.id
+      }));
+    };
 
-        switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
-          case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
-            break;
-          default:
-            console.warn("Неизвестный метод:", msg.method);
-        }
-      };
-    }
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (!msg.username || msg.username === canvasState.username) return;
+      drawHandler(msg);
+    };
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-    const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
-    ctx.beginPath(); // Сброс контекста перед рисованием новой фигуры
+    const { figure, username } = msg;
 
-    if (!msg.username || msg.username === canvasState.username) return;
-
-    if (!userPaths.current[msg.username]) {
-      userPaths.current[msg.username] = { active: false };
+    if (!userPaths.current[username]) {
+      userPaths.current[username] = { active: false };
     }
 
     switch (figure.type) {
-      case "brush":
+      case "brush": {
+        if (figure.isStart || !userPaths.current[username].active) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          userPaths.current[username].active = true;
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+        }
+
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
         ctx.lineCap = "round";
-
-        if (figure.isStart || !userPaths.current[msg.username].active) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          userPaths.current[msg.username].active = true;
-        } else {
-          ctx.lineTo(figure.x, figure.y);
-          ctx.stroke();
-        }
-        break;
-
-      case "eraser":
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = figure.lineWidth ?? toolState.lineWidths.eraser;
-        ctx.lineCap = "round";
-
-        if (figure.isStart || !userPaths.current[msg.username].active) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          userPaths.current[msg.username].active = true;
-        } else {
-          ctx.lineTo(figure.x, figure.y);
-          ctx.stroke();
-        }
-        break;
-
-      case "rect":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
-        ctx.rect(figure.x, figure.y, figure.width, figure.height);
         ctx.stroke();
         break;
+      }
 
-      case "circle":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
-        ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
-        ctx.stroke();
+      case "finish": {
+        userPaths.current[username].active = false;
+        ctx.beginPath(); // сброс пути
         break;
+      }
 
-      case "line":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
-        ctx.moveTo(figure.x1, figure.y1);
-        ctx.lineTo(figure.x2, figure.y2);
-        ctx.stroke();
+      case "connection": {
+        setMessages((prev) => [...prev, `${username} вошел в комнату`]);
         break;
+      }
 
       default:
-        console.warn("Неизвестный тип фигуры :", figure.type);
+        console.warn("Неизвестный тип фигуры:", figure.type);
     }
   };
 
   const connectHandler = () => {
-    const username = usernameRef.current.value.trim();
-    if (username) {
-      canvasState.setUsername(username);
+    const name = usernameRef.current.value.trim();
+    if (name) {
+      canvasState.setUsername(name);
       setModal(false);
     } else {
-      alert("Введите ваше имя");
+      alert("Введите имя");
     }
   };
 
   const mouseDownHandler = () => {
     canvasState.pushToUndo(canvasRef.current.toDataURL());
     axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
+      img: canvasRef.current.toDataURL()
     });
-  };
-
-  const handleCreateRoomClick = () => {
-    setModal(true);
-    setIsRoomCreated(true);
   };
 
   return (
@@ -220,31 +138,23 @@ const Canvas = observer(() => {
             autoFocus
             ref={usernameRef}
             placeholder="Ваше имя"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                connectHandler();
-              }
-            }}
+            onKeyDown={(e) => e.key === "Enter" && connectHandler()}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
-            Войти
-          </Button>
+          <Button variant="secondary" onClick={connectHandler}>Войти</Button>
         </Modal.Footer>
       </Modal>
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
       {!isRoomCreated && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+        <Button variant="primary" onClick={() => { setModal(true); setIsRoomCreated(true); }} style={{ marginTop: "10px" }}>
           Создать комнату
         </Button>
       )}
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
+        {messages.map((msg, i) => <div key={i}>{msg}</div>)}
       </div>
     </div>
   );

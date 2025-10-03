@@ -8,7 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
-    this._startSent = false;
+    this.firstMoveSent = false;
 
     makeAutoObservable(this);
   }
@@ -43,7 +43,7 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this._startSent = false;
+    this.firstMoveSent = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const { x, y } = this._getCoords(e);
@@ -60,20 +60,20 @@ export default class Brush extends Tool {
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.lineCap = "round";
     this.ctx.stroke();
-    this._send(x, y, this._startSent === false);
-    this._startSent = true;
+    this._send(x, y, !this.firstMoveSent);
+    this.firstMoveSent = true;
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    this._startSent = false;
+    this.firstMoveSent = false;
     this._sendFinish();
   }
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    this._startSent = false;
+    this.firstMoveSent = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const { x, y } = this._getCoords(e.touches[0]);
@@ -91,14 +91,14 @@ export default class Brush extends Tool {
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.lineCap = "round";
     this.ctx.stroke();
-    this._send(x, y, this._startSent === false);
-    this._startSent = true;
+    this._send(x, y, !this.firstMoveSent);
+    this.firstMoveSent = true;
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    this._startSent = false;
+    this.firstMoveSent = false;
     this._sendFinish();
   }
 
