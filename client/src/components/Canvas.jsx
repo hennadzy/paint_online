@@ -197,8 +197,7 @@ const Canvas = observer(() => {
   };
 
   const mouseDownHandler = () => {
-    canvas
-State.pushToUndo(canvasRef.current.toDataURL());
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
     axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
       img: canvasRef.current.toDataURL(),
     });
