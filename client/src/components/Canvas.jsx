@@ -122,28 +122,33 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-    const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
-    if (msg.username === canvasState.username) return;
+    const { figure, username } = msg;
 
-    if (!userPaths.current[msg.username]) {
-      userPaths.current[msg.username] = { active: false };
+    if (username === canvasState.username) return;
+
+    if (!userPaths.current[username]) {
+      userPaths.current[username] = { active: false };
     }
 
     switch (figure.type) {
-      case "brush":
-        if (figure.isStart || !userPaths.current[msg.username].active) {
+      case "brush": {
+        const isStart = figure.isStart || !userPaths.current[username].active;
+
+        if (isStart) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          userPaths.current[msg.username].active = true;
+          userPaths.current[username].active = true;
         } else {
           ctx.lineTo(figure.x, figure.y);
-          ctx.strokeStyle = figure.strokeStyle;
-          ctx.lineWidth = figure.lineWidth;
-          ctx.lineCap = "round";
-          ctx.stroke();
         }
+
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.lineCap = "round";
+        ctx.stroke();
         break;
+      }
 
       case "eraser":
         if (figure.isStart || !userPaths.current[msg.username].active) {
