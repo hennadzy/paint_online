@@ -45,17 +45,20 @@ export default class Brush extends Tool {
     this.canvas.removeEventListener("touchend", this._touchEndHandler);
   }
 
-  mouseDownHandler(e) {
-    this.mouseDown = true;
-    this.localPathStarted = false;
-    canvasState.pushToUndo(this.canvas.toDataURL());
+mouseDownHandler(e) {
+  this.mouseDown = true;
+  canvasState.pushToUndo(this.canvas.toDataURL());
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const rect = this.canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
-    this.sendDrawData(x, y, true);
-  }
+  this.ctx.beginPath();
+  this.ctx.moveTo(x, y);
+  this.localPathStarted = true;
+
+  this.sendDrawData(x, y, true);
+}
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
@@ -121,23 +124,15 @@ export default class Brush extends Tool {
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
     const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
+  const lineWidth = this.lineWidth;
 
-    if (isLocal) {
-      if (isStart || !this.localPathStarted) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.localPathStarted = true;
-      } else {
-        this.ctx.lineTo(x, y);
-        this.ctx.strokeStyle = strokeStyle;
-        this.ctx.lineWidth = lineWidth;
-        this.ctx.lineCap = "round";
-        this.ctx.stroke();
-        this.ctx.beginPath(); // ← сброс после stroke
-
-      }
-    }
+  if (isLocal && this.localPathStarted) {
+    this.ctx.lineTo(x, y);
+    this.ctx.strokeStyle = strokeStyle;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.lineCap = "round";
+    this.ctx.stroke();
+  }
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
