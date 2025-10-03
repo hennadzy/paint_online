@@ -8,11 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
-    this.localPathStarted = false;
-
-    this._touchStartHandler = this.touchStartHandler.bind(this);
-    this._touchMoveHandler = this.touchMoveHandler.bind(this);
-    this._touchEndHandler = this.touchEndHandler.bind(this);
+    this._startSent = false;
 
     makeAutoObservable(this);
   }
@@ -30,9 +26,9 @@ export default class Brush extends Tool {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
-    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
-    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
   }
 
   destroyEvents() {
@@ -40,116 +36,81 @@ export default class Brush extends Tool {
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
 
-    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this._touchEndHandler);
+    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this.touchEndHandler);
   }
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.firstMoveSent = false;
-
+    this._startSent = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
+    const { x, y } = this._getCoords(e);
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
-    this.localPathStarted = true;
-    
-
-    this.sendDrawData(x, y, true);
+    this._send(x, y, true);
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
-    const isStart = !this.firstMoveSent;
-this.sendDrawData(x, y, isStart);
-this.firstMoveSent = true;
-
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
+    const { x, y } = this._getCoords(e);
+    this.ctx.lineTo(x, y);
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
+    this.ctx.lineCap = "round";
+    this.ctx.stroke();
+    this._send(x, y, this._startSent === false);
+    this._startSent = true;
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    this.localPathStarted = false;
-
-    if (this.socket) {
-      this.socket.send(JSON.stringify({
-        method: "draw",
-        id: this.id,
-        username: this.username,
-        figure: { type: "finish" }
-      }));
-    }
+    this._startSent = false;
+    this._sendFinish();
   }
 
   touchStartHandler(e) {
-
-    this.firstMoveSent = false;
-
     e.preventDefault();
     this.mouseDown = true;
-    this.localPathStarted = false;
+    this._startSent = false;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
-
+    const { x, y } = this._getCoords(e.touches[0]);
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
-    this.localPathStarted = true;
-
-    this.sendDrawData(x, y, true);
+    this._send(x, y, true);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
-const isStart = !this.firstMoveSent;
-this.sendDrawData(x, y, isStart);
-this.firstMoveSent = true;
-
+    const { x, y } = this._getCoords(e.touches[0]);
+    this.ctx.lineTo(x, y);
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
+    this.ctx.lineCap = "round";
+    this.ctx.stroke();
+    this._send(x, y, this._startSent === false);
+    this._startSent = true;
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    this.localPathStarted = false;
-
-    if (this.socket) {
-      this.socket.send(JSON.stringify({
-        method: "draw",
-        id: this.id,
-        figure: { type: "finish" }
-      }));
-    }
+    this._startSent = false;
+    this._sendFinish();
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = true) {
-    const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
+  _getCoords(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
 
-    if (isLocal && this.localPathStarted) {
-      this.ctx.lineTo(x, y);
-      this.ctx.strokeStyle = strokeStyle;
-      this.ctx.lineWidth = lineWidth;
-      this.ctx.lineCap = "round";
-      this.ctx.stroke();
-    }
-
+  _send(x, y, isStart) {
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -159,23 +120,22 @@ this.firstMoveSent = true;
           type: "brush",
           x,
           y,
-          lineWidth,
-          strokeStyle,
-          isStart,
-          username: this.username
+          lineWidth: this.lineWidth,
+          strokeStyle: this.strokeColor,
+          isStart
         }
       }));
     }
+  }
 
-    if (this.username === canvasState.username) {
-      canvasState.addFigure({
-        type: "brush",
-        x,
-        y,
-        lineWidth,
-        strokeStyle,
-        isStart
-      });
+  _sendFinish() {
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: { type: "finish" }
+      }));
     }
   }
 }
