@@ -28,9 +28,3 @@ const lineWidth = toolState.tool?.lineWidth ?? 1;
 
 export default SettingBar;
 
-
-
-
-
-
-

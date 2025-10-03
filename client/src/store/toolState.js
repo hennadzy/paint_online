@@ -1,6 +1,5 @@
-import { makeAutoObservable } from "mobx";
-import canvasState from "./canvasState";
 
+import { makeAutoObservable } from "mobx";
 
 class ToolState {
   tool = null;
@@ -31,11 +30,6 @@ class ToolState {
     const savedWidth = this.lineWidths[this.toolName] ?? 1;
     this.tool.setLineWidth?.(savedWidth);
 
-     if (canvasState.canvas) {
-    const ctx = canvasState.canvas.getContext("2d");
-    ctx.beginPath();
-  }
-
     this.tool.listen?.();
   }
 
@@ -58,3 +52,4 @@ class ToolState {
 }
 
 export default new ToolState();
+
