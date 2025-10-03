@@ -102,6 +102,7 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+         console.log("WS message:", msg); // ← добавь это
         if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
