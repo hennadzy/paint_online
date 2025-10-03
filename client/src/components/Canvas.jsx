@@ -13,6 +13,7 @@ import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
+
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const usernameRef = useRef();
