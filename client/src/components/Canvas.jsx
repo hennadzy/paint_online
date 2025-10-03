@@ -20,7 +20,7 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
-  const userPaths = useRef({}); // ← изоляция по пользователю
+  const userPaths = useRef({});
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -102,14 +102,10 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
-            break;
-          case "finish":
-            drawHandler(msg); // ← сбрасываем путь
             break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
@@ -122,76 +118,59 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
+    const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
-    const { figure, username } = msg;
 
-    if (username === canvasState.username) return;
+    if (!msg.username || msg.username === canvasState.username) return;
 
-    if (!userPaths.current[username]) {
-      userPaths.current[username] = { active: false };
+    if (!userPaths.current[msg.username]) {
+      userPaths.current[msg.username] = { active: false };
     }
 
     switch (figure.type) {
-      case "brush": {
-        const isStart = figure.isStart || !userPaths.current[username].active;
-
-        if (isStart) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          userPaths.current[username].active = true;
-        } else {
-          ctx.lineTo(figure.x, figure.y);
-        }
-
+      case "brush":
+      case "eraser":
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
         ctx.lineCap = "round";
-        ctx.stroke();
-        break;
-      }
 
-      case "eraser":
         if (figure.isStart || !userPaths.current[msg.username].active) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[msg.username].active = true;
         } else {
           ctx.lineTo(figure.x, figure.y);
-          ctx.strokeStyle = "#FFFFFF";
-          ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
-          ctx.lineCap = "round";
           ctx.stroke();
         }
         break;
 
-      case "finish":
-        userPaths.current[msg.username].active = false;
-        ctx.beginPath();
-        break;
-
       case "rect":
-        ctx.beginPath();
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
+        ctx.beginPath();
         ctx.rect(figure.x, figure.y, figure.width, figure.height);
         ctx.stroke();
         break;
 
       case "circle":
-        ctx.beginPath();
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
+        ctx.beginPath();
         ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
         ctx.stroke();
         break;
 
       case "line":
-        ctx.beginPath();
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
+        ctx.beginPath();
         ctx.moveTo(figure.x1, figure.y1);
         ctx.lineTo(figure.x2, figure.y2);
         ctx.stroke();
+        break;
+
+      case "finish":
+        userPaths.current[msg.username].active = false;
         break;
 
       default:
