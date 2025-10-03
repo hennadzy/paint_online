@@ -5,7 +5,6 @@ import { makeAutoObservable, observable, action } from "mobx";
 export default class Eraser extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#ffffff";
     this.mouseDown = false;
     this.lineWidth = null;
     makeAutoObservable(this, {
@@ -58,7 +57,6 @@ export default class Eraser extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
@@ -97,7 +95,6 @@ export default class Eraser extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
@@ -130,7 +127,7 @@ export default class Eraser extends Tool {
   }
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
-    const strokeStyle = this.strokeColor;
+    const strokeStyle = "#FFFFFF";
     const lineWidth = this.lineWidth;
 
     if (isLocal) {
@@ -152,16 +149,6 @@ export default class Eraser extends Tool {
           username: this.username
         }
       }));
-    }
-
-    if (this.username === canvasState.username) {
-      canvasState.addFigure({
-        type: "eraser",
-        x,
-        y,
-        lineWidth,
-        isStart
-      });
     }
   }
 
