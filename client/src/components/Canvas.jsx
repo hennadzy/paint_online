@@ -16,6 +16,7 @@ import "../styles/canvas.scss";
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const usernameRef = useRef();
+  const userPaths = useRef({});
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
