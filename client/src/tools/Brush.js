@@ -53,13 +53,8 @@ export default class Brush extends Tool {
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-if (isStart) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
 
     this.sendDrawData(x, y, true);
   }
@@ -97,13 +92,8 @@ if (isStart) {
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-if (isStart) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
 
     this.sendDrawData(x, y, true);
   }

@@ -142,6 +142,7 @@ const Canvas = observer(() => {
         Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
       case "finish":
+        userPaths.current[msg.username].active = false;
         ctx.beginPath();
         break;
       default:
