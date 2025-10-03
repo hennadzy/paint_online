@@ -66,7 +66,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
+const isStart = !this.localPathStarted;
     this.sendDrawData(x, y, false);
   }
 
@@ -108,7 +108,7 @@ export default class Brush extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-
+const isStart = !this.localPathStarted;
     this.sendDrawData(x, y, false);
   }
 
