@@ -137,16 +137,12 @@ const Canvas = observer(() => {
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[msg.username].active = true;
         } else {
-          // ctx.lineTo(figure.x, figure.y);
-          ctx.strokeStyle = figure.strokeStyle;
-          ctx.lineWidth = figure.lineWidth;
-          ctx.lineCap = "round";
           ctx.lineTo(figure.x, figure.y);
-          ctx.stroke();
-          ctx.beginPath();
-
-          // ctx.stroke();
         }
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.lineCap = "round";
+        ctx.stroke();
         break;
 
       case "eraser":
@@ -164,8 +160,10 @@ const Canvas = observer(() => {
         break;
 
       case "finish":
-        userPaths.current[msg.username].active = false;
+        ctx.closePath();
         ctx.beginPath();
+        userPaths.current[msg.username].active = false;
+
         break;
 
       case "rect":

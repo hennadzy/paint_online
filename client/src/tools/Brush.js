@@ -47,6 +47,8 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    this.firstMoveSent = false;
+
     canvasState.pushToUndo(this.canvas.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
@@ -56,6 +58,7 @@ export default class Brush extends Tool {
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
     this.localPathStarted = true;
+    
 
     this.sendDrawData(x, y, true);
   }
@@ -63,11 +66,15 @@ export default class Brush extends Tool {
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
+    const isStart = !this.firstMoveSent;
+this.sendDrawData(x, y, isStart);
+this.firstMoveSent = true;
+
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-const isStart = !this.localPathStarted;
-    this.sendDrawData(x, y, false);
+
   }
 
   mouseUpHandler() {
@@ -85,6 +92,9 @@ const isStart = !this.localPathStarted;
   }
 
   touchStartHandler(e) {
+
+    this.firstMoveSent = false;
+
     e.preventDefault();
     this.mouseDown = true;
     this.localPathStarted = false;
@@ -108,8 +118,10 @@ const isStart = !this.localPathStarted;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-const isStart = !this.localPathStarted;
-    this.sendDrawData(x, y, false);
+const isStart = !this.firstMoveSent;
+this.sendDrawData(x, y, isStart);
+this.firstMoveSent = true;
+
   }
 
   touchEndHandler(e) {
