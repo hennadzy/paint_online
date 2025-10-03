@@ -123,6 +123,8 @@ const Canvas = observer(() => {
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
+    
+const { figure, username } = msg;
     const ctx = canvasRef.current.getContext("2d");
     if (msg.username === canvasState.username) return;
 
