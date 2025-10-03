@@ -182,7 +182,7 @@ const Canvas = observer(() => {
         break;
 
       default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
+        console.warn("Неизвестный тип фигуры :", figure.type);
     }
   };
 
