@@ -1,4 +1,6 @@
 import { makeAutoObservable } from "mobx";
+import canvasState from "./canvasState";
+
 
 class ToolState {
   tool = null;
