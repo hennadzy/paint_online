@@ -13,7 +13,6 @@ import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
-
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const usernameRef = useRef();
@@ -121,6 +120,7 @@ const Canvas = observer(() => {
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
+    ctx.beginPath(); // Сброс контекста перед рисованием новой фигуры
 
     if (!msg.username || msg.username === canvasState.username) return;
 
@@ -130,9 +130,23 @@ const Canvas = observer(() => {
 
     switch (figure.type) {
       case "brush":
-      case "eraser":
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
+        ctx.lineCap = "round";
+
+        if (figure.isStart || !userPaths.current[msg.username].active) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          userPaths.current[msg.username].active = true;
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+          ctx.stroke();
+        }
+        break;
+
+      case "eraser":
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = figure.lineWidth ?? toolState.lineWidths.eraser;
         ctx.lineCap = "round";
 
         if (figure.isStart || !userPaths.current[msg.username].active) {
@@ -148,7 +162,6 @@ const Canvas = observer(() => {
       case "rect":
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
-        ctx.beginPath();
         ctx.rect(figure.x, figure.y, figure.width, figure.height);
         ctx.stroke();
         break;
@@ -156,7 +169,6 @@ const Canvas = observer(() => {
       case "circle":
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
-        ctx.beginPath();
         ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
         ctx.stroke();
         break;
@@ -164,14 +176,9 @@ const Canvas = observer(() => {
       case "line":
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
-        ctx.beginPath();
         ctx.moveTo(figure.x1, figure.y1);
         ctx.lineTo(figure.x2, figure.y2);
         ctx.stroke();
-        break;
-
-      case "finish":
-        userPaths.current[msg.username].active = false;
         break;
 
       default:
@@ -190,7 +197,8 @@ const Canvas = observer(() => {
   };
 
   const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    canvas
+State.pushToUndo(canvasRef.current.toDataURL());
     axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
       img: canvasRef.current.toDataURL(),
     });
@@ -242,5 +250,5 @@ const Canvas = observer(() => {
     </div>
   );
 });
- 
-export default Canvas; 
+
+export default Canvas;
