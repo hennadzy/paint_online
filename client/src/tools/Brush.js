@@ -76,6 +76,7 @@ export default class Brush extends Tool {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
+        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -117,6 +118,7 @@ export default class Brush extends Tool {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
+        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -142,7 +144,7 @@ export default class Brush extends Tool {
           lineWidth,
           strokeStyle,
           isStart,
-          // username: this.username
+
         }
       }));
     }
