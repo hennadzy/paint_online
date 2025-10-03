@@ -29,6 +29,11 @@ class ToolState {
     const savedWidth = this.lineWidths[this.toolName] ?? 1;
     this.tool.setLineWidth?.(savedWidth);
 
+     if (canvasState.canvas) {
+    const ctx = canvasState.canvas.getContext("2d");
+    ctx.beginPath();
+  }
+
     this.tool.listen?.();
   }
 
