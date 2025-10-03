@@ -142,7 +142,7 @@ export default class Brush extends Tool {
           lineWidth,
           strokeStyle,
           isStart,
-          username: this.username
+          // username: this.username
         }
       }));
     }
