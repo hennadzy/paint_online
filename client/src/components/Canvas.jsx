@@ -20,8 +20,7 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
-  const userPaths = useRef({});
-
+  const userPaths = useRef({}); // ← изоляция по пользователю
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -110,7 +109,7 @@ const Canvas = observer(() => {
             drawHandler(msg);
             break;
           case "finish":
-            canvasRef.current.getContext("2d").beginPath();
+            drawHandler(msg); // ← сбрасываем путь
             break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
@@ -123,75 +122,77 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-  const figure = msg.figure;
-  const ctx = canvasRef.current.getContext("2d");
-  if (msg.username === canvasState.username) return;
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
+    if (msg.username === canvasState.username) return;
 
-  ctx.lineCap = "round";
+    if (!userPaths.current[msg.username]) {
+      userPaths.current[msg.username] = { active: false };
+    }
 
-  switch (figure.type) {
-    case "brush":
-      if (figure.isStart || !userPaths.current[msg.username]) {
-        userPaths.current[msg.username] = true;
+    switch (figure.type) {
+      case "brush":
+        if (figure.isStart || !userPaths.current[msg.username].active) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          userPaths.current[msg.username].active = true;
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+          ctx.strokeStyle = figure.strokeStyle;
+          ctx.lineWidth = figure.lineWidth;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
+        break;
+
+      case "eraser":
+        if (figure.isStart || !userPaths.current[msg.username].active) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          userPaths.current[msg.username].active = true;
+        } else {
+          ctx.lineTo(figure.x, figure.y);
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
+        break;
+
+      case "finish":
+        userPaths.current[msg.username].active = false;
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      } else {
-        ctx.lineTo(figure.x, figure.y);
+        break;
+
+      case "rect":
+        ctx.beginPath();
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
+        ctx.rect(figure.x, figure.y, figure.width, figure.height);
         ctx.stroke();
-      }
-      break;
+        break;
 
-    case "eraser":
-      if (figure.isStart || !userPaths.current[msg.username]) {
-        userPaths.current[msg.username] = true;
+      case "circle":
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      } else {
-        ctx.lineTo(figure.x, figure.y);
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = figure.lineWidth ?? toolState.tool.lineWidth;
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
         ctx.stroke();
-      }
-      break;
+        break;
 
-    case "rect":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.rect(figure.x, figure.y, figure.width, figure.height);
-      ctx.stroke();
-      break;
+      case "line":
+        ctx.beginPath();
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.moveTo(figure.x1, figure.y1);
+        ctx.lineTo(figure.x2, figure.y2);
+        ctx.stroke();
+        break;
 
-    case "circle":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
-      ctx.stroke();
-      break;
-
-    case "line":
-      ctx.beginPath();
-      ctx.strokeStyle = figure.strokeStyle;
-      ctx.lineWidth = figure.lineWidth;
-      ctx.moveTo(figure.x1, figure.y1);
-      ctx.lineTo(figure.x2, figure.y2);
-      ctx.stroke();
-      break;
-
-    case "finish":
-      delete userPaths.current[msg.username];
-      ctx.beginPath(); // сбрасываем глобальный путь
-      break;
-
-    default:
-      console.warn("Неизвестный тип фигуры:", figure.type);
-  }
-};
-
-
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+  };
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
@@ -242,7 +243,6 @@ const Canvas = observer(() => {
       </Modal>
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
-      {/* {canvasState.canvas && <Toolbar />} */}
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
