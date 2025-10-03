@@ -122,10 +122,14 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-   
+  const ctx = canvasRef.current.getContext("2d");
 const { figure, username } = msg;
-    const ctx = canvasRef.current.getContext("2d");
-    if (msg.username === canvasState.username) return;
+
+if (username === canvasState.username) return;
+
+if (!userPaths.current[username]) {
+  userPaths.current[username] = { active: false };
+}
 
     switch (figure.type) {
       case "brush": {
