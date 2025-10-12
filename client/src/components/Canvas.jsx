@@ -77,8 +77,10 @@ const Canvas = observer(() => {
   useEffect(() => {
     console.log("useEffect triggered - username:", canvasState.username, "params.id:", params.id);
     
-    if (canvasState.username && params.id) {
-      console.log("Подключаемся к комнате:", params.id, "пользователь:", canvasState.username);
+    if (canvasState.username) {
+      // Если нет ID комнаты, генерируем его
+      const roomId = params.id || `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log("Подключаемся к комнате:", roomId, "пользователь:", canvasState.username);
       
       if (toolState.tool?.destroyEvents) {
         toolState.tool.destroyEvents();
@@ -92,9 +94,9 @@ const Canvas = observer(() => {
         console.log("WebSocket создан, состояние:", socket.readyState);
         
         canvasState.setSocket(socket);
-        canvasState.setSessionId(params.id);
+        canvasState.setSessionId(roomId);
         toolState.setTool(
-          new Brush(canvasState.canvas, socket, params.id, canvasState.username),
+          new Brush(canvasState.canvas, socket, roomId, canvasState.username),
           "brush"
         );
 
@@ -105,7 +107,7 @@ const Canvas = observer(() => {
           console.log("WebSocket соединение установлено");
           socket.send(
             JSON.stringify({
-              id: params.id,
+              id: roomId,
               username: canvasState.username,
               method: "connection",
             })
@@ -255,8 +257,9 @@ const Canvas = observer(() => {
   const mouseDownHandler = () => {
     canvasState.pushToUndo(canvasRef.current.toDataURL());
     // Сохраняем изображение только если есть ID комнаты
-    if (params.id) {
-      axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+    const roomId = params.id || canvasState.sessionId;
+    if (roomId) {
+      axios.post(`https://paint-online-back.onrender.com/image?id=${roomId}`, {
         img: canvasRef.current.toDataURL(),
       }).catch(error => {
         console.log("Ошибка сохранения изображения:", error);
@@ -305,6 +308,11 @@ const Canvas = observer(() => {
       )}
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
+        {canvasState.sessionId && (
+          <div style={{ marginBottom: "10px", fontWeight: "bold" }}>
+            ID комнаты: {canvasState.sessionId}
+          </div>
+        )}
         {messages.map((message, index) => (
           <div key={index}>{message}</div>
         ))}
