@@ -105,13 +105,16 @@ const Canvas = observer(() => {
         console.log("WS message:", msg);
         if (!msg.username || msg.username === canvasState.username) return;
 
+        // Принудительно завершаем все активные пути перед обработкой любого события от других пользователей
+        const ctx = canvasRef.current.getContext("2d");
+        ctx.beginPath();
+
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
             break;
           case "finish":
-            // Принудительно завершаем все активные пути при получении события finish
-            const ctx = canvasRef.current.getContext("2d");
+            // Дополнительно завершаем путь при получении события finish
             ctx.beginPath();
             break;
           case "connection":
@@ -134,16 +137,20 @@ const Canvas = observer(() => {
       userPaths.current[username] = { active: false };
     }
 
+    console.log(`Обработка рисования от пользователя ${username}, тип: ${figure.type}, isStart: ${figure.isStart}`);
+
     switch (figure.type) {
       case "brush": {
         const isStart = figure.isStart || !userPaths.current[username].active;
 
         if (isStart) {
-          // Принудительно завершаем любой активный путь перед началом нового
+          // Принудительно завершаем ВСЕ активные пути перед началом нового
+          console.log(`Начинаем новый путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[username].active = true;
         } else {
+          console.log(`Продолжаем путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
           ctx.lineTo(figure.x, figure.y);
         }
 
@@ -154,28 +161,28 @@ const Canvas = observer(() => {
         break;
       }
       case "rect":
-        // Принудительно завершаем активные пути перед рисованием фигуры
+        console.log(`Рисуем прямоугольник для пользователя ${username}`);
         ctx.beginPath();
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
       case "circle":
-        // Принудительно завершаем активные пути перед рисованием фигуры
+        console.log(`Рисуем круг для пользователя ${username}`);
         ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         break;
       case "line":
-        // Принудительно завершаем активные пути перед рисованием фигуры
+        console.log(`Рисуем линию для пользователя ${username}`);
         ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
       case "eraser":
-        // Принудительно завершаем активные пути перед стиранием
+        console.log(`Стираем для пользователя ${username}`);
         ctx.beginPath();
         Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
       case "finish":
+        console.log(`Завершаем путь для пользователя ${username}`);
         userPaths.current[username].active = false;
-        // Принудительно завершаем путь для этого пользователя
         ctx.beginPath();
         break;
       default:

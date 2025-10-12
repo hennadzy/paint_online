@@ -51,6 +51,8 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    console.log(`Локальное рисование: начинаем путь в точке (${x}, ${y})`);
+
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.beginPath();
@@ -71,6 +73,8 @@ export default class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    
+    console.log(`Локальное рисование: завершаем путь`);
     
     // Принудительно завершаем локальный путь
     this.ctx.beginPath();
