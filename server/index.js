@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 app.use(cors({
-    origin: 'https://paint-art.ru/' 
+    origin: ['https://paint-art.ru', 'https://paint-art.ru/', 'http://localhost:3000', 'http://localhost:3001', 'https://localhost:3000', 'https://localhost:3001']
 }));
 app.use(express.json({ limit: '10mb' })); 
 

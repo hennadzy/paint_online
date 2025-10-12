@@ -75,7 +75,9 @@ const Canvas = observer(() => {
   }, [params.id]);
 
   useEffect(() => {
-    if (canvasState.username) {
+    if (canvasState.username && params.id) {
+      console.log("Подключаемся к комнате:", params.id, "пользователь:", canvasState.username);
+      
       if (toolState.tool?.destroyEvents) {
         toolState.tool.destroyEvents();
       }
@@ -91,6 +93,7 @@ const Canvas = observer(() => {
       toolState.tool.listen();
 
       socket.onopen = () => {
+        console.log("WebSocket соединение установлено");
         socket.send(
           JSON.stringify({
             id: params.id,
@@ -98,6 +101,14 @@ const Canvas = observer(() => {
             method: "connection",
           })
         );
+      };
+
+      socket.onerror = (error) => {
+        console.log("WebSocket ошибка:", error);
+      };
+
+      socket.onclose = (event) => {
+        console.log("WebSocket соединение закрыто:", event.code, event.reason);
       };
 
       socket.onmessage = (event) => {
@@ -207,9 +218,14 @@ const Canvas = observer(() => {
 
   const mouseDownHandler = () => {
     canvasState.pushToUndo(canvasRef.current.toDataURL());
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
-    });
+    // Сохраняем изображение только если есть ID комнаты
+    if (params.id) {
+      axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+        img: canvasRef.current.toDataURL(),
+      }).catch(error => {
+        console.log("Ошибка сохранения изображения:", error);
+      });
+    }
   };
 
   const handleCreateRoomClick = () => {
