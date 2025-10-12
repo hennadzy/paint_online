@@ -118,9 +118,14 @@ const Canvas = observer(() => {
 
         console.log("Обрабатываем событие от пользователя:", msg.username, "метод:", msg.method);
 
-        // Принудительно завершаем все активные пути перед обработкой любого события от других пользователей
+        // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед обработкой любого события от других пользователей
         const ctx = canvasRef.current.getContext("2d");
         ctx.beginPath();
+        
+        // Дополнительно завершаем все пути для всех пользователей
+        Object.keys(userPaths.current).forEach(username => {
+          userPaths.current[username].active = false;
+        });
 
         switch (msg.method) {
           case "draw":
@@ -152,7 +157,10 @@ const Canvas = observer(() => {
 
     console.log("Обработка рисования от пользователя:", username, "тип:", figure.type, "isStart:", figure.isStart);
 
-    // ВАЖНО: Принудительно завершаем ВСЕ активные пути перед любым рисованием от других пользователей
+    // КРИТИЧЕСКИ ВАЖНО: Сохраняем текущее состояние canvas
+    const currentImageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    // Принудительно завершаем ВСЕ активные пути
     ctx.beginPath();
 
     switch (figure.type) {
@@ -161,6 +169,7 @@ const Canvas = observer(() => {
 
         if (isStart) {
           console.log("Начинаем новый путь для пользователя:", username, "в точке:", figure.x, figure.y);
+          // Принудительно завершаем ВСЕ пути перед началом нового
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[username].active = true;

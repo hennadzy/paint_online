@@ -53,6 +53,9 @@ export default class Brush extends Tool {
 
     console.log("Локальное рисование: начинаем путь в точке", x, y);
 
+    // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед началом локального рисования
+    this.ctx.beginPath();
+
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.lineCap = "round";
@@ -101,6 +104,9 @@ export default class Brush extends Tool {
     const y = e.touches[0].clientY - rect.top;
 
     console.log("Мобильное рисование: начинаем путь в точке", x, y);
+
+    // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед началом локального рисования
+    this.ctx.beginPath();
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
