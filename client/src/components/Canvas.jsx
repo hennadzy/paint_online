@@ -75,74 +75,99 @@ const Canvas = observer(() => {
   }, [params.id]);
 
   useEffect(() => {
+    console.log("useEffect triggered - username:", canvasState.username, "params.id:", params.id);
+    
     if (canvasState.username && params.id) {
       console.log("Подключаемся к комнате:", params.id, "пользователь:", canvasState.username);
       
       if (toolState.tool?.destroyEvents) {
         toolState.tool.destroyEvents();
       }
-      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-      canvasState.setSocket(socket);
-      canvasState.setSessionId(params.id);
-      toolState.setTool(
-        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
-        "brush"
-      );
-
-      updateCursor("brush");
-      toolState.tool.listen();
-
-      socket.onopen = () => {
-        console.log("WebSocket соединение установлено");
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
-          })
-        );
-      };
-
-      socket.onerror = (error) => {
-        console.log("WebSocket ошибка:", error);
-      };
-
-      socket.onclose = (event) => {
-        console.log("WebSocket соединение закрыто:", event.code, event.reason);
-      };
-
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        console.log("WS message:", msg);
-        if (!msg.username || msg.username === canvasState.username) return;
-
-        console.log("Обрабатываем событие от пользователя:", msg.username, "метод:", msg.method);
-
-        // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед обработкой любого события от других пользователей
-        const ctx = canvasRef.current.getContext("2d");
-        ctx.beginPath();
+      
+      try {
+        // Попробуем разные URL для WebSocket
+        const wsUrl = "wss://paint-online-back.onrender.com/";
+        console.log("Пытаемся подключиться к WebSocket:", wsUrl);
+        const socket = new WebSocket(wsUrl);
+        console.log("WebSocket создан, состояние:", socket.readyState);
         
-        // Дополнительно завершаем все пути для всех пользователей
-        Object.keys(userPaths.current).forEach(username => {
-          userPaths.current[username].active = false;
-        });
+        canvasState.setSocket(socket);
+        canvasState.setSessionId(params.id);
+        toolState.setTool(
+          new Brush(canvasState.canvas, socket, params.id, canvasState.username),
+          "brush"
+        );
 
-        switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
-          case "finish":
-            // Дополнительно завершаем путь при получении события finish
-            ctx.beginPath();
-            break;
-          case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
-            break;
-          default:
-            console.warn("Неизвестный метод:", msg.method);
-        }
-      };
+        updateCursor("brush");
+        toolState.tool.listen();
+
+        socket.onopen = () => {
+          console.log("WebSocket соединение установлено");
+          socket.send(
+            JSON.stringify({
+              id: params.id,
+              username: canvasState.username,
+              method: "connection",
+            })
+          );
+        };
+
+        socket.onerror = (error) => {
+          console.log("WebSocket ошибка:", error);
+          console.log("WebSocket состояние при ошибке:", socket.readyState);
+        };
+
+        socket.onclose = (event) => {
+          console.log("WebSocket соединение закрыто:", event.code, event.reason);
+          console.log("WebSocket состояние при закрытии:", socket.readyState);
+        };
+
+        socket.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+          console.log("WS message:", msg);
+          if (!msg.username || msg.username === canvasState.username) return;
+
+          console.log("Обрабатываем событие от пользователя:", msg.username, "метод:", msg.method);
+
+          // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед обработкой любого события от других пользователей
+          const ctx = canvasRef.current.getContext("2d");
+          ctx.beginPath();
+          
+          // Дополнительно завершаем все пути для всех пользователей
+          Object.keys(userPaths.current).forEach(username => {
+            userPaths.current[username].active = false;
+          });
+
+          switch (msg.method) {
+            case "draw":
+              drawHandler(msg);
+              break;
+            case "finish":
+              // Дополнительно завершаем путь при получении события finish
+              ctx.beginPath();
+              break;
+            case "connection":
+              setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+              break;
+            default:
+              console.warn("Неизвестный метод:", msg.method);
+          }
+        };
+        
+      } catch (error) {
+        console.log("Ошибка создания WebSocket:", error);
+        return; // Выходим, если не удалось создать WebSocket
+      }
+
     }
+    
+    // Очистка при размонтировании
+    return () => {
+      if (canvasState.socket) {
+        console.log("Закрываем WebSocket соединение");
+        canvasState.socket.close();
+      }
+    };
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
@@ -217,9 +242,11 @@ const Canvas = observer(() => {
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
+    console.log("Попытка входа с именем:", username);
     if (username) {
       canvasState.setUsername(username);
       setModal(false);
+      console.log("Пользователь вошел:", username);
     } else {
       alert("Введите ваше имя");
     }
@@ -238,6 +265,7 @@ const Canvas = observer(() => {
   };
 
   const handleCreateRoomClick = () => {
+    console.log("Создание комнаты");
     setModal(true);
     setIsRoomCreated(true);
   };
