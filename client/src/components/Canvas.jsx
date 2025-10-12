@@ -268,14 +268,21 @@ const Canvas = observer(() => {
   };
 
   const handleCreateRoomClick = () => {
-    console.log("Создание комнаты");
+    console.log("Создание комнаты - кнопка нажата");
+    console.log("Модальное окно будет показано");
     setModal(true);
     setIsRoomCreated(true);
+    console.log("Модальное окно установлено в true");
   };
 
+  console.log("Рендер компонента - modal:", modal, "isRoomCreated:", isRoomCreated);
+  
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Modal show={modal} onHide={() => setModal(false)}>
+      <Modal show={modal} onHide={() => {
+        console.log("Модальное окно закрыто");
+        setModal(false);
+      }}>
         <Modal.Header closeButton>
           <Modal.Title>Введите ваше имя</Modal.Title>
         </Modal.Header>
@@ -285,15 +292,23 @@ const Canvas = observer(() => {
             autoFocus
             ref={usernameRef}
             placeholder="Ваше имя"
+            onChange={(e) => {
+              console.log("Пользователь вводит имя:", e.target.value);
+            }}
             onKeyDown={(e) => {
+              console.log("Нажата клавиша:", e.key);
               if (e.key === "Enter") {
+                console.log("Нажат Enter, вызываем connectHandler");
                 connectHandler();
               }
             }}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
+          <Button variant="secondary" onClick={() => {
+            console.log("Кнопка 'Войти' нажата");
+            connectHandler();
+          }}>
             Войти
           </Button>
         </Modal.Footer>
