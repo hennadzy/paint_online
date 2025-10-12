@@ -102,8 +102,10 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log("WS message:", msg);
+        console.log("🔴 WS message:", msg);
         if (!msg.username || msg.username === canvasState.username) return;
+
+        console.log(`🟡 Обрабатываем событие от пользователя: ${msg.username}, метод: ${msg.method}`);
 
         // Принудительно завершаем все активные пути перед обработкой любого события от других пользователей
         const ctx = canvasRef.current.getContext("2d");
@@ -137,7 +139,7 @@ const Canvas = observer(() => {
       userPaths.current[username] = { active: false };
     }
 
-    console.log(`Обработка рисования от пользователя ${username}, тип: ${figure.type}, isStart: ${figure.isStart}`);
+    console.log(`🟢 Обработка рисования от пользователя ${username}, тип: ${figure.type}, isStart: ${figure.isStart}`);
 
     switch (figure.type) {
       case "brush": {
@@ -145,18 +147,19 @@ const Canvas = observer(() => {
 
         if (isStart) {
           // Принудительно завершаем ВСЕ активные пути перед началом нового
-          console.log(`Начинаем новый путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
+          console.log(`🟢 Начинаем новый путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[username].active = true;
         } else {
-          console.log(`Продолжаем путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
+          console.log(`🟢 Продолжаем путь для пользователя ${username} в точке (${figure.x}, ${figure.y})`);
           ctx.lineTo(figure.x, figure.y);
         }
 
         ctx.strokeStyle = figure.strokeStyle;
         ctx.lineWidth = figure.lineWidth;
         ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         ctx.stroke();
         break;
       }
