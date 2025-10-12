@@ -76,6 +76,9 @@ export default class Eraser extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    
+    // Принудительно завершаем локальный путь
+    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -116,6 +119,9 @@ export default class Eraser extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    
+    // Принудительно завершаем локальный путь
+    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({

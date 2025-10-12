@@ -102,7 +102,7 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-         console.log("WS message:", msg); // ← добавь это
+        console.log("WS message:", msg);
         if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
@@ -110,7 +110,9 @@ const Canvas = observer(() => {
             drawHandler(msg);
             break;
           case "finish":
-            canvasRef.current.getContext("2d").beginPath();
+            // Принудительно завершаем все активные пути при получении события finish
+            const ctx = canvasRef.current.getContext("2d");
+            ctx.beginPath();
             break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
@@ -123,20 +125,21 @@ const Canvas = observer(() => {
   }, [canvasState.username, params.id]);
 
   const drawHandler = (msg) => {
-  const ctx = canvasRef.current.getContext("2d");
-const { figure, username } = msg;
+    const ctx = canvasRef.current.getContext("2d");
+    const { figure, username } = msg;
 
-if (username === canvasState.username) return;
+    if (username === canvasState.username) return;
 
-if (!userPaths.current[username]) {
-  userPaths.current[username] = { active: false };
-}
+    if (!userPaths.current[username]) {
+      userPaths.current[username] = { active: false };
+    }
 
     switch (figure.type) {
       case "brush": {
         const isStart = figure.isStart || !userPaths.current[username].active;
 
         if (isStart) {
+          // Принудительно завершаем любой активный путь перед началом нового
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           userPaths.current[username].active = true;
@@ -151,19 +154,28 @@ if (!userPaths.current[username]) {
         break;
       }
       case "rect":
+        // Принудительно завершаем активные пути перед рисованием фигуры
+        ctx.beginPath();
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
       case "circle":
+        // Принудительно завершаем активные пути перед рисованием фигуры
+        ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         break;
       case "line":
+        // Принудительно завершаем активные пути перед рисованием фигуры
+        ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
       case "eraser":
+        // Принудительно завершаем активные пути перед стиранием
+        ctx.beginPath();
         Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
       case "finish":
-        userPaths.current[msg.username].active = false;
+        userPaths.current[username].active = false;
+        // Принудительно завершаем путь для этого пользователя
         ctx.beginPath();
         break;
       default:

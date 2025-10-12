@@ -71,6 +71,9 @@ export default class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    
+    // Принудительно завершаем локальный путь
+    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -113,6 +116,9 @@ export default class Brush extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    
+    // Принудительно завершаем локальный путь
+    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
