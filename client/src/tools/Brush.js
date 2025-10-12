@@ -51,7 +51,7 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    console.log(`🖱️ Локальное рисование: начинаем путь в точке (${x}, ${y})`);
+    console.log("Локальное рисование: начинаем путь в точке", x, y);
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
@@ -70,17 +70,13 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Рисуем локально сразу для плавности
-    this.ctx.lineTo(x, y);
-    this.ctx.stroke();
-
     this.sendDrawData(x, y, false);
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
     
-    console.log(`🖱️ Локальное рисование: завершаем путь`);
+    console.log("Локальное рисование: завершаем путь");
     
     // Принудительно завершаем локальный путь
     this.ctx.beginPath();
@@ -104,7 +100,7 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    console.log(`📱 Мобильное рисование: начинаем путь в точке (${x}, ${y})`);
+    console.log("Мобильное рисование: начинаем путь в точке", x, y);
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
@@ -124,10 +120,6 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    // Для мобильных устройств рисуем локально сразу, чтобы избежать прерывистых линий
-    this.ctx.lineTo(x, y);
-    this.ctx.stroke();
-
     this.sendDrawData(x, y, false);
   }
 
@@ -135,7 +127,7 @@ export default class Brush extends Tool {
     e.preventDefault();
     this.mouseDown = false;
     
-    console.log(`📱 Мобильное рисование: завершаем путь`);
+    console.log("Мобильное рисование: завершаем путь");
     
     // Принудительно завершаем локальный путь
     this.ctx.beginPath();
