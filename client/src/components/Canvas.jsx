@@ -319,20 +319,41 @@ const Canvas = observer(() => {
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
       {/* {canvasState.canvas && <Toolbar />} */}
       {!isRoomCreated && (
-        <Button 
-          variant="primary" 
-          onClick={() => {
-            console.log("Кнопка 'Создать комнату' нажата!");
-            handleCreateRoomClick();
-          }} 
-          style={{ marginTop: "10px" }}
-        >
-          Создать комнату
-        </Button>
+        <div style={{ marginTop: "10px" }}>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              console.log("Кнопка 'Создать комнату' нажата!");
+              handleCreateRoomClick();
+            }} 
+            style={{ marginTop: "10px" }}
+          >
+            Создать комнату
+          </Button>
+        </div>
       )}
-      {isRoomCreated && (
+      {isRoomCreated && !canvasState.username && (
+        <div style={{ marginTop: "10px" }}>
+          <input
+            type="text"
+            placeholder="Введите ваше имя"
+            ref={usernameRef}
+            style={{ marginRight: "10px", padding: "5px" }}
+          />
+          <Button 
+            variant="secondary" 
+            onClick={() => {
+              console.log("Кнопка 'Войти' нажата!");
+              connectHandler();
+            }}
+          >
+            Войти
+          </Button>
+        </div>
+      )}
+      {canvasState.username && (
         <div style={{ marginTop: "10px", color: "green" }}>
-          Комната создана! Введите имя пользователя.
+          Добро пожаловать, {canvasState.username}!
         </div>
       )}
 
