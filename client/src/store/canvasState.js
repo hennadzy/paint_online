@@ -4,9 +4,11 @@ class CanvasState {
     canvas = null
     socket = null
     sessionid = null
-    // Отдельные стеки для каждого пользователя
-    userUndoStacks = new Map() // username -> [actions]
-    userRedoStacks = new Map() // username -> [actions]
+    // Старая система для локального режима
+    undoList = []
+    redoList = []
+    // Новая система для многопользовательского режима
+    userActions = [] // Все действия со всех устройств с метаданными
     username = ""
 
     constructor() {
@@ -25,92 +27,194 @@ class CanvasState {
 
     setUsername(username) {
         this.username = username
-        // Инициализируем стеки для нового пользователя
-        if (!this.userUndoStacks.has(username)) {
-            this.userUndoStacks.set(username, [])
-            this.userRedoStacks.set(username, [])
-        }
     }
 
     setCanvas(canvas) {
         this.canvas = canvas
     }
 
-    // Сохраняем действие для конкретного пользователя
-    pushUserAction(username, action) {
-        if (!this.userUndoStacks.has(username)) {
-            this.userUndoStacks.set(username, [])
-            this.userRedoStacks.set(username, [])
-        }
-        
-        const undoStack = this.userUndoStacks.get(username)
-        undoStack.push(action)
-        
-        // Очищаем redo стек при новом действии
-        this.userRedoStacks.set(username, [])
+    // Добавляем действие с информацией об авторе
+    addUserAction(action) {
+        this.userActions.push({
+            ...action,
+            id: Date.now() + Math.random(), // Уникальный ID
+            timestamp: Date.now(),
+            author: action.author || this.username
+        })
         
         // Ограничиваем размер истории
-        if (undoStack.length > 50) {
-            undoStack.shift()
+        if (this.userActions.length > 200) {
+            this.userActions.shift()
         }
     }
 
-    // Отменяем последнее действие текущего пользователя
+    // Старые методы для локального режима
+    pushToUndo(data) {
+        this.undoList.push(data)
+        // Очищаем redo при новом действии
+        this.redoList = []
+    }
+
+    pushToRedo(data) {
+        this.redoList.push(data)
+    }
+
+    // Undo/Redo для многопользовательского режима
+    undoMultiuser() {
+        if (!this.username) return
+        
+        // Находим последнее действие текущего пользователя
+        for (let i = this.userActions.length - 1; i >= 0; i--) {
+            const action = this.userActions[i]
+            if (action.author === this.username && !action.undone) {
+                // Помечаем как отмененное
+                action.undone = true
+                action.undoneAt = Date.now()
+                
+                // Перерисовываем весь canvas
+                this.redrawCanvas()
+                
+                // Отправляем информацию о undo другим пользователям
+                if (this.socket) {
+                    this.socket.send(JSON.stringify({
+                        method: "undo",
+                        id: this.sessionid,
+                        username: this.username,
+                        actionId: action.id
+                    }))
+                }
+                break
+            }
+        }
+    }
+
+    redoMultiuser() {
+        if (!this.username) return
+        
+        // Находим последнее отмененное действие текущего пользователя
+        let lastUndoneAction = null
+        let lastUndoneIndex = -1
+        
+        for (let i = this.userActions.length - 1; i >= 0; i--) {
+            const action = this.userActions[i]
+            if (action.author === this.username && action.undone) {
+                if (!lastUndoneAction || action.undoneAt > lastUndoneAction.undoneAt) {
+                    lastUndoneAction = action
+                    lastUndoneIndex = i
+                }
+            }
+        }
+        
+        if (lastUndoneAction) {
+            // Снимаем отметку об отмене
+            delete lastUndoneAction.undone
+            delete lastUndoneAction.undoneAt
+            
+            // Перерисовываем весь canvas
+            this.redrawCanvas()
+            
+            // Отправляем информацию о redo другим пользователям
+            if (this.socket) {
+                this.socket.send(JSON.stringify({
+                    method: "redo", 
+                    id: this.sessionid,
+                    username: this.username,
+                    actionId: lastUndoneAction.id
+                }))
+            }
+        }
+    }
+
+    // Обработка undo/redo от других пользователей
+    handleRemoteUndo(actionId) {
+        const action = this.userActions.find(a => a.id === actionId)
+        if (action) {
+            action.undone = trueaction.undoneAt = Date.now()
+            this.redrawCanvas()
+        }
+    }
+
+    handleRemoteRedo(actionId) {
+        const action = this.userActions.find(a => a.id === actionId)
+        if (action && action.undone) {
+            delete action.undone
+            delete action.undoneAt
+            this.redrawCanvas()
+        }
+    }
+
+    // Универсальная функция undo/redo
     undo() {
-        const username = this.username
-        if (!username) return
-
-        const undoStack = this.userUndoStacks.get(username)
-        const redoStack = this.userRedoStacks.get(username)
-        
-        if (!undoStack || undoStack.length === 0) return
-
-        const lastAction = undoStack.pop()
-        redoStack.push(lastAction)
-
-        // Перерисовываем canvas без действий этого пользователя
-        this.redrawCanvasWithoutUserActions(username, [lastAction])
+        if (this.username && this.socket) {
+            // Многопользовательский режим
+            this.undoMultiuser()
+        } else {
+            // Локальный режим
+            this.undoLocal()
+        }
     }
 
-    // Возвращаем последнее отмененное действие
     redo() {
-        const username = this.username
-        if (!username) return
-
-        const undoStack = this.userUndoStacks.get(username)
-        const redoStack = this.userRedoStacks.get(username)
-        
-        if (!redoStack || redoStack.length === 0) return
-
-        const actionToRestore = redoStack.pop()
-        undoStack.push(actionToRestore)
-
-        // Перерисовываем действие на canvas
-        this.redrawAction(actionToRestore)
+        if (this.username && this.socket) {
+            // Многопользовательский режим
+            this.redoMultiuser()
+        } else {
+            // Локальный режим
+            this.redoLocal()
+        }
     }
 
-    // Перерисовка canvas без определенных действий пользователя
-    redrawCanvasWithoutUserActions(username, actionsToRemove) {
+    // Локальный undo/redo
+    undoLocal() {
+        let ctx = this.canvas.getContext('2d')
+        if (this.undoList.length > 0) {
+            let dataUrl = this.undoList.pop()
+            this.redoList.push(this.canvas.toDataURL())
+            let img = new Image()
+            img.src = dataUrl
+            img.onload = () => {
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            }
+        } else {
+            this.redoList.push(this.canvas.toDataURL())
+            ctx.fillStyle = "white"
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+        }
+    }
+
+    redoLocal() {
+        let ctx = this.canvas.getContext('2d')
+        if (this.redoList.length > 0) {
+            let dataUrl = this.redoList.pop()
+            this.undoList.push(this.canvas.toDataURL())
+            let img = new Image()
+            img.src = dataUrl
+            img.onload = () => {
+                ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            }
+        }
+    }
+
+    // Перерисовка всего canvas на основе истории действий
+    redrawCanvas() {
         const ctx = this.canvas.getContext('2d')
         
         // Очищаем canvas
         ctx.fillStyle = "white"
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-        // Перерисовываем все действия кроме удаляемых
-        this.userUndoStacks.forEach((actions, user) => {
-            actions.forEach(action => {
-                if (user === username && actionsToRemove.includes(action)) {
-                    return // Пропускаем удаляемые действия
-                }
-                this.redrawAction(action)
-            })
+        // Перерисовываем все не отмененные действия
+        this.userActions.forEach(action => {
+            if (!action.undone) {
+                this.redrawAction(ctx, action)
+            }
         })
     }
 
     // Перерисовка конкретного действия
-    redrawAction(action) {
-        const ctx = this.canvas.getContext('2d')
+    redrawAction(ctx, action) {
         ctx.save()
 
         switch (action.type) {
@@ -179,15 +283,6 @@ class CanvasState {
             ctx.lineTo(action.points[i].x, action.points[i].y)
         }
         ctx.stroke()
-    }
-
-    // Устаревшие методы для совместимости
-    pushToUndo(data) {
-        // Оставляем для совместимости, но используем новую систему
-    }
-
-    pushToRedo(data) {
-        // Оставляем для совместимости
     }
 }
 

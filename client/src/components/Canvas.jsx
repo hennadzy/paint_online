@@ -20,9 +20,7 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   
-  // ⭐️ Используем useRef для синхронного доступа к состоянию
   const activeUsersRef = useRef(new Map());
-  
   const params = useParams();
 
   const updateCursor = (tool) => {
@@ -74,6 +72,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
 
+    // Создаем локальную кисть для режима без комнаты
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
     toolState.setTool(localBrush, "brush");
     localBrush.listen();
@@ -109,6 +108,12 @@ const Canvas = observer(() => {
           case "draw":
             drawHandler(msg);
             break;
+          case "undo":
+            canvasState.handleRemoteUndo(msg.actionId);
+            break;
+          case "redo":
+            canvasState.handleRemoteRedo(msg.actionId);
+            break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
@@ -127,7 +132,6 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
-  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
@@ -135,10 +139,9 @@ const Canvas = observer(() => {
 
     if (!msg.username || msg.username === canvasState.username) return;
 
-    // ⭐️ Сохраняем состояние контекста для изоляции
     ctx.save();
 
-    switch (figure.type) {
+   switch (figure.type) {
       case "brush":
         ctx.strokeStyle = figure.strokeStyle || "#000000";
         ctx.lineWidth = figure.lineWidth || 1;
@@ -146,25 +149,54 @@ const Canvas = observer(() => {
         ctx.lineJoin = "round";
 
         if (figure.isStart) {
-          // ⭐️ ВСЕГДА начинаем новый путь при isStart
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          activeUsersRef.current.set(username, { 
+            isDrawing: true, 
+            lastX: figure.x, 
+            lastY: figure.y,
+            currentAction: {
+              type: "brush",
+              strokeStyle: figure.strokeStyle,
+              lineWidth: figure.lineWidth,
+              points: [{x: figure.x, y: figure.y}],
+              author: username
+            }
+          });
         } else {
           const userState = activeUsersRef.current.get(username);
           if (userState && userState.isDrawing) {
-            // Продолжаем линию от последней позиции
             ctx.beginPath();
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-            // Обновляем позицию
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            
+            // Добавляем точку к текущему действию
+            if (userState.currentAction) {
+              userState.currentAction.points.push({x: figure.x, y: figure.y});
+            }
+            
+            activeUsersRef.current.set(username, { 
+              isDrawing: true, 
+              lastX: figure.x, 
+              lastY: figure.y,
+              currentAction: userState.currentAction
+            });
           } else {
-            // Если нет активного состояния - начинаем новый путь
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            activeUsersRef.current.set(username, { 
+              isDrawing: true, 
+              lastX: figure.x, 
+              lastY: figure.y,
+              currentAction: {
+                type: "brush",
+                strokeStyle: figure.strokeStyle,
+                lineWidth: figure.lineWidth,
+                points: [{x: figure.x, y: figure.y}],
+                author: username
+              }
+            });
           }
         }
         break;
@@ -178,7 +210,17 @@ const Canvas = observer(() => {
         if (figure.isStart) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          activeUsersRef.current.set(username, { 
+            isDrawing: true, 
+            lastX: figure.x, 
+            lastY: figure.y,
+            currentAction: {
+              type: "eraser",
+              lineWidth: figure.lineWidth,
+              points: [{x: figure.x, y: figure.y}],
+              author: username
+            }
+          });
         } else {
           const userState = activeUsersRef.current.get(username);
           if (userState && userState.isDrawing) {
@@ -186,32 +228,93 @@ const Canvas = observer(() => {
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            
+            // Добавляем точку к текущему действию
+            if (userState.currentAction) {
+              userState.currentAction.points.push({x: figure.x, y: figure.y});
+            }
+            
+            activeUsersRef.current.set(username, { 
+              isDrawing: true, 
+              lastX: figure.x, 
+              lastY: figure.y,
+              currentAction: userState.currentAction
+            });
           } else {
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            activeUsersRef.current.set(username, { 
+              isDrawing: true, 
+              lastX: figure.x, 
+              lastY: figure.y,
+              currentAction: {
+                type: "eraser",
+                lineWidth: figure.lineWidth,
+                points: [{x: figure.x, y: figure.y}],
+                author: username
+              }
+            });
           }
         }
         break;
 
       case "rect":
         ctx.beginPath();
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height,figure.strokeStyle, figure.lineWidth);
+        
+        // Сохраняем действие в истории
+        canvasState.addUserAction({
+          type: "rect",
+          x: figure.x,
+          y: figure.y,
+          width: figure.width,
+          height: figure.height,
+          strokeStyle: figure.strokeStyle,
+          lineWidth: figure.lineWidth,
+          author: username
+        });
         break;
 
       case "circle":
         ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        
+        // Сохраняем действие в истории
+        canvasState.addUserAction({
+          type: "circle",
+          x: figure.x,
+          y: figure.y,
+          radius: figure.radius,
+          strokeStyle: figure.strokeStyle,
+          lineWidth: figure.lineWidth,
+          author: username
+        });
         break;
 
       case "line":
         ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        
+        // Сохраняем действие в истории
+        canvasState.addUserAction({
+          type: "line",
+          x1: figure.x1,
+          y1: figure.y1,
+          x2: figure.x2,
+          y2: figure.y2,
+          strokeStyle: figure.strokeStyle,
+          lineWidth: figure.lineWidth,
+          author: username
+        });
         break;
 
       case "finish":
-        // ⭐️ Завершаем рисование пользователя
+        const userState = activeUsersRef.current.get(username);
+        if (userState && userState.currentAction) {
+          // Сохраняем завершенное действие в истории
+          canvasState.addUserAction(userState.currentAction);
+        }
+        
         ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
@@ -220,7 +323,6 @@ const Canvas = observer(() => {
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
 
-    // ⭐️ Восстанавливаем состояние контекста
     ctx.restore();
   };
 
@@ -235,10 +337,17 @@ const Canvas = observer(() => {
   };
 
   const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasRef.current.toDataURL());
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
-    });
+    // Для локального режима используем старую систему
+    if (!canvasState.username || !canvasState.socket) {
+      canvasState.pushToUndo(canvasRef.current.toDataURL());
+    }
+    
+    // Сохраняем на сервер только если есть соединение
+    if (params.id) {
+      axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+        img: canvasRef.current.toDataURL(),
+      });
+    }
   };
 
   const handleCreateRoomClick = () => {

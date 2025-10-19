@@ -8,7 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
-    this.currentStroke = null; // Текущий мазок
+    this.currentStroke = null;
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
@@ -56,7 +56,7 @@ export default class Brush extends Tool {
       strokeStyle: this.strokeColor,
       lineWidth: this.lineWidth,
       points: [{x, y}],
-      username: this.username
+      author: this.username
     };
 
     this.ctx.strokeStyle = this.strokeColor;
@@ -73,7 +73,6 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Добавляем точку к текущему мазку
     this.currentStroke.points.push({x, y});
 
     this.drawLocally(x, y, false);
@@ -85,7 +84,9 @@ export default class Brush extends Tool {
 
     // Сохраняем завершенный мазок в истории
     if (this.currentStroke && this.currentStroke.points.length > 0) {
-      canvasState.pushUserAction(this.username, this.currentStroke);
+      // Генерируем уникальный ID для действия
+      this.currentStroke.id = Date.now() + Math.random();
+      canvasState.addUserAction(this.currentStroke);
     }
 
     this.currentStroke = null;
@@ -94,6 +95,7 @@ export default class Brush extends Tool {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
+        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -111,13 +113,12 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    // Начинаем новый мазок
     this.currentStroke = {
       type: "brush",
       strokeStyle: this.strokeColor,
       lineWidth: this.lineWidth,
       points: [{x, y}],
-      username: this.username
+      author: this.username
     };
 
     this.ctx.strokeStyle = this.strokeColor;
@@ -135,20 +136,18 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    // Добавляем точку к текущему мазку
     this.currentStroke.points.push({x, y});
 
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
   }
-
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
 
-    // Сохраняем завершенный мазок в истории
     if (this.currentStroke && this.currentStroke.points.length > 0) {
-      canvasState.pushUserAction(this.username, this.currentStroke);
+      this.currentStroke.id = Date.now() + Math.random();
+      canvasState.addUserAction(this.currentStroke);
     }
 
     this.currentStroke = null;
@@ -157,6 +156,7 @@ export default class Brush extends Tool {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
+        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -167,9 +167,6 @@ export default class Brush extends Tool {
   }
 
   sendDrawData(x, y, isStart = false) {
-    const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
-
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -179,8 +176,8 @@ export default class Brush extends Tool {
           type: "brush",
           x,
           y,
-          lineWidth,
-          strokeStyle,
+          lineWidth: this.lineWidth,
+          strokeStyle: this.strokeColor,
           isStart,
           username: this.username
         }
@@ -191,18 +188,16 @@ export default class Brush extends Tool {
   drawLocally(x, y, isStart = false) {
     const ctx = this.ctx;
     const username = this.username;
-    const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
 
     ctx.save();
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
     if (!window._localUserState) window._localUserState = {};
-
-    if (isStart || !window._localUserState[username]) {
+    
+ if (isStart || !window._localUserState[username]) {
       ctx.beginPath();
       ctx.moveTo(x, y);
       window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
