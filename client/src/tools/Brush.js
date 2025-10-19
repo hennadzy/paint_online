@@ -52,9 +52,8 @@ export default class Brush extends Tool {
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
 
+    this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
   }
 
@@ -65,6 +64,7 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
   }
 
@@ -77,6 +77,10 @@ export default class Brush extends Tool {
         id: this.id,
         figure: { type: "finish" }
       }));
+    }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
     }
   }
 
@@ -91,9 +95,8 @@ export default class Brush extends Tool {
 
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-    this.ctx.beginPath();
-    this.ctx.moveTo(x, y);
 
+    this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
   }
 
@@ -105,6 +108,7 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
+    this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
   }
 
@@ -119,16 +123,16 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
   }
 
   sendDrawData(x, y, isStart = false) {
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
 
-    // рисуем локально сразу
-    Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-
-    // отправляем по сети
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -147,19 +151,33 @@ export default class Brush extends Tool {
     }
   }
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineCap = "round";
+  drawLocally(x, y, isStart = false) {
+    const ctx = this.ctx;
+    const username = this.username;
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
 
-  if (isStart) {
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  } else {
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    // ctx.beginPath(); 
-    // ctx.moveTo(x, y);
+    ctx.save();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (!window._localUserState) window._localUserState = {};
+
+    if (isStart || !window._localUserState[username]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    } else {
+      const userState = window._localUserState[username];
+      ctx.beginPath();
+      ctx.moveTo(userState.lastX, userState.lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    }
+
+    ctx.restore();
   }
-}
 }
