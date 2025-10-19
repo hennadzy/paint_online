@@ -122,7 +122,16 @@ const drawHandler = (msg) => {
 
   switch (figure.type) {
     case "brush":
-      Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+      if (figure.isStart) {
+        ctx.beginPath();
+        ctx.moveTo(figure.x, figure.y);
+      } else {
+        ctx.lineWidth = figure.lineWidth;
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineCap = "round";
+        ctx.lineTo(figure.x, figure.y);
+        ctx.stroke();
+      }
       break;
     case "rect":
       Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
@@ -143,6 +152,7 @@ const drawHandler = (msg) => {
       console.warn("Неизвестный тип фигуры:", figure.type);
   }
 };
+
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
