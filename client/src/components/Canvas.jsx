@@ -276,6 +276,7 @@ const Canvas = observer(() => {
   };
 
   console.log("Рендер компонента - modal:", modal, "isRoomCreated:", isRoomCreated);
+  console.log("Кнопка 'Создать комнату' должна быть видна:", !isRoomCreated);
   
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -317,9 +318,21 @@ const Canvas = observer(() => {
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
       {/* {canvasState.canvas && <Toolbar />} */}
       {!isRoomCreated && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+        <Button 
+          variant="primary" 
+          onClick={() => {
+            console.log("Кнопка 'Создать комнату' нажата!");
+            handleCreateRoomClick();
+          }} 
+          style={{ marginTop: "10px" }}
+        >
           Создать комнату
         </Button>
+      )}
+      {isRoomCreated && (
+        <div style={{ marginTop: "10px", color: "green" }}>
+          Комната создана! Введите имя пользователя.
+        </div>
       )}
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
