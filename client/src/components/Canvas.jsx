@@ -115,11 +115,12 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
- const drawHandler = (msg) => {
+
+const drawHandler = (msg) => {
   const figure = msg.figure;
   const ctx = canvasRef.current.getContext("2d");
 
-  if (msg.username === canvasState.username) return;
+  if (!msg.username || msg.username === canvasState.username) return;
 
   switch (figure.type) {
     case "brush":
@@ -127,27 +128,35 @@ const Canvas = observer(() => {
         ctx.beginPath();
         ctx.moveTo(figure.x, figure.y);
       }
-      Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
+      Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
       break;
     case "rect":
+      ctx.beginPath(); // ⭐️ Добавить для фигур
       Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
       break;
     case "circle":
+      ctx.beginPath(); // ⭐️ Добавить для фигур
       Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
       break;
     case "line":
+      ctx.beginPath(); // ⭐️ Добавить для фигур
       Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
       break;
     case "eraser":
-      Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
+      if (figure.isStart) {
+        ctx.beginPath();
+        ctx.moveTo(figure.x, figure.y);
+      }
+      Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? 10, "#FFFFFF", figure.isStart);
       break;
     case "finish":
-      ctx.beginPath();
+      ctx.beginPath(); // ⭐️ Принудительно завершаем путь
       break;
     default:
       console.warn("Неизвестный тип фигуры:", figure.type);
   }
 };
+
 
 
   const connectHandler = () => {
