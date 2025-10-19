@@ -69,6 +69,7 @@ export default class Brush extends Tool {
   }
 
   mouseUpHandler() {
+      console.log("mouseUpHandler called"); 
     this.mouseDown = false;
 
     if (this.socket) {
@@ -79,7 +80,7 @@ export default class Brush extends Tool {
       }));
     }
       this.ctx.beginPath();
-      console.log("mouseUp → beginPath()");
+
   }
 
   touchStartHandler(e) {
@@ -150,19 +151,20 @@ export default class Brush extends Tool {
     }
   }
 
-  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineCap = "round";
-    
+static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+  console.log("staticDraw", { isStart, x, y }); // ← здесь ОК
 
-    if (isStart) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineCap = "round";
+
+  if (isStart) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  } else {
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }
+}
   
 }

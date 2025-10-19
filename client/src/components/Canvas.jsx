@@ -70,6 +70,7 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
+    console.log("Tool set:", toolState.toolName, toolState.tool);
     updateCursor("brush");
   }, [params.id]);
 
