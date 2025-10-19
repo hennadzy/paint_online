@@ -128,16 +128,19 @@ const Canvas = observer(() => {
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
 
-    if (!msg.username || msg.username === canvasState.username) return;
+    if (!username || username === canvasState.username) return;
 
     ctx.save();
 
     switch (figure.type) {
       case "brush":
-        ctx.strokeStyle = figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || 1;
+      case "eraser": {
+        const isEraser = figure.type === "eraser";
+        ctx.strokeStyle = isEraser ? "#FFFFFF" : figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || (isEraser ? 10 : 1);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+        if (isEraser) ctx.globalCompositeOperation = "destination-out";
 
         if (figure.isStart) {
           ctx.beginPath();
@@ -154,27 +157,18 @@ const Canvas = observer(() => {
           }
         }
         break;
+      }
 
-      case "eraser":
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = figure.lineWidth || 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
+      case "rect":
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        break;
 
-        if (figure.isStart) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState?.isDrawing) {
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-          }
-        }
+      case "circle":
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        break;
+
+      case "line":
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "finish":
@@ -194,13 +188,6 @@ const Canvas = observer(() => {
     } else {
       alert("Введите ваше имя");
     }
-  };
-
-  const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasState.canvas.toDataURL());
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasState.canvas.toDataURL(),
-    });
   };
 
   const handleCreateRoomClick = () => {
@@ -234,7 +221,6 @@ const Canvas = observer(() => {
         ref={canvasRef}
         tabIndex={0}
         style={{ border: "1px solid black" }}
-        onMouseDown={mouseDownHandler}
       />
 
       {!isRoomCreated && (

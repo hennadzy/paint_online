@@ -8,6 +8,8 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
+    this.lastX = null;
+    this.lastY = null;
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
@@ -44,14 +46,11 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
+    this.lastX = x;
+    this.lastY = y;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
@@ -59,17 +58,20 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
+    this.lastX = x;
+    this.lastY = y;
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
+    this.lastX = null;
+    this.lastY = null;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -78,23 +80,16 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
-
-    if (window._localUserState) {
-      delete window._localUserState[this.username];
-    }
   }
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
+    this.lastX = x;
+    this.lastY = y;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
@@ -103,18 +98,21 @@ export default class Brush extends Tool {
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
+    this.lastX = x;
+    this.lastY = y;
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    this.lastX = null;
+    this.lastY = null;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -123,75 +121,50 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
-
-    if (window._localUserState) {
-      delete window._localUserState[this.username];
-    }
   }
 
   sendDrawData(x, y, isStart = false) {
-    const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
+    const figure = {
+      type: "brush",
+      x,
+      y,
+      lineWidth: this.lineWidth,
+      strokeStyle: this.strokeColor,
+      isStart,
+      username: this.username,
+      lastX: isStart ? null : this.lastX,
+      lastY: isStart ? null : this.lastY
+    };
+
+    canvasState.pushToUndo({ type: "draw", figure });
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
         username: this.username,
-        figure: {
-          type: "brush",
-          x,
-          y,
-          lineWidth,
-          strokeStyle,
-          isStart,
-          username: this.username
-        }
+        figure
       }));
     }
-
-    canvasState.pushToUndo({
-      type: "draw",
-      figure: {
-        type: "brush",
-        x,
-        y,
-        lineWidth: this.lineWidth,
-        strokeStyle: this.strokeColor,
-        isStart,
-        username: this.username
-      }
-    });
-
   }
 
   drawLocally(x, y, isStart = false) {
     const ctx = this.ctx;
-    const username = this.username;
-    const strokeStyle = this.strokeColor;
-    const lineWidth = this.lineWidth;
-
     ctx.save();
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    if (!window._localUserState) window._localUserState = {};
-
-    if (isStart || !window._localUserState[username]) {
-      ctx.beginPath();
+    ctx.beginPath();
+    if (isStart || this.lastX === null || this.lastY === null) {
       ctx.moveTo(x, y);
-      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+      ctx.lineTo(x + 0.01, y + 0.01); // минимальный штрих
     } else {
-      const userState = window._localUserState[username];
-      ctx.beginPath();
-      ctx.moveTo(userState.lastX, userState.lastY);
+      ctx.moveTo(this.lastX, this.lastY);
       ctx.lineTo(x, y);
-      ctx.stroke();
-      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
     }
-
+    ctx.stroke();
     ctx.restore();
   }
 }

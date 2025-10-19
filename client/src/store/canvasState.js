@@ -5,7 +5,7 @@ class CanvasState {
   socket = null;
   sessionid = null;
   username = "";
-  undoList = []; // массив действий: { type: "draw", figure: {...} }
+  undoList = []; // [{ type: "draw", figure: {...} }]
   redoList = [];
 
   constructor() {
@@ -31,11 +31,15 @@ class CanvasState {
   }
 
   pushToUndo(action) {
-    this.undoList.push(action);
+    if (action?.type === "draw" && action.figure?.username === this.username) {
+      this.undoList.push(action);
+    }
   }
 
   pushToRedo(action) {
-    this.redoList.push(action);
+    if (action?.type === "draw" && action.figure?.username === this.username) {
+      this.redoList.push(action);
+    }
   }
 
   applyFigure(figure) {
@@ -48,15 +52,15 @@ class CanvasState {
         ctx.lineWidth = figure.lineWidth || 1;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+        ctx.beginPath();
         if (figure.isStart) {
-          ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
+          ctx.lineTo(figure.x + 0.01, figure.y + 0.01); // минимальный штрих
         } else {
-          ctx.beginPath();
           ctx.moveTo(figure.lastX ?? figure.x, figure.lastY ?? figure.y);
           ctx.lineTo(figure.x, figure.y);
-          ctx.stroke();
         }
+        ctx.stroke();
         break;
 
       case "eraser":
@@ -64,15 +68,15 @@ class CanvasState {
         ctx.lineWidth = figure.lineWidth || 10;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+        ctx.beginPath();
         if (figure.isStart) {
-          ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
+          ctx.lineTo(figure.x + 0.01, figure.y + 0.01);
         } else {
-          ctx.beginPath();
           ctx.moveTo(figure.lastX ?? figure.x, figure.lastY ?? figure.y);
           ctx.lineTo(figure.x, figure.y);
-          ctx.stroke();
         }
+        ctx.stroke();
         break;
 
       case "rect":
@@ -110,7 +114,7 @@ class CanvasState {
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (const action of this.undoList) {
-      if (action.type === "draw") {
+      if (action.type === "draw" && action.figure?.username === this.username) {
         this.applyFigure(action.figure);
       }
     }
@@ -120,10 +124,9 @@ class CanvasState {
     if (this.undoList.length === 0) return;
 
     const last = this.undoList.pop();
-    this.redoList.push(last);
+    this.pushToRedo(last);
 
     this.redrawFromUndo();
-
     this.syncCanvas();
   }
 
@@ -131,10 +134,9 @@ class CanvasState {
     if (this.redoList.length === 0) return;
 
     const action = this.redoList.pop();
-    this.undoList.push(action);
+    this.pushToUndo(action);
 
     this.redrawFromUndo();
-
     this.syncCanvas();
   }
 
