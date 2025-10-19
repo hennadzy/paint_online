@@ -51,3 +51,4 @@ class ToolState {
 }
 
 export default new ToolState();
+

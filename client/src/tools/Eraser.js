@@ -136,19 +136,6 @@ export default class Eraser extends Tool {
         }
       }));
     }
-
-    canvasState.pushToUndo({
-      type: "draw",
-      figure: {
-        type: "eraser",
-        x,
-        y,
-        lineWidth: this.lineWidth,
-        isStart,
-        username: this.username
-      }
-    });
-
   }
 
   drawLocally(x, y, isStart = false) {

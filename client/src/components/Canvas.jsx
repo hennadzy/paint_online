@@ -19,7 +19,10 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
+  
+  // ⭐️ Используем useRef для синхронного доступа к состоянию
   const activeUsersRef = useRef(new Map());
+  
   const params = useParams();
 
   const updateCursor = (tool) => {
@@ -89,11 +92,13 @@ const Canvas = observer(() => {
       updateCursor("brush");
 
       socket.onopen = () => {
-        socket.send(JSON.stringify({
-          id: params.id,
-          username: canvasState.username,
-          method: "connection",
-        }));
+        socket.send(
+          JSON.stringify({
+            id: params.id,
+            username: canvasState.username,
+            method: "connection",
+          })
+        );
       };
 
       socket.onmessage = (event) => {
@@ -104,12 +109,6 @@ const Canvas = observer(() => {
           case "draw":
             drawHandler(msg);
             break;
-          case "undo":
-            canvasState.handleRemoteUndo(msg.actionId, msg.username);
-            break;
-          case "redo":
-            canvasState.handleRemoteRedo(msg.actionId, msg.username);
-            break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
@@ -117,96 +116,111 @@ const Canvas = observer(() => {
             console.warn("Неизвестный метод:", msg.method);
         }
       };
+
+      socket.onclose = () => {
+        console.log("WebSocket соединение закрыто");
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket ошибка:", error);
+      };
     }
   }, [canvasState.username, params.id]);
 
+  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
 
-    if (!username || username === canvasState.username) return;
+    if (!msg.username || msg.username === canvasState.username) return;
 
+    // ⭐️ Сохраняем состояние контекста для изоляции
     ctx.save();
 
     switch (figure.type) {
       case "brush":
-      case "eraser": {
-        const isEraser = figure.type === "eraser";
-        ctx.strokeStyle = isEraser ? "#FFFFFF" : figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || (isEraser ? 10 : 1);
+        ctx.strokeStyle = figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || 1;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        if (isEraser) ctx.globalCompositeOperation = "destination-out";
 
         if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, {
-            isDrawing: true,
-            lastX: figure.x,
-            lastY: figure.y,
-            currentAction: {
-              type: figure.type,
-              strokeStyle: figure.strokeStyle,
-              lineWidth: figure.lineWidth,
-              points: [{ x: figure.x, y: figure.y }],
-              author: username,
-            },
-          });
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
         } else {
           const userState = activeUsersRef.current.get(username);
-          if (userState?.isDrawing) {
+          if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
             ctx.beginPath();
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-            userState.currentAction?.points.push({ x: figure.x, y: figure.y });
-            activeUsersRef.current.set(username, {
-              ...userState,
-              lastX: figure.x,
-              lastY: figure.y,
-            });
+            // Обновляем позицию
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            // Если нет активного состояния - начинаем новый путь
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
-      }
+
+      case "eraser":
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = figure.lineWidth || 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (figure.isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          }
+        }
+        break;
 
       case "rect":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
-        ctx.strokeRect(figure.x, figure.y, figure.width, figure.height);
-        canvasState.addUserAction({ ...figure, type: "rect", author: username });
+        ctx.beginPath();
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "circle":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
         ctx.beginPath();
-        ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
-        ctx.stroke();
-        canvasState.addUserAction({ ...figure, type: "circle", author: username });
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "line":
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineWidth = figure.lineWidth;
         ctx.beginPath();
-        ctx.moveTo(figure.x1, figure.y1);
-        ctx.lineTo(figure.x2, figure.y2);
-        ctx.stroke();
-        canvasState.addUserAction({ ...figure, type: "line", author: username });
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "finish":
-        const userState = activeUsersRef.current.get(username);
-        if (userState?.currentAction) {
-          canvasState.addUserAction(userState.currentAction);
-        }
+        // ⭐️ Завершаем рисование пользователя
+        ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
+
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
     }
 
+    // ⭐️ Восстанавливаем состояние контекста
     ctx.restore();
   };
 
@@ -218,6 +232,13 @@ const Canvas = observer(() => {
     } else {
       alert("Введите ваше имя");
     }
+  };
+
+  const mouseDownHandler = () => {
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+      img: canvasRef.current.toDataURL(),
+    });
   };
 
   const handleCreateRoomClick = () => {
@@ -238,16 +259,25 @@ const Canvas = observer(() => {
             ref={usernameRef}
             placeholder="Ваше имя"
             onKeyDown={(e) => {
-              if (e.key === "Enter") connectHandler();
+              if (e.key === "Enter") {
+                connectHandler();
+              }
             }}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>Войти</Button>
+          <Button variant="secondary" onClick={connectHandler}>
+            Войти
+          </Button>
         </Modal.Footer>
       </Modal>
 
-      <canvas ref={canvasRef} tabIndex={0} style={{ border: "1px solid black" }} />
+      <canvas
+        ref={canvasRef}
+        tabIndex={0}
+        style={{ border: "1px solid black" }}
+        onMouseDown={mouseDownHandler}
+      />
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>

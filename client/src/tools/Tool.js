@@ -32,3 +32,4 @@ this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     }
   }
 }
+
