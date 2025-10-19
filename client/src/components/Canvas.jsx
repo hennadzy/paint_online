@@ -273,6 +273,7 @@ const Canvas = observer(() => {
     setModal(true);
     setIsRoomCreated(true);
     console.log("Модальное окно установлено в true");
+    console.log("Состояние после обновления - modal:", true, "isRoomCreated:", true);
   };
 
   console.log("Рендер компонента - modal:", modal, "isRoomCreated:", isRoomCreated);
@@ -280,7 +281,7 @@ const Canvas = observer(() => {
   
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Modal show={modal} onHide={() => {
+      <Modal show={modal || isRoomCreated} onHide={() => {
         console.log("Модальное окно закрыто");
         setModal(false);
       }}>
