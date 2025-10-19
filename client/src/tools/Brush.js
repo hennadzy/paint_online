@@ -71,7 +71,7 @@ export default class Brush extends Tool {
   mouseUpHandler() {
     this.mouseDown = false;
 
-    if (this.socket) {
+    if (this.socket && this.username !== "local") {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -112,7 +112,7 @@ export default class Brush extends Tool {
     e.preventDefault();
     this.mouseDown = false;
 
-    if (this.socket) {
+    if (this.socket && this.username !== "local") {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -125,11 +125,11 @@ export default class Brush extends Tool {
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
 
-    if (isLocal) {
+    if (isLocal || this.username === "local") {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
 
-    if (this.socket) {
+    if (this.socket && this.username !== "local") {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,

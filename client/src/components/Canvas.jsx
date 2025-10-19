@@ -69,6 +69,12 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
+
+    // локальный инструмент до входа
+    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
+    toolState.setTool(localBrush, "brush");
+    localBrush.listen();
+    updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
