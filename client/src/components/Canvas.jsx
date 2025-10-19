@@ -20,8 +20,8 @@ const Canvas = observer(() => {
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   
-  // ⭐️ Добавляем состояние для отслеживания активных пользователей
-  const [activeUsers, setActiveUsers] = useState(new Map());
+  // ⭐️ Используем useRef для синхронного доступа к состоянию
+  const activeUsersRef = useRef(new Map());
   
   const params = useParams();
 
@@ -117,7 +117,6 @@ const Canvas = observer(() => {
         }
       };
 
-      // ⭐️ Добавляемобработку отключения
       socket.onclose = () => {
         console.log("WebSocket соединение закрыто");
       };
@@ -128,7 +127,7 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
-  // ⭐️ ИСПРАВЛЕННЫЙ drawHandler - основное решение проблемы
+  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
@@ -136,40 +135,62 @@ const Canvas = observer(() => {
 
     if (!msg.username || msg.username === canvasState.username) return;
 
+    // ⭐️ Сохраняем состояние контекста для изоляции
+    ctx.save();
+
     switch (figure.type) {
       case "brush":
-        // ⭐️ Ключевое исправление - проверяем начало рисования пользователя
+        ctx.strokeStyle = figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || 1;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
         if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          setActiveUsers(prev => new Map(prev.set(username, true)));
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
         } else {
-          // Рисуем только если пользователь активен
-          const isUserActive = activeUsers.get(username);
-          if (isUserActive) {
-            Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            // Обновляем позицию
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
-            // Если потеряли начало - начинаем заново
+            // Если нет активного состояния - начинаем новый путь
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            setActiveUsers(prev => new Map(prev.set(username, true)));
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
 
       case "eraser":
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = figure.lineWidth || 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
         if (figure.isStart) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          setActiveUsers(prev => new Map(prev.set(username, true)));
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
         } else {
-          const isUserActive = activeUsers.get(username);
-          if (isUserActive) {
-            Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? 10, "#FFFFFF", false);
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            setActiveUsers(prev => new Map(prev.set(username, true)));
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
@@ -190,18 +211,17 @@ const Canvas = observer(() => {
         break;
 
       case "finish":
-        // ⭐️ Убираем пользователя из активных и завершаем путь
+        // ⭐️ Завершаем рисование пользователя
         ctx.beginPath();
-        setActiveUsers(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(username);
-          return newMap;
-        });
+        activeUsersRef.current.delete(username);
         break;
 
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
+
+    // ⭐️ Восстанавливаем состояние контекста
+    ctx.restore();
   };
 
   const connectHandler = () => {
@@ -244,7 +264,8 @@ const Canvas = observer(() => {
               }
             }}
           />
-        </Modal.Body><Modal.Footer>
+        </Modal.Body>
+        <Modal.Footer>
           <Button variant="secondary" onClick={connectHandler}>
             Войти
           </Button>
@@ -269,13 +290,6 @@ const Canvas = observer(() => {
           <div key={index}>{message}</div>
         ))}
       </div>
-
-      {/* ⭐️ Отладочная информация (можно убрать в продакшене) */}
-      {activeUsers.size > 0 && (
-        <div style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}>
-          Рисуют: {Array.from(activeUsers.keys()).join(", ")}
-        </div>
-      )}
     </div>
   );
 });
