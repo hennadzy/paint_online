@@ -70,7 +70,6 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
 
-    // локальный инструмент до входа
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
     toolState.setTool(localBrush, "brush");
     localBrush.listen();
@@ -100,8 +99,7 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-     if (!msg.username) return;
-
+        if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
           case "draw":
@@ -117,43 +115,33 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
-const drawHandler = (msg) => {
-  const figure = msg.figure;
-  const ctx = canvasRef.current.getContext("2d");
+  const drawHandler = (msg) => {
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
 
-  switch (figure.type) {
-    case "brush":
-      if (figure.isStart) {
+    switch (figure.type) {
+      case "brush":
+        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        break;
+      case "rect":
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "circle":
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "line":
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        break;
+      case "eraser":
+        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
+        break;
+      case "finish":
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      } else {
-        ctx.lineWidth = figure.lineWidth;
-        ctx.strokeStyle = figure.strokeStyle;
-        ctx.lineCap = "round";
-        ctx.lineTo(figure.x, figure.y);
-        ctx.stroke();
-      }
-      break;
-    case "rect":
-      Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "circle":
-      Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "line":
-      Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "eraser":
-      Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
-      break;
-    case "finish":
-      ctx.beginPath();
-      break;
-    default:
-      console.warn("Неизвестный тип фигуры:", figure.type);
-  }
-};
-
+        break;
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+  };
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
