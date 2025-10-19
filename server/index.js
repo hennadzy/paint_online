@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -23,11 +22,6 @@ app.ws('/', (ws, req) => {
             case "draw":
                 broadcastConnection(ws, msg);
                 break;
-            // ✅ Добавляем обработку undo/redo
-            case "undo":
-            case "redo":
-                broadcastConnection(ws, msg);
-                break;
         }
     });
 });
@@ -42,7 +36,6 @@ app.post('/image', (req, res) => {
         return res.status(500).json('error');
     }
 });
-
 app.get('/image', (req, res) => {
     try {
         const file = fs.readFileSync(path.resolve(__dirname, 'files', `${req.query.id}.jpg`));
@@ -65,7 +58,11 @@ const connectionHandler = (ws, msg) => {
 const broadcastConnection = (ws, msg) => {
     aWss.clients.forEach(client => {
         if (client.id === msg.id) {
+            if (!msg.username) {
+                msg.username = ws.username;
+            }
             client.send(JSON.stringify(msg));
         }
     });
 };
+
