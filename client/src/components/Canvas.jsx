@@ -281,26 +281,53 @@ const Canvas = observer(() => {
   
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      {/* --- УДАЛЯЕМ модальное окно! --- */}
-      {/* (блок <Modal ... /> полностью убираем) */}
-
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
-      {/* {canvasState.canvas && <Toolbar />} */}
 
-      {/* {canvasState.username && ( */}
-      {/*   <div style={{ marginTop: "10px", color: "green" }}> */}
-      {/*     Добро пожаловать, {canvasState.username}! */}
-      {/*   </div> */}
-      {/* )} */}
+      {!isRoomCreated && (
+        <div style={{ marginTop: "10px" }}>
+          <Button
+            variant="primary"
+            onClick={handleCreateRoomClick}
+          >
+            Создать комнату
+          </Button>
+        </div>
+      )}
 
-      {/* {canvasState.sessionId && ( */}
-      {/*   <div style={{ marginBottom: "10px", fontWeight: "bold" }}> */}
-      {/*     ID комнаты: {canvasState.sessionId} */}
-      {/*   </div> */}
-      {/* )} */}
-      {messages.map((message, index) => (
-        <div key={index}>{message}</div>
-      ))}
+      {isRoomCreated && !canvasState.username && (
+        <div style={{ marginTop: "10px" }}>
+          <input
+            type="text"
+            placeholder="Введите ваше имя"
+            ref={usernameRef}
+            style={{ marginRight: "10px", padding: "5px" }}
+          />
+          <Button
+            variant="secondary"
+            onClick={connectHandler}
+          >
+            Войти
+          </Button>
+        </div>
+      )}
+
+      {canvasState.sessionId && (
+        <div style={{ marginTop: "10px", fontWeight: "bold" }}>
+          ID комнаты: {canvasState.sessionId}
+        </div>
+      )}
+
+      {canvasState.username && (
+        <div style={{ marginTop: "10px", color: "green" }}>
+          Добро пожаловать, {canvasState.username}!
+        </div>
+      )}
+
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
+        {messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+      </div>
     </div>
   );
 });
