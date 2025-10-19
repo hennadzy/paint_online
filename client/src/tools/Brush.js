@@ -8,8 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
-    this.lastX = null;
-    this.lastY = null;
+    this.currentStroke = null; // Текущий мазок
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
@@ -46,32 +45,50 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    this.lastX = x;
-    this.lastY = y;
+
+    // Начинаем новый мазок
+    this.currentStroke = {
+      type: "brush",
+      strokeStyle: this.strokeColor,
+      lineWidth: this.lineWidth,
+      points: [{x, y}],
+      username: this.username
+    };
+
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
   }
 
   mouseMoveHandler(e) {
-    if (!this.mouseDown) return;
+    if (!this.mouseDown || !this.currentStroke) return;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    // Добавляем точку к текущему мазку
+    this.currentStroke.points.push({x, y});
+
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
-    this.lastX = x;
-    this.lastY = y;
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    this.lastX = null;
-    this.lastY = null;
+
+    // Сохраняем завершенный мазок в истории
+    if (this.currentStroke && this.currentStroke.points.length > 0) {
+      canvasState.pushUserAction(this.username, this.currentStroke);
+    }
+
+    this.currentStroke = null;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -80,16 +97,31 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
   }
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
-    this.lastX = x;
-    this.lastY = y;
+
+    // Начинаем новый мазок
+    this.currentStroke = {
+      type: "brush",
+      strokeStyle: this.strokeColor,
+      lineWidth: this.lineWidth,
+      points: [{x, y}],
+      username: this.username
+    };
+
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
@@ -97,22 +129,29 @@ export default class Brush extends Tool {
 
   touchMoveHandler(e) {
     e.preventDefault();
-    if (!this.mouseDown) return;
+    if (!this.mouseDown || !this.currentStroke) return;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
+    // Добавляем точку к текущему мазку
+    this.currentStroke.points.push({x, y});
+
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
-    this.lastX = x;
-    this.lastY = y;
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    this.lastX = null;
-    this.lastY = null;
+
+    // Сохраняем завершенный мазок в истории
+    if (this.currentStroke && this.currentStroke.points.length > 0) {
+      canvasState.pushUserAction(this.username, this.currentStroke);
+    }
+
+    this.currentStroke = null;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -121,50 +160,61 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
   }
 
   sendDrawData(x, y, isStart = false) {
-    const figure = {
-      type: "brush",
-      x,
-      y,
-      lineWidth: this.lineWidth,
-      strokeStyle: this.strokeColor,
-      isStart,
-      username: this.username,
-      lastX: isStart ? null : this.lastX,
-      lastY: isStart ? null : this.lastY
-    };
-
-    canvasState.pushToUndo({ type: "draw", figure });
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
         username: this.username,
-        figure
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username
+        }
       }));
     }
   }
 
   drawLocally(x, y, isStart = false) {
     const ctx = this.ctx;
+    const username = this.username;
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
+
     ctx.save();
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    ctx.beginPath();
-    if (isStart || this.lastX === null || this.lastY === null) {
+    if (!window._localUserState) window._localUserState = {};
+
+    if (isStart || !window._localUserState[username]) {
+      ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x + 0.01, y + 0.01); // минимальный штрих
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
     } else {
-      ctx.moveTo(this.lastX, this.lastY);
+      const userState = window._localUserState[username];
+      ctx.beginPath();
+      ctx.moveTo(userState.lastX, userState.lastY);
       ctx.lineTo(x, y);
+      ctx.stroke();
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
     }
-    ctx.stroke();
+
     ctx.restore();
   }
 }

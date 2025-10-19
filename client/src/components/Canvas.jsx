@@ -19,7 +19,10 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
+  
+  // ⭐️ Используем useRef для синхронного доступа к состоянию
   const activeUsersRef = useRef(new Map());
+  
   const params = useParams();
 
   const updateCursor = (tool) => {
@@ -89,11 +92,13 @@ const Canvas = observer(() => {
       updateCursor("brush");
 
       socket.onopen = () => {
-        socket.send(JSON.stringify({
-          id: params.id,
-          username: canvasState.username,
-          method: "connection",
-        }));
+        socket.send(
+          JSON.stringify({
+            id: params.id,
+            username: canvasState.username,
+            method: "connection",
+          })
+        );
       };
 
       socket.onmessage = (event) => {
@@ -107,40 +112,68 @@ const Canvas = observer(() => {
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
-          case "sync":
-            const img = new Image();
-            img.src = msg.img;
-            img.onload = () => {
-              const ctx = canvasRef.current.getContext("2d");
-              ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-              ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-            };
-            break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
       };
+
+      socket.onclose = () => {
+        console.log("WebSocket соединение закрыто");
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket ошибка:", error);
+      };
     }
   }, [canvasState.username, params.id]);
 
+  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
 
-    if (!username || username === canvasState.username) return;
+    if (!msg.username || msg.username === canvasState.username) return;
 
+    // ⭐️ Сохраняем состояние контекста для изоляции
     ctx.save();
 
     switch (figure.type) {
       case "brush":
-      case "eraser": {
-        const isEraser = figure.type === "eraser";
-        ctx.strokeStyle = isEraser ? "#FFFFFF" : figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || (isEraser ? 10 : 1);
+        ctx.strokeStyle = figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || 1;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        if (isEraser) ctx.globalCompositeOperation = "destination-out";
+
+        if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            // Обновляем позицию
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            // Если нет активного состояния - начинаем новый путь
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          }
+        }
+        break;
+
+      case "eraser":
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = figure.lineWidth || 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
         if (figure.isStart) {
           ctx.beginPath();
@@ -148,35 +181,46 @@ const Canvas = observer(() => {
           activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
         } else {
           const userState = activeUsersRef.current.get(username);
-          if (userState?.isDrawing) {
+          if (userState && userState.isDrawing) {
             ctx.beginPath();
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
-      }
 
       case "rect":
+        ctx.beginPath();
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "circle":
+        ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "line":
+        ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "finish":
+        // ⭐️ Завершаем рисование пользователя
         ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
+
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
     }
 
+    // ⭐️ Восстанавливаем состояние контекста
     ctx.restore();
   };
 
@@ -188,6 +232,13 @@ const Canvas = observer(() => {
     } else {
       alert("Введите ваше имя");
     }
+  };
+
+  const mouseDownHandler = () => {
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+      img: canvasRef.current.toDataURL(),
+    });
   };
 
   const handleCreateRoomClick = () => {
@@ -208,12 +259,16 @@ const Canvas = observer(() => {
             ref={usernameRef}
             placeholder="Ваше имя"
             onKeyDown={(e) => {
-              if (e.key === "Enter") connectHandler();
+              if (e.key === "Enter") {
+                connectHandler();
+              }
             }}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>Войти</Button>
+          <Button variant="secondary" onClick={connectHandler}>
+            Войти
+          </Button>
         </Modal.Footer>
       </Modal>
 
@@ -221,6 +276,7 @@ const Canvas = observer(() => {
         ref={canvasRef}
         tabIndex={0}
         style={{ border: "1px solid black" }}
+        onMouseDown={mouseDownHandler}
       />
 
       {!isRoomCreated && (
