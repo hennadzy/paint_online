@@ -141,10 +141,10 @@ const Canvas = observer(() => {
       case "eraser":
         Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
-      case "finish":
-        ctx.beginPath();
-        ctx.moveTo(-9999, -9999); // сбрасываем текущую точку вне холста
-        break;
+      // case "finish":
+      //   ctx.beginPath();
+      //   ctx.moveTo(-9999, -9999); // сбрасываем текущую точку вне холста
+      //   break;
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
