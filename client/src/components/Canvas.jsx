@@ -89,6 +89,8 @@ const Canvas = observer(() => {
 
       updateCursor("brush");
       toolState.tool.listen();
+      console.log("Canvas ref:", canvasRef.current);
+
 
       socket.onopen = () => {
         socket.send(
