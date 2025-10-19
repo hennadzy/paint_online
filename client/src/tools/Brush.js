@@ -158,8 +158,8 @@ export default class Brush extends Tool {
   } else {
     ctx.lineTo(x, y);
     ctx.stroke();
-    ctx.beginPath(); 
-    ctx.moveTo(x, y);
+    // ctx.beginPath(); 
+    // ctx.moveTo(x, y);
   }
 }
 }

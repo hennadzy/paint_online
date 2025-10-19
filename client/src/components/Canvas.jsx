@@ -19,6 +19,10 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
+  
+  // ⭐️ Добавляем состояние для отслеживания активных пользователей
+  const [activeUsers, setActiveUsers] = useState(new Map());
+  
   const params = useParams();
 
   const updateCursor = (tool) => {
@@ -106,58 +110,99 @@ const Canvas = observer(() => {
             drawHandler(msg);
             break;
           case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+            setMessages((prev) => [...prev, ${msg.username} вошел в комнату]);
             break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
       };
+
+      // ⭐️ Добавляемобработку отключения
+      socket.onclose = () => {
+        console.log("WebSocket соединение закрыто");
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket ошибка:", error);
+      };
     }
   }, [canvasState.username, params.id]);
 
+  // ⭐️ ИСПРАВЛЕННЫЙ drawHandler - основное решение проблемы
+  const drawHandler = (msg) => {
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
+    const username = msg.username;
 
-const drawHandler = (msg) => {
-  const figure = msg.figure;
-  const ctx = canvasRef.current.getContext("2d");
+    if (!msg.username || msg.username === canvasState.username) return;
 
-  if (!msg.username || msg.username === canvasState.username) return;
+    switch (figure.type) {
+      case "brush":
+        // ⭐️ Ключевое исправление - проверяем начало рисования пользователя
+        if (figure.isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          setActiveUsers(prev => new Map(prev.set(username, true)));
+        } else {
+          // Рисуем только если пользователь активен
+          const isUserActive = activeUsers.get(username);
+          if (isUserActive) {
+            Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
+          } else {
+            // Если потеряли начало - начинаем заново
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            setActiveUsers(prev => new Map(prev.set(username, true)));
+          }
+        }
+        break;
 
-  switch (figure.type) {
-    case "brush":
-      if (figure.isStart) {
+      case "eraser":
+        if (figure.isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          setActiveUsers(prev => new Map(prev.set(username, true)));
+        } else {
+          const isUserActive = activeUsers.get(username);
+          if (isUserActive) {
+            Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? 10, "#FFFFFF", false);
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            setActiveUsers(prev => new Map(prev.set(username, true)));
+          }
+        }
+        break;
+
+      case "rect":
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      }
-      Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-      break;
-    case "rect":
-      ctx.beginPath(); // ⭐️ Добавить для фигур
-      Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "circle":
-      ctx.beginPath(); // ⭐️ Добавить для фигур
-      Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "line":
-      ctx.beginPath(); // ⭐️ Добавить для фигур
-      Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-      break;
-    case "eraser":
-      if (figure.isStart) {
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        break;
+
+      case "circle":
         ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-      }
-      Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? 10, "#FFFFFF", figure.isStart);
-      break;
-    case "finish":
-      ctx.beginPath(); // ⭐️ Принудительно завершаем путь
-      break;
-    default:
-      console.warn("Неизвестный тип фигуры:", figure.type);
-  }
-};
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        break;
 
+      case "line":
+        ctx.beginPath();
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        break;
 
+      case "finish":
+        // ⭐️ Убираем пользователя из активных и завершаем путь
+        ctx.beginPath();
+        setActiveUsers(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(username);
+          return newMap;
+        });
+        break;
+
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+  };
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
@@ -199,8 +244,7 @@ const drawHandler = (msg) => {
               }
             }}
           />
-        </Modal.Body>
-        <Modal.Footer>
+        </Modal.Body><Modal.Footer>
           <Button variant="secondary" onClick={connectHandler}>
             Войти
           </Button>
@@ -211,6 +255,7 @@ const drawHandler = (msg) => {
         ref={canvasRef}
         tabIndex={0}
         style={{ border: "1px solid black" }}
+        onMouseDown={mouseDownHandler}
       />
 
       {!isRoomCreated && (
@@ -224,6 +269,13 @@ const drawHandler = (msg) => {
           <div key={index}>{message}</div>
         ))}
       </div>
+
+      {/* ⭐️ Отладочная информация (можно убрать в продакшене) */}
+      {activeUsers.size > 0 && (
+        <div style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}>
+          Рисуют: {Array.from(activeUsers.keys()).join(", ")}
+        </div>
+      )}
     </div>
   );
 });
