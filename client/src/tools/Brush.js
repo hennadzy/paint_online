@@ -22,16 +22,28 @@ export default class Brush extends Tool {
     this.strokeColor = color;
   }
 
-  listen() {
-     console.log("Brush.listen called");
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+listen() {
+  console.log("Brush.listen called"); // ← проверка, что метод вызван
 
-    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
-    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
-    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
-  }
+  this.canvas.onmousedown = (e) => {
+    console.log("mousedown attached"); // ← проверка, что событие привязано
+    this.mouseDownHandler(e);
+  };
+
+  this.canvas.onmousemove = (e) => {
+    console.log("mousemove attached"); // ← проверка, что событие привязан
+    this.mouseMoveHandler(e);
+  };
+
+  this.canvas.onmouseup = (e) => {
+    console.log("mouseup attached"); // ← проверка, что событие привязан
+    this.mouseUpHandler(e);
+  };
+
+  this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+  this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+  this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+}
 
   destroyEvents() {
     this.canvas.onmousedown = null;
@@ -44,6 +56,7 @@ export default class Brush extends Tool {
   }
 
   mouseDownHandler(e) {
+      console.log("mouseDownHandler triggered"); // ← должен появиться при клике
     this.mouseDown = true;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
@@ -70,7 +83,7 @@ export default class Brush extends Tool {
   }
 
   mouseUpHandler() {
-      console.log("mouseUpHandler called"); 
+  console.log("mouseUpHandler triggered"); // ← должен появиться при отпускании мыши
     this.mouseDown = false;
 
     if (this.socket) {
@@ -153,7 +166,7 @@ export default class Brush extends Tool {
   }
 
 static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-  console.log("staticDraw", { isStart, x, y }); // ← здесь ОК
+  console.log("staticDraw", { isStart, x, y }); // ← проверка, что рисование происходит
 
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = strokeStyle;

@@ -52,6 +52,7 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
+    console.log("Canvas set:", canvasRef.current); // ← проверка, что canvas установлен
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
       axios
@@ -70,7 +71,8 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
     toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
-    console.log("Tool set:", toolState.toolName, toolState.tool);
+    console.log("Tool set:", toolState.toolName, toolState.tool); // ← проверка, что инструмент установлен
+
     updateCursor("brush");
   }, [params.id]);
 
