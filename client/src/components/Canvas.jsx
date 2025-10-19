@@ -100,7 +100,8 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        if (!msg.username || msg.username === canvasState.username) return;
+     if (!msg.username) return;
+
 
         switch (msg.method) {
           case "draw":
