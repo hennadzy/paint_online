@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import { observer } from "mobx-react-lite";
-import { useParams, useHistory } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
 import Toolbar from "./Toolbar";
@@ -19,9 +19,12 @@ const Canvas = observer(() => {
   const userPaths = useRef({});
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [isRoomCreated, setIsRoomCreated] = useState(!!useParams().id); // если из URL — сразу true
-  const params = useParams();
-  const history = useHistory();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+
+  const [isRoomCreated, setIsRoomCreated] = useState(!!params.get('id')); // если из URL — сразу true
+  const roomId = params.get('id') || canvasState.sessionId;
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -55,9 +58,9 @@ const Canvas = observer(() => {
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
-    if (params.id) {
+    if (params.get('id')) {
       axios
-        .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+        .get(`https://paint-online-back.onrender.com/image?id=${params.get('id')}`)
         .then((response) => {
           const img = new Image();
           img.src = response.data;
@@ -71,15 +74,15 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
+    toolState.setTool(new Brush(canvasRef.current, null, params.get('id')), "brush");
     updateCursor("brush");
-  }, [params.id]);
+  }, [params.get('id')]);
 
   // Вынести roomId в переменную
-  const roomId = params.id || canvasState.sessionId;
+  const roomId = params.get('id') || canvasState.sessionId;
 
   useEffect(() => {
-    console.log("useEffect triggered - username:", canvasState.username, "params.id:", params.id);
+    console.log("useEffect triggered - username:", canvasState.username, "params.id:", params.get('id'));
     
     if (canvasState.username && roomId) {
       if (toolState.tool?.destroyEvents) {
@@ -265,10 +268,10 @@ const Canvas = observer(() => {
   };
 
   const handleCreateRoomClick = () => {
-    let finalId = params.id || canvasState.sessionId;
+    let finalId = params.get('id') || canvasState.sessionId;
     if (!finalId) {
       finalId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      history.replace(`/?id=${finalId}`);
+      navigate(`/?id=${finalId}`, { replace: true });
       canvasState.setSessionId(finalId);
     }
     setIsRoomCreated(true);
