@@ -1,4 +1,3 @@
-
 import { makeAutoObservable } from "mobx";
 
 class ToolState {
@@ -52,4 +51,3 @@ class ToolState {
 }
 
 export default new ToolState();
-

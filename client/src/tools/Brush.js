@@ -1,4 +1,3 @@
-
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import { makeAutoObservable } from "mobx";
@@ -51,15 +50,8 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    console.log("Локальное рисование: начинаем путь в точке", x, y);
-
-    // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед началом локального рисования
-    this.ctx.beginPath();
-
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-    this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "round";
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
 
@@ -78,17 +70,11 @@ export default class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
-    
-    console.log("Локальное рисование: завершаем путь");
-    
-    // Принудительно завершаем локальный путь
-    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
-        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -103,15 +89,8 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    console.log("Мобильное рисование: начинаем путь в точке", x, y);
-
-    // КРИТИЧЕСКИ ВАЖНО: Принудительно завершаем ВСЕ активные пути перед началом локального рисования
-    this.ctx.beginPath();
-
     this.ctx.strokeStyle = this.strokeColor;
     this.ctx.lineWidth = this.lineWidth;
-    this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "round";
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
 
@@ -132,17 +111,11 @@ export default class Brush extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-    
-    console.log("Мобильное рисование: завершаем путь");
-    
-    // Принудительно завершаем локальный путь
-    this.ctx.beginPath();
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
-        username: this.username,
         figure: { type: "finish" }
       }));
     }
@@ -168,7 +141,7 @@ export default class Brush extends Tool {
           lineWidth,
           strokeStyle,
           isStart,
-
+          username: this.username
         }
       }));
     }
