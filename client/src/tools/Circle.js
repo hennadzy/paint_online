@@ -86,19 +86,33 @@ export default class Circle extends Tool {
     }));
 
     if (this.username === canvasState.username) {
-  const radius = Math.sqrt(
-    Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2)
-  );
+      const radius = Math.sqrt(
+        Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2)
+      );
 
-  canvasState.addFigure({
-    type: "circle",
-    x: this.startX,
-    y: this.startY,
-    radius,
-    strokeStyle: this.strokeColor,
-    lineWidth: this.lineWidth
-  });
-}
+      canvasState.addFigure({
+        type: "circle",
+        x: this.startX,
+        y: this.startY,
+        radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth
+      });
+    }
+
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "circle",
+        x: this.centerX,
+        y: this.centerY,
+        radius: this.radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
 
   }
 
@@ -154,6 +168,22 @@ export default class Circle extends Tool {
         username: this.username,
       },
     }));
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "circle",
+        x: this.centerX,
+        y: this.centerY,
+        radius: this.radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
+
+
   }
 
   static staticDraw(ctx, x, y, radius, strokeStyle, lineWidth) {

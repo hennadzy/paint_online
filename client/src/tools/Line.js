@@ -72,6 +72,21 @@ export default class Line extends Tool {
         },
       })
     );
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: this.endX,
+        y2: this.endY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
   }
 
   mouseMoveHandler(e) {
@@ -155,6 +170,21 @@ export default class Line extends Tool {
         },
       })
     );
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: this.endX,
+        y2: this.endY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
   }
 
   static staticDraw(ctx, x1, y1, x2, y2, strokeStyle, lineWidth) {

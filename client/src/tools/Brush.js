@@ -149,6 +149,20 @@ export default class Brush extends Tool {
         }
       }));
     }
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "brush",
+        x,
+        y,
+        lineWidth: this.lineWidth,
+        strokeStyle: this.strokeColor,
+        isStart,
+        username: this.username
+      }
+    });
+
   }
 
   drawLocally(x, y, isStart = false) {

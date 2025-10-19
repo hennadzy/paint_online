@@ -99,6 +99,20 @@ export default class Rect extends Tool {
       });
     }
 
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width: this.width,
+        height: this.height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
   }
 
   touchStartHandler(e) {
@@ -156,6 +170,20 @@ export default class Rect extends Tool {
         username: this.username,
       },
     }));
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width: this.width,
+        height: this.height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
   }
 
   static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
