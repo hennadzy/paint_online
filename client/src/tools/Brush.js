@@ -125,10 +125,10 @@ export default class Brush extends Tool {
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
 
-    // рисуем локально всегда
+    // рисуем локально сразу
     Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 
-    // отправляем по сети, если есть сокет
+    // отправляем по сети
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
