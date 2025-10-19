@@ -115,33 +115,40 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
-  const drawHandler = (msg) => {
-    const figure = msg.figure;
-    const ctx = canvasRef.current.getContext("2d");
+ const drawHandler = (msg) => {
+  const figure = msg.figure;
+  const ctx = canvasRef.current.getContext("2d");
 
-    switch (figure.type) {
-      case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
-        break;
-      case "rect":
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "circle":
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "line":
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        break;
-      case "eraser":
-        Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
-        break;
-      case "finish":
+  if (msg.username === canvasState.username) return;
+
+  switch (figure.type) {
+    case "brush":
+      if (figure.isStart) {
         ctx.beginPath();
-        break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-    }
-  };
+        ctx.moveTo(figure.x, figure.y);
+      }
+      Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
+      break;
+    case "rect":
+      Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+      break;
+    case "circle":
+      Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+      break;
+    case "line":
+      Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+      break;
+    case "eraser":
+      Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
+      break;
+    case "finish":
+      ctx.beginPath();
+      break;
+    default:
+      console.warn("Неизвестный тип фигуры:", figure.type);
+  }
+};
+
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
