@@ -19,7 +19,6 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
-
   const activeUsersRef = useRef(new Map());
   const params = useParams();
 
@@ -72,7 +71,6 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
 
-    // Создаем локальную кисть для режима без комнаты
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
     toolState.setTool(localBrush, "brush");
     localBrush.listen();
@@ -91,31 +89,25 @@ const Canvas = observer(() => {
       updateCursor("brush");
 
       socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
-          })
-        );
+        socket.send(JSON.stringify({
+          id: params.id,
+          username: canvasState.username,
+          method: "connection",
+        }));
       };
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-
-        // ✅ ВАЖНО: НЕ обрабатываем свои собственные сообщения
-        if (msg.username === canvasState.username) return;
+        if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
             break;
           case "undo":
-            // ✅ Обрабатываем undo от другого пользователя
             canvasState.handleRemoteUndo(msg.actionId, msg.username);
             break;
           case "redo":
-            // ✅ Обрабатываем redo от другого пользователя  
             canvasState.handleRemoteRedo(msg.actionId, msg.username);
             break;
           case "connection":
@@ -125,14 +117,6 @@ const Canvas = observer(() => {
             console.warn("Неизвестный метод:", msg.method);
         }
       };
-
-      socket.onclose = () => {
-        console.log("WebSocket соединение закрыто");
-      };
-
-      socket.onerror = (error) => {
-        console.error("WebSocket ошибка:", error);
-      };
     }
   }, [canvasState.username, params.id]);
 
@@ -141,16 +125,19 @@ const Canvas = observer(() => {
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
 
-    if (!msg.username || msg.username === canvasState.username) return;
+    if (!username || username === canvasState.username) return;
 
     ctx.save();
 
     switch (figure.type) {
       case "brush":
-        ctx.strokeStyle = figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || 1;
+      case "eraser": {
+        const isEraser = figure.type === "eraser";
+        ctx.strokeStyle = isEraser ? "#FFFFFF" : figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || (isEraser ? 10 : 1);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
+        if (isEraser) ctx.globalCompositeOperation = "destination-out";
 
         if (figure.isStart) {
           ctx.beginPath();
@@ -160,171 +147,64 @@ const Canvas = observer(() => {
             lastX: figure.x,
             lastY: figure.y,
             currentAction: {
-              type: "brush",
+              type: figure.type,
               strokeStyle: figure.strokeStyle,
               lineWidth: figure.lineWidth,
               points: [{ x: figure.x, y: figure.y }],
-              author: username
-            }
+              author: username,
+            },
           });
         } else {
           const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
+          if (userState?.isDrawing) {
             ctx.beginPath();
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-
-            // Добавляем точку к текущему действию
-            if (userState.currentAction) {
-              userState.currentAction.points.push({ x: figure.x, y: figure.y });
-            }
-
+            userState.currentAction?.points.push({ x: figure.x, y: figure.y });
             activeUsersRef.current.set(username, {
-              isDrawing: true,
+              ...userState,
               lastX: figure.x,
               lastY: figure.y,
-              currentAction: userState.currentAction
-            });
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, {
-              isDrawing: true,
-              lastX: figure.x,
-              lastY: figure.y,
-              currentAction: {
-                type: "brush",
-                strokeStyle: figure.strokeStyle,
-                lineWidth: figure.lineWidth,
-                points: [{ x: figure.x, y: figure.y }],
-                author: username
-              }
             });
           }
         }
         break;
-
-      case "eraser":
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = figure.lineWidth || 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        if (figure.isStart) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, {
-            isDrawing: true,
-            lastX: figure.x,
-            lastY: figure.y,
-            currentAction: {
-              type: "eraser",
-              lineWidth: figure.lineWidth,
-              points: [{ x: figure.x, y: figure.y }],
-              author: username
-            }
-          });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
-
-            // Добавляем точку к текущему действию
-            if (userState.currentAction) {
-              userState.currentAction.points.push({ x: figure.x, y: figure.y });
-            }
-
-            activeUsersRef.current.set(username, {
-              isDrawing: true,
-              lastX: figure.x,
-              lastY: figure.y,
-              currentAction: userState.currentAction
-            });
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, {
-              isDrawing: true,
-              lastX: figure.x,
-              lastY: figure.y,
-              currentAction: {
-                type: "eraser",
-                lineWidth: figure.lineWidth,
-                points: [{ x: figure.x, y: figure.y }],
-                author: username
-              }
-            });
-          }
-        }
-        break;
+      }
 
       case "rect":
-        ctx.beginPath();
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-
-        // Сохраняем действие в истории
-        canvasState.addUserAction({
-          type: "rect",
-          x: figure.x,
-          y: figure.y,
-          width: figure.width,
-          height: figure.height,
-          strokeStyle: figure.strokeStyle,
-          lineWidth: figure.lineWidth,
-          author: username
-        });
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
+        ctx.strokeRect(figure.x, figure.y, figure.width, figure.height);
+        canvasState.addUserAction({ ...figure, type: "rect", author: username });
         break;
 
       case "circle":
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
         ctx.beginPath();
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-
-        // Сохраняем действие в истории
-        canvasState.addUserAction({
-          type: "circle",
-          x: figure.x,
-          y: figure.y,
-          radius: figure.radius,
-          strokeStyle: figure.strokeStyle,
-          lineWidth: figure.lineWidth,
-          author: username
-        });
+        ctx.arc(figure.x, figure.y, figure.radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        canvasState.addUserAction({ ...figure, type: "circle", author: username });
         break;
 
       case "line":
+        ctx.strokeStyle = figure.strokeStyle;
+        ctx.lineWidth = figure.lineWidth;
         ctx.beginPath();
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-
-        // Сохраняем действие в истории
-        canvasState.addUserAction({
-          type: "line",
-          x1: figure.x1,
-          y1: figure.y1,
-          x2: figure.x2,
-          y2: figure.y2,
-          strokeStyle: figure.strokeStyle,
-          lineWidth: figure.lineWidth,
-          author: username
-        });
+        ctx.moveTo(figure.x1, figure.y1);
+        ctx.lineTo(figure.x2, figure.y2);
+        ctx.stroke();
+        canvasState.addUserAction({ ...figure, type: "line", author: username });
         break;
 
       case "finish":
         const userState = activeUsersRef.current.get(username);
-        if (userState && userState.currentAction) {
-          // Сохраняем завершенное действие в истории
+        if (userState?.currentAction) {
           canvasState.addUserAction(userState.currentAction);
         }
-
-        ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
-
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
     }
 
     ctx.restore();
@@ -337,20 +217,6 @@ const Canvas = observer(() => {
       setModal(false);
     } else {
       alert("Введите ваше имя");
-    }
-  };
-
-  const mouseDownHandler = () => {
-    // Для локального режима используем старую систему
-    if (!canvasState.username || !canvasState.socket) {
-      canvasState.pushToUndo(canvasRef.current.toDataURL());
-    }
-
-    // Сохраняем на сервер только если есть соединение
-    if (params.id) {
-      axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-        img: canvasRef.current.toDataURL(),
-      });
     }
   };
 
@@ -372,25 +238,16 @@ const Canvas = observer(() => {
             ref={usernameRef}
             placeholder="Ваше имя"
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                connectHandler();
-              }
+              if (e.key === "Enter") connectHandler();
             }}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
-            Войти
-          </Button>
+          <Button variant="secondary" onClick={connectHandler}>Войти</Button>
         </Modal.Footer>
       </Modal>
 
-      <canvas
-        ref={canvasRef}
-        tabIndex={0}
-        style={{ border: "1px solid black" }}
-        onMouseDown={mouseDownHandler}
-      />
+      <canvas ref={canvasRef} tabIndex={0} style={{ border: "1px solid black" }} />
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
