@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import { observer } from "mobx-react-lite";
-import { useParams } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
 import Toolbar from "./Toolbar";
@@ -19,8 +19,9 @@ const Canvas = observer(() => {
   const userPaths = useRef({});
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [isRoomCreated, setIsRoomCreated] = useState(false);
+  const [isRoomCreated, setIsRoomCreated] = useState(!!useParams().id); // если из URL — сразу true
   const params = useParams();
+  const history = useHistory();
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -74,20 +75,18 @@ const Canvas = observer(() => {
     updateCursor("brush");
   }, [params.id]);
 
+  // Вынести roomId в переменную
+  const roomId = params.id || canvasState.sessionId;
+
   useEffect(() => {
     console.log("useEffect triggered - username:", canvasState.username, "params.id:", params.id);
     
-    if (canvasState.username) {
-      // Если нет ID комнаты, генерируем его
-      const roomId = params.id || `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log("Подключаемся к комнате:", roomId, "пользователь:", canvasState.username);
-      
+    if (canvasState.username && roomId) {
       if (toolState.tool?.destroyEvents) {
         toolState.tool.destroyEvents();
       }
       
       try {
-        // Попробуем разные URL для WebSocket
         const wsUrl = "wss://paint-online-back.onrender.com/";
         console.log("Пытаемся подключиться к WebSocket:", wsUrl);
         const socket = new WebSocket(wsUrl);
@@ -170,7 +169,7 @@ const Canvas = observer(() => {
         canvasState.socket.close();
       }
     };
-  }, [canvasState.username, params.id]);
+  }, [canvasState.username, roomId]);
 
   const drawHandler = (msg) => {
     const ctx = canvasRef.current.getContext("2d");
@@ -256,8 +255,6 @@ const Canvas = observer(() => {
 
   const mouseDownHandler = () => {
     canvasState.pushToUndo(canvasRef.current.toDataURL());
-    // Сохраняем изображение только если есть ID комнаты
-    const roomId = params.id || canvasState.sessionId;
     if (roomId) {
       axios.post(`https://paint-online-back.onrender.com/image?id=${roomId}`, {
         img: canvasRef.current.toDataURL(),
@@ -268,12 +265,13 @@ const Canvas = observer(() => {
   };
 
   const handleCreateRoomClick = () => {
-    console.log("Создание комнаты - кнопка нажата");
-    console.log("Модальное окно будет показано");
-    setModal(true);
+    let finalId = params.id || canvasState.sessionId;
+    if (!finalId) {
+      finalId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      history.replace(`/?id=${finalId}`);
+      canvasState.setSessionId(finalId);
+    }
     setIsRoomCreated(true);
-    console.log("Модальное окно установлено в true");
-    console.log("Состояние после обновления - modal:", true, "isRoomCreated:", true);
   };
 
   console.log("Рендер компонента - modal:", modal, "isRoomCreated:", isRoomCreated);
@@ -311,9 +309,9 @@ const Canvas = observer(() => {
         </div>
       )}
 
-      {canvasState.sessionId && (
+      {roomId && (
         <div style={{ marginTop: "10px", fontWeight: "bold" }}>
-          ID комнаты: {canvasState.sessionId}
+          Ваша комната: <input style={{width: '320px'}} readOnly value={window.location.origin + '/?id=' + roomId} />
         </div>
       )}
 
