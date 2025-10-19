@@ -5,7 +5,8 @@ class CanvasState {
   socket = null;
   sessionid = null;
   username = "";
-  undoList = []; // [{ type: "draw", figure: {...} }]
+  allActions = []; // все действия всех пользователей
+  myActions = [];  // только свои действия
   redoList = [];
 
   constructor() {
@@ -31,8 +32,11 @@ class CanvasState {
   }
 
   pushToUndo(action) {
-    if (action?.type === "draw" && action.figure?.username === this.username) {
-      this.undoList.push(action);
+    if (action?.type === "draw" && action.figure) {
+      this.allActions.push(action);
+      if (action.figure.username === this.username) {
+        this.myActions.push(action);
+      }
     }
   }
 
@@ -55,7 +59,7 @@ class CanvasState {
         ctx.beginPath();
         if (figure.isStart) {
           ctx.moveTo(figure.x, figure.y);
-          ctx.lineTo(figure.x + 0.01, figure.y + 0.01); // минимальный штрих
+          ctx.lineTo(figure.x + 0.01, figure.y + 0.01);
         } else {
           ctx.moveTo(figure.lastX ?? figure.x, figure.lastY ?? figure.y);
           ctx.lineTo(figure.x, figure.y);
@@ -107,26 +111,29 @@ class CanvasState {
     ctx.restore();
   }
 
-  redrawFromUndo() {
+  redrawFromAll() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    for (const action of this.undoList) {
-      if (action.type === "draw" && action.figure?.username === this.username) {
+    for (const action of this.allActions) {
+      if (action.type === "draw") {
         this.applyFigure(action.figure);
       }
     }
   }
 
   undo() {
-    if (this.undoList.length === 0) return;
+    if (this.myActions.length === 0) return;
 
-    const last = this.undoList.pop();
+    const last = this.myActions.pop();
     this.pushToRedo(last);
 
-    this.redrawFromUndo();
+    // удалить из allActions
+    this.allActions = this.allActions.filter(a => a !== last);
+
+    this.redrawFromAll();
     this.syncCanvas();
   }
 
@@ -134,9 +141,10 @@ class CanvasState {
     if (this.redoList.length === 0) return;
 
     const action = this.redoList.pop();
-    this.pushToUndo(action);
+    this.myActions.push(action);
+    this.allActions.push(action);
 
-    this.redrawFromUndo();
+    this.redrawFromAll();
     this.syncCanvas();
   }
 
