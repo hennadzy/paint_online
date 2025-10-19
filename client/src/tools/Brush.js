@@ -78,6 +78,8 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
+      this.ctx.beginPath();
+      console.log("mouseUp → beginPath()");
   }
 
   touchStartHandler(e) {
@@ -119,6 +121,7 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
+      this.ctx.beginPath();
   }
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
@@ -151,6 +154,7 @@ export default class Brush extends Tool {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
     ctx.lineCap = "round";
+    
 
     if (isStart) {
       ctx.beginPath();
