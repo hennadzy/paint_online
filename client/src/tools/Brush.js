@@ -121,11 +121,12 @@ export default class Brush extends Tool {
     }
   }
 
-  sendDrawData(x, y, isStart = false, isLocal = true) {
+  sendDrawData(x, y, isStart = false) {
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
 
-    if (isLocal) {
+    // рисуем локально только если нет сокета (до входа в комнату)
+    if (!this.socket) {
       Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
     }
 
@@ -146,6 +147,7 @@ export default class Brush extends Tool {
       }));
     }
   }
+
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
