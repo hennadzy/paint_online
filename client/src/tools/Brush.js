@@ -146,7 +146,6 @@ export default class Brush extends Tool {
       }));
     }
   }
-
   static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = strokeStyle;
