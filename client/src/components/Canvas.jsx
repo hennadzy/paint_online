@@ -18,7 +18,7 @@ const Canvas = observer(() => {
     useEffect(() => {
         canvasState.setCanvas(canvasRef.current)
         let ctx = canvasRef.current.getContext('2d')
-        axios.get(`http://localhost:5000/image?id=${params.id}`)
+        axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
             .then(response => {
                 const img = new Image()
                 img.src = response.data
