@@ -132,3 +132,8 @@ button:active {
     height: auto; /* Высота сохраняет пропорции */
   }
 }
+
+canvas {
+  z-index: 9999 !important;
+  position: relative !important;
+}
