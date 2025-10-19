@@ -110,7 +110,7 @@ const Canvas = observer(() => {
             drawHandler(msg);
             break;
           case "connection":
-            setMessages((prev) => [...prev, ${msg.username} вошел в комнату]);
+            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
           default:
             console.warn("Неизвестный метод:", msg.method);
