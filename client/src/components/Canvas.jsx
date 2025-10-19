@@ -127,12 +127,7 @@ const Canvas = observer(() => {
 
     switch (figure.type) {
       case "brush":
-        if (figure.isStart) {
-          ctx.beginPath(); // ← это нужно для изоляции пути
-          ctx.moveTo(figure.x, figure.y);
-        } else {
-          Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
-        }
+        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
         break;
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
@@ -148,6 +143,7 @@ const Canvas = observer(() => {
         break;
       case "finish":
         ctx.beginPath();
+        ctx.moveTo(-9999, -9999); // сбрасываем текущую точку вне холста
         break;
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
