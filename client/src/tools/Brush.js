@@ -125,10 +125,7 @@ export default class Brush extends Tool {
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
 
-    // рисуем локально только если нет сокета (до входа в комнату)
-    if (!this.socket) {
-      Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
-    }
+ Brush.staticDraw(this.ctx, x, y, lineWidth, strokeStyle, isStart);
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
