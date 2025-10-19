@@ -281,92 +281,26 @@ const Canvas = observer(() => {
   
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Modal show={modal || isRoomCreated} onHide={() => {
-        console.log("Модальное окно закрыто");
-        setModal(false);
-      }}>
-        <Modal.Header closeButton>
-          <Modal.Title>Введите ваше имя</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <input
-            type="text"
-            autoFocus
-            ref={usernameRef}
-            placeholder="Ваше имя"
-            onChange={(e) => {
-              console.log("Пользователь вводит имя:", e.target.value);
-            }}
-            onKeyDown={(e) => {
-              console.log("Нажата клавиша:", e.key);
-              if (e.key === "Enter") {
-                console.log("Нажат Enter, вызываем connectHandler");
-                connectHandler();
-              }
-            }}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => {
-            console.log("Кнопка 'Войти' нажата");
-            connectHandler();
-          }}>
-            Войти
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {/* --- УДАЛЯЕМ модальное окно! --- */}
+      {/* (блок <Modal ... /> полностью убираем) */}
 
       <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
       {/* {canvasState.canvas && <Toolbar />} */}
-      {!isRoomCreated && (
-        <div style={{ marginTop: "10px" }}>
-          <Button 
-            variant="primary" 
-            onClick={() => {
-              console.log("Кнопка 'Создать комнату' нажата!");
-              handleCreateRoomClick();
-            }} 
-            style={{ marginTop: "10px" }}
-          >
-            Создать комнату
-          </Button>
-        </div>
-      )}
-      {isRoomCreated && !canvasState.username && (
-        <div style={{ marginTop: "10px" }}>
-          <input
-            type="text"
-            placeholder="Введите ваше имя"
-            ref={usernameRef}
-            style={{ marginRight: "10px", padding: "5px" }}
-          />
-          <Button 
-            variant="secondary" 
-            onClick={() => {
-              console.log("Кнопка 'Войти' нажата!");
-              connectHandler();
-            }}
-          >
-            Войти
-          </Button>
-        </div>
-      )}
-      {canvasState.username && (
-        <div style={{ marginTop: "10px", color: "green" }}>
-          Добро пожаловать, {canvasState.username}!
-        </div>
-      )}
 
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {canvasState.sessionId && (
-          <div style={{ marginBottom: "10px", fontWeight: "bold" }}>
-            ID комнаты: {canvasState.sessionId}
-          </div>
-        )}
-        {messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
-      </div>
+      {/* {canvasState.username && ( */}
+      {/*   <div style={{ marginTop: "10px", color: "green" }}> */}
+      {/*     Добро пожаловать, {canvasState.username}! */}
+      {/*   </div> */}
+      {/* )} */}
+
+      {/* {canvasState.sessionId && ( */}
+      {/*   <div style={{ marginBottom: "10px", fontWeight: "bold" }}> */}
+      {/*     ID комнаты: {canvasState.sessionId} */}
+      {/*   </div> */}
+      {/* )} */}
+      {messages.map((message, index) => (
+        <div key={index}>{message}</div>
+      ))}
     </div>
   );
 });
