@@ -203,7 +203,13 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <canvas ref={canvasRef} onMouseDown={mouseDownHandler} style={{ border: "1px solid black" }} />
+      <canvas
+        ref={canvasRef}
+        tabIndex={0} // делает canvas фокусируемым
+        onMouseDown={() => console.log("native mousedown")} // проверка, что canvas реагирует
+        style={{ border: "1px solid black", zIndex: 9999 }}
+      />
+
       {/* {canvasState.canvas && <Toolbar />} */}
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
