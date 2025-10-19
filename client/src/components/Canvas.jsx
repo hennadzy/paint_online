@@ -127,7 +127,12 @@ const Canvas = observer(() => {
 
     switch (figure.type) {
       case "brush":
-        Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, figure.isStart);
+        if (figure.isStart) {
+          ctx.beginPath(); // ← это нужно для изоляции пути
+          ctx.moveTo(figure.x, figure.y);
+        } else {
+          Brush.staticDraw(ctx, figure.x, figure.y, figure.lineWidth, figure.strokeStyle, false);
+        }
         break;
       case "rect":
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
