@@ -37,21 +37,19 @@ class CanvasState {
     addUserAction(action) {
         // ✅ Проверяем, что действие не дублируется
         const existingAction = this.userActions.find(a => 
-            a.id === action.id
+            a.id === action.id && a.author === action.author
         );
         
-        if (!existingAction && action.id) {
-            const newAction = {
+        if (!existingAction) {
+            this.userActions.push({
                 ...action,
-                timestamp: action.timestamp || Date.now(),
+                id: action.id || (Date.now() + Math.random()),
+                timestamp: Date.now(),
                 author: action.author || this.username
-            };
-            
-            this.userActions.push(newAction);
-            console.log("Добавлено действие:", newAction); // ✅ Для отладки
+            });
             
             // Ограничиваем размер истории
-            if (this.userActions.length > 500) {
+            if (this.userActions.length > 200) {
                 this.userActions.shift();
             }
         }
@@ -71,14 +69,10 @@ class CanvasState {
     undoMultiuser() {
         if (!this.username) return
         
-        console.log("undoMultiuser для:", this.username); // ✅ Для отладки
-        
         // Находим последнее НЕотмененное действие текущего пользователя
         for (let i = this.userActions.length - 1; i >= 0; i--) {
             const action = this.userActions[i]
             if (action.author === this.username && !action.undone) {
-                console.log("Отменяем действие:", action); // ✅ Для отладки
-                
                 // Помечаем как отмененное
                 action.undone = true
                 action.undoneAt = Date.now()
@@ -103,8 +97,6 @@ class CanvasState {
     redoMultiuser() {
         if (!this.username) return
         
-        console.log("redoMultiuser для:", this.username); // ✅ Для отладки
-        
         // Находим последнее отмененное действие текущего пользователя (по времени отмены)
         let lastUndoneAction = null
         
@@ -118,19 +110,17 @@ class CanvasState {
         }
         
         if (lastUndoneAction) {
-            console.log("Возвращаем действие:", lastUndoneAction); // ✅ Для отладки
-            
             // Снимаем отметку об отмене
             delete lastUndoneAction.undone
             delete lastUndoneAction.undoneAt
             
-            // ✅ВАЖНО: Перерисовываем canvas ЛОКАЛЬНО
+            // ✅ ВАЖНО: Перерисовываем canvas ЛОКАЛЬНО
             this.redrawCanvas()
             
             // ✅ Отправляем команду redo на сервер для синхронизации с другими пользователями
             if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                 this.socket.send(JSON.stringify({
-                    method: "redo", 
+                    method: "redo",
                     id: this.sessionid,
                     username: this.username,
                     actionId: lastUndoneAction.id
@@ -139,30 +129,24 @@ class CanvasState {
         }
     }
 
-    // ✅ Обработка undo/redo от других пользователей (убираем ограничения)
+    // Обработка undo/redo от других пользователей (НЕ перерисовывает, только помечает)
     handleRemoteUndo(actionId, fromUsername) {
-        console.log("handleRemoteUndo:", actionId, "от", fromUsername); // ✅ Для отладки
         const action = this.userActions.find(a => a.id === actionId)
-        if (action) {
-            console.log("Найдено действие для undo:", action); // ✅ Для отладки
+        if (action && action.author === fromUsername) {
             action.undone = true
             action.undoneAt = Date.now()
+            // ✅ Перерисовываем canvas после получения команды от другого пользователя
             this.redrawCanvas()
-        } else {
-            console.log("Действие не найдено для undo:", actionId); // ✅ Для отладки
         }
     }
 
     handleRemoteRedo(actionId, fromUsername) {
-        console.log("handleRemoteRedo:", actionId, "от", fromUsername); // ✅ Для отладки
         const action = this.userActions.find(a => a.id === actionId)
-        if (action && action.undone) {
-            console.log("Найдено действие для redo:", action); // ✅ Для отладки
+        if (action && action.undone && action.author === fromUsername) {
             delete action.undone
             delete action.undoneAt
+            // ✅ Перерисовываем canvas после получения команды от другого пользователя
             this.redrawCanvas()
-        } else {
-            console.log("Действие не найдено для redo:", actionId); // ✅ Для отладки
         }
     }
 
@@ -220,11 +204,9 @@ class CanvasState {
         }
     }
 
-    // ✅ Перерисовка всего canvas на основе истории действий
+    // ✅ Перерисовка всего canvas на основе истории действий (более надежная версия)
     redrawCanvas() {
         if (!this.canvas) return;
-        
-        console.log("Перерисовка canvas, всего действий:", this.userActions.length); // ✅ Для отладки
         
         const ctx = this.canvas.getContext('2d')
         
@@ -235,16 +217,12 @@ class CanvasState {
         // ✅ Сортируем действия по времени создания для правильного порядка отрисовки
         const sortedActions = [...this.userActions].sort((a, b) => a.timestamp - b.timestamp);
 
-        let drawnCount= 0;
         // Перерисовываем все не отмененные действия
         sortedActions.forEach(action => {
             if (!action.undone) {
-                this.redrawAction(ctx, action);
-                drawnCount++;
+                this.redrawAction(ctx, action)
             }
-        });
-        
-        console.log("Нарисовано действий:", drawnCount); // ✅ Для отладки
+        })
     }
 
     // Перерисовка конкретного действия
@@ -289,7 +267,7 @@ class CanvasState {
         ctx.restore()
     }
 
-    // ✅ Перерисовка мазка кисти
+    // ✅ Более безопасная перерисовка мазка кисти
     redrawBrushStroke(ctx, action) {
         if (!action.points || action.points.length === 0) return
 
@@ -303,8 +281,7 @@ class CanvasState {
         if (action.points.length === 1) {
             // Если только одна точка, рисуем точку
             const point = action.points[0]
-            ctx.beginPath()
-            ctx.arc(point.x, point.y, action.lineWidth / 2, 0, 2 * Math.PI)
+            ctx.arc(point.x, point.y, ctx.lineWidth / 2, 0, 2 * Math.PI)
             ctx.fill()
         } else {
             // Если несколько точек, рисуем линию
@@ -316,7 +293,7 @@ class CanvasState {
         }
     }
 
-    // ✅ Перерисовка мазка ластика
+    // ✅ Более безопасная перерисовка мазка ластика
     redrawEraserStroke(ctx, action) {
         if (!action.points || action.points.length === 0) return
 
@@ -330,8 +307,7 @@ class CanvasState {
         if (action.points.length === 1) {
             // Если только одна точка, стираем точку
             const point = action.points[0]
-            ctx.beginPath()
-            ctx.arc(point.x, point.y, action.lineWidth / 2, 0, 2 * Math.PI)
+            ctx.arc(point.x, point.y, ctx.lineWidth / 2, 0, 2 * Math.PI)
             ctx.fill()
         } else {
             // Если несколько точек, стираем линию
