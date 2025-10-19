@@ -177,6 +177,14 @@ const Canvas = observer(() => {
     setIsRoomCreated(true);
   };
 
+
+  useEffect(() => {
+  const canvas = canvasRef.current;
+  if (canvas) {
+    canvas.onmousedown = () => console.log("manual mousedown");
+  }
+}, []);
+
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
