@@ -52,7 +52,6 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
-    console.log("Canvas set:", canvasRef.current); // ← проверка, что canvas установлен
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
       axios
@@ -70,29 +69,18 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-    toolState.setTool(new Brush(canvasRef.current, null, params.id), "brush");
-    console.log("Tool set:", toolState.toolName, toolState.tool); // ← проверка, что инструмент установлен
-
-    updateCursor("brush");
   }, [params.id]);
 
   useEffect(() => {
     if (canvasState.username) {
-      if (toolState.tool?.destroyEvents) {
-        toolState.tool.destroyEvents();
-      }
       const socket = new WebSocket("wss://paint-online-back.onrender.com/");
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
-      toolState.setTool(
-        new Brush(canvasState.canvas, socket, params.id, canvasState.username),
-        "brush"
-      );
 
+      const brush = new Brush(canvasRef.current, socket, params.id, canvasState.username);
+      toolState.setTool(brush, "brush");
+      brush.listen();
       updateCursor("brush");
-      toolState.tool.listen();
-      console.log("Canvas ref:", canvasRef.current);
-
 
       socket.onopen = () => {
         socket.send(
@@ -111,9 +99,6 @@ const Canvas = observer(() => {
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
-            break;
-          case "finish":
-            canvasRef.current.getContext("2d").beginPath();
             break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
@@ -146,10 +131,6 @@ const Canvas = observer(() => {
       case "eraser":
         Eraser.staticDraw(ctx, figure.x, figure.y, figure.lineWidth ?? toolState.tool.lineWidth, "#FFFFFF", figure.isStart);
         break;
-      // case "finish":
-      //   ctx.beginPath();
-      //   ctx.moveTo(-9999, -9999); // сбрасываем текущую точку вне холста
-      //   break;
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
@@ -176,14 +157,6 @@ const Canvas = observer(() => {
     setModal(true);
     setIsRoomCreated(true);
   };
-
-
-  useEffect(() => {
-  const canvas = canvasRef.current;
-  if (canvas) {
-    canvas.onmousedown = () => console.log("manual mousedown");
-  }
-}, []);
 
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -213,12 +186,10 @@ const Canvas = observer(() => {
 
       <canvas
         ref={canvasRef}
-        tabIndex={0} // делает canvas фокусируемым
-        onMouseDown={() => console.log("native mousedown")} // проверка, что canvas реагирует
-        style={{ border: "1px solid black", zIndex: 9999 }}
+        tabIndex={0}
+        style={{ border: "1px solid black" }}
       />
 
-      {/* {canvasState.canvas && <Toolbar />} */}
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату

@@ -22,28 +22,15 @@ export default class Brush extends Tool {
     this.strokeColor = color;
   }
 
-listen() {
-  console.log("Brush.listen called"); // ← проверка, что метод вызван
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-  this.canvas.onmousedown = (e) => {
-    console.log("mousedown attached"); // ← проверка, что событие привязано
-    this.mouseDownHandler(e);
-  };
-
-  this.canvas.onmousemove = (e) => {
-    console.log("mousemove attached"); // ← проверка, что событие привязан
-    this.mouseMoveHandler(e);
-  };
-
-  this.canvas.onmouseup = (e) => {
-    console.log("mouseup attached"); // ← проверка, что событие привязан
-    this.mouseUpHandler(e);
-  };
-
-  this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
-  this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
-  this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
-}
+    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+  }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
@@ -56,7 +43,6 @@ listen() {
   }
 
   mouseDownHandler(e) {
-      console.log("mouseDownHandler triggered"); // ← должен появиться при клике
     this.mouseDown = true;
     canvasState.pushToUndo(this.canvas.toDataURL());
 
@@ -83,7 +69,6 @@ listen() {
   }
 
   mouseUpHandler() {
-  console.log("mouseUpHandler triggered"); // ← должен появиться при отпускании мыши
     this.mouseDown = false;
 
     if (this.socket) {
@@ -93,8 +78,6 @@ listen() {
         figure: { type: "finish" }
       }));
     }
-      this.ctx.beginPath();
-
   }
 
   touchStartHandler(e) {
@@ -136,7 +119,6 @@ listen() {
         figure: { type: "finish" }
       }));
     }
-      this.ctx.beginPath();
   }
 
   sendDrawData(x, y, isStart = false, isLocal = true) {
@@ -165,20 +147,17 @@ listen() {
     }
   }
 
-static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
-  console.log("staticDraw", { isStart, x, y }); // ← проверка, что рисование происходит
+  static staticDraw(ctx, x, y, lineWidth, strokeStyle, isStart = false) {
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineCap = "round";
 
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineCap = "round";
-
-  if (isStart) {
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  } else {
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    if (isStart) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
   }
-}
-  
 }
