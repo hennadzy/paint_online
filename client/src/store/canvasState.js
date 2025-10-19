@@ -129,7 +129,8 @@ class CanvasState {
     handleRemoteUndo(actionId) {
         const action = this.userActions.find(a => a.id === actionId)
         if (action) {
-            action.undone = trueaction.undoneAt = Date.now()
+            action.undone = true
+            action.undoneAt = Date.now()
             this.redrawCanvas()
         }
     }
