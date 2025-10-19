@@ -19,7 +19,7 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
-  
+
   const activeUsersRef = useRef(new Map());
   const params = useParams();
 
@@ -102,17 +102,21 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        if (!msg.username || msg.username === canvasState.username) return;
+
+        // ✅ ВАЖНО: НЕ обрабатываем свои собственные сообщения
+        if (msg.username === canvasState.username) return;
 
         switch (msg.method) {
           case "draw":
             drawHandler(msg);
             break;
           case "undo":
-            canvasState.handleRemoteUndo(msg.actionId);
+            // ✅ Обрабатываем undo от другого пользователя
+            canvasState.handleRemoteUndo(msg.actionId, msg.username);
             break;
           case "redo":
-            canvasState.handleRemoteRedo(msg.actionId);
+            // ✅ Обрабатываем redo от другого пользователя  
+            canvasState.handleRemoteRedo(msg.actionId, msg.username);
             break;
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
@@ -141,7 +145,7 @@ const Canvas = observer(() => {
 
     ctx.save();
 
-   switch (figure.type) {
+    switch (figure.type) {
       case "brush":
         ctx.strokeStyle = figure.strokeStyle || "#000000";
         ctx.lineWidth = figure.lineWidth || 1;
@@ -151,15 +155,15 @@ const Canvas = observer(() => {
         if (figure.isStart) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { 
-            isDrawing: true, 
-            lastX: figure.x, 
+          activeUsersRef.current.set(username, {
+            isDrawing: true,
+            lastX: figure.x,
             lastY: figure.y,
             currentAction: {
               type: "brush",
               strokeStyle: figure.strokeStyle,
               lineWidth: figure.lineWidth,
-              points: [{x: figure.x, y: figure.y}],
+              points: [{ x: figure.x, y: figure.y }],
               author: username
             }
           });
@@ -170,30 +174,30 @@ const Canvas = observer(() => {
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-            
+
             // Добавляем точку к текущему действию
             if (userState.currentAction) {
-              userState.currentAction.points.push({x: figure.x, y: figure.y});
+              userState.currentAction.points.push({ x: figure.x, y: figure.y });
             }
-            
-            activeUsersRef.current.set(username, { 
-              isDrawing: true, 
-              lastX: figure.x, 
+
+            activeUsersRef.current.set(username, {
+              isDrawing: true,
+              lastX: figure.x,
               lastY: figure.y,
               currentAction: userState.currentAction
             });
           } else {
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { 
-              isDrawing: true, 
-              lastX: figure.x, 
+            activeUsersRef.current.set(username, {
+              isDrawing: true,
+              lastX: figure.x,
               lastY: figure.y,
               currentAction: {
                 type: "brush",
                 strokeStyle: figure.strokeStyle,
                 lineWidth: figure.lineWidth,
-                points: [{x: figure.x, y: figure.y}],
+                points: [{ x: figure.x, y: figure.y }],
                 author: username
               }
             });
@@ -210,14 +214,14 @@ const Canvas = observer(() => {
         if (figure.isStart) {
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { 
-            isDrawing: true, 
-            lastX: figure.x, 
+          activeUsersRef.current.set(username, {
+            isDrawing: true,
+            lastX: figure.x,
             lastY: figure.y,
             currentAction: {
               type: "eraser",
               lineWidth: figure.lineWidth,
-              points: [{x: figure.x, y: figure.y}],
+              points: [{ x: figure.x, y: figure.y }],
               author: username
             }
           });
@@ -228,29 +232,29 @@ const Canvas = observer(() => {
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
-            
+
             // Добавляем точку к текущему действию
             if (userState.currentAction) {
-              userState.currentAction.points.push({x: figure.x, y: figure.y});
+              userState.currentAction.points.push({ x: figure.x, y: figure.y });
             }
-            
-            activeUsersRef.current.set(username, { 
-              isDrawing: true, 
-              lastX: figure.x, 
+
+            activeUsersRef.current.set(username, {
+              isDrawing: true,
+              lastX: figure.x,
               lastY: figure.y,
               currentAction: userState.currentAction
             });
           } else {
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { 
-              isDrawing: true, 
-              lastX: figure.x, 
+            activeUsersRef.current.set(username, {
+              isDrawing: true,
+              lastX: figure.x,
               lastY: figure.y,
               currentAction: {
                 type: "eraser",
                 lineWidth: figure.lineWidth,
-                points: [{x: figure.x, y: figure.y}],
+                points: [{ x: figure.x, y: figure.y }],
                 author: username
               }
             });
@@ -260,8 +264,8 @@ const Canvas = observer(() => {
 
       case "rect":
         ctx.beginPath();
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height,figure.strokeStyle, figure.lineWidth);
-        
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+
         // Сохраняем действие в истории
         canvasState.addUserAction({
           type: "rect",
@@ -278,7 +282,7 @@ const Canvas = observer(() => {
       case "circle":
         ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        
+
         // Сохраняем действие в истории
         canvasState.addUserAction({
           type: "circle",
@@ -294,7 +298,7 @@ const Canvas = observer(() => {
       case "line":
         ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        
+
         // Сохраняем действие в истории
         canvasState.addUserAction({
           type: "line",
@@ -314,7 +318,7 @@ const Canvas = observer(() => {
           // Сохраняем завершенное действие в истории
           canvasState.addUserAction(userState.currentAction);
         }
-        
+
         ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
@@ -341,7 +345,7 @@ const Canvas = observer(() => {
     if (!canvasState.username || !canvasState.socket) {
       canvasState.pushToUndo(canvasRef.current.toDataURL());
     }
-    
+
     // Сохраняем на сервер только если есть соединение
     if (params.id) {
       axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {

@@ -33,7 +33,7 @@ export default class Brush extends Tool {
     this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
   }
 
-  destroyEvents() {
+ destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
@@ -50,13 +50,17 @@ export default class Brush extends Tool {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    // ✅ Генерируем уникальный ID для действия сразу
+    const actionId = Date.now() + Math.random() + (this.username || 'local');
+
     // Начинаем новый мазок
     this.currentStroke = {
       type: "brush",
       strokeStyle: this.strokeColor,
       lineWidth: this.lineWidth,
       points: [{x, y}],
-      author: this.username
+      author: this.username || 'local',
+      id: actionId
     };
 
     this.ctx.strokeStyle = this.strokeColor;
@@ -82,16 +86,14 @@ export default class Brush extends Tool {
   mouseUpHandler() {
     this.mouseDown = false;
 
-    // Сохраняем завершенный мазок в истории
+    // ✅ Сохраняем завершенный мазок в истории
     if (this.currentStroke && this.currentStroke.points.length > 0) {
-      // Генерируем уникальный ID для действия
-      this.currentStroke.id = Date.now() + Math.random();
       canvasState.addUserAction(this.currentStroke);
     }
 
     this.currentStroke = null;
 
-    if (this.socket) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -101,7 +103,7 @@ export default class Brush extends Tool {
     }
 
     if (window._localUserState) {
-      delete window._localUserState[this.username];
+      delete window._localUserState[this.username || 'local'];
     }
   }
 
@@ -113,12 +115,16 @@ export default class Brush extends Tool {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
+    // ✅ Генерируем уникальный ID для действия сразу
+    const actionId = Date.now() + Math.random() + (this.username || 'local');
+
     this.currentStroke = {
       type: "brush",
       strokeStyle: this.strokeColor,
       lineWidth: this.lineWidth,
       points: [{x, y}],
-      author: this.username
+      author: this.username || 'local',
+      id: actionId
     };
 
     this.ctx.strokeStyle = this.strokeColor;
@@ -141,18 +147,19 @@ export default class Brush extends Tool {
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
   }
+
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
 
+    // ✅ Сохраняем завершенный мазок в истории
     if (this.currentStroke && this.currentStroke.points.length > 0) {
-      this.currentStroke.id = Date.now() + Math.random();
       canvasState.addUserAction(this.currentStroke);
     }
 
     this.currentStroke = null;
 
-    if (this.socket) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -162,12 +169,12 @@ export default class Brush extends Tool {
     }
 
     if (window._localUserState) {
-      delete window._localUserState[this.username];
+      delete window._localUserState[this.username || 'local'];
     }
   }
 
   sendDrawData(x, y, isStart = false) {
-    if (this.socket) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -187,7 +194,7 @@ export default class Brush extends Tool {
 
   drawLocally(x, y, isStart = false) {
     const ctx = this.ctx;
-    const username = this.username;
+    const username = this.username || 'local';
 
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -196,8 +203,8 @@ export default class Brush extends Tool {
     ctx.lineJoin = "round";
 
     if (!window._localUserState) window._localUserState = {};
-    
- if (isStart || !window._localUserState[username]) {
+
+    if (isStart || !window._localUserState[username]) {
       ctx.beginPath();
       ctx.moveTo(x, y);
       window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
