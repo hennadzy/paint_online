@@ -19,7 +19,10 @@ const Canvas = observer(() => {
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
+  
+  // ⭐️ Используем useRef для синхронного доступа к состоянию
   const activeUsersRef = useRef(new Map());
+  
   const params = useParams();
 
   const updateCursor = (tool) => {
@@ -54,7 +57,6 @@ const Canvas = observer(() => {
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
-
     if (params.id) {
       axios
         .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
@@ -110,21 +112,6 @@ const Canvas = observer(() => {
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
-          case "undo":
-            setMessages((prev) => [...prev, `${msg.username} отменил последнее действие`]);
-            // Можно просто очистить холст или перезагрузить с сервера
-            axios
-              .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
-              .then((response) => {
-                const img = new Image();
-                img.src = response.data;
-                img.onload = () => {
-                  const ctx = canvasRef.current.getContext("2d");
-                  ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                  ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-                };
-              });
-            break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
@@ -140,6 +127,7 @@ const Canvas = observer(() => {
     }
   }, [canvasState.username, params.id]);
 
+  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
@@ -147,6 +135,7 @@ const Canvas = observer(() => {
 
     if (!msg.username || msg.username === canvasState.username) return;
 
+    // ⭐️ Сохраняем состояние контекста для изоляции
     ctx.save();
 
     switch (figure.type) {
@@ -157,18 +146,22 @@ const Canvas = observer(() => {
         ctx.lineJoin = "round";
 
         if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
           ctx.beginPath();
           ctx.moveTo(figure.x, figure.y);
           activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
         } else {
           const userState = activeUsersRef.current.get(username);
           if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
             ctx.beginPath();
             ctx.moveTo(userState.lastX, userState.lastY);
             ctx.lineTo(figure.x, figure.y);
             ctx.stroke();
+            // Обновляем позицию
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
+            // Если нет активного состояния - начинаем новый путь
             ctx.beginPath();
             ctx.moveTo(figure.x, figure.y);
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
@@ -218,6 +211,7 @@ const Canvas = observer(() => {
         break;
 
       case "finish":
+        // ⭐️ Завершаем рисование пользователя
         ctx.beginPath();
         activeUsersRef.current.delete(username);
         break;
@@ -226,6 +220,7 @@ const Canvas = observer(() => {
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
 
+    // ⭐️ Восстанавливаем состояние контекста
     ctx.restore();
   };
 
@@ -251,7 +246,7 @@ const Canvas = observer(() => {
     setIsRoomCreated(true);
   };
 
-   return (
+  return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header closeButton>
