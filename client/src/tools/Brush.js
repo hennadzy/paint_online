@@ -44,6 +44,7 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -54,15 +55,6 @@ export default class Brush extends Tool {
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
-
-    canvasState.addAction({
-      type: "brush",
-      x,
-      y,
-      color: this.strokeColor,
-      lineWidth: this.lineWidth,
-      isStart: true,
-    });
   }
 
   mouseMoveHandler(e) {
@@ -74,15 +66,6 @@ export default class Brush extends Tool {
 
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
-
-    canvasState.addAction({
-      type: "brush",
-      x,
-      y,
-      color: this.strokeColor,
-      lineWidth: this.lineWidth,
-      isStart: false,
-    });
   }
 
   mouseUpHandler() {
@@ -104,6 +87,7 @@ export default class Brush extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
@@ -114,15 +98,6 @@ export default class Brush extends Tool {
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
-
-    canvasState.addAction({
-      type: "brush",
-      x,
-      y,
-      color: this.strokeColor,
-      lineWidth: this.lineWidth,
-      isStart: true,
-    });
   }
 
   touchMoveHandler(e) {
@@ -135,18 +110,10 @@ export default class Brush extends Tool {
 
     this.drawLocally(x, y, false);
     this.sendDrawData(x, y, false);
-
-    canvasState.addAction({
-      type: "brush",
-      x,
-      y,
-      color: this.strokeColor,
-      lineWidth: this.lineWidth,
-      isStart: false,
-    });
   }
 
-  touchEndHandler() {
+  touchEndHandler(e) {
+    e.preventDefault();
     this.mouseDown = false;
 
     if (this.socket) {
@@ -156,38 +123,61 @@ export default class Brush extends Tool {
         figure: { type: "finish" }
       }));
     }
-  }
 
-  drawLocally(x, y, isStart) {
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
-    this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "round";
-
-    if (isStart) {
-      this.ctx.beginPath();
-      this.ctx.moveTo(x, y);
-    } else {
-      this.ctx.lineTo(x, y);
-      this.ctx.stroke();
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
     }
   }
 
-  sendDrawData(x, y, isStart) {
-    if (!this.socket) return;
+  sendDrawData(x, y, isStart = false) {
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
 
-    this.socket.send(JSON.stringify({
-      method: "draw",
-      id: this.id,
-      username: this.username,
-      figure: {
-        type: "brush",
-        x,
-        y,
-        strokeStyle: this.strokeColor,
-        lineWidth: this.lineWidth,
-        isStart,
-      }
-    }));
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username
+        }
+      }));
+    }
+  }
+
+  drawLocally(x, y, isStart = false) {
+    const ctx = this.ctx;
+    const username = this.username;
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
+
+    ctx.save();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (!window._localUserState) window._localUserState = {};
+
+    if (isStart || !window._localUserState[username]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    } else {
+      const userState = window._localUserState[username];
+      ctx.beginPath();
+      ctx.moveTo(userState.lastX, userState.lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    }
+
+    ctx.restore();
   }
 }
