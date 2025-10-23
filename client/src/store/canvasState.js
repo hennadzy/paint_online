@@ -42,6 +42,8 @@ class CanvasState {
             layer.style.left = '0';
             layer.style.pointerEvents = 'none'; // слой не перехватывает события мыши
             layer.style.zIndex = '1'; // слой поверх основного холста
+            layer.style.border = 'none'; // убираем рамку
+            layer.style.backgroundColor = 'transparent'; // прозрачный фон
             this.layers.set(username, layer);
         }
         return this.layers.get(username);

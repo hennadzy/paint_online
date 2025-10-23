@@ -58,14 +58,14 @@ const Canvas = observer(() => {
     if (canvasState.username) {
       const layer = canvasState.createLayer(canvasState.username);
       canvasState.setCurrentLayer(layer);
-      // Добавляем слой в DOM
+      // Добавляем слой в DOM только если он еще не добавлен
       const canvasContainer = canvasRef.current.parentElement;
       if (layer && !canvasContainer.contains(layer)) {
         canvasContainer.appendChild(layer);
       }
       // Синхронизируем размеры слоя с основным холстом
       const resizeLayer = () => {
-        if (layer) {
+        if (layer && canvasRef.current) {
           layer.width = canvasRef.current.width;
           layer.height = canvasRef.current.height;
         }
@@ -332,7 +332,7 @@ const Canvas = observer(() => {
       <canvas
         ref={canvasRef}
         tabIndex={0}
-        style={{ border: "1px solid black" }}
+        className="main-canvas"
         onMouseDown={mouseDownHandler}
       />
 
