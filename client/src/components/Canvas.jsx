@@ -55,28 +55,6 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    if (canvasState.username) {
-      const layer = canvasState.createLayer(canvasState.username);
-      canvasState.setCurrentLayer(layer);
-      // Добавляем слой в DOM только если он еще не добавлен
-      const canvasContainer = canvasRef.current.parentElement;
-      if (layer && !canvasContainer.contains(layer)) {
-        canvasContainer.appendChild(layer);
-      }
-      // Синхронизируем размеры слоя с основным холстом
-      const resizeLayer = () => {
-        if (layer && canvasRef.current) {
-          layer.width = canvasRef.current.width;
-          layer.height = canvasRef.current.height;
-        }
-      };
-      resizeLayer();
-      window.addEventListener("resize", resizeLayer);
-      return () => window.removeEventListener("resize", resizeLayer);
-    }
-  }, [canvasState.username]);
-
-  useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
@@ -125,8 +103,6 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log("Received message:", msg); // Добавляем логирование для отладки
-
         if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
@@ -157,8 +133,6 @@ const Canvas = observer(() => {
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
 
-    console.log("Drawing for user:", username, "figure:", figure); // Добавляем логирование
-
     if (!msg.username || msg.username === canvasState.username) return;
 
     // ⭐️ Сохраняем состояние контекста для изоляции
@@ -166,96 +140,74 @@ const Canvas = observer(() => {
 
     switch (figure.type) {
       case "brush":
-        // Рисуем на слое пользователя
-        const userLayer = canvasState.getLayer(username);
-        if (userLayer) {
-          const layerCtx = userLayer.getContext("2d");
-          layerCtx.strokeStyle = figure.strokeStyle || "#000000";
-          layerCtx.lineWidth = figure.lineWidth || 1;
-          layerCtx.lineCap = "round";
-          layerCtx.lineJoin = "round";
+        ctx.strokeStyle = figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || 1;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
-          if (figure.isStart) {
-            // ⭐️ ВСЕГДА начинаем новый путь при isStart
-            layerCtx.beginPath();
-            layerCtx.moveTo(figure.x, figure.y);
+        if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            // Обновляем позицию
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
-            const userState = activeUsersRef.current.get(username);
-            if (userState && userState.isDrawing) {
-              // Продолжаем линию от последней позиции
-              layerCtx.beginPath();
-              layerCtx.moveTo(userState.lastX, userState.lastY);
-              layerCtx.lineTo(figure.x, figure.y);
-              layerCtx.stroke();
-              // Обновляем позицию
-              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-            } else {
-              // Если нет активного состояния - начинаем новый путь
-              layerCtx.beginPath();
-              layerCtx.moveTo(figure.x, figure.y);
-              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-            }
+            // Если нет активного состояния - начинаем новый путь
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
 
       case "eraser":
-        // Рисуем ластиком на слое пользователя
-        const eraserLayer = canvasState.getLayer(username);
-        if (eraserLayer) {
-          const layerCtx = eraserLayer.getContext("2d");
-          layerCtx.globalCompositeOperation = "destination-out";
-          layerCtx.lineWidth = figure.lineWidth || 10;
-          layerCtx.lineCap = "round";
-          layerCtx.lineJoin = "round";
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = figure.lineWidth || 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
-          if (figure.isStart) {
-            layerCtx.beginPath();
-            layerCtx.moveTo(figure.x, figure.y);
+        if (figure.isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
-            const userState = activeUsersRef.current.get(username);
-            if (userState && userState.isDrawing) {
-              layerCtx.beginPath();
-              layerCtx.moveTo(userState.lastX, userState.lastY);
-              layerCtx.lineTo(figure.x, figure.y);
-              layerCtx.stroke();
-              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-            } else {
-              layerCtx.beginPath();
-              layerCtx.moveTo(figure.x, figure.y);
-              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-            }
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           }
         }
         break;
 
       case "rect":
-        // Рисуем прямоугольник на слое пользователя
-        const rectLayer = canvasState.getLayer(username);
-        if (rectLayer) {
-          const layerCtx = rectLayer.getContext("2d");
-          Rect.staticDraw(layerCtx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-        }
+        ctx.beginPath();
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "circle":
-        // Рисуем круг на слое пользователя
-        const circleLayer = canvasState.getLayer(username);
-        if (circleLayer) {
-          const layerCtx = circleLayer.getContext("2d");
-          Circle.staticDraw(layerCtx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        }
+        ctx.beginPath();
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "line":
-        // Рисуем линию на слое пользователя
-        const lineLayer = canvasState.getLayer(username);
-        if (lineLayer) {
-          const layerCtx = lineLayer.getContext("2d");
-          Line.staticDraw(layerCtx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        }
+        ctx.beginPath();
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         break;
 
       case "finish":
@@ -265,31 +217,23 @@ const Canvas = observer(() => {
         break;
 
       case "undo":
-        // Undo влияет только на слой пользователя, отправившего undo
-        const undoLayer = canvasState.getLayer(username);
-        if (undoLayer) {
-          const undoImg = new Image();
-          undoImg.src = figure.dataURL;
-          undoImg.onload = () => {
-            const layerCtx = undoLayer.getContext("2d");
-            layerCtx.clearRect(0, 0, undoLayer.width, undoLayer.height);
-            layerCtx.drawImage(undoImg, 0, 0, undoLayer.width, undoLayer.height);
-          };
-        }
+        // Handle undo from other users - show to all users
+        const undoImg = new Image();
+        undoImg.src = figure.dataURL;
+        undoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
         break;
 
       case "redo":
-        // Redo влияет только на слой пользователя, отправившего redo
-        const redoLayer = canvasState.getLayer(username);
-        if (redoLayer) {
-          const redoImg = new Image();
-          redoImg.src = figure.dataURL;
-          redoImg.onload = () => {
-            const layerCtx = redoLayer.getContext("2d");
-            layerCtx.clearRect(0, 0, redoLayer.width, redoLayer.height);
-            layerCtx.drawImage(redoImg, 0, 0, redoLayer.width, redoLayer.height);
-          };
-        }
+        // Handle redo from other users - show to all users
+        const redoImg = new Image();
+        redoImg.src = figure.dataURL;
+        redoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
         break;
 
       default:
@@ -353,16 +297,14 @@ const Canvas = observer(() => {
       <canvas
         ref={canvasRef}
         tabIndex={0}
-        className="main-canvas"
+        style={{ border: "1px solid black" }}
         onMouseDown={mouseDownHandler}
       />
 
       {!isRoomCreated && (
-        <div style={{ marginTop: "50px", textAlign: "center" }}>
-          <Button variant="primary" onClick={handleCreateRoomClick}>
-            Создать комнату
-          </Button>
-        </div>
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+          Создать комнату
+        </Button>
       )}
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
@@ -375,3 +317,4 @@ const Canvas = observer(() => {
 });
 
 export default Canvas;
+

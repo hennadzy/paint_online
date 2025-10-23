@@ -1,127 +1,112 @@
-import { makeAutoObservable, observable } from "mobx";
-
-
 class CanvasState {
-    canvas = null
-    socket = null
-    sessionid = null
-    undoList = []
-    redoList = []
-    username = ""
-    layers = new Map() // username -> canvas element
-    currentLayer = null
+  layers = new Map(); // username → canvas
+  undoStacks = new Map(); // username → [dataURL]
+  redoStacks = new Map(); // username → [dataURL]
+  currentLayer = null;
 
-    constructor() {
-  makeAutoObservable(this, {
-    canvas: observable, // ← теперь canvas реактивен
-  });
+  canvasContainer = null;
+  socket = null;
+  sessionid = null;
+  username = "";
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setUsername(name) {
+    this.username = name;
+  }
+
+  setSocket(socket) {
+    this.socket = socket;
+  }
+
+  setSessionId(id) {
+    this.sessionid = id;
+  }
+
+  setCanvasContainer(container) {
+    this.canvasContainer = container;
+  }
+
+  createLayerForUser(username) {
+    if (this.layers.has(username)) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.canvasContainer.offsetWidth;
+    canvas.height = this.canvasContainer.offsetHeight;
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.zIndex = username === this.username ? "10" : "5";
+    canvas.style.pointerEvents = username === this.username ? "auto" : "none";
+    canvas.id = `layer-${username}`;
+
+    this.canvasContainer.appendChild(canvas);
+    this.layers.set(username, canvas);
+
+    if (username === this.username) {
+      this.currentLayer = canvas;
+    }
+  }
+
+  getLayer(username) {
+    return this.layers.get(username);
+  }
+
+  pushToUndo(username, dataURL) {
+    if (!this.undoStacks.has(username)) this.undoStacks.set(username, []);
+    this.undoStacks.get(username).push(dataURL);
+  }
+
+  pushToRedo(username, dataURL) {
+    if (!this.redoStacks.has(username)) this.redoStacks.set(username, []);
+    this.redoStacks.get(username).push(dataURL);
+  }
+
+  undo() {
+    const layer = this.currentLayer;
+    const ctx = layer.getContext("2d");
+    const stack = this.undoStacks.get(this.username) || [];
+    if (stack.length > 0) {
+      const dataUrl = stack.pop();
+      this.pushToRedo(this.username, layer.toDataURL());
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        ctx.clearRect(0, 0, layer.width, layer.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      this.socket?.send(JSON.stringify({
+        method: "undo",
+        id: this.sessionid,
+        username: this.username,
+        dataURL: dataUrl
+      }));
+    }
+  }
+
+  redo() {
+    const layer = this.currentLayer;
+    const ctx = layer.getContext("2d");
+    const stack = this.redoStacks.get(this.username) || [];
+    if (stack.length > 0) {
+      const dataUrl = stack.pop();
+      this.pushToUndo(this.username, layer.toDataURL());
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        ctx.clearRect(0, 0, layer.width, layer.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      this.socket?.send(JSON.stringify({
+        method: "redo",
+        id: this.sessionid,
+        username: this.username,
+        dataURL: dataUrl
+      }));
+    }
+  }
 }
 
-    setSessionId(id) {
-        this.sessionid = id
-    }
-    setSocket(socket) {
-        this.socket = socket
-    } 
-
-    setUsername(username) {
-        this.username = username
-    }
-
-    setCanvas(canvas) {
-        this.canvas = canvas
-    }
-
-    createLayer(username) {
-        if (!this.layers.has(username)) {
-            const layer = document.createElement('canvas');
-            layer.width = this.canvas.width;
-            layer.height = this.canvas.height;
-            layer.style.position = 'absolute';
-            layer.style.top = '80px'; // совпадает с margin-top основного холста
-            layer.style.left = '0';
-            layer.style.pointerEvents = 'none'; // слой не перехватывает события мыши
-            layer.style.zIndex = '1'; // слой поверх основного холста
-            layer.style.border = 'none'; // убираем рамку
-            layer.style.backgroundColor = 'transparent'; // прозрачный фон
-            this.layers.set(username, layer);
-        }
-        return this.layers.get(username);
-    }
-
-    setCurrentLayer(layer) {
-        this.currentLayer = layer;
-    }
-
-    getLayer(username) {
-        return this.layers.get(username);
-    }
-
-    pushToUndo(data) {
-        this.undoList.push(data)
-    }
-
-    pushToRedo(data) {
-        this.redoList.push(data)
-    }
-
-    undo() {
-        if (this.undoList.length > 0) {
-            let dataUrl = this.undoList.pop()
-            this.redoList.push(this.currentLayer.toDataURL())
-            let img = new Image()
-            img.src = dataUrl
-            img.onload =  () => {
-                const ctx = this.currentLayer.getContext('2d')
-                ctx.clearRect(0,0, this.currentLayer.width, this.currentLayer.height)
-                ctx.drawImage(img, 0, 0, this.currentLayer.width, this.currentLayer.height)
-            }
-            // Send undo to other users via draw message
-            if (this.socket) {
-                this.socket.send(JSON.stringify({
-                    method: "draw",
-                    id: this.sessionid,
-                    username: this.username,
-                    figure: {
-                        type: "undo",
-                        dataURL: dataUrl,
-                        username: this.username
-                    }
-                }));
-            }
-        } else {
-            const ctx = this.currentLayer.getContext('2d')
-            ctx.clearRect(0, 0, this.currentLayer.width, this.currentLayer.height)
-        }
-    }
-
-    redo() {
-        if (this.redoList.length > 0) {
-            let dataUrl = this.redoList.pop()
-            this.undoList.push(this.currentLayer.toDataURL())
-            let img = new Image()
-            img.src = dataUrl
-            img.onload =  () => {
-                const ctx = this.currentLayer.getContext('2d')
-                ctx.clearRect(0,0, this.currentLayer.width, this.currentLayer.height)
-                ctx.drawImage(img, 0, 0, this.currentLayer.width, this.currentLayer.height)
-            }
-            // Send redo to other users via draw message
-            if (this.socket) {
-                this.socket.send(JSON.stringify({
-                    method: "draw",
-                    id: this.sessionid,
-                    username: this.username,
-                    figure: {
-                        type: "redo",
-                        dataURL: dataUrl,
-                        username: this.username
-                    }
-                }));
-            }
-        }
-    }
-
-}
-
-export default new CanvasState()
+export default new CanvasState();
