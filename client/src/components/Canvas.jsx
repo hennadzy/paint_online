@@ -112,6 +112,12 @@ const Canvas = observer(() => {
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
+          case "undo":
+            undoHandler(msg);
+            break;
+          case "redo":
+            redoHandler(msg);
+            break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
@@ -222,6 +228,26 @@ const Canvas = observer(() => {
 
     // ⭐️ Восстанавливаем состояние контекста
     ctx.restore();
+  };
+
+  const undoHandler = (msg) => {
+    const ctx = canvasRef.current.getContext("2d");
+    const img = new Image();
+    img.src = msg.dataURL;
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
+  };
+
+  const redoHandler = (msg) => {
+    const ctx = canvasRef.current.getContext("2d");
+    const img = new Image();
+    img.src = msg.dataURL;
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
   };
 
   const connectHandler = () => {

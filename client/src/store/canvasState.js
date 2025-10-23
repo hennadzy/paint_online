@@ -20,7 +20,7 @@ class CanvasState {
     }
     setSocket(socket) {
         this.socket = socket
-    }
+    } 
 
     setUsername(username) {
         this.username = username
@@ -49,6 +49,15 @@ class CanvasState {
                 ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
                 ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
             }
+            // Send undo to other users
+            if (this.socket) {
+                this.socket.send(JSON.stringify({
+                    method: "undo",
+                    id: this.sessionid,
+                    username: this.username,
+                    dataURL: dataUrl
+                }));
+            }
         } else {
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
         }
@@ -64,6 +73,15 @@ class CanvasState {
             img.onload =  () => {
                 ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
                 ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            }
+            // Send redo to other users
+            if (this.socket) {
+                this.socket.send(JSON.stringify({
+                    method: "redo",
+                    id: this.sessionid,
+                    username: this.username,
+                    dataURL: dataUrl
+                }));
             }
         }
     }
