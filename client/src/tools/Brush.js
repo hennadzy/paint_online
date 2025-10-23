@@ -8,6 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.mouseDown = false;
+    this.points = [];
     this._touchStartHandler = this.touchStartHandler.bind(this);
     this._touchMoveHandler = this.touchMoveHandler.bind(this);
     this._touchEndHandler = this.touchEndHandler.bind(this);
