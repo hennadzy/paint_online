@@ -216,7 +216,25 @@ const Canvas = observer(() => {
         activeUsersRef.current.delete(username);
         break;
 
+      case "undo":
+        // Handle undo from other users
+        const undoImg = new Image();
+        undoImg.src = figure.dataURL;
+        undoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
 
+      case "redo":
+        // Handle redo from other users
+        const redoImg = new Image();
+        redoImg.src = figure.dataURL;
+        redoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
 
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
