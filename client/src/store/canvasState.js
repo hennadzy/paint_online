@@ -49,7 +49,7 @@ class CanvasState {
                 ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
                 ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
             }
-            // Send undo to other users via draw message
+            // Send undo to other users via draw message with username
             if (this.socket) {
                 this.socket.send(JSON.stringify({
                     method: "draw",
@@ -57,7 +57,8 @@ class CanvasState {
                     username: this.username,
                     figure: {
                         type: "undo",
-                        dataURL: dataUrl
+                        dataURL: dataUrl,
+                        username: this.username
                     }
                 }));
             }
@@ -77,7 +78,7 @@ class CanvasState {
                 ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
                 ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
             }
-            // Send redo to other users via draw message
+            // Send redo to other users via draw message with username
             if (this.socket) {
                 this.socket.send(JSON.stringify({
                     method: "draw",
@@ -85,7 +86,8 @@ class CanvasState {
                     username: this.username,
                     figure: {
                         type: "redo",
-                        dataURL: dataUrl
+                        dataURL: dataUrl,
+                        username: this.username
                     }
                 }));
             }
