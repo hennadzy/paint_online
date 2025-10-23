@@ -1,0 +1,2248 @@
+Directory Structure:
+
+└── ./
+    ├── client
+    │   ├── public
+    │   │   └── index.html
+    │   ├── src
+    │   │   ├── components
+    │   │   │   ├── Canvas.jsx
+    │   │   │   ├── SettingBar.jsx
+    │   │   │   └── Toolbar.jsx
+    │   │   ├── store
+    │   │   │   ├── canvasState.js
+    │   │   │   └── toolState.js
+    │   │   ├── styles
+    │   │   │   ├── app.scss
+    │   │   │   ├── canvas.scss
+    │   │   │   ├── toolbar.scss
+    │   │   │   └── variables.scss
+    │   │   ├── tools
+    │   │   │   ├── Brush.js
+    │   │   │   ├── Circle.js
+    │   │   │   ├── Eraser.js
+    │   │   │   ├── Line.js
+    │   │   │   ├── Rect.js
+    │   │   │   └── Tool.js
+    │   │   ├── App.jsx
+    │   │   └── index.jsx
+    │   └── package.json
+    ├── server
+    │   ├── index.js
+    │   └── package.json
+    └── package.json
+
+
+
+---
+File: /client/public/index.html
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Рисование онлайн</title>
+    <link
+            rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+            crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
+
+
+
+---
+File: /client/src/components/Canvas.jsx
+---
+
+import React, { useEffect, useRef, useState } from "react";
+import { Modal, Button } from "react-bootstrap";
+import { observer } from "mobx-react-lite";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import canvasState from "../store/canvasState";
+import Toolbar from "./Toolbar";
+import toolState from "../store/toolState";
+import Brush from "../tools/Brush";
+import Circle from "../tools/Circle";
+import Rect from "../tools/Rect";
+import Eraser from "../tools/Eraser";
+import Line from "../tools/Line";
+import "../styles/canvas.scss";
+
+const Canvas = observer(() => {
+  const canvasRef = useRef();
+  const usernameRef = useRef();
+  const [modal, setModal] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
+  
+  // ⭐️ Используем useRef для синхронного доступа к состоянию
+  const activeUsersRef = useRef(new Map());
+  
+  const params = useParams();
+
+  const updateCursor = (tool) => {
+    const canvas = canvasRef.current;
+    canvas.classList.remove("brush-cursor", "eraser-cursor");
+    if (tool === "brush") canvas.classList.add("brush-cursor");
+    else if (tool === "eraser") canvas.classList.add("eraser-cursor");
+  };
+
+  const adjustCanvasSize = () => {
+    const canvas = canvasRef.current;
+    const aspectRatio = 600 / 400;
+    if (window.innerWidth < 768) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerWidth / aspectRatio;
+    } else {
+      canvas.width = 600;
+      canvas.height = 400;
+    }
+    canvasState.setCanvas(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  useEffect(() => {
+    adjustCanvasSize();
+    window.addEventListener("resize", adjustCanvasSize);
+    return () => window.removeEventListener("resize", adjustCanvasSize);
+  }, []);
+
+  useEffect(() => {
+    canvasState.setCanvas(canvasRef.current);
+    const ctx = canvasRef.current.getContext("2d");
+    if (params.id) {
+      axios
+        .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+        .then((response) => {
+          const img = new Image();
+          img.src = response.data;
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+          };
+        })
+        .catch((error) => console.error("Ошибка загрузки изображения:", error));
+    } else {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+
+    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
+    toolState.setTool(localBrush, "brush");
+    localBrush.listen();
+    updateCursor("brush");
+  }, [params.id]);
+
+  useEffect(() => {
+    if (canvasState.username) {
+      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+      canvasState.setSocket(socket);
+      canvasState.setSessionId(params.id);
+
+      const brush = new Brush(canvasRef.current, socket, params.id, canvasState.username);
+      toolState.setTool(brush, "brush");
+      brush.listen();
+      updateCursor("brush");
+
+      socket.onopen = () => {
+        socket.send(
+          JSON.stringify({
+            id: params.id,
+            username: canvasState.username,
+            method: "connection",
+          })
+        );
+      };
+
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (!msg.username || msg.username === canvasState.username) return;
+
+        switch (msg.method) {
+          case "draw":
+            drawHandler(msg);
+            break;
+          case "connection":
+            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+            break;
+          default:
+            console.warn("Неизвестный метод:", msg.method);
+        }
+      };
+
+      socket.onclose = () => {
+        console.log("WebSocket соединение закрыто");
+      };
+
+      socket.onerror = (error) => {
+        console.error("WebSocket ошибка:", error);
+      };
+    }
+  }, [canvasState.username, params.id]);
+
+  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
+  const drawHandler = (msg) => {
+    const figure = msg.figure;
+    const ctx = canvasRef.current.getContext("2d");
+    const username = msg.username;
+
+    if (!msg.username || msg.username === canvasState.username) return;
+
+    // ⭐️ Сохраняем состояние контекста для изоляции
+    ctx.save();
+
+    switch (figure.type) {
+      case "brush":
+        ctx.strokeStyle = figure.strokeStyle || "#000000";
+        ctx.lineWidth = figure.lineWidth || 1;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (figure.isStart) {
+          // ⭐️ ВСЕГДА начинаем новый путь при isStart
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            // Продолжаем линию от последней позиции
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            // Обновляем позицию
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            // Если нет активного состояния - начинаем новый путь
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          }
+        }
+        break;
+
+      case "eraser":
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = figure.lineWidth || 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (figure.isStart) {
+          ctx.beginPath();
+          ctx.moveTo(figure.x, figure.y);
+          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+        } else {
+          const userState = activeUsersRef.current.get(username);
+          if (userState && userState.isDrawing) {
+            ctx.beginPath();
+            ctx.moveTo(userState.lastX, userState.lastY);
+            ctx.lineTo(figure.x, figure.y);
+            ctx.stroke();
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(figure.x, figure.y);
+            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+          }
+        }
+        break;
+
+      case "rect":
+        ctx.beginPath();
+        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        break;
+
+      case "circle":
+        ctx.beginPath();
+        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        break;
+
+      case "line":
+        ctx.beginPath();
+        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        break;
+
+      case "finish":
+        // ⭐️ Завершаем рисование пользователя
+        ctx.beginPath();
+        activeUsersRef.current.delete(username);
+        break;
+
+      case "undo":
+        // Handle undo from other users - show to all users
+        const undoImg = new Image();
+        undoImg.src = figure.dataURL;
+        undoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
+
+      case "redo":
+        // Handle redo from other users - show to all users
+        const redoImg = new Image();
+        redoImg.src = figure.dataURL;
+        redoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
+
+      default:
+        console.warn("Неизвестный тип фигуры:", figure.type);
+    }
+
+    // ⭐️ Восстанавливаем состояние контекста
+    ctx.restore();
+  };
+
+
+
+  const connectHandler = () => {
+    const username = usernameRef.current.value.trim();
+    if (username) {
+      canvasState.setUsername(username);
+      setModal(false);
+    } else {
+      alert("Введите ваше имя");
+    }
+  };
+
+  const mouseDownHandler = () => {
+    canvasState.pushToUndo(canvasRef.current.toDataURL());
+    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+      img: canvasRef.current.toDataURL(),
+    });
+  };
+
+  const handleCreateRoomClick = () => {
+    setModal(true);
+    setIsRoomCreated(true);
+  };
+
+  return (
+    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <Modal show={modal} onHide={() => setModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Введите ваше имя</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <input
+            type="text"
+            autoFocus
+            ref={usernameRef}
+            placeholder="Ваше имя"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                connectHandler();
+              }
+            }}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={connectHandler}>
+            Войти
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <canvas
+        ref={canvasRef}
+        tabIndex={0}
+        style={{ border: "1px solid black" }}
+        onMouseDown={mouseDownHandler}
+      />
+
+      {!isRoomCreated && (
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+          Создать комнату
+        </Button>
+      )}
+
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
+        {messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export default Canvas;
+
+
+
+---
+File: /client/src/components/SettingBar.jsx
+---
+
+import React from "react";
+import { observer } from "mobx-react-lite";
+import toolState from "../store/toolState";
+
+const SettingBar = observer(() => {
+  const handleChange = (e) => {
+    const value = +e.target.value;
+    toolState.setLineWidth(value);
+  };
+const lineWidth = toolState.tool?.lineWidth ?? 1;
+  const currentToolName = toolState.toolName;
+  const currentWidth = currentToolName ? toolState.lineWidths[currentToolName] : 1;
+
+  return (
+    <div className="setting-bar">
+      <input
+        id="line-width"
+        type="range"
+        min={1}
+        max={50}
+        value={currentWidth}
+        onChange={handleChange}
+      />
+      <span className="line-width-label">{lineWidth}px</span>
+    </div>
+  );
+});
+
+export default SettingBar;
+
+
+
+
+---
+File: /client/src/components/Toolbar.jsx
+---
+
+
+import React from 'react';
+import { observer } from "mobx-react-lite";
+import '../styles/toolbar.scss';
+import toolState from "../store/toolState";
+import canvasState from "../store/canvasState";
+import Brush from "../tools/Brush";
+import Rect from "../tools/Rect";
+import Circle from "../tools/Circle";
+import Line from "../tools/Line";
+import Eraser from "../tools/Eraser";
+
+const Toolbar = observer(() => {
+  const changeColor = (e) => {
+    toolState.setStrokeColor(e.target.value);
+  };
+
+  const changeTool = (tool, cursorClass, toolNameOverride) => {
+    toolState.setTool(tool, toolNameOverride);
+
+    const canvas = canvasState.canvas;
+    if (canvas) {
+      canvas.classList.remove(
+        "brush-cursor",
+        "eraser-cursor",
+        "rect-cursor",
+        "circle-cursor",
+        "line-cursor"
+      );
+      canvas.classList.add(cursorClass);
+    }
+  };
+
+  const download = () => {
+    const dataUrl = canvasState.canvas.toDataURL();
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = canvasState.sessionid + ".jpg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const current = toolState.toolName;
+
+  return (
+    <div className="toolbar">
+      <button
+        className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
+        onClick={() =>
+          changeTool(
+            new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "brush-cursor", "brush"
+          )
+        }
+      />
+      <button
+        className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
+        onClick={() =>
+          changeTool(
+            new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "rect-cursor", "rect"
+          )
+        }
+      />
+      <button
+        className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
+        onClick={() =>
+          changeTool(
+            new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "circle-cursor", "circle"
+          )
+        }
+      />
+      <button
+        className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
+        onClick={() =>
+          changeTool(
+            new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "eraser-cursor", "eraser"
+          )
+        }
+      />
+      <button
+        className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
+        onClick={() =>
+          changeTool(
+            new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
+            "line-cursor", "line"
+          )
+        }
+      />
+      <input
+        type="color"
+        value={toolState.strokeColor}
+        onChange={changeColor}
+        style={{ marginLeft: 10 }}
+      />
+      <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
+      <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
+      <button className="toolbar__btn save" onClick={download} />
+    </div>
+  );
+});
+
+export default Toolbar;
+
+
+
+---
+File: /client/src/store/canvasState.js
+---
+
+import { makeAutoObservable, observable } from "mobx";
+
+
+class CanvasState {
+    canvas = null
+    socket = null
+    sessionid = null
+    undoList = []
+    redoList = []
+    username = ""
+
+    constructor() {
+  makeAutoObservable(this, {
+    canvas: observable, // ← теперь canvas реактивен
+  });
+}
+
+    setSessionId(id) {
+        this.sessionid = id
+    }
+    setSocket(socket) {
+        this.socket = socket
+    } 
+
+    setUsername(username) {
+        this.username = username
+    }
+
+    setCanvas(canvas) {
+        this.canvas = canvas
+    }
+
+    pushToUndo(data) {
+        this.undoList.push(data)
+    }
+
+    pushToRedo(data) {
+        this.redoList.push(data)
+    }
+
+    undo() {
+        let ctx = this.canvas.getContext('2d')
+        if (this.undoList.length > 0) {
+            let dataUrl = this.undoList.pop()
+            this.redoList.push(this.canvas.toDataURL())
+            let img = new Image()
+            img.src = dataUrl
+            img.onload =  () => {
+                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
+                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            }
+            // Send undo to other users via draw message
+            if (this.socket) {
+                this.socket.send(JSON.stringify({
+                    method: "draw",
+                    id: this.sessionid,
+                    username: this.username,
+                    figure: {
+                        type: "undo",
+                        dataURL: dataUrl,
+                        username: this.username
+                    }
+                }));
+            }
+        } else {
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        }
+    }
+
+    redo() {
+        let ctx = this.canvas.getContext('2d')
+        if (this.redoList.length > 0) {
+            let dataUrl = this.redoList.pop()
+            this.undoList.push(this.canvas.toDataURL())
+            let img = new Image()
+            img.src = dataUrl
+            img.onload =  () => {
+                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
+                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+            }
+            // Send redo to other users via draw message
+            if (this.socket) {
+                this.socket.send(JSON.stringify({
+                    method: "draw",
+                    id: this.sessionid,
+                    username: this.username,
+                    figure: {
+                        type: "redo",
+                        dataURL: dataUrl,
+                        username: this.username
+                    }
+                }));
+            }
+        }
+    }
+
+}
+
+export default new CanvasState()
+
+
+
+---
+File: /client/src/store/toolState.js
+---
+
+import { makeAutoObservable } from "mobx";
+
+class ToolState {
+  tool = null;
+  toolName = null;
+  strokeColor = "#000000";
+  fillColor = "#000000";
+
+  lineWidths = {
+    brush: 1,
+    rect: 1,
+    circle: 1,
+    eraser: 10,
+    line: 1
+  };
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setTool(tool, toolNameOverride) {
+    this.tool?.destroyEvents?.();
+    this.tool = tool;
+    this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
+
+    this.tool.setStrokeColor?.(this.strokeColor);
+    this.tool.setFillColor?.(this.fillColor);
+
+    const savedWidth = this.lineWidths[this.toolName] ?? 1;
+    this.tool.setLineWidth?.(savedWidth);
+
+    this.tool.listen?.();
+  }
+
+  setLineWidth(lineWidth) {
+    if (this.tool && this.toolName) {
+      this.tool.setLineWidth?.(lineWidth);
+      this.lineWidths[this.toolName] = lineWidth;
+    }
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+    this.tool?.setStrokeColor?.(color);
+  }
+
+  setFillColor(color) {
+    this.fillColor = color;
+    this.tool?.setFillColor?.(color);
+  }
+}
+
+export default new ToolState();
+
+
+
+
+---
+File: /client/src/styles/app.scss
+---
+
+@import "./variables";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+   
+  background-color: #aaaaaa !important;
+}
+
+.app {
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
+  background-color: $background-color !important;
+}
+
+
+
+---
+File: /client/src/styles/canvas.scss
+---
+
+@import "./variables";
+
+.canvas {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;  /* Добавляем вертикальное расположение */
+  justify-content: center;
+  align-items: center;
+}
+
+
+canvas {
+  cursor: crosshair; /* Базовый стиль курсора для холста */
+  border: 1px solid black;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  background-color: white;
+  margin-top: 80px;
+  margin-bottom: 10px;
+  touch-action: none;
+}
+
+canvas.rect-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.circle-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.line-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.brush-cursor {
+  cursor: url('../assets/img/brush.png') 0 25, auto; 
+}
+
+canvas.eraser-cursor {
+  cursor: url('../assets/img/eraser.png') 0 25, auto; 
+}
+
+button {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  background: linear-gradient(135deg, #ffcc00, #ff6699); /* Градиентный фон */
+  border: none; /* Убираем стандартные границы */
+  border-radius: 10px; /* Закругленные углы */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  color: white; /* Цвет текста */
+  font-size: 18px; /* Размер шрифта */
+  padding: 5px 10px; /* Внутренние отступы */
+  cursor: pointer; /* Указатель мыши для интерактивности */
+  transition: all 0.3s ease; /* Плавность переходов */
+}
+
+button:hover {
+  transform: scale(1.05); /* Увеличение при наведении */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Более заметная тень */
+}
+
+button:active {
+  transform: scale(0.9); /* Сжатие при нажатии */
+}
+
+.btn-close {
+  position: absolute;
+  top: 10px; /* Расположение сверху */
+  right: 10px; /* Расположение справа */
+  width: 30px; /* Размер кнопки */
+  height: 30px; /* Размер кнопки */
+  background: transparent; /* Без фона */
+  border: none; /* Убираем стандартные границы */
+  cursor: pointer; /* Указатель мыши */
+}
+
+.btn-close::before, .btn-close::after {
+  content: '';
+  position: absolute;
+  width: 20px; /* Длина линии */
+  height: 3px; /* Толщина линии */
+  background-color: #ffcc00; /* Цвет линий */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg); /* Первая линия */
+}
+
+.btn-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg); /* Вторая линия */
+}
+
+.btn-close:hover::before, .btn-close:hover::after {
+  background-color: #ff6699; /* Цвет линий меняется на золотистый */
+  transition: background-color 0.3s ease;
+}
+
+.modal-content {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  background: #676767c3; 
+  border-radius: 10px; /* Округлые углы */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Тень для объема */
+  padding: 20px; /* Внутренние отступы */
+}
+
+.modal-header {
+  font-size: 15px;
+  color: #ffcc00; /* Яркий акцент цвета */
+  display: flex;
+  justify-content: center;
+}
+
+
+
+.modal-footer button {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  background: #ffcc00; /* Яркий фон кнопки */
+  color: #333; /* Цвет текста */
+  border-radius: 10px; /* Округление углов */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  transition: all 0.3s ease;
+}
+
+.modal-footer button:hover {
+  transform: scale(1.1); /* Увеличение при наведении */
+  background: #ff6699; /* Смена цвета кнопки */
+}
+
+
+
+
+@media only screen and (max-width: 768px) {
+  canvas {
+    width: 100%; /* Холст занимает всю доступную ширину */
+    height: auto; /* Высота сохраняет пропорции */
+  }
+}
+
+
+
+
+
+---
+File: /client/src/styles/toolbar.scss
+---
+
+@import "./variables";
+
+.toolbar {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  width: 100%;
+  height: $toolbar-height;
+  background-color: #67676759;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  box-shadow: 0 4px 5px gray;
+  z-index: 999;
+  
+
+  &__btn {
+    height: 25px;
+    width: 25px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background-size: cover;
+    margin-left: 10px;
+  }
+
+  .brush {
+    background: url('../assets/img/brush.png') no-repeat center center;
+  }
+  .rect {
+    background: url('../assets/img/rect.png') no-repeat center center;
+  }
+  .circle {
+    background: url('../assets/img/circle.png') no-repeat center center;
+  }
+  .eraser {
+    background: url('../assets/img/eraser.png') no-repeat center center;
+  }
+  .line {
+    background: url('../assets/img/line.png') no-repeat center center;
+  }
+  .undo {
+    margin-left: auto;
+    background: url('../assets/img/undo.png') no-repeat center center;
+  }
+  .redo {
+    background: url('../assets/img/redo.png') no-repeat center center;
+  }
+  .save {
+    background: url('../assets/img/save.png') no-repeat center center;
+    margin-right: 10px;
+  }
+
+  &__btn:active {
+    animation: buttonPress 0.2s ease-out;
+  }
+
+  &__btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    background-color: #ffd700;
+    background-size: cover;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+}
+
+canvas {
+  cursor: crosshair;
+}
+
+canvas.brush-cursor {
+  cursor: url('../assets/img/brush.png'), auto;
+}
+
+canvas.eraser-cursor {
+  cursor: url('../assets/img/eraser.png'), auto;
+}
+
+.setting-bar {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  height: $toolbar-height;
+  background-color: #67676759;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+  box-shadow: 0 4px 5px gray;
+  top: $toolbar-height;
+  gap: 10px;
+  padding: 0 20px;
+  color: #fff;
+  font-size: 14px;
+
+  label {
+    white-space: nowrap;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 200px;
+    height: 15px;
+    background: linear-gradient(to right, #ffcc00, #ff6699);
+    border-radius: 10px;
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: #ff6699;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: #ff6699;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  input[type="range"]::-webkit-slider-thumb:active {
+    animation: bounce 0.3s ease;
+  }
+}
+
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+.undo:focus,
+.redo:focus {
+  outline: none;
+  background-color: transparent;
+}
+
+.toolbar__btn.active {
+  background-color: #ffd700; // постоянный жёлтый фон
+  outline: 1px solid #333;   // тонкая тёмная рамка
+  outline-offset: 1px;
+  box-shadow: none;
+  transform: none;
+}
+
+
+
+---
+File: /client/src/styles/variables.scss
+---
+
+$background-color: #aaaaaa;
+$toolbar-height:40px;
+
+
+
+---
+File: /client/src/tools/Brush.js
+---
+
+import Tool from "./Tool";
+import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
+
+export default class Brush extends Tool {
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
+    this.strokeColor = "#000000";
+    this.lineWidth = 1;
+    this.mouseDown = false;
+    this.points = [];
+    this._touchStartHandler = this.touchStartHandler.bind(this);
+    this._touchMoveHandler = this.touchMoveHandler.bind(this);
+    this._touchEndHandler = this.touchEndHandler.bind(this);
+    makeAutoObservable(this);
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+
+    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this._touchEndHandler);
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
+
+    this.drawLocally(x, y, true);
+    this.sendDrawData(x, y, true);
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    this.drawLocally(x, y, false);
+    this.sendDrawData(x, y, false);
+  }
+
+  mouseUpHandler() {
+    this.mouseDown = false;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" }
+      }));
+    }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+
+    this.ctx.strokeStyle = this.strokeColor;
+    this.ctx.lineWidth = this.lineWidth;
+
+    this.drawLocally(x, y, true);
+    this.sendDrawData(x, y, true);
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+
+    this.drawLocally(x, y, false);
+    this.sendDrawData(x, y, false);
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" }
+      }));
+    }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
+  }
+
+  sendDrawData(x, y, isStart = false) {
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "brush",
+          x,
+          y,
+          lineWidth,
+          strokeStyle,
+          isStart,
+          username: this.username
+        }
+      }));
+    }
+  }
+
+  drawLocally(x, y, isStart = false) {
+    const ctx = this.ctx;
+    const username = this.username;
+    const strokeStyle = this.strokeColor;
+    const lineWidth = this.lineWidth;
+
+    ctx.save();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (!window._localUserState) window._localUserState = {};
+
+    if (isStart || !window._localUserState[username]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    } else {
+      const userState = window._localUserState[username];
+      ctx.beginPath();
+      ctx.moveTo(userState.lastX, userState.lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    }
+
+    ctx.restore();
+  }
+}
+
+
+
+---
+File: /client/src/tools/Circle.js
+---
+
+import Tool from "./Tool";
+import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
+
+export default class Circle extends Tool {
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
+    this.strokeColor = "#000000";
+    this.lineWidth = 1;
+    this.mouseDown = false;
+    makeAutoObservable(this);
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.ontouchstart = this.touchStartHandler.bind(this);
+    this.canvas.ontouchmove = this.touchMoveHandler.bind(this); // ✅ добавлено
+    this.canvas.ontouchend = this.touchEndHandler.bind(this);
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
+    };
+  }
+
+  mouseUpHandler(e) {
+    this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
+
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "circle",
+        x: this.startX,
+        y: this.startY,
+        radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username,
+      },
+    }));
+
+    if (this.username === canvasState.username) {
+  const radius = Math.sqrt(
+    Math.pow(currentX - this.startX, 2) + Math.pow(currentY - this.startY, 2)
+  );
+
+  canvasState.addFigure({
+    type: "circle",
+    x: this.startX,
+    y: this.startY,
+    radius,
+    strokeStyle: this.strokeColor,
+    lineWidth: this.lineWidth
+  });
+}
+
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.touches[0].clientX - rect.left;
+    this.startY = e.touches[0].clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.touches[0].clientX - rect.left;
+    const currentY = e.touches[0].clientY - rect.top;
+    const radius = Math.sqrt((currentX - this.startX) ** 2 + (currentY - this.startY) ** 2);
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
+    };
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    const endX = e.changedTouches[0].clientX - rect.left;
+    const endY = e.changedTouches[0].clientY - rect.top;
+    const radius = Math.sqrt((endX - this.startX) ** 2 + (endY - this.startY) ** 2);
+
+    canvasState.pushToUndo(this.canvas.toDataURL());
+    Circle.staticDraw(this.ctx, this.startX, this.startY, radius, this.strokeColor, this.lineWidth);
+
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "circle",
+        x: this.startX,
+        y: this.startY,
+        radius,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username,
+      },
+    }));
+  }
+
+  static staticDraw(ctx, x, y, radius, strokeStyle, lineWidth) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+  }
+}
+
+
+
+
+---
+File: /client/src/tools/Eraser.js
+---
+
+import Tool from "./Tool";
+import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
+
+export default class Eraser extends Tool {
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
+    this.lineWidth = 10;
+    this.mouseDown = false;
+    this._touchStartHandler = this.touchStartHandler.bind(this);
+    this._touchMoveHandler = this.touchMoveHandler.bind(this);
+    this._touchEndHandler = this.touchEndHandler.bind(this);
+    makeAutoObservable(this);
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
+    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
+    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+
+    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this._touchEndHandler);
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    this.drawLocally(x, y, true);
+    this.sendDrawData(x, y, true);
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    this.drawLocally(x, y, false);
+    this.sendDrawData(x, y, false);
+  }
+
+  mouseUpHandler() {
+    this.mouseDown = false;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" }
+      }));
+    }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+
+    this.drawLocally(x, y, true);
+    this.sendDrawData(x, y, true);
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+
+    this.drawLocally(x, y, false);
+    this.sendDrawData(x, y, false);
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        figure: { type: "finish" }
+      }));
+    }
+
+    if (window._localUserState) {
+      delete window._localUserState[this.username];
+    }
+  }
+
+  sendDrawData(x, y, isStart = false) {
+    const lineWidth = this.lineWidth;
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "eraser",
+          x,
+          y,
+          lineWidth,
+          isStart,
+          username: this.username
+        }
+      }));
+    }
+  }
+
+  drawLocally(x, y, isStart = false) {
+    const ctx = this.ctx;
+    const username = this.username;
+    const lineWidth = this.lineWidth;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (!window._localUserState) window._localUserState = {};
+
+    if (isStart || !window._localUserState[username]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    } else {
+      const userState = window._localUserState[username];
+      ctx.beginPath();
+      ctx.moveTo(userState.lastX, userState.lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
+    }
+
+    ctx.restore();
+  }
+}
+
+
+
+---
+File: /client/src/tools/Line.js
+---
+
+import Tool from "./Tool";
+import canvasState from "../store/canvasState";
+import toolState from "../store/toolState";
+import { makeAutoObservable } from "mobx";
+
+
+export default class Line extends Tool {
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
+    this.strokeColor = "#000000"
+    this.destroyEvents();
+    this.listen();
+    makeAutoObservable(this);
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.ontouchstart = this.touchStartHandler.bind(this);
+    this.canvas.ontouchmove = this.touchMoveHandler.bind(this);
+    this.canvas.ontouchend = this.touchEndHandler.bind(this);
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  mouseUpHandler(e) {
+    this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    const endX = e.clientX - rect.left;
+    const endY = e.clientY - rect.top;
+
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "line",
+          x1: this.startX,
+          y1: this.startY,
+          x2: endX,
+          y2: endY,
+          strokeStyle: this.strokeColor,
+          lineWidth: this.lineWidth,
+          username: this.username,
+        },
+      })
+    );
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: this.endX,
+        y2: this.endY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const endX = e.clientX - rect.left;
+    const endY = e.clientY - rect.top;
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Line.staticDraw(this.ctx, this.startX, this.startY, endX, endY, this.strokeColor, this.lineWidth);
+    };
+
+
+    if (this.username === canvasState.username) {
+      canvasState.addFigure({
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: currentX,
+        y2: currentY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth
+      });
+    }
+
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.touches[0].clientX - rect.left;
+    this.startY = e.touches[0].clientY - rect.top;
+    this.currentX = this.startX;
+    this.currentY = this.startY;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    this.currentX = e.touches[0].clientX - rect.left;
+    this.currentY = e.touches[0].clientY - rect.top;
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Line.staticDraw(this.ctx, this.startX, this.startY, this.currentX, this.currentY, this.strokeColor, this.lineWidth);
+    };
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    this.socket.send(
+      JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: {
+          type: "line",
+          x1: this.startX,
+          y1: this.startY,
+          x2: this.currentX,
+          y2: this.currentY,
+          strokeStyle: this.strokeColor,
+          lineWidth: this.lineWidth,
+          username: this.username,
+        },
+      })
+    );
+
+    canvasState.pushToUndo({
+      type: "draw",
+      figure: {
+        type: "line",
+        x1: this.startX,
+        y1: this.startY,
+        x2: this.endX,
+        y2: this.endY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username
+      }
+    });
+
+  }
+
+  static staticDraw(ctx, x1, y1, x2, y2, strokeStyle, lineWidth) {
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = strokeStyle;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
+
+
+
+---
+File: /client/src/tools/Rect.js
+---
+
+import Tool from "./Tool";
+import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
+
+export default class Rect extends Tool {
+  constructor(canvas, socket, id, username) {
+    super(canvas, socket, id, username);
+    this.strokeColor = "#000000";
+    this.lineWidth = 1;
+    this.mouseDown = false;
+    makeAutoObservable(this);
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
+  listen() {
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.ontouchstart = this.touchStartHandler.bind(this);
+    this.canvas.ontouchmove = this.touchMoveHandler.bind(this); // ✅ добавлено
+    this.canvas.ontouchend = this.touchEndHandler.bind(this);
+  }
+
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+  }
+
+  mouseDownHandler(e) {
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    const width = currentX - this.startX;
+    const height = currentY - this.startY;
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
+    };
+  }
+
+  mouseUpHandler(e) {
+    this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    const width = e.clientX - rect.left - this.startX;
+    const height = e.clientY - rect.top - this.startY;
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    canvasState.pushToUndo(this.canvas.toDataURL());
+
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username,
+      },
+    }));
+
+    if (this.username === canvasState.username) {
+      canvasState.addFigure({
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width: currentX - this.startX,
+        height: currentY - this.startY,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth
+      });
+    }
+
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.touches[0].clientX - rect.left;
+    this.startY = e.touches[0].clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const rect = this.canvas.getBoundingClientRect();
+    const currentX = e.touches[0].clientX - rect.left;
+    const currentY = e.touches[0].clientY - rect.top;
+    const width = currentX - this.startX;
+    const height = currentY - this.startY;
+
+    const img = new Image();
+    img.src = this.saved;
+    img.onload = () => {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.drawImage(img, 0, 0);
+      Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
+    };
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    const rect = this.canvas.getBoundingClientRect();
+    const endX = e.changedTouches[0].clientX - rect.left;
+    const endY = e.changedTouches[0].clientY - rect.top;
+    const width = endX - this.startX;
+    const height = endY - this.startY;
+
+    canvasState.pushToUndo(this.canvas.toDataURL());
+    Rect.staticDraw(this.ctx, this.startX, this.startY, width, height, this.strokeColor, this.lineWidth);
+
+    this.socket.send(JSON.stringify({
+      method: "draw",
+      id: this.id,
+      username: this.username,
+      figure: {
+        type: "rect",
+        x: this.startX,
+        y: this.startY,
+        width,
+        height,
+        strokeStyle: this.strokeColor,
+        lineWidth: this.lineWidth,
+        username: this.username,
+      },
+    }));
+  }
+
+  static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.stroke();
+  }
+}
+
+
+
+---
+File: /client/src/tools/Tool.js
+---
+
+import toolState from "../store/toolState";
+
+export default class Tool {
+  constructor(canvas, socket, id, username) {
+    this.canvas = canvas;
+    this.socket = socket;
+    this.id = id;
+    this.username = username;
+    this.ctx = canvas.getContext("2d");
+
+    // ✅ Устанавливаем настройки по умолчанию
+    this.color = toolState.color;
+    this.strokeColor = toolState.color;
+    this.fillColor = toolState.color;
+   const toolName = this.constructor.name.toLowerCase();
+this.lineWidth = toolState.lineWidths[toolName] ?? 1;
+
+    this.mouseDown = false;
+  }
+
+  // ✅ Очищаем события, включая addEventListener
+  destroyEvents() {
+    this.canvas.onmousedown = null;
+    this.canvas.onmouseup = null;
+    this.canvas.onmousemove = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+
+    if (typeof this.removeTouchEvents === "function") {
+      this.removeTouchEvents();
+    }
+  }
+}
+
+
+
+
+---
+File: /client/src/App.jsx
+---
+
+import React from 'react';
+import "./styles/app.scss"
+import SettingBar from "./components/SettingBar";
+import Toolbar from "./components/Toolbar";
+import Canvas from "./components/Canvas";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+
+const App = () => {
+    return (
+        <Routes>
+            <Route path='/' element={
+                <>
+                    <Toolbar />
+                    <SettingBar />
+                    <Canvas />
+                </>
+            } />
+            <Route path='/:id'>
+                <Route path="home" />
+            </Route>
+        </Routes>
+        // <Routes>
+        //     <Route path='/:id' element={
+        //         <>
+        //             <Toolbar />
+        //             <SettingBar />
+        //             <Canvas />
+        //         </>
+        //     } />
+        //     <Route path='/' element={
+        //         <Navigate to={`f${(+new Date).toString(16)}`} />
+        //     }
+        //     />
+        // </Routes>
+
+
+    );
+};
+
+export default App;
+
+
+---
+File: /client/src/index.jsx
+---
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import {BrowserRouter} from 'react-router-dom';
+
+const root = ReactDOM.createRoot( document.getElementById('root'));
+root.render(
+  <BrowserRouter>
+  <App />
+  </BrowserRouter>
+);
+
+
+
+
+---
+File: /client/package.json
+---
+
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^0.27.2",
+    "bootstrap": "^5.3.3",
+    "mobx": "^6.0.4",
+    "mobx-react-lite": "^3.1.6",
+    "react": "^18.3.1",
+    "react-bootstrap": "^2.4.3",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.4.3",
+    "react-scripts": "5.0.1",
+    "sass": "^1.81.0", 
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+
+
+
+---
+File: /server/index.js
+---
+
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const WSServer = require('express-ws')(app);
+const aWss = WSServer.getWss();
+const PORT = process.env.PORT || 5000;
+const fs = require('fs');
+const path = require('path');
+
+app.use(cors({
+    origin: ['https://paint-art.ru', 'https://paint-art.ru/', 'http://localhost:3000', 'http://localhost:3001', 'https://localhost:3000', 'https://localhost:3001']
+}));
+app.use(express.json({ limit: '10mb' })); 
+
+app.ws('/', (ws, req) => {
+    ws.on('message', (msg) => {
+        msg = JSON.parse(msg);
+        switch (msg.method) {
+            case "connection":
+                connectionHandler(ws, msg);
+                break;
+            case "draw":
+                broadcastConnection(ws, msg);
+                break;
+        }
+    });
+});
+
+app.post('/image', (req, res) => {
+    try {
+        const data = req.body.img.replace(`data:image/png;base64,`, '');
+        fs.writeFileSync(path.resolve(__dirname, 'files', `${req.query.id}.jpg`), data, 'base64');
+        return res.status(200).json({message: "Загружено"});
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json('error');
+    }
+});
+app.get('/image', (req, res) => {
+    try {
+        const file = fs.readFileSync(path.resolve(__dirname, 'files', `${req.query.id}.jpg`));
+        const data = `data:image/png;base64,` + file.toString('base64');
+        res.json(data);
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json('error');
+    }
+});
+
+app.listen(PORT, () => console.log(`server started on PORT ${PORT}`));
+
+const connectionHandler = (ws, msg) => {
+    ws.id = msg.id;
+    ws.username = msg.username;
+    broadcastConnection(ws, msg);
+};
+
+const broadcastConnection = (ws, msg) => {
+    aWss.clients.forEach(client => {
+        if (client.id === msg.id) {
+            if (!msg.username) {
+                msg.username = ws.username;
+            }
+            client.send(JSON.stringify(msg));
+        }
+    });
+};
+
+
+
+
+---
+File: /server/package.json
+---
+
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "express-ws": "^4.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
+
+
+
+---
+File: /package.json
+---
+
+{
+  "name": "paint_online",
+  "version": "1.0.0",
+  "description": "## для запуска клиента NPM START ## для запуска сервера NPM RUN DEV",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "hennadz",
+  "license": "ISC"
+}
+
