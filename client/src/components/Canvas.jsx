@@ -112,12 +112,6 @@ const Canvas = observer(() => {
           case "connection":
             setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
             break;
-          case "undo":
-            undoHandler(msg);
-            break;
-          case "redo":
-            redoHandler(msg);
-            break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
@@ -222,6 +216,26 @@ const Canvas = observer(() => {
         activeUsersRef.current.delete(username);
         break;
 
+      case "undo":
+        // Handle undo from other users
+        const undoImg = new Image();
+        undoImg.src = figure.dataURL;
+        undoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
+
+      case "redo":
+        // Handle redo from other users
+        const redoImg = new Image();
+        redoImg.src = figure.dataURL;
+        redoImg.onload = () => {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        };
+        break;
+
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
     }
@@ -230,25 +244,7 @@ const Canvas = observer(() => {
     ctx.restore();
   };
 
-  const undoHandler = (msg) => {
-    const ctx = canvasRef.current.getContext("2d");
-    const img = new Image();
-    img.src = msg.dataURL;
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
-  };
 
-  const redoHandler = (msg) => {
-    const ctx = canvasRef.current.getContext("2d");
-    const img = new Image();
-    img.src = msg.dataURL;
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
-  };
 
   const connectHandler = () => {
     const username = usernameRef.current.value.trim();
