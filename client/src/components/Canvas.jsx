@@ -63,6 +63,16 @@ const Canvas = observer(() => {
       if (layer && !canvasContainer.contains(layer)) {
         canvasContainer.appendChild(layer);
       }
+      // Синхронизируем размеры слоя с основным холстом
+      const resizeLayer = () => {
+        if (layer) {
+          layer.width = canvasRef.current.width;
+          layer.height = canvasRef.current.height;
+        }
+      };
+      resizeLayer();
+      window.addEventListener("resize", resizeLayer);
+      return () => window.removeEventListener("resize", resizeLayer);
     }
   }, [canvasState.username]);
 

@@ -38,9 +38,10 @@ class CanvasState {
             layer.width = this.canvas.width;
             layer.height = this.canvas.height;
             layer.style.position = 'absolute';
-            layer.style.top = '0';
+            layer.style.top = '80px'; // совпадает с margin-top основного холста
             layer.style.left = '0';
             layer.style.pointerEvents = 'none'; // слой не перехватывает события мыши
+            layer.style.zIndex = '1'; // слой поверх основного холста
             this.layers.set(username, layer);
         }
         return this.layers.get(username);
