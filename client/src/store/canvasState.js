@@ -8,6 +8,8 @@ class CanvasState {
     undoList = []
     redoList = []
     username = ""
+    layers = new Map() // username -> canvas element
+    currentLayer = null
 
     constructor() {
   makeAutoObservable(this, {
@@ -30,6 +32,28 @@ class CanvasState {
         this.canvas = canvas
     }
 
+    createLayer(username) {
+        if (!this.layers.has(username)) {
+            const layer = document.createElement('canvas');
+            layer.width = this.canvas.width;
+            layer.height = this.canvas.height;
+            layer.style.position = 'absolute';
+            layer.style.top = '0';
+            layer.style.left = '0';
+            layer.style.pointerEvents = 'none'; // слой не перехватывает события мыши
+            this.layers.set(username, layer);
+        }
+        return this.layers.get(username);
+    }
+
+    setCurrentLayer(layer) {
+        this.currentLayer = layer;
+    }
+
+    getLayer(username) {
+        return this.layers.get(username);
+    }
+
     pushToUndo(data) {
         this.undoList.push(data)
     }
@@ -39,15 +63,15 @@ class CanvasState {
     }
 
     undo() {
-        let ctx = this.canvas.getContext('2d')
         if (this.undoList.length > 0) {
             let dataUrl = this.undoList.pop()
-            this.redoList.push(this.canvas.toDataURL())
+            this.redoList.push(this.currentLayer.toDataURL())
             let img = new Image()
             img.src = dataUrl
             img.onload =  () => {
-                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+                const ctx = this.currentLayer.getContext('2d')
+                ctx.clearRect(0,0, this.currentLayer.width, this.currentLayer.height)
+                ctx.drawImage(img, 0, 0, this.currentLayer.width, this.currentLayer.height)
             }
             // Send undo to other users via draw message
             if (this.socket) {
@@ -63,20 +87,21 @@ class CanvasState {
                 }));
             }
         } else {
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+            const ctx = this.currentLayer.getContext('2d')
+            ctx.clearRect(0, 0, this.currentLayer.width, this.currentLayer.height)
         }
     }
 
     redo() {
-        let ctx = this.canvas.getContext('2d')
         if (this.redoList.length > 0) {
             let dataUrl = this.redoList.pop()
-            this.undoList.push(this.canvas.toDataURL())
+            this.undoList.push(this.currentLayer.toDataURL())
             let img = new Image()
             img.src = dataUrl
             img.onload =  () => {
-                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
+                const ctx = this.currentLayer.getContext('2d')
+                ctx.clearRect(0,0, this.currentLayer.width, this.currentLayer.height)
+                ctx.drawImage(img, 0, 0, this.currentLayer.width, this.currentLayer.height)
             }
             // Send redo to other users via draw message
             if (this.socket) {

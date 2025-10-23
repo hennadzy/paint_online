@@ -55,6 +55,18 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
+    if (canvasState.username) {
+      const layer = canvasState.createLayer(canvasState.username);
+      canvasState.setCurrentLayer(layer);
+      // Добавляем слой в DOM
+      const canvasContainer = canvasRef.current.parentElement;
+      if (layer && !canvasContainer.contains(layer)) {
+        canvasContainer.appendChild(layer);
+      }
+    }
+  }, [canvasState.username]);
+
+  useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
     if (params.id) {
@@ -140,31 +152,36 @@ const Canvas = observer(() => {
 
     switch (figure.type) {
       case "brush":
-        ctx.strokeStyle = figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || 1;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
+        // Рисуем на слое пользователя
+        const userLayer = canvasState.getLayer(username);
+        if (userLayer) {
+          const layerCtx = userLayer.getContext("2d");
+          layerCtx.strokeStyle = figure.strokeStyle || "#000000";
+          layerCtx.lineWidth = figure.lineWidth || 1;
+          layerCtx.lineCap = "round";
+          layerCtx.lineJoin = "round";
 
-        if (figure.isStart) {
-          // ⭐️ ВСЕГДА начинаем новый путь при isStart
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
-            // Продолжаем линию от последней позиции
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
-            // Обновляем позицию
+          if (figure.isStart) {
+            // ⭐️ ВСЕГДА начинаем новый путь при isStart
+            layerCtx.beginPath();
+            layerCtx.moveTo(figure.x, figure.y);
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
-            // Если нет активного состояния - начинаем новый путь
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            const userState = activeUsersRef.current.get(username);
+            if (userState && userState.isDrawing) {
+              // Продолжаем линию от последней позиции
+              layerCtx.beginPath();
+              layerCtx.moveTo(userState.lastX, userState.lastY);
+              layerCtx.lineTo(figure.x, figure.y);
+              layerCtx.stroke();
+              // Обновляем позицию
+              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            } else {
+              // Если нет активного состояния - начинаем новый путь
+              layerCtx.beginPath();
+              layerCtx.moveTo(figure.x, figure.y);
+              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            }
           }
         }
         break;
@@ -217,23 +234,31 @@ const Canvas = observer(() => {
         break;
 
       case "undo":
-        // Handle undo from other users - show to all users
-        const undoImg = new Image();
-        undoImg.src = figure.dataURL;
-        undoImg.onload = () => {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        };
+        // Undo влияет только на слой пользователя, отправившего undo
+        const undoLayer = canvasState.getLayer(username);
+        if (undoLayer) {
+          const undoImg = new Image();
+          undoImg.src = figure.dataURL;
+          undoImg.onload = () => {
+            const layerCtx = undoLayer.getContext("2d");
+            layerCtx.clearRect(0, 0, undoLayer.width, undoLayer.height);
+            layerCtx.drawImage(undoImg, 0, 0, undoLayer.width, undoLayer.height);
+          };
+        }
         break;
 
       case "redo":
-        // Handle redo from other users - show to all users
-        const redoImg = new Image();
-        redoImg.src = figure.dataURL;
-        redoImg.onload = () => {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        };
+        // Redo влияет только на слой пользователя, отправившего redo
+        const redoLayer = canvasState.getLayer(username);
+        if (redoLayer) {
+          const redoImg = new Image();
+          redoImg.src = figure.dataURL;
+          redoImg.onload = () => {
+            const layerCtx = redoLayer.getContext("2d");
+            layerCtx.clearRect(0, 0, redoLayer.width, redoLayer.height);
+            layerCtx.drawImage(redoImg, 0, 0, redoLayer.width, redoLayer.height);
+          };
+        }
         break;
 
       default:

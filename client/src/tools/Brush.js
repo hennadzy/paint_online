@@ -45,14 +45,14 @@ export default class Brush extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
+    canvasState.pushToUndo(this.layer.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
+    this.layerCtx.strokeStyle = this.strokeColor;
+    this.layerCtx.lineWidth = this.lineWidth;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
@@ -88,14 +88,14 @@ export default class Brush extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
+    canvasState.pushToUndo(this.layer.toDataURL());
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    this.ctx.strokeStyle = this.strokeColor;
-    this.ctx.lineWidth = this.lineWidth;
+    this.layerCtx.strokeStyle = this.strokeColor;
+    this.layerCtx.lineWidth = this.lineWidth;
 
     this.drawLocally(x, y, true);
     this.sendDrawData(x, y, true);
@@ -153,7 +153,7 @@ export default class Brush extends Tool {
   }
 
   drawLocally(x, y, isStart = false) {
-    const ctx = this.ctx;
+    const ctx = this.layerCtx;
     const username = this.username;
     const strokeStyle = this.strokeColor;
     const lineWidth = this.lineWidth;
