@@ -197,44 +197,61 @@ const Canvas = observer(() => {
         break;
 
       case "eraser":
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = figure.lineWidth || 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
+        // Рисуем ластиком на слое пользователя
+        const eraserLayer = canvasState.getLayer(username);
+        if (eraserLayer) {
+          const layerCtx = eraserLayer.getContext("2d");
+          layerCtx.globalCompositeOperation = "destination-out";
+          layerCtx.lineWidth = figure.lineWidth || 10;
+          layerCtx.lineCap = "round";
+          layerCtx.lineJoin = "round";
 
-        if (figure.isStart) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
+          if (figure.isStart) {
+            layerCtx.beginPath();
+            layerCtx.moveTo(figure.x, figure.y);
             activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
           } else {
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            const userState = activeUsersRef.current.get(username);
+            if (userState && userState.isDrawing) {
+              layerCtx.beginPath();
+              layerCtx.moveTo(userState.lastX, userState.lastY);
+              layerCtx.lineTo(figure.x, figure.y);
+              layerCtx.stroke();
+              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            } else {
+              layerCtx.beginPath();
+              layerCtx.moveTo(figure.x, figure.y);
+              activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
+            }
           }
         }
         break;
 
       case "rect":
-        ctx.beginPath();
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        // Рисуем прямоугольник на слое пользователя
+        const rectLayer = canvasState.getLayer(username);
+        if (rectLayer) {
+          const layerCtx = rectLayer.getContext("2d");
+          Rect.staticDraw(layerCtx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
+        }
         break;
 
       case "circle":
-        ctx.beginPath();
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        // Рисуем круг на слое пользователя
+        const circleLayer = canvasState.getLayer(username);
+        if (circleLayer) {
+          const layerCtx = circleLayer.getContext("2d");
+          Circle.staticDraw(layerCtx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
+        }
         break;
 
       case "line":
-        ctx.beginPath();
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        // Рисуем линию на слое пользователя
+        const lineLayer = canvasState.getLayer(username);
+        if (lineLayer) {
+          const layerCtx = lineLayer.getContext("2d");
+          Line.staticDraw(layerCtx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        }
         break;
 
       case "finish":
