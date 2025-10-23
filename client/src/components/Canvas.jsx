@@ -358,7 +358,7 @@ const Canvas = observer(() => {
       />
 
       {!isRoomCreated && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "20px", position: "relative", zIndex: 10 }}>
           Создать комнату
         </Button>
       )}
