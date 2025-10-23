@@ -12,7 +12,8 @@
 .main-canvas {
   position: absolute;
   top: 80px;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 0;
   margin-bottom: 10px;
 }
@@ -20,7 +21,8 @@
 .canvas canvas:not(.main-canvas) {
   position: absolute;
   top: 80px;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
   pointer-events: none;
 }
@@ -147,6 +149,14 @@ button:active {
   canvas {
     width: 100%; /* Холст занимает всю доступную ширину */
     height: auto; /* Высота сохраняет пропорции */
+  }
+
+  .main-canvas {
+    top: 120px; /* Сдвигаем ниже для мобильных устройств */
+  }
+
+  .canvas canvas:not(.main-canvas) {
+    top: 120px; /* Сдвигаем ниже для мобильных устройств */
   }
 }
 

@@ -125,6 +125,8 @@ const Canvas = observer(() => {
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+        console.log("Received message:", msg); // Добавляем логирование для отладки
+
         if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
@@ -154,6 +156,8 @@ const Canvas = observer(() => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
     const username = msg.username;
+
+    console.log("Drawing for user:", username, "figure:", figure); // Добавляем логирование
 
     if (!msg.username || msg.username === canvasState.username) return;
 
