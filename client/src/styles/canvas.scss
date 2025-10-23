@@ -1,13 +1,11 @@
 @import "./variables";
 
 .canvas {
-  position: relative;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;  /* Добавляем вертикальное расположение */
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
-  padding-top: 20px;
 }
 
 
@@ -16,7 +14,7 @@ canvas {
   border: 1px solid black;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   background-color: white;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   touch-action: none;
 }
 
@@ -131,10 +129,6 @@ button:active {
   canvas {
     width: 100%; /* Холст занимает всю доступную ширину */
     height: auto; /* Высота сохраняет пропорции */
-  }
-
-  .canvas {
-    padding-bottom: 80px; /* Добавляем больший отступ снизу для кнопки на мобильных */
   }
 }
 
