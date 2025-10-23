@@ -1,5 +1,4 @@
 import toolState from "../store/toolState";
-import canvasState from "../store/canvasState";
 
 export default class Tool {
   constructor(canvas, socket, id, username) {
@@ -17,11 +16,7 @@ export default class Tool {
 this.lineWidth = toolState.lineWidths[toolName] ?? 1;
 
     this.mouseDown = false;
-    this.layer = canvasState.getLayer(username); // используем слой пользователя
-    this.layerCtx = this.layer ? this.layer.getContext("2d") : this.ctx;
   }
-
-  
 
   // ✅ Очищаем события, включая addEventListener
   destroyEvents() {
@@ -37,4 +32,3 @@ this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     }
   }
 }
-

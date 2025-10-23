@@ -164,4 +164,3 @@ export default class Circle extends Tool {
     ctx.stroke();
   }
 }
-

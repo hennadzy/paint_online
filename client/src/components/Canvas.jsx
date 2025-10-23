@@ -17,8 +17,8 @@ const Canvas = observer(() => {
   const canvasRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
-
-
+  const [messages, setMessages] = useState([]);
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
   
   // ⭐️ Используем useRef для синхронного доступа к состоянию
   const activeUsersRef = useRef(new Map());
@@ -109,7 +109,9 @@ const Canvas = observer(() => {
           case "draw":
             drawHandler(msg);
             break;
-
+          case "connection":
+            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+            break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
@@ -261,7 +263,10 @@ const Canvas = observer(() => {
     });
   };
 
-
+  const handleCreateRoomClick = () => {
+    setModal(true);
+    setIsRoomCreated(true);
+  };
 
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -296,12 +301,19 @@ const Canvas = observer(() => {
         onMouseDown={mouseDownHandler}
       />
 
+      {!isRoomCreated && (
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+          Создать комнату
+        </Button>
+      )}
 
-
-
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
+        {messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+      </div>
     </div>
   );
 });
 
 export default Canvas;
-
