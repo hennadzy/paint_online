@@ -1,3 +1,6 @@
+import { makeAutoObservable } from "mobx";
+
+
 class CanvasState {
   layers = new Map(); // username → canvas
   undoStacks = new Map(); // username → [dataURL]
