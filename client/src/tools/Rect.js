@@ -6,6 +6,8 @@ export default class Rect extends Tool {
     super(canvas, socket, id, username);
     this.startX = 0;
     this.startY = 0;
+    this.currentX = 0;
+    this.currentY = 0;
     this.saved = null;
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
@@ -48,24 +50,10 @@ export default class Rect extends Tool {
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
-    const width = x - this.startX;
-    const height = y - this.startY;
+    this.currentX = e.pageX - this.canvas.offsetLeft;
+    this.currentY = e.pageY - this.canvas.offsetTop;
 
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      const ctx = this.canvas.getContext("2d");
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
-
-      ctx.beginPath();
-      ctx.strokeStyle = this.strokeStyle;
-      ctx.lineWidth = this.lineWidth;
-      ctx.rect(this.startX, this.startY, width, height);
-      ctx.stroke();
-    };
+    this.drawPreview();
   }
 
   touchStartHandler(e) {
@@ -83,10 +71,15 @@ export default class Rect extends Tool {
     if (!this.mouseDown) return;
 
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
-    const width = x - this.startX;
-    const height = y - this.startY;
+    this.currentX = touch.pageX - this.canvas.offsetLeft;
+    this.currentY = touch.pageY - this.canvas.offsetTop;
+
+    this.drawPreview();
+  }
+
+  drawPreview() {
+    const width = this.currentX - this.startX;
+    const height = this.currentY - this.startY;
 
     const img = new Image();
     img.src = this.saved;
@@ -104,17 +97,15 @@ export default class Rect extends Tool {
   }
 
   commitStroke() {
-    canvasState.isDrawing = false;
+    if (!this.saved) return;
 
-    const x = this.startX;
-    const y = this.startY;
-    const width = this.lastX - this.startX;
-    const height = this.lastY - this.startY;
+    const width = this.currentX - this.startX;
+    const height = this.currentY - this.startY;
 
     const stroke = {
       type: "rect",
-      x,
-      y,
+      x: this.startX,
+      y: this.startY,
       width,
       height,
       strokeStyle: this.strokeStyle,
@@ -134,13 +125,7 @@ export default class Rect extends Tool {
     }
 
     this.mouseDown = false;
-  }
-
-  get lastX() {
-    return this.canvas.width; // fallback if not set
-  }
-
-  get lastY() {
-    return this.canvas.height;
+    canvasState.isDrawing = false;
+    this.saved = null;
   }
 }
