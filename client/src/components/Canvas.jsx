@@ -2,83 +2,24 @@ import React, { useEffect, useRef, useState } from "react";
 import { Modal, Button } from "react-bootstrap";
 import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import canvasState from "../store/canvasState";
-import Toolbar from "./Toolbar";
 import toolState from "../store/toolState";
+import strokeManager from "../store/StrokeManager";
 import Brush from "../tools/Brush";
-import Circle from "../tools/Circle";
-import Rect from "../tools/Rect";
-import Eraser from "../tools/Eraser";
-import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
-  const canvasRef = useRef();
+  const containerRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [isRoomCreated, setIsRoomCreated] = useState(false);
-  
-  // ⭐️ Используем useRef для синхронного доступа к состоянию
-  const activeUsersRef = useRef(new Map());
-  
   const params = useParams();
 
-  const updateCursor = (tool) => {
-    const canvas = canvasRef.current;
-    canvas.classList.remove("brush-cursor", "eraser-cursor");
-    if (tool === "brush") canvas.classList.add("brush-cursor");
-    else if (tool === "eraser") canvas.classList.add("eraser-cursor");
-  };
-
-  const adjustCanvasSize = () => {
-    const canvas = canvasRef.current;
-    const aspectRatio = 600 / 400;
-    if (window.innerWidth < 768) {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerWidth / aspectRatio;
-    } else {
-      canvas.width = 600;
-      canvas.height = 400;
-    }
-    canvasState.setCanvas(canvas);
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  };
-
   useEffect(() => {
-    adjustCanvasSize();
-    window.addEventListener("resize", adjustCanvasSize);
-    return () => window.removeEventListener("resize", adjustCanvasSize);
+    canvasState.setCanvasContainer(containerRef.current);
+    window.addEventListener("resize", resizeAllLayers);
+    return () => window.removeEventListener("resize", resizeAllLayers);
   }, []);
-
-  useEffect(() => {
-    canvasState.setCanvas(canvasRef.current);
-    const ctx = canvasRef.current.getContext("2d");
-    if (params.id) {
-      axios
-        .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
-        .then((response) => {
-          const img = new Image();
-          img.src = response.data;
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-          };
-        })
-        .catch((error) => console.error("Ошибка загрузки изображения:", error));
-    } else {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
-
-    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
-    toolState.setTool(localBrush, "brush");
-    localBrush.listen();
-    updateCursor("brush");
-  }, [params.id]);
 
   useEffect(() => {
     if (canvasState.username) {
@@ -86,19 +27,16 @@ const Canvas = observer(() => {
       canvasState.setSocket(socket);
       canvasState.setSessionId(params.id);
 
-      const brush = new Brush(canvasRef.current, socket, params.id, canvasState.username);
-      toolState.setTool(brush, "brush");
-      brush.listen();
-      updateCursor("brush");
-
       socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
-          })
-        );
+        socket.send(JSON.stringify({
+          id: params.id,
+          username: canvasState.username,
+          method: "connection"
+        }));
+        canvasState.createLayerForUser(canvasState.username);
+        const brush = new Brush(canvasState.currentLayer, socket, params.id, canvasState.username);
+        toolState.setTool(brush, "brush");
+        brush.listen();
       };
 
       socket.onmessage = (event) => {
@@ -106,170 +44,85 @@ const Canvas = observer(() => {
         if (!msg.username || msg.username === canvasState.username) return;
 
         switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
           case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+            canvasState.createLayerForUser(msg.username);
+            setMessages(prev => [...prev, `${msg.username} вошел в комнату`]);
+            break;
+          case "draw":
+            handleDraw(msg);
+            break;
+          case "undo":
+            strokeManager.undo(msg.username);
+            redrawLayer(msg.username);
+            break;
+          case "redo":
+            strokeManager.redo(msg.username);
+            redrawLayer(msg.username);
             break;
           default:
             console.warn("Неизвестный метод:", msg.method);
         }
       };
-
-      socket.onclose = () => {
-        console.log("WebSocket соединение закрыто");
-      };
-
-      socket.onerror = (error) => {
-        console.error("WebSocket ошибка:", error);
-      };
     }
-  }, [canvasState.username, params.id]);
+  }, [canvasState.username]);
 
-  // ⭐️ БОЛЕЕ ПРОСТОЕ И НАДЁЖНОЕ решение
-  const drawHandler = (msg) => {
-    const figure = msg.figure;
-    const ctx = canvasRef.current.getContext("2d");
-    const username = msg.username;
-
-    if (!msg.username || msg.username === canvasState.username) return;
-
-    // ⭐️ Сохраняем состояние контекста для изоляции
-    ctx.save();
-
-    switch (figure.type) {
-      case "brush":
-        ctx.strokeStyle = figure.strokeStyle || "#000000";
-        ctx.lineWidth = figure.lineWidth || 1;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        if (figure.isStart) {
-          // ⭐️ ВСЕГДА начинаем новый путь при isStart
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
-            // Продолжаем линию от последней позиции
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
-            // Обновляем позицию
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-          } else {
-            // Если нет активного состояния - начинаем новый путь
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-          }
-        }
-        break;
-
-      case "eraser":
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = figure.lineWidth || 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        if (figure.isStart) {
-          ctx.beginPath();
-          ctx.moveTo(figure.x, figure.y);
-          activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-        } else {
-          const userState = activeUsersRef.current.get(username);
-          if (userState && userState.isDrawing) {
-            ctx.beginPath();
-            ctx.moveTo(userState.lastX, userState.lastY);
-            ctx.lineTo(figure.x, figure.y);
-            ctx.stroke();
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(figure.x, figure.y);
-            activeUsersRef.current.set(username, { isDrawing: true, lastX: figure.x, lastY: figure.y });
-          }
-        }
-        break;
-
-      case "rect":
-        ctx.beginPath();
-        Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
-        break;
-
-      case "circle":
-        ctx.beginPath();
-        Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
-        break;
-
-      case "line":
-        ctx.beginPath();
-        Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        break;
-
-      case "finish":
-        // ⭐️ Завершаем рисование пользователя
-        ctx.beginPath();
-        activeUsersRef.current.delete(username);
-        break;
-
-      case "undo":
-        // Handle undo from other users - show to all users
-        const undoImg = new Image();
-        undoImg.src = figure.dataURL;
-        undoImg.onload = () => {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(undoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        };
-        break;
-
-      case "redo":
-        // Handle redo from other users - show to all users
-        const redoImg = new Image();
-        redoImg.src = figure.dataURL;
-        redoImg.onload = () => {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(redoImg, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        };
-        break;
-
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
-    }
-
-    // ⭐️ Восстанавливаем состояние контекста
-    ctx.restore();
-  };
-
-
-
-  const connectHandler = () => {
-    const username = usernameRef.current.value.trim();
-    if (username) {
-      canvasState.setUsername(username);
-      setModal(false);
-    } else {
-      alert("Введите ваше имя");
-    }
-  };
-
-  const mouseDownHandler = () => {
-    canvasState.pushToUndo(canvasRef.current.toDataURL());
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
+  const resizeAllLayers = () => {
+    const container = containerRef.current;
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    canvasState.layers.forEach((canvas) => {
+      canvas.width = width;
+      canvas.height = height;
     });
   };
 
-  const handleCreateRoomClick = () => {
-    setModal(true);
-    setIsRoomCreated(true);
+  const handleDraw = (msg) => {
+    const layer = canvasState.getLayer(msg.username);
+    if (!layer) return;
+    const ctx = layer.getContext("2d");
+    const stroke = msg.stroke;
+
+    strokeManager.addStroke(msg.username, stroke);
+    drawStroke(ctx, stroke);
+  };
+
+  const drawStroke = (ctx, stroke) => {
+    ctx.save();
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const points = stroke.points;
+    if (points.length > 0) {
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  const redrawLayer = (username) => {
+    const layer = canvasState.getLayer(username);
+    if (!layer) return;
+    const ctx = layer.getContext("2d");
+    ctx.clearRect(0, 0, layer.width, layer.height);
+    const strokes = strokeManager.getStrokes(username);
+    strokes.forEach((stroke) => drawStroke(ctx, stroke));
+  };
+
+  const connectHandler = () => {
+    const name = usernameRef.current.value.trim();
+    if (name) {
+      canvasState.setUsername(name);
+      setModal(false);
+    }
   };
 
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className="canvas">
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Введите ваше имя</Modal.Title>
@@ -280,37 +133,18 @@ const Canvas = observer(() => {
             autoFocus
             ref={usernameRef}
             placeholder="Ваше имя"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                connectHandler();
-              }
-            }}
+            onKeyDown={(e) => e.key === "Enter" && connectHandler()}
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
-            Войти
-          </Button>
+          <Button variant="secondary" onClick={connectHandler}>Войти</Button>
         </Modal.Footer>
       </Modal>
 
-      <canvas
-        ref={canvasRef}
-        tabIndex={0}
-        style={{ border: "1px solid black" }}
-        onMouseDown={mouseDownHandler}
-      />
-
-      {!isRoomCreated && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
-          Создать комнату
-        </Button>
-      )}
+      <div ref={containerRef} className="canvas-container" style={{ position: "relative", width: "100%", height: "100vh" }} />
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
+        {messages.map((msg, i) => <div key={i}>{msg}</div>)}
       </div>
     </div>
   );

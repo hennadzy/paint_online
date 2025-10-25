@@ -1,99 +1,107 @@
-import { makeAutoObservable, observable } from "mobx";
-
+import { makeAutoObservable } from "mobx";
+import strokeManager from "./StrokeManager";
 
 class CanvasState {
-    canvas = null
-    socket = null
-    sessionid = null
-    undoList = []
-    redoList = []
-    username = ""
+  layers = new Map(); // username → canvas
+  currentLayer = null;
+  canvasContainer = null;
+  socket = null;
+  sessionid = null;
+  username = "";
 
-    constructor() {
-  makeAutoObservable(this, {
-    canvas: observable, // ← теперь canvas реактивен
-  });
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setSessionId(id) {
+    this.sessionid = id;
+  }
+
+  setSocket(socket) {
+    this.socket = socket;
+  }
+
+  setUsername(username) {
+    this.username = username;
+  }
+
+  setCanvasContainer(container) {
+    this.canvasContainer = container;
+  }
+
+  createLayerForUser(username) {
+    if (this.layers.has(username)) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.canvasContainer.offsetWidth;
+    canvas.height = this.canvasContainer.offsetHeight;
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.zIndex = username === this.username ? "10" : "5";
+    canvas.style.pointerEvents = username === this.username ? "auto" : "none";
+    canvas.id = `layer-${username}`;
+
+    this.canvasContainer.appendChild(canvas);
+    this.layers.set(username, canvas);
+
+    if (username === this.username) {
+      this.currentLayer = canvas;
+    }
+  }
+
+  getLayer(username) {
+    return this.layers.get(username);
+  }
+
+  undo() {
+    const removed = strokeManager.undo(this.username);
+    this.redrawCurrentLayer();
+    if (this.socket && removed) {
+      this.socket.send(JSON.stringify({
+        method: "undo",
+        id: this.sessionid,
+        username: this.username
+      }));
+    }
+  }
+
+  redo() {
+    const restored = strokeManager.redo(this.username);
+    this.redrawCurrentLayer();
+    if (this.socket && restored) {
+      this.socket.send(JSON.stringify({
+        method: "redo",
+        id: this.sessionid,
+        username: this.username
+      }));
+    }
+  }
+
+  redrawCurrentLayer() {
+    const canvas = this.currentLayer;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const strokes = strokeManager.getStrokes(this.username);
+    strokes.forEach((stroke) => {
+      ctx.save();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.width;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      const points = stroke.points;
+      if (points.length > 0) {
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
+  }
 }
 
-    setSessionId(id) {
-        this.sessionid = id
-    }
-    setSocket(socket) {
-        this.socket = socket
-    } 
-
-    setUsername(username) {
-        this.username = username
-    }
-
-    setCanvas(canvas) {
-        this.canvas = canvas
-    }
-
-    pushToUndo(data) {
-        this.undoList.push(data)
-    }
-
-    pushToRedo(data) {
-        this.redoList.push(data)
-    }
-
-    undo() {
-        let ctx = this.canvas.getContext('2d')
-        if (this.undoList.length > 0) {
-            let dataUrl = this.undoList.pop()
-            this.redoList.push(this.canvas.toDataURL())
-            let img = new Image()
-            img.src = dataUrl
-            img.onload =  () => {
-                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
-            }
-            // Send undo to other users via draw message
-            if (this.socket) {
-                this.socket.send(JSON.stringify({
-                    method: "draw",
-                    id: this.sessionid,
-                    username: this.username,
-                    figure: {
-                        type: "undo",
-                        dataURL: dataUrl,
-                        username: this.username
-                    }
-                }));
-            }
-        } else {
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-        }
-    }
-
-    redo() {
-        let ctx = this.canvas.getContext('2d')
-        if (this.redoList.length > 0) {
-            let dataUrl = this.redoList.pop()
-            this.undoList.push(this.canvas.toDataURL())
-            let img = new Image()
-            img.src = dataUrl
-            img.onload =  () => {
-                ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-                ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)
-            }
-            // Send redo to other users via draw message
-            if (this.socket) {
-                this.socket.send(JSON.stringify({
-                    method: "draw",
-                    id: this.sessionid,
-                    username: this.username,
-                    figure: {
-                        type: "redo",
-                        dataURL: dataUrl,
-                        username: this.username
-                    }
-                }));
-            }
-        }
-    }
-
-}
-
-export default new CanvasState()
+export default new CanvasState();
