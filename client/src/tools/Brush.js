@@ -67,8 +67,23 @@ export default class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-    this.sendStroke();
+    const stroke = {
+      type: "brush",
+      points: this.points,
+      strokeStyle: this.strokeColor,
+      lineWidth: this.lineWidth
+    };
+
+    canvasState.pushStroke(stroke);
+
+    if (this.socket && this.points.length > 0) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: stroke
+      }));
+    }
   }
 
   touchStartHandler(e) {
@@ -102,22 +117,22 @@ export default class Brush extends Tool {
 
   touchEndHandler() {
     this.mouseDown = false;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-    this.sendStroke();
-  }
+    const stroke = {
+      type: "brush",
+      points: this.points,
+      strokeStyle: this.strokeColor,
+      lineWidth: this.lineWidth
+    };
 
-  sendStroke() {
-    if (!this.socket || this.points.length === 0) return;
-    this.socket.send(JSON.stringify({
-      method: "draw",
-      id: this.id,
-      username: this.username,
-      figure: {
-        type: "brush",
-        points: this.points,
-        strokeStyle: this.strokeColor,
-        lineWidth: this.lineWidth
-      }
-    }));
+    canvasState.pushStroke(stroke);
+
+    if (this.socket && this.points.length > 0) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: stroke
+      }));
+    }
   }
 }
