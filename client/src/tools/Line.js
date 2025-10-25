@@ -50,14 +50,16 @@ export default class Line extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    this.endX = e.pageX - this.canvas.offsetLeft;
-    this.endY = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.endX = e.clientX - rect.left;
+    this.endY = e.clientY - rect.top;
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
@@ -80,16 +82,18 @@ export default class Line extends Tool {
     e.preventDefault();
     this.mouseDown = true;
     const touch = e.touches[0];
-    this.startX = touch.pageX - this.canvas.offsetLeft;
-    this.startY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = touch.clientX - rect.left;
+    this.startY = touch.clientY - rect.top;
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
     const touch = e.touches[0];
-    this.endX = touch.pageX - this.canvas.offsetLeft;
-    this.endY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.endX = touch.clientX - rect.left;
+    this.endY = touch.clientY - rect.top;
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
@@ -109,8 +113,9 @@ export default class Line extends Tool {
 
     if (this.endX === 0 && this.endY === 0) {
       const touch = e.changedTouches[0];
-      this.endX = touch.pageX - this.canvas.offsetLeft;
-      this.endY = touch.pageY - this.canvas.offsetTop;
+      const rect = this.canvas.getBoundingClientRect();
+      this.endX = touch.clientX - rect.left;
+      this.endY = touch.clientY - rect.top;
     }
 
     this.commitStroke();

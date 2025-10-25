@@ -65,8 +65,9 @@ export default class Circle extends Tool {
     if (!this.mouseDown) return;
     let x, y;
     if (e.type === 'mousemove') {
-      x = e.clientX - this.canvas.getBoundingClientRect().left;
-      y = e.clientY - this.canvas.getBoundingClientRect().top;
+      const rect = this.canvas.getBoundingClientRect();
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
     } else {
       x = e.pageX - this.canvas.offsetLeft;
       y = e.pageY - this.canvas.offsetTop;

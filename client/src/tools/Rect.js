@@ -96,19 +96,15 @@ export default class Rect extends Tool {
     const width = this.currentX - this.startX;
     const height = this.currentY - this.startY;
 
-    const img = new Image();
-    img.src = this.saved;
-    img.onload = () => {
-      const ctx = this.canvas.getContext("2d");
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
-
-      ctx.beginPath();
-      ctx.strokeStyle = this.strokeStyle;
-      ctx.lineWidth = this.lineWidth;
-      ctx.rect(this.startX, this.startY, width, height);
-      ctx.stroke();
-    };
+    const ctx = this.canvas.getContext("2d");
+    canvasState.redrawCanvas();
+    ctx.save();
+    ctx.strokeStyle = this.strokeStyle;
+    ctx.lineWidth = this.lineWidth;
+    ctx.beginPath();
+    ctx.rect(this.startX, this.startY, width, height);
+    ctx.stroke();
+    ctx.restore();
   }
 
   commitStroke() {
