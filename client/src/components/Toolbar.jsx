@@ -16,9 +16,10 @@ const Toolbar = observer(() => {
 
   const changeTool = (ToolClass, cursorClass, toolName) => {
     const { canvas, socket, sessionid, username } = canvasState;
-    if (!canvas || !username) return;
+    if (!canvas) return;
 
-    const tool = new ToolClass(canvas, socket, sessionid, username);
+    const safeUsername = username || "local";
+    const tool = new ToolClass(canvas, socket, sessionid, safeUsername);
     toolState.setTool(tool, toolName);
 
     canvas.classList.remove(
