@@ -7,9 +7,11 @@ export default class Eraser extends Tool {
     super(canvas, socket, id, username);
     this.lineWidth = 10;
     this.mouseDown = false;
-    this._touchStartHandler = this.touchStartHandler.bind(this);
-    this._touchMoveHandler = this.touchMoveHandler.bind(this);
-    this._touchEndHandler = this.touchEndHandler.bind(this);
+
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+
     makeAutoObservable(this);
   }
 
@@ -22,9 +24,9 @@ export default class Eraser extends Tool {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-    this.canvas.addEventListener("touchstart", this._touchStartHandler, { passive: false });
-    this.canvas.addEventListener("touchmove", this._touchMoveHandler, { passive: false });
-    this.canvas.addEventListener("touchend", this._touchEndHandler, { passive: false });
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
@@ -32,138 +34,83 @@ export default class Eraser extends Tool {
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
 
-    this.canvas.removeEventListener("touchstart", this._touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this._touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this._touchEndHandler);
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    this.drawLocally(x, y, true);
-    this.sendDrawData(x, y, true);
+    canvasState.isDrawing = true;
+    this.eraseAt(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    this.drawLocally(x, y, false);
-    this.sendDrawData(x, y, false);
+    this.eraseAt(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
   }
 
-  mouseUpHandler() {
+  mouseUpHandler(e) {
     this.mouseDown = false;
-
-    if (this.socket) {
-      this.socket.send(JSON.stringify({
-        method: "draw",
-        id: this.id,
-        figure: { type: "finish" }
-      }));
-    }
-
-    if (window._localUserState) {
-      delete window._localUserState[this.username];
-    }
+    canvasState.isDrawing = false;
+    this.commitStroke(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
   }
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
-
-    this.drawLocally(x, y, true);
-    this.sendDrawData(x, y, true);
+    canvasState.isDrawing = true;
+    const touch = e.touches[0];
+    this.eraseAt(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
-
-    this.drawLocally(x, y, false);
-    this.sendDrawData(x, y, false);
+    const touch = e.touches[0];
+    this.eraseAt(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
   }
 
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-
-    if (this.socket) {
-      this.socket.send(JSON.stringify({
-        method: "draw",
-        id: this.id,
-        figure: { type: "finish" }
-      }));
-    }
-
-    if (window._localUserState) {
-      delete window._localUserState[this.username];
-    }
+    canvasState.isDrawing = false;
+    const touch = e.changedTouches[0];
+    this.commitStroke(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
   }
 
-  sendDrawData(x, y, isStart = false) {
-    const lineWidth = this.lineWidth;
+  eraseAt(x, y) {
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 0.1, y + 0.1);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  commitStroke(x, y) {
+    const stroke = {
+      type: "eraser",
+      x,
+      y,
+      lineWidth: this.lineWidth,
+      username: this.username
+    };
+
+    canvasState.pushStroke(stroke);
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
         username: this.username,
-        figure: {
-          type: "eraser",
-          x,
-          y,
-          lineWidth,
-          isStart,
-          username: this.username
-        }
+        figure: stroke
       }));
     }
-  }
-
-  drawLocally(x, y, isStart = false) {
-    const ctx = this.ctx;
-    const username = this.username;
-    const lineWidth = this.lineWidth;
-
-    ctx.save();
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    if (!window._localUserState) window._localUserState = {};
-
-    if (isStart || !window._localUserState[username]) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
-    } else {
-      const userState = window._localUserState[username];
-      ctx.beginPath();
-      ctx.moveTo(userState.lastX, userState.lastY);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      window._localUserState[username] = { isDrawing: true, lastX: x, lastY: y };
-    }
-
-    ctx.restore();
   }
 }
