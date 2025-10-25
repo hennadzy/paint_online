@@ -14,6 +14,8 @@ export default class Brush extends Tool {
     this.boundTouchMove = this.touchMoveHandler.bind(this);
     this.boundTouchEnd = this.touchEndHandler.bind(this);
     this.boundMouseUp = this.mouseUpHandler.bind(this);
+    this.boundMouseLeave = this.handleExit.bind(this);
+    this.boundTouchCancel = this.handleExit.bind(this);
 
     makeAutoObservable(this);
   }
@@ -33,10 +35,11 @@ export default class Brush extends Tool {
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
 
-    // Глобальные события для отпускания за пределами холста
     window.addEventListener("mouseup", this.boundMouseUp);
     window.addEventListener("touchend", this.boundTouchEnd, { passive: false });
-    window.addEventListener("touchcancel", this.boundTouchEnd, { passive: false });
+
+    this.canvas.addEventListener("mouseleave", this.boundMouseLeave);
+    this.canvas.addEventListener("touchcancel", this.boundTouchCancel, { passive: false });
   }
 
   destroyEvents() {
@@ -48,7 +51,9 @@ export default class Brush extends Tool {
 
     window.removeEventListener("mouseup", this.boundMouseUp);
     window.removeEventListener("touchend", this.boundTouchEnd);
-    window.removeEventListener("touchcancel", this.boundTouchEnd);
+
+    this.canvas.removeEventListener("mouseleave", this.boundMouseLeave);
+    this.canvas.removeEventListener("touchcancel", this.boundTouchCancel);
   }
 
   mouseDownHandler(e) {
@@ -66,6 +71,13 @@ export default class Brush extends Tool {
 
     const x = e.pageX - this.canvas.offsetLeft;
     const y = e.pageY - this.canvas.offsetTop;
+
+    // Если курсор вышел за холст — завершить stroke
+    if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
+      this.mouseUpHandler();
+      return;
+    }
+
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
@@ -110,6 +122,13 @@ export default class Brush extends Tool {
     const touch = e.touches[0];
     const x = touch.pageX - this.canvas.offsetLeft;
     const y = touch.pageY - this.canvas.offsetTop;
+
+    // Если палец вышел за холст — завершить stroke
+    if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
+      this.touchEndHandler(e);
+      return;
+    }
+
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
@@ -130,6 +149,13 @@ export default class Brush extends Tool {
 
   touchEndHandler(e) {
     e.preventDefault();
+    if (!this.mouseDown) return;
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
+  handleExit() {
     if (!this.mouseDown) return;
     this.mouseDown = false;
     canvasState.isDrawing = false;
