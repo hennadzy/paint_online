@@ -9,7 +9,7 @@ class CanvasState {
   sessionid = null;
   username = "";
   strokeList = [];
-  redoStack = [];
+  redoStacks = new Map(); // username → [stroke]
 
   constructor() {
     makeAutoObservable(this);
@@ -36,7 +36,8 @@ class CanvasState {
       stroke.username = this.username || "local";
     }
     this.strokeList.push(stroke);
-    this.redoStack = [];
+    const user = stroke.username;
+    this.redoStacks.set(user, []); // сбрасываем redo для этого пользователя
   }
 
   undo() {
@@ -44,7 +45,8 @@ class CanvasState {
     const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(user);
     if (lastIndex !== -1) {
       const removed = this.strokeList.splice(lastIndex, 1)[0];
-      this.redoStack.push(removed);
+      if (!this.redoStacks.has(user)) this.redoStacks.set(user, []);
+      this.redoStacks.get(user).push(removed);
       this.redrawCanvas();
       this.sendUndoRedo("undo");
     }
@@ -52,10 +54,10 @@ class CanvasState {
 
   redo() {
     const user = this.username || "local";
-    const lastRedo = [...this.redoStack].reverse().find(s => s.username === user);
-    if (lastRedo) {
-      this.strokeList.push(lastRedo);
-      this.redoStack = this.redoStack.filter(s => s !== lastRedo);
+    const stack = this.redoStacks.get(user);
+    if (stack && stack.length > 0) {
+      const restored = stack.pop();
+      this.strokeList.push(restored);
       this.redrawCanvas();
       this.sendUndoRedo("redo");
     }
