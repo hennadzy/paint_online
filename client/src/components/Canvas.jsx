@@ -203,8 +203,15 @@ const Canvas = observer(() => {
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
-        <Modal.Header closeButton>
+        <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => setModal(false)}
+            onTouchEnd={() => setModal(false)}
+          ></button>
         </Modal.Header>
         <Modal.Body>
           <input
@@ -218,7 +225,11 @@ const Canvas = observer(() => {
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
+          <Button
+            variant="secondary"
+            onClick={connectHandler}
+            onTouchEnd={connectHandler}
+          >
             Войти
           </Button>
         </Modal.Footer>
