@@ -63,6 +63,25 @@ class CanvasState {
     }
   }
 
+  undoRemote(username) {
+    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(username);
+    if (lastIndex !== -1) {
+      const removed = this.strokeList.splice(lastIndex, 1)[0];
+      if (!this.redoStacks.has(username)) this.redoStacks.set(username, []);
+      this.redoStacks.get(username).push(removed);
+      this.redrawCanvas();
+    }
+  }
+
+  redoRemote(username) {
+    const stack = this.redoStacks.get(username);
+    if (stack && stack.length > 0) {
+      const restored = stack.pop();
+      this.strokeList.push(restored);
+      this.redrawCanvas();
+    }
+  }
+
   redrawCanvas() {
     if (!this.canvas) return;
     const ctx = this.canvas.getContext("2d");
@@ -123,7 +142,7 @@ class CanvasState {
         username: this.username,
         figure: {
           type,
-          dataURL: this.canvas.toDataURL()
+          username: this.username
         }
       }));
     }

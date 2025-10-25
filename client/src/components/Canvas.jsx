@@ -64,8 +64,8 @@ const Canvas = observer(() => {
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
 
-    // Локальный режим по умолчанию
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
+    canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
     localBrush.listen();
     updateCursor("brush");
@@ -149,13 +149,10 @@ const Canvas = observer(() => {
         canvasState.pushStroke(figure);
         break;
       case "undo":
+        canvasState.undoRemote(msg.username);
+        break;
       case "redo":
-        const img = new Image();
-        img.src = figure.dataURL;
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
-        };
+        canvasState.redoRemote(msg.username);
         break;
       default:
         console.warn("Неизвестный тип фигуры:", figure.type);
