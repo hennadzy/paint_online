@@ -140,17 +140,14 @@ const Canvas = observer(() => {
         canvasState.pushStroke(figure);
         break;
       case "rect":
-        ctx.beginPath();
         Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.strokeStyle, figure.lineWidth);
         canvasState.pushStroke(figure);
         break;
       case "circle":
-        ctx.beginPath();
         Circle.staticDraw(ctx, figure.x, figure.y, figure.radius, figure.strokeStyle, figure.lineWidth);
         canvasState.pushStroke(figure);
         break;
       case "line":
-        ctx.beginPath();
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
         canvasState.pushStroke(figure);
         break;
@@ -173,14 +170,8 @@ const Canvas = observer(() => {
     ctx.lineWidth = stroke.lineWidth || 1;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-
-    if (isEraser) {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.strokeStyle = "rgba(0,0,0,1)";
-    } else {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = stroke.strokeStyle || "#000000";
-    }
+    ctx.strokeStyle = isEraser ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
+    ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
