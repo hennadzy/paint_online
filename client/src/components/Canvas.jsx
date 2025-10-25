@@ -19,8 +19,9 @@ const Canvas = observer(() => {
   useEffect(() => {
     canvasState.setCanvasContainer(containerRef.current);
     canvasState.createLayerForUser("local");
+    canvasState.currentLayer = canvasState.getLayer("local");
     resizeAllLayers();
-    const brush = new Brush(canvasState.getLayer("local"), null, params.id, "local");
+    const brush = new Brush(canvasState.currentLayer, null, params.id, "local");
     toolState.setTool(brush, "brush");
     brush.listen();
     window.addEventListener("resize", resizeAllLayers);
@@ -45,6 +46,7 @@ const Canvas = observer(() => {
         canvasState.layers.delete("local");
 
         canvasState.createLayerForUser(canvasState.username);
+        canvasState.currentLayer = canvasState.getLayer(canvasState.username);
         resizeAllLayers();
         const brush = new Brush(canvasState.currentLayer, socket, params.id, canvasState.username);
         toolState.setTool(brush, "brush");
@@ -139,7 +141,7 @@ const Canvas = observer(() => {
   };
 
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className="canvas">
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Введите ваше имя</Modal.Title>

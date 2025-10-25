@@ -6,7 +6,7 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  background-color: $background-color;
+  background-color: #cccccc;
   overflow: hidden;
 }
 
@@ -19,34 +19,31 @@
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   background-color: white;
   border: 1px solid black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 canvas {
-  cursor: crosshair;
+  background-color: white;
   touch-action: none;
 }
 
-canvas.rect-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto;
-}
-
-canvas.circle-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto;
-}
-
-canvas.line-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto;
-}
-
 canvas.brush-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto;
+  cursor: url('../assets/img/brush.png') 0 25, crosshair;
 }
 
 canvas.eraser-cursor {
-  cursor: url('../assets/img/eraser.png') 0 25, auto;
+  cursor: url('../assets/img/eraser.png') 0 25, crosshair;
+}
+
+canvas.rect-cursor {
+  cursor: url('../assets/img/rect.png') 0 25, crosshair;
+}
+
+canvas.circle-cursor {
+  cursor: url('../assets/img/circle.png') 0 25, crosshair;
+}
+
+canvas.line-cursor {
+  cursor: url('../assets/img/line.png') 0 25, crosshair;
 }
 
 button {
@@ -69,68 +66,6 @@ button:hover {
 
 button:active {
   transform: scale(0.9);
-}
-
-.btn-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-close::before,
-.btn-close::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 3px;
-  background-color: #ffcc00;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.btn-close::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.btn-close:hover::before,
-.btn-close:hover::after {
-  background-color: #ff6699;
-  transition: background-color 0.3s ease;
-}
-
-.modal-content {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: #676767c3;
-  border-radius: 10px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-  padding: 20px;
-}
-
-.modal-header {
-  font-size: 15px;
-  color: #ffcc00;
-  display: flex;
-  justify-content: center;
-}
-
-.modal-footer button {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: #ffcc00;
-  color: #333;
-  border-radius: 10px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.modal-footer button:hover {
-  transform: scale(1.1);
-  background: #ff6699;
 }
 
 @media only screen and (max-width: 768px) {
