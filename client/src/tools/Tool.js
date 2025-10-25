@@ -5,6 +5,7 @@ export default class Tool {
     this.id = id;
     this.username = username;
     this.mouseDown = false;
+    this.hasCommitted = false;
 
     this.boundGlobalMouseUp = this.handleGlobalEnd.bind(this);
     this.boundGlobalTouchEnd = this.handleGlobalEnd.bind(this);
@@ -24,11 +25,12 @@ export default class Tool {
   }
 
   handleGlobalEnd() {
-    if (this.mouseDown) {
-      this.mouseDown = false;
-      if (this.commitStroke) {
-        this.commitStroke();
-      }
+    if (!this.mouseDown || this.hasCommitted) return;
+    this.mouseDown = false;
+    this.hasCommitted = true;
+
+    if (this.commitStroke) {
+      this.commitStroke();
     }
   }
 
