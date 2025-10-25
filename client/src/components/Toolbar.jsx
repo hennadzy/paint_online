@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 import { observer } from "mobx-react-lite";
-import '../styles/toolbar.scss';
+import "../styles/toolbar.scss";
 import toolState from "../store/toolState";
 import canvasState from "../store/canvasState";
 import Brush from "../tools/Brush";
@@ -34,7 +34,7 @@ const Toolbar = observer(() => {
 
   const download = () => {
     const dataUrl = canvasState.canvas.toDataURL();
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = dataUrl;
     a.download = canvasState.sessionid + ".jpg";
     document.body.appendChild(a);
@@ -43,10 +43,12 @@ const Toolbar = observer(() => {
   };
 
   const safeUndo = () => {
+    if (canvasState.isDrawing) return;
     setTimeout(() => canvasState.undo(), 50);
   };
 
   const safeRedo = () => {
+    if (canvasState.isDrawing) return;
     setTimeout(() => canvasState.redo(), 50);
   };
 

@@ -43,6 +43,8 @@ export default class Brush extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     this.points = [];
+    canvasState.isDrawing = true;
+
     const x = e.pageX - e.target.offsetLeft;
     const y = e.pageY - e.target.offsetTop;
     this.points.push({ x, y });
@@ -50,11 +52,11 @@ export default class Brush extends Tool {
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
+
     const x = e.pageX - e.target.offsetLeft;
     const y = e.pageY - e.target.offsetTop;
     this.points.push({ x, y });
 
-    // Временный предпросмотр (опционально)
     const ctx = this.canvas.getContext("2d");
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -73,6 +75,8 @@ export default class Brush extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    canvasState.isDrawing = false;
+
     if (this.points.length === 0) return;
 
     const stroke = {
@@ -93,12 +97,16 @@ export default class Brush extends Tool {
         figure: stroke
       }));
     }
+
+    this.points = [];
   }
 
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
     this.points = [];
+    canvasState.isDrawing = true;
+
     const touch = e.touches[0];
     const x = touch.pageX - this.canvas.offsetLeft;
     const y = touch.pageY - this.canvas.offsetTop;
@@ -108,6 +116,7 @@ export default class Brush extends Tool {
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
+
     const touch = e.touches[0];
     const x = touch.pageX - this.canvas.offsetLeft;
     const y = touch.pageY - this.canvas.offsetTop;
@@ -132,6 +141,8 @@ export default class Brush extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+    canvasState.isDrawing = false;
+
     if (this.points.length === 0) return;
 
     const stroke = {
@@ -152,5 +163,7 @@ export default class Brush extends Tool {
         figure: stroke
       }));
     }
+
+    this.points = [];
   }
 }

@@ -10,6 +10,7 @@ class CanvasState {
   username = "";
   strokeList = [];
   redoStacks = new Map(); // username → [stroke]
+  isDrawing = false; // ← добавлено
 
   constructor() {
     makeAutoObservable(this);
@@ -37,7 +38,7 @@ class CanvasState {
     }
     this.strokeList.push(stroke);
     const user = stroke.username;
-    this.redoStacks.set(user, []); // сбрасываем redo для этого пользователя
+    this.redoStacks.set(user, []);
   }
 
   undo() {
