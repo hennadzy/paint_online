@@ -11,7 +11,6 @@ export default class Circle extends Tool {
     this.saved = null;
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
-    this.hasCommitted = false;
   }
 
   setStrokeColor(color) {
@@ -42,7 +41,7 @@ export default class Circle extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.hasCommitted = false;
+    this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.startX = e.pageX - this.canvas.offsetLeft;
     this.startY = e.pageY - this.canvas.offsetTop;
@@ -62,7 +61,7 @@ export default class Circle extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    this.hasCommitted = false;
+    this._hasCommitted = false;
     canvasState.isDrawing = true;
     const touch = e.touches[0];
     this.startX = touch.pageX - this.canvas.offsetLeft;
@@ -105,8 +104,8 @@ export default class Circle extends Tool {
   }
 
   commitStroke() {
-    if (this.hasCommitted || !this.saved) return;
-    this.hasCommitted = true;
+    if (this._hasCommitted || !this.saved) return;
+    this._hasCommitted = true;
 
     const radius = Math.sqrt(
       Math.pow(this.currentX - this.startX, 2) + Math.pow(this.currentY - this.startY, 2)
