@@ -76,8 +76,9 @@ export default class Rect extends Tool {
     this.mouseDown = true;
     canvasState.isDrawing = true;
     const touch = e.touches[0];
-    this.startX = touch.pageX - this.canvas.offsetLeft;
-    this.startY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = touch.clientX - rect.left;
+    this.startY = touch.clientY - rect.top;
     this.saved = this.canvas.toDataURL();
   }
 
@@ -86,8 +87,9 @@ export default class Rect extends Tool {
     if (!this.mouseDown) return;
 
     const touch = e.touches[0];
-    this.currentX = touch.pageX - this.canvas.offsetLeft;
-    this.currentY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.currentX = touch.clientX - rect.left;
+    this.currentY = touch.clientY - rect.top;
 
     this.drawPreview();
   }
