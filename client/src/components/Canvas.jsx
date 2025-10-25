@@ -67,11 +67,9 @@ const Canvas = observer(() => {
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
     canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
-    localBrush.listen();
     updateCursor("brush");
 
     return () => {
-      // 🔄 Очистка при выходе из комнаты
       canvasState.strokeList = [];
       canvasState.redoStacks.clear();
       canvasState.redrawCanvas();
@@ -85,7 +83,6 @@ const Canvas = observer(() => {
     canvasState.setUsername(username);
     setModal(false);
 
-    // 🔄 Очистка локальной истории при переходе в сетевой режим
     canvasState.strokeList = [];
     canvasState.redoStacks.clear();
     canvasState.redrawCanvas();
@@ -96,7 +93,6 @@ const Canvas = observer(() => {
 
     const brush = new Brush(canvasRef.current, socket, params.id, username);
     toolState.setTool(brush, "brush");
-    brush.listen();
     updateCursor("brush");
 
     socket.onopen = () => {
@@ -108,7 +104,6 @@ const Canvas = observer(() => {
     };
 
     socket.onclose = () => {
-      // 🔄 Очистка при отключении от комнаты
       canvasState.strokeList = [];
       canvasState.redoStacks.clear();
       canvasState.redrawCanvas();
@@ -141,15 +136,7 @@ const Canvas = observer(() => {
         canvasState.pushStroke(figure);
         break;
       case "eraser":
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = figure.lineWidth || 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(figure.x, figure.y);
-        ctx.lineTo(figure.x + 0.1, figure.y + 0.1);
-        ctx.stroke();
-        ctx.globalCompositeOperation = "source-over";
+        drawStroke(ctx, figure, true);
         canvasState.pushStroke(figure);
         break;
       case "rect":
@@ -178,15 +165,23 @@ const Canvas = observer(() => {
     }
   };
 
-  const drawStroke = (ctx, stroke) => {
+  const drawStroke = (ctx, stroke, isEraser = false) => {
     const points = stroke.points;
     if (!points || points.length === 0) return;
 
     ctx.save();
-    ctx.strokeStyle = stroke.strokeStyle || "#000000";
     ctx.lineWidth = stroke.lineWidth || 1;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+
+    if (isEraser) {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = stroke.strokeStyle || "#000000";
+    }
+
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
