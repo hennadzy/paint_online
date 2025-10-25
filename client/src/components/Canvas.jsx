@@ -13,10 +13,15 @@ const Canvas = observer(() => {
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
   useEffect(() => {
     canvasState.setCanvasContainer(containerRef.current);
+    canvasState.createLayerForUser("local");
+    const brush = new Brush(canvasState.getLayer("local"), null, params.id, "local");
+    toolState.setTool(brush, "brush");
+    brush.listen();
     window.addEventListener("resize", resizeAllLayers);
     return () => window.removeEventListener("resize", resizeAllLayers);
   }, []);
@@ -33,6 +38,11 @@ const Canvas = observer(() => {
           username: canvasState.username,
           method: "connection"
         }));
+        // Удаляем локальный слой
+        const localCanvas = canvasState.getLayer("local");
+        if (localCanvas) localCanvas.remove();
+        canvasState.layers.delete("local");
+
         canvasState.createLayerForUser(canvasState.username);
         const brush = new Brush(canvasState.currentLayer, socket, params.id, canvasState.username);
         toolState.setTool(brush, "brush");
@@ -121,6 +131,11 @@ const Canvas = observer(() => {
     }
   };
 
+  const handleCreateRoomClick = () => {
+    setModal(true);
+    setIsRoomCreated(true);
+  };
+
   return (
     <div className="canvas">
       <Modal show={modal} onHide={() => setModal(false)}>
@@ -142,6 +157,12 @@ const Canvas = observer(() => {
       </Modal>
 
       <div ref={containerRef} className="canvas-container" style={{ position: "relative", width: "100%", height: "100vh" }} />
+
+      {!isRoomCreated && (
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+          Создать комнату
+        </Button>
+      )}
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((msg, i) => <div key={i}>{msg}</div>)}
