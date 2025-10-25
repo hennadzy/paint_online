@@ -30,21 +30,23 @@ export default class Circle extends Tool {
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     window.addEventListener("mousemove", this.mouseMoveHandler.bind(this));
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
     this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+
+    this.listenGlobalEndEvents();
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     window.removeEventListener("mousemove", this.mouseMoveHandler);
-    this.canvas.onmouseup = null;
 
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
     this.canvas.removeEventListener("touchend", this.boundTouchEnd);
+
+    this.removeGlobalEndEvents();
   }
 
   mouseDownHandler(e) {
@@ -82,10 +84,7 @@ export default class Circle extends Tool {
     ctx.restore();
   }
 
-  mouseUpHandler() {
-    this.mouseDown = false;
-    this.commitStroke();
-  }
+
 
   touchStartHandler(e) {
     e.preventDefault();
