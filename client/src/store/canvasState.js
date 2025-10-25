@@ -9,8 +9,7 @@ class CanvasState {
   sessionid = null;
   username = "";
   strokeList = [];
-  undoList = [];
-  redoList = [];
+  redoStack = [];
 
   constructor() {
     makeAutoObservable(this);
@@ -33,29 +32,30 @@ class CanvasState {
   }
 
   pushStroke(stroke) {
-    // ✅ Гарантируем, что username всегда установлен
     if (!stroke.username || stroke.username === "local") {
       stroke.username = this.username || "local";
     }
     this.strokeList.push(stroke);
-    this.undoList.push([...this.strokeList]);
-    this.redoList = [];
+    this.redoStack = [];
   }
 
   undo() {
-    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(this.username || "local");
+    const user = this.username || "local";
+    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(user);
     if (lastIndex !== -1) {
-      this.redoList.push([...this.strokeList]);
-      this.strokeList.splice(lastIndex, 1);
+      const removed = this.strokeList.splice(lastIndex, 1)[0];
+      this.redoStack.push(removed);
       this.redrawCanvas();
       this.sendUndoRedo("undo");
     }
   }
 
   redo() {
-    if (this.redoList.length > 0) {
-      this.undoList.push([...this.strokeList]);
-      this.strokeList = this.redoList.pop();
+    const user = this.username || "local";
+    const lastRedo = [...this.redoStack].reverse().find(s => s.username === user);
+    if (lastRedo) {
+      this.strokeList.push(lastRedo);
+      this.redoStack = this.redoStack.filter(s => s !== lastRedo);
       this.redrawCanvas();
       this.sendUndoRedo("redo");
     }
