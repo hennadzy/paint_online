@@ -14,20 +14,21 @@ const Toolbar = observer(() => {
     toolState.setStrokeColor(e.target.value);
   };
 
-  const changeTool = (tool, cursorClass, toolNameOverride) => {
-    toolState.setTool(tool, toolNameOverride);
+  const changeTool = (ToolClass, cursorClass, toolName) => {
+    const { canvas, socket, sessionid, username } = canvasState;
+    if (!canvas || !username) return;
 
-    const canvas = canvasState.canvas;
-    if (canvas) {
-      canvas.classList.remove(
-        "brush-cursor",
-        "eraser-cursor",
-        "rect-cursor",
-        "circle-cursor",
-        "line-cursor"
-      );
-      canvas.classList.add(cursorClass);
-    }
+    const tool = new ToolClass(canvas, socket, sessionid, username);
+    toolState.setTool(tool, toolName);
+
+    canvas.classList.remove(
+      "brush-cursor",
+      "eraser-cursor",
+      "rect-cursor",
+      "circle-cursor",
+      "line-cursor"
+    );
+    canvas.classList.add(cursorClass);
   };
 
   const download = () => {
@@ -46,48 +47,23 @@ const Toolbar = observer(() => {
     <div className="toolbar">
       <button
         className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
-        onClick={() =>
-          changeTool(
-            new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-            "brush-cursor", "brush"
-          )
-        }
+        onClick={() => changeTool(Brush, "brush-cursor", "brush")}
       />
       <button
         className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
-        onClick={() =>
-          changeTool(
-            new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-            "rect-cursor", "rect"
-          )
-        }
+        onClick={() => changeTool(Rect, "rect-cursor", "rect")}
       />
       <button
         className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
-        onClick={() =>
-          changeTool(
-            new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-            "circle-cursor", "circle"
-          )
-        }
+        onClick={() => changeTool(Circle, "circle-cursor", "circle")}
       />
       <button
         className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
-        onClick={() =>
-          changeTool(
-            new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-            "eraser-cursor", "eraser"
-          )
-        }
+        onClick={() => changeTool(Eraser, "eraser-cursor", "eraser")}
       />
       <button
         className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
-        onClick={() =>
-          changeTool(
-            new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
-            "line-cursor", "line"
-          )
-        }
+        onClick={() => changeTool(Line, "line-cursor", "line")}
       />
       <input
         type="color"

@@ -39,9 +39,10 @@ class CanvasState {
   }
 
   undo() {
-    if (this.undoList.length > 0) {
+    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(this.username);
+    if (lastIndex !== -1) {
       this.redoList.push([...this.strokeList]);
-      this.strokeList = this.undoList.pop();
+      this.strokeList.splice(lastIndex, 1);
       this.redrawCanvas();
       this.sendUndoRedo("undo");
     }

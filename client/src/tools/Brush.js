@@ -71,11 +71,11 @@ export default class Brush extends Tool {
       type: "brush",
       points: this.points,
       strokeStyle: this.strokeColor,
-      lineWidth: this.lineWidth
+      lineWidth: this.lineWidth,
+      username: this.username
     };
 
     canvasState.pushStroke(stroke);
-    canvasState.redrawCanvas();
 
     if (this.socket && this.points.length > 0) {
       this.socket.send(JSON.stringify({
@@ -122,11 +122,11 @@ export default class Brush extends Tool {
       type: "brush",
       points: this.points,
       strokeStyle: this.strokeColor,
-      lineWidth: this.lineWidth
+      lineWidth: this.lineWidth,
+      username: this.username
     };
 
     canvasState.pushStroke(stroke);
-    canvasState.redrawCanvas();
 
     if (this.socket && this.points.length > 0) {
       this.socket.send(JSON.stringify({
