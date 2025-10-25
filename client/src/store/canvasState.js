@@ -10,7 +10,7 @@ class CanvasState {
   username = "";
   strokeList = [];
   redoStacks = new Map(); // username → [stroke]
-  isDrawing = false; // ← добавлено
+  isDrawing = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -36,6 +36,15 @@ class CanvasState {
     if (!stroke.username || stroke.username === "local") {
       stroke.username = this.username || "local";
     }
+
+    // 🔒 Предотвращаем дубликаты
+    const isDuplicate = this.strokeList.some(s =>
+      s.type === stroke.type &&
+      s.username === stroke.username &&
+      JSON.stringify(s) === JSON.stringify(stroke)
+    );
+    if (isDuplicate) return;
+
     this.strokeList.push(stroke);
     const user = stroke.username;
     this.redoStacks.set(user, []);
@@ -151,3 +160,4 @@ class CanvasState {
 }
 
 export default new CanvasState();
+ 
