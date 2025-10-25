@@ -186,14 +186,10 @@ const Canvas = observer(() => {
     });
   };
 
-  const handleCreateRoomClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setTimeout(() => {
-      setModal(true);
-      setIsRoomCreated(true);
-    }, 0);
-  };
+  const handleCreateRoomClick = () => {
+  setModal(true);
+  setIsRoomCreated(true);
+};
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -246,7 +242,7 @@ const Canvas = observer(() => {
       {!isRoomCreated && (
         <Button
           variant="primary"
-          onPointerDown={handleCreateRoomClick}
+          onClick={handleCreateRoomClick}
           style={{ marginTop: "10px" }}
         >
           Создать комнату
