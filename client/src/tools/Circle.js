@@ -46,6 +46,8 @@ export default class Circle extends Tool {
     canvasState.isDrawing = true;
     this.startX = e.pageX - this.canvas.offsetLeft;
     this.startY = e.pageY - this.canvas.offsetTop;
+    this.currentX = this.startX;
+    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
   }
 
@@ -65,6 +67,8 @@ export default class Circle extends Tool {
     const touch = e.touches[0];
     this.startX = touch.pageX - this.canvas.offsetLeft;
     this.startY = touch.pageY - this.canvas.offsetTop;
+    this.currentX = this.startX;
+    this.currentY = this.startY;
     this.saved = this.canvas.toDataURL();
   }
 
@@ -79,6 +83,8 @@ export default class Circle extends Tool {
   }
 
   drawPreview() {
+    if (!this.saved) return;
+
     const radius = Math.sqrt(
       Math.pow(this.currentX - this.startX, 2) + Math.pow(this.currentY - this.startY, 2)
     );
