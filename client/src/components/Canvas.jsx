@@ -66,6 +66,7 @@ const Canvas = observer(() => {
     canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
     updateCursor("brush");
+    canvasRef.current.style.pointerEvents = 'auto';
 
     return () => {
       canvasState.strokeList = [];
@@ -92,6 +93,7 @@ const Canvas = observer(() => {
     const brush = new Brush(canvasRef.current, socket, params.id, username);
     toolState.setTool(brush, "brush");
     updateCursor("brush");
+    canvasRef.current.style.pointerEvents = 'auto';
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
