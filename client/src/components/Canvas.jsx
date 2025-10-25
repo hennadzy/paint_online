@@ -69,6 +69,13 @@ const Canvas = observer(() => {
     toolState.setTool(localBrush, "brush");
     localBrush.listen();
     updateCursor("brush");
+
+    return () => {
+      // 🔄 Очистка при выходе из комнаты
+      canvasState.strokeList = [];
+      canvasState.redoStacks.clear();
+      canvasState.redrawCanvas();
+    };
   }, [params.id]);
 
   const connectHandler = () => {
@@ -77,6 +84,11 @@ const Canvas = observer(() => {
 
     canvasState.setUsername(username);
     setModal(false);
+
+    // 🔄 Очистка локальной истории при переходе в сетевой режим
+    canvasState.strokeList = [];
+    canvasState.redoStacks.clear();
+    canvasState.redrawCanvas();
 
     const socket = new WebSocket("wss://paint-online-back.onrender.com/");
     canvasState.setSocket(socket);
@@ -93,6 +105,13 @@ const Canvas = observer(() => {
         username,
         method: "connection",
       }));
+    };
+
+    socket.onclose = () => {
+      // 🔄 Очистка при отключении от комнаты
+      canvasState.strokeList = [];
+      canvasState.redoStacks.clear();
+      canvasState.redrawCanvas();
     };
 
     socket.onmessage = (event) => {
