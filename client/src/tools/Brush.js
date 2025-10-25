@@ -10,10 +10,10 @@ export default class Brush extends Tool {
     this.mouseDown = false;
     this.points = [];
 
-    // Сохраняем привязанные обработчики для корректного удаления
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
     this.boundTouchEnd = this.touchEndHandler.bind(this);
+    this.boundMouseUp = this.mouseUpHandler.bind(this);
 
     makeAutoObservable(this);
   }
@@ -29,21 +29,26 @@ export default class Brush extends Tool {
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
-    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+
+    // Глобальные события для отпускания за пределами холста
+    window.addEventListener("mouseup", this.boundMouseUp);
+    window.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+    window.addEventListener("touchcancel", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
 
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
-    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
+
+    window.removeEventListener("mouseup", this.boundMouseUp);
+    window.removeEventListener("touchend", this.boundTouchEnd);
+    window.removeEventListener("touchcancel", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
@@ -51,16 +56,16 @@ export default class Brush extends Tool {
     this.points = [];
     canvasState.isDrawing = true;
 
-    const x = e.pageX - e.target.offsetLeft;
-    const y = e.pageY - e.target.offsetTop;
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const x = e.pageX - e.target.offsetLeft;
-    const y = e.pageY - e.target.offsetTop;
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
@@ -80,31 +85,10 @@ export default class Brush extends Tool {
   }
 
   mouseUpHandler() {
+    if (!this.mouseDown) return;
     this.mouseDown = false;
     canvasState.isDrawing = false;
-
-    if (this.points.length === 0) return;
-
-    const stroke = {
-      type: "brush",
-      points: this.points,
-      strokeStyle: this.strokeColor,
-      lineWidth: this.lineWidth,
-      username: this.username
-    };
-
-    canvasState.pushStroke(stroke);
-
-    if (this.socket) {
-      this.socket.send(JSON.stringify({
-        method: "draw",
-        id: this.id,
-        username: this.username,
-        figure: stroke
-      }));
-    }
-
-    this.points = [];
+    this.commitStroke();
   }
 
   touchStartHandler(e) {
@@ -146,9 +130,13 @@ export default class Brush extends Tool {
 
   touchEndHandler(e) {
     e.preventDefault();
+    if (!this.mouseDown) return;
     this.mouseDown = false;
     canvasState.isDrawing = false;
+    this.commitStroke();
+  }
 
+  commitStroke() {
     if (this.points.length === 0) return;
 
     const stroke = {
