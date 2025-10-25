@@ -27,12 +27,20 @@ export default class Rect extends Tool {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
+
+    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
+    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+    this.canvas.removeEventListener("touchend", this.touchEndHandler);
   }
 
   mouseDownHandler(e) {
@@ -43,7 +51,6 @@ export default class Rect extends Tool {
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
     const x = e.pageX - this.canvas.offsetLeft;
     const y = e.pageY - this.canvas.offsetTop;
     this.width = x - this.startX;
@@ -51,7 +58,6 @@ export default class Rect extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
@@ -61,7 +67,42 @@ export default class Rect extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    this.commitStroke();
+  }
 
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const touch = e.touches[0];
+    this.startX = touch.pageX - this.canvas.offsetLeft;
+    this.startY = touch.pageY - this.canvas.offsetTop;
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.width = x - this.startX;
+    this.height = y - this.startY;
+
+    const ctx = this.canvas.getContext("2d");
+    canvasState.redrawCanvas();
+    ctx.save();
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.strokeRect(this.startX, this.startY, this.width, this.height);
+    ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    this.commitStroke();
+  }
+
+  commitStroke() {
     const stroke = {
       type: "rect",
       x: this.startX,

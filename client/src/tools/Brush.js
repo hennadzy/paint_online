@@ -2,16 +2,13 @@ import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import { makeAutoObservable } from "mobx";
 
-export default class Rect extends Tool {
+export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.strokeColor = "#000000";
     this.lineWidth = 1;
-    this.startX = 0;
-    this.startY = 0;
-    this.width = 0;
-    this.height = 0;
     this.mouseDown = false;
+    this.points = [];
     makeAutoObservable(this);
   }
 
@@ -45,76 +42,52 @@ export default class Rect extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    this.points = [];
+    canvasState.isDrawing = true;
+
+    const x = e.pageX - e.target.offsetLeft;
+    const y = e.pageY - e.target.offsetTop;
+    this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
-    this.width = x - this.startX;
-    this.height = y - this.startY;
+
+    const x = e.pageX - e.target.offsetLeft;
+    const y = e.pageY - e.target.offsetTop;
+    this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
-    canvasState.redrawCanvas();
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
-    ctx.strokeRect(this.startX, this.startY, this.width, this.height);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
-    this.commitStroke();
-  }
+    canvasState.isDrawing = false;
 
-  touchStartHandler(e) {
-    e.preventDefault();
-    this.mouseDown = true;
-    const touch = e.touches[0];
-    this.startX = touch.pageX - this.canvas.offsetLeft;
-    this.startY = touch.pageY - this.canvas.offsetTop;
-  }
+    if (this.points.length === 0) return;
 
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
-    this.width = x - this.startX;
-    this.height = y - this.startY;
-
-    const ctx = this.canvas.getContext("2d");
-    canvasState.redrawCanvas();
-    ctx.save();
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.lineWidth;
-    ctx.strokeRect(this.startX, this.startY, this.width, this.height);
-    ctx.restore();
-  }
-
-  touchEndHandler(e) {
-    e.preventDefault();
-    this.mouseDown = false;
-    this.commitStroke();
-  }
-
-  commitStroke() {
     const stroke = {
-      type: "rect",
-      x: this.startX,
-      y: this.startY,
-      width: this.width,
-      height: this.height,
+      type: "brush",
+      points: this.points,
       strokeStyle: this.strokeColor,
       lineWidth: this.lineWidth,
       username: this.username
     };
 
-    canvasState.pushStroke(stroke);
+    canvasState.pushStroke(stroke); // ← локальное добавление сразу
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -124,13 +97,73 @@ export default class Rect extends Tool {
         figure: stroke
       }));
     }
+
+    this.points = [];
   }
 
-  static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    this.points = [];
+    canvasState.isDrawing = true;
+
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
+
+    const ctx = this.canvas.getContext("2d");
     ctx.save();
-    ctx.strokeStyle = strokeStyle || "#000000";
-    ctx.lineWidth = lineWidth || 1;
-    ctx.strokeRect(x, y, width, height);
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
     ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+
+    if (this.points.length === 0) return;
+
+    const stroke = {
+      type: "brush",
+      points: this.points,
+      strokeStyle: this.strokeColor,
+      lineWidth: this.lineWidth,
+      username: this.username
+    };
+
+    canvasState.pushStroke(stroke); // ← локальное добавление сразу
+
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "draw",
+        id: this.id,
+        username: this.username,
+        figure: stroke
+      }));
+    }
+
+    this.points = [];
   }
 }
