@@ -48,7 +48,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Brush(canvasState.canvas),
+            new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionid),
             "brush-cursor", "brush"
           )
         }
@@ -57,7 +57,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Rect(canvasState.canvas),
+            new Rect(canvasState.canvas, canvasState.socket, canvasState.sessionid),
             "rect-cursor", "rect"
           )
         }
@@ -66,7 +66,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Circle(canvasState.canvas),
+            new Circle(canvasState.canvas, canvasState.socket, canvasState.sessionid),
             "circle-cursor", "circle"
           )
         }
@@ -75,7 +75,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Eraser(canvasState.canvas),
+            new Eraser(canvasState.canvas, canvasState.socket, canvasState.sessionid),
             "eraser-cursor", "eraser"
           )
         }
@@ -84,7 +84,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Line(canvasState.canvas),
+            new Line(canvasState.canvas, canvasState.socket, canvasState.sessionid),
             "line-cursor", "line"
           )
         }
