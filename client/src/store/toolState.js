@@ -19,9 +19,6 @@ class ToolState {
   }
 
   setTool(tool, toolNameOverride) {
-    if (canvas) {
-      canvas.style.pointerEvents = 'auto';
-    }
     this.tool?.destroyEvents?.();
     this.tool = tool;
     this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
