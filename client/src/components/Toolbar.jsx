@@ -30,7 +30,6 @@ const Toolbar = observer(() => {
       "line-cursor"
     );
     canvas.classList.add(cursorClass);
-    canvas.style.pointerEvents = 'auto';
   };
 
   const download = () => {
@@ -57,23 +56,23 @@ const Toolbar = observer(() => {
     <div className="toolbar">
       <button
         className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
-        onClick={() => changeTool(Brush, "brush-cursor", "brush")}
+        onPointerUp={() => changeTool(Brush, "brush-cursor", "brush")}
       />
       <button
         className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
-        onClick={() => changeTool(Rect, "rect-cursor", "rect")}
+        onPointerUp={() => changeTool(Rect, "rect-cursor", "rect")}
       />
       <button
         className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
-        onClick={() => changeTool(Circle, "circle-cursor", "circle")}
+        onPointerUp={() => changeTool(Circle, "circle-cursor", "circle")}
       />
       <button
         className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
-        onClick={() => changeTool(Eraser, "eraser-cursor", "eraser")}
+        onPointerUp={() => changeTool(Eraser, "eraser-cursor", "eraser")}
       />
       <button
         className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
-        onClick={() => changeTool(Line, "line-cursor", "line")}
+        onPointerUp={() => changeTool(Line, "line-cursor", "line")}
       />
       <input
         type="color"
@@ -83,15 +82,15 @@ const Toolbar = observer(() => {
       />
       <button
         className="toolbar__btn undo"
-        onClick={safeUndo}
+        onPointerUp={safeUndo}
       />
       <button
         className="toolbar__btn redo"
-        onClick={safeRedo}
+        onPointerUp={safeRedo}
       />
       <button
         className="toolbar__btn save"
-        onClick={download}
+        onPointerUp={download}
       />
     </div>
   );
