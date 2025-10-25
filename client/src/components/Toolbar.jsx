@@ -30,6 +30,7 @@ const Toolbar = observer(() => {
       "line-cursor"
     );
     canvas.classList.add(cursorClass);
+    canvas.style.pointerEvents = 'auto';
   };
 
   const download = () => {
