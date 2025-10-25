@@ -17,6 +17,7 @@ export default class Tool {
 this.lineWidth = toolState.lineWidths[toolName] ?? 1;
 
     this.mouseDown = false;
+    this.canvas.style.pointerEvents = 'none';
   }
 
   // ✅ Очищаем события, включая addEventListener
