@@ -43,13 +43,11 @@ const Toolbar = observer(() => {
   };
 
   const safeUndo = () => {
-    if (canvasState.isDrawing) return;
-    setTimeout(() => canvasState.undo(), 50);
+    canvasState.undo();
   };
 
   const safeRedo = () => {
-    if (canvasState.isDrawing) return;
-    setTimeout(() => canvasState.redo(), 50);
+    canvasState.redo();
   };
 
   const current = toolState.toolName;
