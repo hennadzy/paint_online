@@ -42,6 +42,14 @@ const Toolbar = observer(() => {
     document.body.removeChild(a);
   };
 
+  const safeUndo = () => {
+    setTimeout(() => canvasState.undo(), 50);
+  };
+
+  const safeRedo = () => {
+    setTimeout(() => canvasState.redo(), 50);
+  };
+
   const current = toolState.toolName;
 
   return (
@@ -72,8 +80,8 @@ const Toolbar = observer(() => {
         onChange={changeColor}
         style={{ marginLeft: 10 }}
       />
-      <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
-      <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
+      <button className="toolbar__btn undo" onClick={safeUndo} />
+      <button className="toolbar__btn redo" onClick={safeRedo} />
       <button className="toolbar__btn save" onClick={download} />
     </div>
   );
