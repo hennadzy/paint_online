@@ -66,13 +66,7 @@ const Canvas = observer(() => {
     canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
     updateCursor("brush");
-    canvasRef.current.style.pointerEvents = 'auto';
-
-    return () => {
-      canvasState.strokeList = [];
-      canvasState.redoStacks.clear();
-      canvasState.redrawCanvas();
-    };
+    canvasRef.current.style.pointerEvents = "auto";
   }, [params.id]);
 
   const connectHandler = () => {
@@ -93,7 +87,7 @@ const Canvas = observer(() => {
     const brush = new Brush(canvasRef.current, socket, params.id, username);
     toolState.setTool(brush, "brush");
     updateCursor("brush");
-    canvasRef.current.style.pointerEvents = 'auto';
+    canvasRef.current.style.pointerEvents = "auto";
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
@@ -189,9 +183,9 @@ const Canvas = observer(() => {
   };
 
   const handleCreateRoomClick = () => {
-  setModal(true);
-  setIsRoomCreated(true);
-};
+    setModal(true);
+    setIsRoomCreated(true);
+  };
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
@@ -225,10 +219,7 @@ const Canvas = observer(() => {
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="secondary"
-            onPointerUp={connectHandler}
-          >
+          <Button variant="secondary" onClick={connectHandler}>
             Войти
           </Button>
         </Modal.Footer>
