@@ -32,19 +32,23 @@ export default class Brush extends Tool {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
 
-    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
-    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.style.touchAction = 'none';
+
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: true });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: true });
 
     window.addEventListener("mouseup", this.boundMouseUp);
-    window.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+    window.addEventListener("touchend", this.boundTouchEnd, { passive: true });
 
     this.canvas.addEventListener("mouseleave", this.boundMouseLeave);
-    this.canvas.addEventListener("touchcancel", this.boundTouchCancel, { passive: false });
+    this.canvas.addEventListener("touchcancel", this.boundTouchCancel, { passive: true });
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
+
+    this.canvas.style.touchAction = '';
 
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
