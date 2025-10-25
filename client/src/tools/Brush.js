@@ -43,30 +43,38 @@ export default class Brush extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     this.points = [];
-    const ctx = this.canvas.getContext("2d");
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
     const x = e.pageX - e.target.offsetLeft;
     const y = e.pageY - e.target.offsetTop;
-    ctx.moveTo(x, y);
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    const ctx = this.canvas.getContext("2d");
     const x = e.pageX - e.target.offsetLeft;
     const y = e.pageY - e.target.offsetTop;
-    ctx.lineTo(x, y);
-    ctx.stroke();
     this.points.push({ x, y });
+
+    // Временный предпросмотр (опционально)
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   mouseUpHandler() {
     this.mouseDown = false;
+    if (this.points.length === 0) return;
+
     const stroke = {
       type: "brush",
       points: this.points,
@@ -77,7 +85,7 @@ export default class Brush extends Tool {
 
     canvasState.pushStroke(stroke);
 
-    if (this.socket && this.points.length > 0) {
+    if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
@@ -92,15 +100,8 @@ export default class Brush extends Tool {
     this.mouseDown = true;
     this.points = [];
     const touch = e.touches[0];
-    const x = touch.clientX - this.canvas.offsetLeft;
-    const y = touch.clientY - this.canvas.offsetTop;
-    const ctx = this.canvas.getContext("2d");
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
   }
 
@@ -108,16 +109,31 @@ export default class Brush extends Tool {
     e.preventDefault();
     if (!this.mouseDown) return;
     const touch = e.touches[0];
-    const x = touch.clientX - this.canvas.offsetLeft;
-    const y = touch.clientY - this.canvas.offsetTop;
-    const ctx = this.canvas.getContext("2d");
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
+
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
-  touchEndHandler() {
+  touchEndHandler(e) {
+    e.preventDefault();
     this.mouseDown = false;
+    if (this.points.length === 0) return;
+
     const stroke = {
       type: "brush",
       points: this.points,
@@ -128,7 +144,7 @@ export default class Brush extends Tool {
 
     canvasState.pushStroke(stroke);
 
-    if (this.socket && this.points.length > 0) {
+    if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
         id: this.id,
