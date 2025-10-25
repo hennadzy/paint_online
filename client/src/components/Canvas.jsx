@@ -209,7 +209,7 @@ const Canvas = observer(() => {
             type="button"
             className="btn-close"
             aria-label="Close"
-            onPointerUp={() => setModal(false)}
+            onClick={() => setModal(false)}
           ></button>
         </Modal.Header>
         <Modal.Body>
@@ -226,7 +226,7 @@ const Canvas = observer(() => {
         <Modal.Footer>
           <Button
             variant="secondary"
-            onPointerUp={connectHandler}
+            onClick={connectHandler}
           >
             Войти
           </Button>
