@@ -17,6 +17,7 @@ canvas {
   margin-top: 80px;
   margin-bottom: 10px;
   touch-action: none;
+  pointer-events: auto;
 }
 
 canvas.rect-cursor {
