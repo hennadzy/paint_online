@@ -110,7 +110,6 @@ export default class Brush extends Tool {
   }
 
   touchStartHandler(e) {
-    e.preventDefault();
     this.mouseDown = true;
     this.points = [];
     canvasState.isDrawing = true;
@@ -123,7 +122,6 @@ export default class Brush extends Tool {
   }
 
   touchMoveHandler(e) {
-    e.preventDefault();
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
@@ -161,7 +159,6 @@ export default class Brush extends Tool {
   }
 
   touchEndHandler(e) {
-    e.preventDefault();
     if (!this.mouseDown) return;
     this.mouseDown = false;
     canvasState.isDrawing = false;
