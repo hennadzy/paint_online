@@ -35,7 +35,7 @@ export default class Circle extends Tool {
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
     this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
 
-    this.listenGlobalEndEvents();
+    // Don't listen to global end events for Circle tool to avoid double commits
   }
 
   destroyEvents() {
@@ -46,7 +46,7 @@ export default class Circle extends Tool {
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
     this.canvas.removeEventListener("touchend", this.boundTouchEnd);
 
-    this.removeGlobalEndEvents();
+    // No global end events to remove for Circle tool
   }
 
   mouseDownHandler(e) {
@@ -128,7 +128,10 @@ export default class Circle extends Tool {
       this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
     }
 
-    this.commitStroke();
+    // Only commit if we have a valid radius
+    if (this.radius > 0) {
+      this.commitStroke();
+    }
   }
 
   commitStroke() {
