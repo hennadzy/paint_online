@@ -99,6 +99,16 @@ export default class Rect extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
+
+    // 🛠️ Исправление: если не было движения, рассчитать размеры по точке отпускания
+    if (this.width === 0 && this.height === 0) {
+      const touch = e.changedTouches[0];
+      const x = touch.pageX - this.canvas.offsetLeft;
+      const y = touch.pageY - this.canvas.offsetTop;
+      this.width = x - this.startX;
+      this.height = y - this.startY;
+    }
+
     this.commitStroke();
   }
 
