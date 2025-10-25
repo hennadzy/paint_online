@@ -236,7 +236,7 @@ const Canvas = observer(() => {
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
         </Button>
-      )}
+      )}  
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((message, index) => (
