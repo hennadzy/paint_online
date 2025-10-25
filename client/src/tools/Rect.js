@@ -12,6 +12,7 @@ export default class Rect extends Tool {
     this.width = 0;
     this.height = 0;
     this.mouseDown = false;
+    this.committed = false; // Флаг для предотвращения двойного commit
 
     // Сохраняем привязанные обработчики для корректного удаления
     this.boundTouchStart = this.touchStartHandler.bind(this);
@@ -51,6 +52,7 @@ export default class Rect extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    this.committed = false; // Сбрасываем флаг при начале рисования
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.clientX - rect.left;
     this.startY = e.clientY - rect.top;
@@ -81,6 +83,7 @@ export default class Rect extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+    this.committed = false; // Сбрасываем флаг при начале рисования
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     this.startX = touch.clientX - rect.left;
@@ -122,6 +125,9 @@ export default class Rect extends Tool {
   }
 
   commitStroke() {
+    if (this.committed) return; // Предотвращаем двойной commit
+    this.committed = true;
+
     const stroke = {
       type: "rect",
       x: this.startX,

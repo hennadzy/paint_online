@@ -12,6 +12,7 @@ export default class Line extends Tool {
     this.endX = 0;
     this.endY = 0;
     this.mouseDown = false;
+    this.committed = false; // Флаг для предотвращения двойного commit
 
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
@@ -50,6 +51,7 @@ export default class Line extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    this.committed = false; // Сбрасываем флаг при начале рисования
     this.startX = e.pageX - this.canvas.offsetLeft;
     this.startY = e.pageY - this.canvas.offsetTop;
   }
@@ -79,6 +81,7 @@ export default class Line extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+    this.committed = false; // Сбрасываем флаг при начале рисования
     const touch = e.touches[0];
     this.startX = touch.pageX - this.canvas.offsetLeft;
     this.startY = touch.pageY - this.canvas.offsetTop;
@@ -117,6 +120,9 @@ export default class Line extends Tool {
   }
 
   commitStroke() {
+    if (this.committed) return; // Предотвращаем двойной commit
+    this.committed = true;
+
     const stroke = {
       type: "line",
       x1: this.startX,
