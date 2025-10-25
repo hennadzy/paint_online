@@ -49,14 +49,26 @@ export default class Circle extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    if (e.type === 'mousedown') {
+      const rect = this.canvas.getBoundingClientRect();
+      this.startX = e.clientX - rect.left;
+      this.startY = e.clientY - rect.top;
+    } else {
+      this.startX = e.pageX - this.canvas.offsetLeft;
+      this.startY = e.pageY - this.canvas.offsetTop;
+    }
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    let x, y;
+    if (e.type === 'mousemove') {
+      x = e.clientX - this.canvas.getBoundingClientRect().left;
+      y = e.clientY - this.canvas.getBoundingClientRect().top;
+    } else {
+      x = e.pageX - this.canvas.offsetLeft;
+      y = e.pageY - this.canvas.offsetTop;
+    }
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");

@@ -42,16 +42,31 @@ export default class Rect extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     canvasState.isDrawing = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    if (e.type === 'mousedown') {
+      const rect = this.canvas.getBoundingClientRect();
+      this.startX = e.clientX - rect.left;
+      this.startY = e.clientY - rect.top;
+    } else {
+      this.startX = e.pageX - this.canvas.offsetLeft;
+      this.startY = e.pageY - this.canvas.offsetTop;
+    }
     this.saved = this.canvas.toDataURL();
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    this.currentX = e.pageX - this.canvas.offsetLeft;
-    this.currentY = e.pageY - this.canvas.offsetTop;
+    let x, y;
+    if (e.type === 'mousemove') {
+      const rect = this.canvas.getBoundingClientRect();
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    } else {
+      x = e.pageX - this.canvas.offsetLeft;
+      y = e.pageY - this.canvas.offsetTop;
+    }
+    this.currentX = x;
+    this.currentY = y;
 
     this.drawPreview();
   }
