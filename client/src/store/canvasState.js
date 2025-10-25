@@ -33,13 +33,17 @@ class CanvasState {
   }
 
   pushStroke(stroke) {
+    // ✅ Гарантируем, что username всегда установлен
+    if (!stroke.username || stroke.username === "local") {
+      stroke.username = this.username || "local";
+    }
     this.strokeList.push(stroke);
     this.undoList.push([...this.strokeList]);
     this.redoList = [];
   }
 
   undo() {
-    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(this.username);
+    const lastIndex = this.strokeList.map(s => s.username).lastIndexOf(this.username || "local");
     if (lastIndex !== -1) {
       this.redoList.push([...this.strokeList]);
       this.strokeList.splice(lastIndex, 1);
