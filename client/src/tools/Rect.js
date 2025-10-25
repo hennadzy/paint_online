@@ -51,14 +51,16 @@ export default class Rect extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.width = x - this.startX;
     this.height = y - this.startY;
 
@@ -80,8 +82,9 @@ export default class Rect extends Tool {
     e.preventDefault();
     this.mouseDown = true;
     const touch = e.touches[0];
-    this.startX = touch.pageX - this.canvas.offsetLeft;
-    this.startY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = touch.clientX - rect.left;
+    this.startY = touch.clientY - rect.top;
   }
 
   touchMoveHandler(e) {

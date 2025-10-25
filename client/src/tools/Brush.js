@@ -61,14 +61,16 @@ export default class Brush extends Tool {
     this.points = [];
     canvasState.isDrawing = true;
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
       if (this.mouseDown) this.mouseUpHandler();
@@ -114,16 +116,18 @@ export default class Brush extends Tool {
     canvasState.isDrawing = true;
 
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
 
     if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
       if (this.mouseDown) this.touchEndHandler(e);

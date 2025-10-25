@@ -143,6 +143,9 @@ class CanvasState {
           ctx.globalCompositeOperation = "source-over";
           Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
           break;
+
+        default:
+          console.warn("Неизвестный тип фигуры:", stroke.type);
       }
 
       ctx.restore();
@@ -164,4 +167,5 @@ class CanvasState {
   }
 }
 
-export default new CanvasState();
+const canvasState = new CanvasState();
+export default canvasState;

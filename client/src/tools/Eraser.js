@@ -45,16 +45,18 @@ export default class Eraser extends Tool {
     canvasState.isDrawing = true;
     this.points = [];
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
@@ -86,8 +88,9 @@ export default class Eraser extends Tool {
     this.points = [];
 
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     this.points.push({ x, y });
   }
 
@@ -96,8 +99,9 @@ export default class Eraser extends Tool {
     if (!this.mouseDown) return;
 
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");

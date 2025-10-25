@@ -4,12 +4,10 @@ import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import canvasState from "../store/canvasState";
-import Toolbar from "./Toolbar";
 import toolState from "../store/toolState";
 import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
-import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
 import "../styles/canvas.scss";
 
@@ -195,8 +193,10 @@ const Canvas = observer(() => {
 
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
-    canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
-    canvas.classList.add(`${tool}-cursor`);
+    if (canvas) {
+      canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
+      canvas.classList.add(`${tool}-cursor`);
+    }
   };
 
   return (
