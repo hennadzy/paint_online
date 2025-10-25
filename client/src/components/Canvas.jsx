@@ -63,51 +63,48 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-
-    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
-    toolState.setTool(localBrush, "brush");
-    localBrush.listen();
-    updateCursor("brush");
   }, [params.id]);
 
-  useEffect(() => {
-    if (canvasState.username) {
-      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-      canvasState.setSocket(socket);
-      canvasState.setSessionId(params.id);
+  const connectHandler = () => {
+    const username = usernameRef.current.value.trim();
+    if (!username) return alert("Введите ваше имя");
 
-      const brush = new Brush(canvasRef.current, socket, params.id, canvasState.username);
-      toolState.setTool(brush, "brush");
-      brush.listen();
-      updateCursor("brush");
+    canvasState.setUsername(username);
+    setModal(false);
 
-      socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            id: params.id,
-            username: canvasState.username,
-            method: "connection",
-          })
-        );
-      };
+    const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+    canvasState.setSocket(socket);
+    canvasState.setSessionId(params.id);
 
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (!msg.username || msg.username === canvasState.username) return;
+    const brush = new Brush(canvasRef.current, socket, params.id, username);
+    toolState.setTool(brush, "brush");
+    brush.listen();
+    updateCursor("brush");
 
-        switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
-          case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
-            break;
-          default:
-            console.warn("Неизвестный метод:", msg.method);
-        }
-      };
-    }
-  }, [canvasState.username, params.id]);
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        id: params.id,
+        username,
+        method: "connection",
+      }));
+    };
+
+    socket.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (!msg.username || msg.username === canvasState.username) return;
+
+      switch (msg.method) {
+        case "draw":
+          drawHandler(msg);
+          break;
+        case "connection":
+          setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+          break;
+        default:
+          console.warn("Неизвестный метод:", msg.method);
+      }
+    };
+  };
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
@@ -177,16 +174,6 @@ const Canvas = observer(() => {
     ctx.restore();
   };
 
-  const connectHandler = () => {
-    const username = usernameRef.current.value.trim();
-    if (username) {
-      canvasState.setUsername(username);
-      setModal(false);
-    } else {
-      alert("Введите ваше имя");
-    }
-  };
-
   const mouseDownHandler = () => {
     axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
       img: canvasRef.current.toDataURL(),
@@ -217,9 +204,7 @@ const Canvas = observer(() => {
             ref={usernameRef}
             placeholder="Ваше имя"
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                connectHandler();
-              }
+              if (e.key === "Enter") connectHandler();
             }}
           />
         </Modal.Body>
