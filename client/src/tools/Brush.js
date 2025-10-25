@@ -87,7 +87,7 @@ export default class Brush extends Tool {
       username: this.username
     };
 
-    canvasState.pushStroke(stroke);
+    canvasState.pushStroke(stroke); // ← локальное добавление сразу
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -153,7 +153,7 @@ export default class Brush extends Tool {
       username: this.username
     };
 
-    canvasState.pushStroke(stroke);
+    canvasState.pushStroke(stroke); // ← локальное добавление сразу
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
