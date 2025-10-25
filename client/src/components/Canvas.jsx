@@ -186,7 +186,8 @@ const Canvas = observer(() => {
     });
   };
 
-  const handleCreateRoomClick = () => {
+  const handleCreateRoomClick = (e) => {
+    e.preventDefault();
     setModal(true);
     setIsRoomCreated(true);
   };
@@ -231,7 +232,12 @@ const Canvas = observer(() => {
       />
 
       {!isRoomCreated && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
+        <Button
+          variant="primary"
+          onClick={handleCreateRoomClick}
+          onTouchEnd={handleCreateRoomClick}
+          style={{ marginTop: "10px" }}
+        >
           Создать комнату
         </Button>
       )}
