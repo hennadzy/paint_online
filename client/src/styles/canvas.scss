@@ -3,132 +3,139 @@
 .canvas {
   height: 100vh;
   display: flex;
-  flex-direction: column;  /* Добавляем вертикальное расположение */
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: $background-color;
+  overflow: hidden;
+}
+
+.canvas-container {
+  position: relative;
+  width: 600px;
+  height: 400px;
+  margin-top: 80px;
+  margin-bottom: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  background-color: white;
+  border: 1px solid black;
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 
-
 canvas {
-  cursor: crosshair; /* Базовый стиль курсора для холста */
-  border: 1px solid black;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-  background-color: white;
-  margin-top: 80px;
-  margin-bottom: 10px;
+  cursor: crosshair;
   touch-action: none;
 }
 
 canvas.rect-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto; 
+  cursor: url('../assets/img/brush.png') 0 25, auto;
 }
 
 canvas.circle-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto; 
+  cursor: url('../assets/img/brush.png') 0 25, auto;
 }
 
 canvas.line-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto; 
+  cursor: url('../assets/img/brush.png') 0 25, auto;
 }
 
 canvas.brush-cursor {
-  cursor: url('../assets/img/brush.png') 0 25, auto; 
+  cursor: url('../assets/img/brush.png') 0 25, auto;
 }
 
 canvas.eraser-cursor {
-  cursor: url('../assets/img/eraser.png') 0 25, auto; 
+  cursor: url('../assets/img/eraser.png') 0 25, auto;
 }
 
 button {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: linear-gradient(135deg, #ffcc00, #ff6699); /* Градиентный фон */
-  border: none; /* Убираем стандартные границы */
-  border-radius: 10px; /* Закругленные углы */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Легкая тень */
-  color: white; /* Цвет текста */
-  font-size: 18px; /* Размер шрифта */
-  padding: 5px 10px; /* Внутренние отступы */
-  cursor: pointer; /* Указатель мыши для интерактивности */
-  transition: all 0.3s ease; /* Плавность переходов */
+  background: linear-gradient(135deg, #ffcc00, #ff6699);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 18px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  transform: scale(1.05); /* Увеличение при наведении */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Более заметная тень */
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 button:active {
-  transform: scale(0.9); /* Сжатие при нажатии */
+  transform: scale(0.9);
 }
 
 .btn-close {
   position: absolute;
-  top: 10px; /* Расположение сверху */
-  right: 10px; /* Расположение справа */
-  width: 30px; /* Размер кнопки */
-  height: 30px; /* Размер кнопки */
-  background: transparent; /* Без фона */
-  border: none; /* Убираем стандартные границы */
-  cursor: pointer; /* Указатель мыши */
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-.btn-close::before, .btn-close::after {
+.btn-close::before,
+.btn-close::after {
   content: '';
   position: absolute;
-  width: 20px; /* Длина линии */
-  height: 3px; /* Толщина линии */
-  background-color: #ffcc00; /* Цвет линий */
+  width: 20px;
+  height: 3px;
+  background-color: #ffcc00;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(45deg); /* Первая линия */
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .btn-close::after {
-  transform: translate(-50%, -50%) rotate(-45deg); /* Вторая линия */
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-.btn-close:hover::before, .btn-close:hover::after {
-  background-color: #ff6699; /* Цвет линий меняется на золотистый */
+.btn-close:hover::before,
+.btn-close:hover::after {
+  background-color: #ff6699;
   transition: background-color 0.3s ease;
 }
 
 .modal-content {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: #676767c3; 
-  border-radius: 10px; /* Округлые углы */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* Тень для объема */
-  padding: 20px; /* Внутренние отступы */
+  background: #676767c3;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  padding: 20px;
 }
 
 .modal-header {
   font-size: 15px;
-  color: #ffcc00; /* Яркий акцент цвета */
+  color: #ffcc00;
   display: flex;
   justify-content: center;
 }
 
-
-
 .modal-footer button {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  background: #ffcc00; /* Яркий фон кнопки */
-  color: #333; /* Цвет текста */
-  border-radius: 10px; /* Округление углов */
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); /* Легкая тень */
+  background: #ffcc00;
+  color: #333;
+  border-radius: 10px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
 .modal-footer button:hover {
-  transform: scale(1.1); /* Увеличение при наведении */
-  background: #ff6699; /* Смена цвета кнопки */
+  transform: scale(1.1);
+  background: #ff6699;
 }
 
-
-
-
 @media only screen and (max-width: 768px) {
-  canvas {
-    width: 100%; /* Холст занимает всю доступную ширину */
-    height: auto; /* Высота сохраняет пропорции */
+  .canvas-container {
+    width: 100%;
+    height: auto;
   }
 }

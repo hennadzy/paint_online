@@ -19,6 +19,7 @@ const Canvas = observer(() => {
   useEffect(() => {
     canvasState.setCanvasContainer(containerRef.current);
     canvasState.createLayerForUser("local");
+    resizeAllLayers();
     const brush = new Brush(canvasState.getLayer("local"), null, params.id, "local");
     toolState.setTool(brush, "brush");
     brush.listen();
@@ -38,12 +39,13 @@ const Canvas = observer(() => {
           username: canvasState.username,
           method: "connection"
         }));
-        // Удаляем локальный слой
+
         const localCanvas = canvasState.getLayer("local");
         if (localCanvas) localCanvas.remove();
         canvasState.layers.delete("local");
 
         canvasState.createLayerForUser(canvasState.username);
+        resizeAllLayers();
         const brush = new Brush(canvasState.currentLayer, socket, params.id, canvasState.username);
         toolState.setTool(brush, "brush");
         brush.listen();
@@ -56,6 +58,7 @@ const Canvas = observer(() => {
         switch (msg.method) {
           case "connection":
             canvasState.createLayerForUser(msg.username);
+            resizeAllLayers();
             setMessages(prev => [...prev, `${msg.username} вошел в комнату`]);
             break;
           case "draw":
@@ -77,9 +80,8 @@ const Canvas = observer(() => {
   }, [canvasState.username]);
 
   const resizeAllLayers = () => {
-    const container = containerRef.current;
-    const width = container.offsetWidth;
-    const height = container.offsetHeight;
+    const width = 600;
+    const height = 400;
     canvasState.layers.forEach((canvas) => {
       canvas.width = width;
       canvas.height = height;
@@ -137,7 +139,7 @@ const Canvas = observer(() => {
   };
 
   return (
-    <div className="canvas">
+    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Введите ваше имя</Modal.Title>
@@ -156,7 +158,7 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <div ref={containerRef} className="canvas-container" style={{ position: "relative", width: "100%", height: "100vh" }} />
+      <div ref={containerRef} className="canvas-container" />
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
