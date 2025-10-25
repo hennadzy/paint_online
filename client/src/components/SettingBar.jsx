@@ -20,6 +20,7 @@ const lineWidth = toolState.tool?.lineWidth ?? 1;
         max={50}
         value={currentWidth}
         onChange={handleChange}
+        onPointerUp={handleChange}
       />
       <span className="line-width-label">{lineWidth}px</span>
     </div>

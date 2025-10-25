@@ -209,8 +209,7 @@ const Canvas = observer(() => {
             type="button"
             className="btn-close"
             aria-label="Close"
-            onClick={() => setModal(false)}
-            onTouchEnd={() => setModal(false)}
+            onPointerUp={() => setModal(false)}
           ></button>
         </Modal.Header>
         <Modal.Body>
@@ -227,8 +226,7 @@ const Canvas = observer(() => {
         <Modal.Footer>
           <Button
             variant="secondary"
-            onClick={connectHandler}
-            onTouchEnd={connectHandler}
+            onPointerUp={connectHandler}
           >
             Войти
           </Button>
@@ -245,8 +243,7 @@ const Canvas = observer(() => {
       {!isRoomCreated && (
         <Button
           variant="primary"
-          onClick={handleCreateRoomClick}
-          onTouchEnd={handleCreateRoomClick}
+          onPointerUp={handleCreateRoomClick}
           style={{ marginTop: "10px" }}
         >
           Создать комнату

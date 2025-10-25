@@ -14,10 +14,7 @@ export default class Rect extends Tool {
     this.mouseDown = false;
     this.committed = false; // Флаг для предотвращения двойного commit
 
-    // Сохраняем привязанные обработчики для корректного удаления
-    this.boundTouchStart = this.touchStartHandler.bind(this);
-    this.boundTouchMove = this.touchMoveHandler.bind(this);
-    this.boundTouchEnd = this.touchEndHandler.bind(this);
+
 
     makeAutoObservable(this);
   }
@@ -31,26 +28,18 @@ export default class Rect extends Tool {
   }
 
   listen() {
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-
-    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
-    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
-    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+    this.canvas.onpointerdown = this.pointerDownHandler.bind(this);
+    this.canvas.onpointermove = this.pointerMoveHandler.bind(this);
+    this.canvas.onpointerup = this.pointerUpHandler.bind(this);
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
-
-    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
-    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
-    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
+    this.canvas.onpointerdown = null;
+    this.canvas.onpointermove = null;
+    this.canvas.onpointerup = null;
   }
 
-  mouseDownHandler(e) {
+  pointerDownHandler(e) {
     this.mouseDown = true;
     this.committed = false; // Сбрасываем флаг при начале рисования
     const rect = this.canvas.getBoundingClientRect();
@@ -58,7 +47,7 @@ export default class Rect extends Tool {
     this.startY = e.clientY - rect.top;
   }
 
-  mouseMoveHandler(e) {
+  pointerMoveHandler(e) {
     if (!this.mouseDown) return;
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -75,52 +64,8 @@ export default class Rect extends Tool {
     ctx.restore();
   }
 
-  mouseUpHandler() {
+  pointerUpHandler() {
     this.mouseDown = false;
-    this.commitStroke();
-  }
-
-  touchStartHandler(e) {
-    e.preventDefault();
-    this.mouseDown = true;
-    this.committed = false; // Сбрасываем флаг при начале рисования
-    const touch = e.touches[0];
-    const rect = this.canvas.getBoundingClientRect();
-    this.startX = touch.clientX - rect.left;
-    this.startY = touch.clientY - rect.top;
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
-    this.width = x - this.startX;
-    this.height = y - this.startY;
-
-    const ctx = this.canvas.getContext("2d");
-    canvasState.redrawCanvas();
-    ctx.save();
-    ctx.strokeStyle = this.strokeColor;
-    ctx.lineWidth = this.lineWidth;
-    ctx.strokeRect(this.startX, this.startY, this.width, this.height);
-    ctx.restore();
-  }
-
-  touchEndHandler(e) {
-    e.preventDefault();
-    this.mouseDown = false;
-
-    // Если не было движения — рассчитать размеры по точке отпускания
-    if (this.width === 0 && this.height === 0) {
-      const touch = e.changedTouches[0];
-      const x = touch.pageX - this.canvas.offsetLeft;
-      const y = touch.pageY - this.canvas.offsetTop;
-      this.width = x - this.startX;
-      this.height = y - this.startY;
-    }
-
     this.commitStroke();
   }
 
