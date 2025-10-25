@@ -75,6 +75,7 @@ export default class Brush extends Tool {
     };
 
     canvasState.pushStroke(stroke);
+    canvasState.redrawCanvas();
 
     if (this.socket && this.points.length > 0) {
       this.socket.send(JSON.stringify({
@@ -125,6 +126,7 @@ export default class Brush extends Tool {
     };
 
     canvasState.pushStroke(stroke);
+    canvasState.redrawCanvas();
 
     if (this.socket && this.points.length > 0) {
       this.socket.send(JSON.stringify({

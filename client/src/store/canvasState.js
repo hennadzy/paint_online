@@ -1,4 +1,7 @@
 import { makeAutoObservable } from "mobx";
+import Rect from "../tools/Rect";
+import Circle from "../tools/Circle";
+import Line from "../tools/Line";
 
 class CanvasState {
   canvas = null;
@@ -54,29 +57,54 @@ class CanvasState {
   }
 
   redrawCanvas() {
+    if (!this.canvas) return;
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.strokeList.forEach((stroke) => {
-      if (stroke.type === "brush") {
-        const points = stroke.points;
-        if (!points || points.length === 0) return;
-        ctx.save();
-        ctx.strokeStyle = stroke.strokeStyle || "#000000";
-        ctx.lineWidth = stroke.lineWidth || 1;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-          ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.stroke();
-        ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = stroke.strokeStyle || "#000000";
+      ctx.lineWidth = stroke.lineWidth || 1;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      switch (stroke.type) {
+        case "brush":
+          const points = stroke.points;
+          if (!points || points.length === 0) break;
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
+          ctx.stroke();
+          break;
+
+        case "rect":
+          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
+          break;
+
+        case "circle":
+          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
+          break;
+
+        case "line":
+          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
+          break;
+
+        case "eraser":
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.beginPath();
+          ctx.moveTo(stroke.x, stroke.y);
+          ctx.lineTo(stroke.x + 0.1, stroke.y + 0.1);
+          ctx.stroke();
+          ctx.globalCompositeOperation = "source-over";
+          break;
       }
-      // TODO: поддержка других типов stroke (rect, circle и т.д.)
+
+      ctx.restore();
     });
   }
 
