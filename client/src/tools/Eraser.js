@@ -7,6 +7,7 @@ export default class Eraser extends Tool {
     super(canvas, socket, id, username);
     this.lineWidth = 10;
     this.mouseDown = false;
+    this.points = [];
 
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
@@ -42,44 +43,20 @@ export default class Eraser extends Tool {
   mouseDownHandler(e) {
     this.mouseDown = true;
     canvasState.isDrawing = true;
-    this.eraseAt(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
+    this.points = [];
+
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    this.eraseAt(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
-  }
 
-  mouseUpHandler(e) {
-    this.mouseDown = false;
-    canvasState.isDrawing = false;
-    this.commitStroke(e.pageX - this.canvas.offsetLeft, e.pageY - this.canvas.offsetTop);
-  }
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
 
-  touchStartHandler(e) {
-    e.preventDefault();
-    this.mouseDown = true;
-    canvasState.isDrawing = true;
-    const touch = e.touches[0];
-    this.eraseAt(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-    const touch = e.touches[0];
-    this.eraseAt(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
-  }
-
-  touchEndHandler(e) {
-    e.preventDefault();
-    this.mouseDown = false;
-    canvasState.isDrawing = false;
-    const touch = e.changedTouches[0];
-    this.commitStroke(touch.pageX - this.canvas.offsetLeft, touch.pageY - this.canvas.offsetTop);
-  }
-
-  eraseAt(x, y) {
     const ctx = this.canvas.getContext("2d");
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
@@ -87,17 +64,71 @@ export default class Eraser extends Tool {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + 0.1, y + 0.1);
-    ctx.stroke();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
-  commitStroke(x, y) {
+  mouseUpHandler() {
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    canvasState.isDrawing = true;
+    this.points = [];
+
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.points.push({ x, y });
+
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
+  commitStroke() {
+    if (this.points.length === 0) return;
+
     const stroke = {
       type: "eraser",
-      x,
-      y,
+      points: this.points,
       lineWidth: this.lineWidth,
       username: this.username
     };
@@ -112,5 +143,7 @@ export default class Eraser extends Tool {
         figure: stroke
       }));
     }
+
+    this.points = [];
   }
 }
