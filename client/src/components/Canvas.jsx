@@ -63,6 +63,12 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
+
+    // Локальный режим по умолчанию
+    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
+    toolState.setTool(localBrush, "brush");
+    localBrush.listen();
+    updateCursor("brush");
   }, [params.id]);
 
   const connectHandler = () => {
