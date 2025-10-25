@@ -23,7 +23,7 @@ export default class Rect extends Tool {
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    window.addEventListener("mousemove", this.mouseMoveHandler.bind(this));
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
 
@@ -32,7 +32,7 @@ export default class Rect extends Tool {
 
   destroyEvents() {
     this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
+    window.removeEventListener("mousemove", this.mouseMoveHandler);
     this.canvas.removeEventListener("touchstart", this.touchStartHandler);
     this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
 

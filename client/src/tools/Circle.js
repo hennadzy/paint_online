@@ -29,7 +29,7 @@ export default class Circle extends Tool {
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    window.addEventListener("mousemove", this.mouseMoveHandler.bind(this));
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
@@ -39,7 +39,7 @@ export default class Circle extends Tool {
 
   destroyEvents() {
     this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
+    window.removeEventListener("mousemove", this.mouseMoveHandler);
     this.canvas.onmouseup = null;
 
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
