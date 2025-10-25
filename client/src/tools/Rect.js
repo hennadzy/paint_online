@@ -12,6 +12,12 @@ export default class Rect extends Tool {
     this.width = 0;
     this.height = 0;
     this.mouseDown = false;
+
+    // Сохраняем привязанные обработчики для корректного удаления
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+
     makeAutoObservable(this);
   }
 
@@ -28,9 +34,9 @@ export default class Rect extends Tool {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
@@ -38,9 +44,9 @@ export default class Rect extends Tool {
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
 
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this.touchEndHandler);
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
@@ -100,7 +106,7 @@ export default class Rect extends Tool {
     e.preventDefault();
     this.mouseDown = false;
 
-    // 🛠️ Исправление: если не было движения, рассчитать размеры по точке отпускания
+    // Если не было движения — рассчитать размеры по точке отпускания
     if (this.width === 0 && this.height === 0) {
       const touch = e.changedTouches[0];
       const x = touch.pageX - this.canvas.offsetLeft;
