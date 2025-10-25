@@ -67,16 +67,20 @@ export default class Brush extends Tool {
   }
 
   mouseMoveHandler(e) {
-    if (!this.mouseDown) return;
-
     const x = e.pageX - this.canvas.offsetLeft;
     const y = e.pageY - this.canvas.offsetTop;
 
-    // Если курсор вышел за холст — завершить stroke
     if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
-      this.mouseUpHandler();
+      if (this.mouseDown) this.mouseUpHandler();
       return;
     }
+
+    // Если мышь удерживается, но stroke завершён — начать новый
+    if (e.buttons === 1 && !this.mouseDown) {
+      this.mouseDownHandler(e);
+    }
+
+    if (!this.mouseDown) return;
 
     this.points.push({ x, y });
 
@@ -117,17 +121,22 @@ export default class Brush extends Tool {
 
   touchMoveHandler(e) {
     e.preventDefault();
-    if (!this.mouseDown) return;
-
     const touch = e.touches[0];
     const x = touch.pageX - this.canvas.offsetLeft;
     const y = touch.pageY - this.canvas.offsetTop;
 
-    // Если палец вышел за холст — завершить stroke
     if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
-      this.touchEndHandler(e);
+      if (this.mouseDown) this.touchEndHandler(e);
       return;
     }
+
+    // Если палец удерживается, но stroke завершён — начать новый
+    if (e.touches.length > 0 && !this.mouseDown) {
+      this.touchStartHandler(e);
+      return;
+    }
+
+    if (!this.mouseDown) return;
 
     this.points.push({ x, y });
 
