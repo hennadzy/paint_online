@@ -9,6 +9,12 @@ export default class Brush extends Tool {
     this.lineWidth = 1;
     this.mouseDown = false;
     this.points = [];
+
+    // Сохраняем привязанные обработчики для корректного удаления
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+
     makeAutoObservable(this);
   }
 
@@ -25,9 +31,9 @@ export default class Brush extends Tool {
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
 
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
@@ -35,9 +41,9 @@ export default class Brush extends Tool {
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
 
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this.touchEndHandler);
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
@@ -87,7 +93,7 @@ export default class Brush extends Tool {
       username: this.username
     };
 
-    canvasState.pushStroke(stroke); // ← локальное добавление сразу
+    canvasState.pushStroke(stroke);
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
@@ -153,7 +159,7 @@ export default class Brush extends Tool {
       username: this.username
     };
 
-    canvasState.pushStroke(stroke); // ← локальное добавление сразу
+    canvasState.pushStroke(stroke);
 
     if (this.socket) {
       this.socket.send(JSON.stringify({
