@@ -1,12 +1,10 @@
-@import "./variables";
-
 .canvas {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
   background-color: #cccccc;
+  padding-top: 40px;
   overflow: hidden;
 }
 
@@ -14,14 +12,14 @@
   position: relative;
   width: 600px;
   height: 400px;
-  margin-top: 80px;
-  margin-bottom: 10px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   background-color: white;
-  border: 1px solid black;
+  border: 1px solid #333;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 canvas {
+  width: 100%;
+  height: 100%;
   background-color: white;
   touch-action: none;
 }
@@ -47,30 +45,47 @@ canvas.line-cursor {
 }
 
 button {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: linear-gradient(135deg, #ffcc00, #ff6699);
   border: none;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
   color: white;
-  font-size: 18px;
-  padding: 5px 10px;
+  font-size: 16px;
+  padding: 6px 12px;
+  margin-top: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-button:active {
-  transform: scale(0.9);
+.modal-content {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  padding: 20px;
 }
 
-@media only screen and (max-width: 768px) {
-  .canvas-container {
-    width: 100%;
-    height: auto;
-  }
+.modal-header {
+  border-bottom: none;
+  justify-content: center;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.modal-body input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.modal-footer {
+  justify-content: center;
 }

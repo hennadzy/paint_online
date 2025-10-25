@@ -4,133 +4,32 @@ import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
-import strokeManager from "../store/StrokeManager";
 import Brush from "../tools/Brush";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
-  const containerRef = useRef();
+  const canvasRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
-  const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
   useEffect(() => {
-    canvasState.setCanvasContainer(containerRef.current);
-    canvasState.createLayerForUser("local");
-    canvasState.currentLayer = canvasState.getLayer("local");
-    resizeAllLayers();
-    const brush = new Brush(canvasState.currentLayer, null, params.id, "local");
+    canvasState.setCanvas(canvasRef.current);
+    canvasState.setCanvasContainer(canvasRef.current.parentElement);
+    canvasRef.current.width = 600;
+    canvasRef.current.height = 400;
+
+    const brush = new Brush(canvasRef.current);
     toolState.setTool(brush, "brush");
     brush.listen();
-    window.addEventListener("resize", resizeAllLayers);
-    return () => window.removeEventListener("resize", resizeAllLayers);
   }, []);
-
-  useEffect(() => {
-    if (canvasState.username) {
-      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-      canvasState.setSocket(socket);
-      canvasState.setSessionId(params.id);
-
-      socket.onopen = () => {
-        socket.send(JSON.stringify({
-          id: params.id,
-          username: canvasState.username,
-          method: "connection"
-        }));
-
-        const localCanvas = canvasState.getLayer("local");
-        if (localCanvas) localCanvas.remove();
-        canvasState.layers.delete("local");
-
-        canvasState.createLayerForUser(canvasState.username);
-        canvasState.currentLayer = canvasState.getLayer(canvasState.username);
-        resizeAllLayers();
-        const brush = new Brush(canvasState.currentLayer, socket, params.id, canvasState.username);
-        toolState.setTool(brush, "brush");
-        brush.listen();
-      };
-
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (!msg.username || msg.username === canvasState.username) return;
-
-        switch (msg.method) {
-          case "connection":
-            canvasState.createLayerForUser(msg.username);
-            resizeAllLayers();
-            setMessages(prev => [...prev, `${msg.username} вошел в комнату`]);
-            break;
-          case "draw":
-            handleDraw(msg);
-            break;
-          case "undo":
-            strokeManager.undo(msg.username);
-            redrawLayer(msg.username);
-            break;
-          case "redo":
-            strokeManager.redo(msg.username);
-            redrawLayer(msg.username);
-            break;
-          default:
-            console.warn("Неизвестный метод:", msg.method);
-        }
-      };
-    }
-  }, [canvasState.username]);
-
-  const resizeAllLayers = () => {
-    const width = 600;
-    const height = 400;
-    canvasState.layers.forEach((canvas) => {
-      canvas.width = width;
-      canvas.height = height;
-    });
-  };
-
-  const handleDraw = (msg) => {
-    const layer = canvasState.getLayer(msg.username);
-    if (!layer) return;
-    const ctx = layer.getContext("2d");
-    const stroke = msg.stroke;
-
-    strokeManager.addStroke(msg.username, stroke);
-    drawStroke(ctx, stroke);
-  };
-
-  const drawStroke = (ctx, stroke) => {
-    ctx.save();
-    ctx.strokeStyle = stroke.color;
-    ctx.lineWidth = stroke.width;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    const points = stroke.points;
-    if (points.length > 0) {
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-    }
-    ctx.restore();
-  };
-
-  const redrawLayer = (username) => {
-    const layer = canvasState.getLayer(username);
-    if (!layer) return;
-    const ctx = layer.getContext("2d");
-    ctx.clearRect(0, 0, layer.width, layer.height);
-    const strokes = strokeManager.getStrokes(username);
-    strokes.forEach((stroke) => drawStroke(ctx, stroke));
-  };
 
   const connectHandler = () => {
     const name = usernameRef.current.value.trim();
     if (name) {
       canvasState.setUsername(name);
+      canvasState.setSessionId(params.id);
       setModal(false);
     }
   };
@@ -160,17 +59,15 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <div ref={containerRef} className="canvas-container" />
+      <div className="canvas-container">
+        <canvas ref={canvasRef} />
+      </div>
 
       {!isRoomCreated && (
         <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginTop: "10px" }}>
           Создать комнату
         </Button>
       )}
-
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {messages.map((msg, i) => <div key={i}>{msg}</div>)}
-      </div>
     </div>
   );
 });

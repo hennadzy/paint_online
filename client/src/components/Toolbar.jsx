@@ -17,7 +17,7 @@ const Toolbar = observer(() => {
   const changeTool = (tool, cursorClass, toolNameOverride) => {
     toolState.setTool(tool, toolNameOverride);
 
-    const canvas = canvasState.currentLayer;
+    const canvas = canvasState.canvas;
     if (canvas) {
       canvas.classList.remove(
         "brush-cursor",
@@ -31,7 +31,7 @@ const Toolbar = observer(() => {
   };
 
   const download = () => {
-    const dataUrl = canvasState.currentLayer.toDataURL();
+    const dataUrl = canvasState.canvas.toDataURL();
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = canvasState.sessionid + ".jpg";
@@ -48,7 +48,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Brush(canvasState.currentLayer, canvasState.socket, canvasState.sessionid, canvasState.username),
+            new Brush(canvasState.canvas),
             "brush-cursor", "brush"
           )
         }
@@ -57,7 +57,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Rect(canvasState.currentLayer, canvasState.socket, canvasState.sessionid, canvasState.username),
+            new Rect(canvasState.canvas),
             "rect-cursor", "rect"
           )
         }
@@ -66,7 +66,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Circle(canvasState.currentLayer, canvasState.socket, canvasState.sessionid, canvasState.username),
+            new Circle(canvasState.canvas),
             "circle-cursor", "circle"
           )
         }
@@ -75,7 +75,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Eraser(canvasState.currentLayer, canvasState.socket, canvasState.sessionid, canvasState.username),
+            new Eraser(canvasState.canvas),
             "eraser-cursor", "eraser"
           )
         }
@@ -84,7 +84,7 @@ const Toolbar = observer(() => {
         className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
         onClick={() =>
           changeTool(
-            new Line(canvasState.currentLayer, canvasState.socket, canvasState.sessionid, canvasState.username),
+            new Line(canvasState.canvas),
             "line-cursor", "line"
           )
         }
