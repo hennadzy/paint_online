@@ -189,8 +189,10 @@ const Canvas = observer(() => {
   const handleCreateRoomClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setModal(true);
-    setIsRoomCreated(true);
+    setTimeout(() => {
+      setModal(true);
+      setIsRoomCreated(true);
+    }, 0);
   };
 
   const updateCursor = (tool) => {
