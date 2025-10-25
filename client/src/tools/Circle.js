@@ -11,6 +11,11 @@ export default class Circle extends Tool {
     this.startY = 0;
     this.radius = 0;
     this.mouseDown = false;
+
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+
     makeAutoObservable(this);
   }
 
@@ -26,12 +31,20 @@ export default class Circle extends Tool {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
     this.canvas.onmouseup = null;
+
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
@@ -42,16 +55,12 @@ export default class Circle extends Tool {
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
     const x = e.pageX - this.canvas.offsetLeft;
     const y = e.pageY - this.canvas.offsetTop;
-    const dx = x - this.startX;
-    const dy = y - this.startY;
-    this.radius = Math.sqrt(dx * dx + dy * dy);
+    this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
@@ -63,7 +72,51 @@ export default class Circle extends Tool {
 
   mouseUpHandler() {
     this.mouseDown = false;
+    this.commitStroke();
+  }
 
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const touch = e.touches[0];
+    this.startX = touch.pageX - this.canvas.offsetLeft;
+    this.startY = touch.pageY - this.canvas.offsetTop;
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
+
+    const ctx = this.canvas.getContext("2d");
+    canvasState.redrawCanvas();
+    ctx.save();
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.beginPath();
+    ctx.arc(this.startX, this.startY, this.radius, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+
+    if (this.radius === 0) {
+      const touch = e.changedTouches[0];
+      const x = touch.pageX - this.canvas.offsetLeft;
+      const y = touch.pageY - this.canvas.offsetTop;
+      this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
+    }
+
+    this.commitStroke();
+  }
+
+  commitStroke() {
     const stroke = {
       type: "circle",
       x: this.startX,
