@@ -9,6 +9,7 @@ export default class Brush extends Tool {
     this.lineWidth = 1;
     this.points = [];
     this._skipNextSegment = false;
+    this.isNewSegment = false;
 
     makeAutoObservable(this);
   }
@@ -67,7 +68,7 @@ export default class Brush extends Tool {
 
     if (this._skipNextSegment) {
       this._skipNextSegment = false;
-      this.points = []; // ✅ сбрасываем, чтобы не соединять прямой
+      this.isNewSegment = true;
     }
 
     this.points.push({ x, y });
@@ -79,13 +80,19 @@ export default class Brush extends Tool {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
+
     const len = this.points.length;
-    if (len >= 2) {
+    if (len >= 2 && !this.isNewSegment) {
       ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
-      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
-      ctx.stroke();
+    } else {
+      ctx.moveTo(this.points[len - 1].x, this.points[len - 1].y);
     }
+
+    ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+    ctx.stroke();
     ctx.restore();
+
+    this.isNewSegment = false;
   }
 
   touchStartHandler(e) {
@@ -120,7 +127,7 @@ export default class Brush extends Tool {
 
     if (this._skipNextSegment) {
       this._skipNextSegment = false;
-      this.points = [];
+      this.isNewSegment = true;
     }
 
     this.points.push({ x, y });
@@ -132,13 +139,19 @@ export default class Brush extends Tool {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
+
     const len = this.points.length;
-    if (len >= 2) {
+    if (len >= 2 && !this.isNewSegment) {
       ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
-      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
-      ctx.stroke();
+    } else {
+      ctx.moveTo(this.points[len - 1].x, this.points[len - 1].y);
     }
+
+    ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+    ctx.stroke();
     ctx.restore();
+
+    this.isNewSegment = false;
   }
 
   commitStroke() {
