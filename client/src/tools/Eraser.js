@@ -1,113 +1,123 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
+import { makeAutoObservable } from "mobx";
 
 export default class Eraser extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.lineWidth = 10;
     this.points = [];
-  }
-
-  setLineWidth(width) {
-    this.lineWidth = width;
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+    makeAutoObservable(this);
   }
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-
-    this.listenGlobalEndEvents(); // централизованное завершение
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-
-    this.removeGlobalEndEvents();
+    super.destroyEvents();
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
-
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
-
-    this.drawSegment();
-  }
-
-  touchStartHandler(e) {
-    e.preventDefault();
-    this.mouseDown = true;
-    this._hasCommitted = false;
-    canvasState.isDrawing = true;
-    this.points = [];
-
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
-    this.points.push({ x, y });
-  }
-
-  touchMoveHandler(e) {
-    e.preventDefault();
-    if (!this.mouseDown) return;
-
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
-    this.points.push({ x, y });
-
-    this.drawSegment();
-  }
-
-  drawSegment() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.ctx;
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
-    ctx.strokeStyle = "rgba(0,0,0,1)";
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-
     const len = this.points.length;
     if (len >= 2) {
       ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
       ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
       ctx.stroke();
     }
-
     ctx.restore();
+  }
+
+  mouseUpHandler() {
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    canvasState.isDrawing = true;
+    this.points = [];
+    const touch = e.touches[0];
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    this.points.push({ x, y });
+  }
+
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const touch = e.touches[0];
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    this.points.push({ x, y });
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = this.lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    const len = this.points.length;
+    if (len >= 2) {
+      ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
+      ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
   }
 
   commitStroke() {
     if (this.points.length === 0) return;
-
     const stroke = {
       type: "eraser",
       points: this.points,
       lineWidth: this.lineWidth,
       username: this.username
     };
-
     canvasState.pushStroke(stroke);
-
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -116,8 +126,8 @@ export default class Eraser extends Tool {
         figure: stroke
       }));
     }
-
     this.points = [];
-    canvasState.isDrawing = false;
   }
 }
+
+
