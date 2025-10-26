@@ -125,6 +125,7 @@ export default class Circle extends Tool {
 
   static staticDraw(ctx, x, y, radius, strokeStyle, lineWidth) {
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = strokeStyle || "#000000";
     ctx.lineWidth = lineWidth || 1;
     ctx.beginPath();

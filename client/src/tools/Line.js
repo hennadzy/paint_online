@@ -126,6 +126,7 @@ export default class Line extends Tool {
 
   static staticDraw(ctx, x1, y1, x2, y2, strokeStyle, lineWidth) {
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = strokeStyle || "#000000";
     ctx.lineWidth = lineWidth || 1;
     ctx.beginPath();

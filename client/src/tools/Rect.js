@@ -126,6 +126,7 @@ export default class Rect extends Tool {
 
   static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = strokeStyle || "#000000";
     ctx.lineWidth = lineWidth || 1;
     ctx.strokeRect(x, y, width, height);
