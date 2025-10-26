@@ -9,6 +9,7 @@ export default class Brush extends Tool {
     this.lineWidth = 1;
     this.points = [];
     this._skipNextSegment = false;
+    this.isOutOfBounds = false;
 
     makeAutoObservable(this);
   }
@@ -57,18 +58,19 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      if (this.mouseDown) {
-        this._skipNextSegment = true;
-      }
+      this.isOutOfBounds = true;
+      return;
+    }
+
+    if (this.isOutOfBounds && this.mouseDown) {
+      // Если вернулись в границы после выхода, начинаем новый stroke
+      this.isOutOfBounds = false;
+      this.points = [];
+      this.points.push({ x, y });
       return;
     }
 
     if (!this.mouseDown) return;
-
-    if (this._skipNextSegment) {
-      this._skipNextSegment = false;
-      this.points = []; // ✅ сбрасываем, чтобы не соединять прямой
-    }
 
     this.points.push({ x, y });
 
@@ -110,18 +112,19 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      if (this.mouseDown) {
-        this._skipNextSegment = true;
-      }
+      this.isOutOfBounds = true;
+      return;
+    }
+
+    if (this.isOutOfBounds && this.mouseDown) {
+      // Если вернулись в границы после выхода, начинаем новый stroke
+      this.isOutOfBounds = false;
+      this.points = [];
+      this.points.push({ x, y });
       return;
     }
 
     if (!this.mouseDown) return;
-
-    if (this._skipNextSegment) {
-      this._skipNextSegment = false;
-      this.points = [];
-    }
 
     this.points.push({ x, y });
 
