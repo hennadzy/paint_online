@@ -107,8 +107,10 @@ const Canvas = observer(() => {
 
     const handleMove = (e) => {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.touches?.[0]?.pageX ?? e.pageX) - rect.left;
-      const y = (e.touches?.[0]?.pageY ?? e.pageY) - rect.top;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = ((e.touches?.[0]?.pageX ?? e.pageX) - rect.left) * scaleX;
+      const y = ((e.touches?.[0]?.pageY ?? e.pageY) - rect.top) * scaleY;
       updateCursorOverlay(x, y);
     };
 
