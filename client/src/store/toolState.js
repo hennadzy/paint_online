@@ -18,28 +18,25 @@ class ToolState {
     makeAutoObservable(this);
   }
 
-  setTool(tool, toolNameOverride) {
-    // Удаляем события у предыдущего инструмента
-    this.tool?.destroyEvents?.();
+setTool(tool, toolNameOverride) {
+  this.tool?.destroyEvents?.(); // удаляет ВСЕ события
 
-    this.tool = tool;
-    this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
+  this.tool = tool;
+  this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
 
-    // Применяем настройки цвета и толщины
-    this.tool.setStrokeColor?.(this.strokeColor);
-    this.tool.setFillColor?.(this.fillColor);
+  this.tool.setStrokeColor?.(this.strokeColor);
+  this.tool.setFillColor?.(this.fillColor);
 
-    const savedWidth = this.lineWidths[this.toolName] ?? 1;
-    this.tool.setLineWidth?.(savedWidth);
+  const savedWidth = this.lineWidths[this.toolName] ?? 1;
+  this.tool.setLineWidth?.(savedWidth);
 
-    // Назначаем события
-    this.tool.listen?.();
+  this.tool.listen?.();
 
-    // Восстанавливаем pointerEvents
-    if (this.tool.canvas) {
-      this.tool.canvas.style.pointerEvents = "auto";
-    }
+  if (this.tool.canvas) {
+    this.tool.canvas.style.pointerEvents = "auto";
   }
+}
+
 
   setLineWidth(lineWidth) {
     if (this.tool && this.toolName) {

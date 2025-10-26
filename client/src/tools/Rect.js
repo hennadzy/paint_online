@@ -11,8 +11,12 @@ export default class Rect extends Tool {
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
 
+    // Привязанные обработчики
+    this.mouseDownHandlerBound = this.mouseDownHandler.bind(this);
     this.mouseMoveHandlerBound = this.mouseMoveHandler.bind(this);
     this.mouseUpHandlerBound = this.mouseUpHandler.bind(this);
+    this.touchStartHandlerBound = this.touchStartHandler.bind(this);
+    this.touchMoveHandlerBound = this.touchMoveHandler.bind(this);
     this.touchEndHandlerBound = this.touchEndHandler.bind(this);
   }
 
@@ -25,9 +29,9 @@ export default class Rect extends Tool {
   }
 
   listen() {
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("mousedown", this.mouseDownHandlerBound);
+    this.canvas.addEventListener("touchstart", this.touchStartHandlerBound, { passive: false });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandlerBound, { passive: false });
 
     document.addEventListener("mousemove", this.mouseMoveHandlerBound);
     document.addEventListener("mouseup", this.mouseUpHandlerBound);
@@ -37,9 +41,9 @@ export default class Rect extends Tool {
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+    this.canvas.removeEventListener("mousedown", this.mouseDownHandlerBound);
+    this.canvas.removeEventListener("touchstart", this.touchStartHandlerBound);
+    this.canvas.removeEventListener("touchmove", this.touchMoveHandlerBound);
 
     document.removeEventListener("mousemove", this.mouseMoveHandlerBound);
     document.removeEventListener("mouseup", this.mouseUpHandlerBound);
