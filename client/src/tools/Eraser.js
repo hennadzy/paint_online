@@ -35,22 +35,27 @@ export default class Eraser extends Tool {
     this.removeGlobalEndEvents();
   }
 
+  getCoords(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = (e.touches?.[0]?.pageX ?? e.pageX) - rect.left;
+    const y = (e.touches?.[0]?.pageY ?? e.pageY) - rect.top;
+    return { x, y };
+  }
+
   mouseDownHandler(e) {
     this.mouseDown = true;
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
 
     this.drawSegment();
@@ -58,20 +63,19 @@ export default class Eraser extends Tool {
 
   mouseLeaveHandler() {
     if (this.mouseDown) {
-      this.commitStroke(); // завершить текущий штрих
+      this.commitStroke();
       this.mouseDown = false;
     }
   }
 
   mouseEnterHandler(e) {
-    if (e.buttons !== 1) return; // не нажата кнопка — не начинать
+    if (e.buttons !== 1) return;
     this.mouseDown = true;
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
   }
 
@@ -82,9 +86,7 @@ export default class Eraser extends Tool {
     canvasState.isDrawing = true;
     this.points = [];
 
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
   }
 
@@ -92,9 +94,7 @@ export default class Eraser extends Tool {
     e.preventDefault();
     if (!this.mouseDown) return;
 
-    const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
 
     this.drawSegment();
