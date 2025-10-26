@@ -14,6 +14,7 @@ import "../styles/canvas.scss";
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const cursorRef = useRef();
+  const containerRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -23,20 +24,26 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
+    const container = containerRef.current;
     const aspectRatio = 600 / 400;
-    if (window.innerWidth < 768) {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerWidth / aspectRatio;
-    } else {
-      canvas.width = 600;
-      canvas.height = 400;
-    }
-    cursor.width = canvas.width;
-    cursor.height = canvas.height;
+
+    const width = window.innerWidth < 768 ? window.innerWidth : 600;
+    const height = window.innerWidth < 768 ? window.innerWidth / aspectRatio : 400;
+
+    canvas.width = width;
+    canvas.height = height;
+    cursor.width = width;
+    cursor.height = height;
+
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    cursor.style.width = `${width}px`;
+    cursor.style.height = `${height}px`;
+
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, width, height);
   };
 
   useEffect(() => {
@@ -146,16 +153,7 @@ const Canvas = observer(() => {
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (!msg.username || msg.username === canvasState.username) return;
-        switch (msg.method) {
-          case "draw":
-            drawHandler(msg);
-            break;
-          case "connection":
-            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
-            break;
-          default:
-            console.warn("Неизвестный метод:", msg.method);
-        }
+        drawHandler(msg);
       };
     } catch (error) {
       console.error("Ошибка подключения к WebSocket:", error);
@@ -167,11 +165,8 @@ const Canvas = observer(() => {
     const ctx = canvasRef.current.getContext("2d");
     switch (figure.type) {
       case "brush":
-        drawStroke(ctx, figure);
-        canvasState.pushStroke(figure);
-        break;
       case "eraser":
-        drawStroke(ctx, figure, true);
+        drawStroke(ctx, figure, figure.type === "eraser");
         canvasState.pushStroke(figure);
         break;
       case "rect":
@@ -192,8 +187,6 @@ const Canvas = observer(() => {
       case "redo":
         canvasState.redoRemote(msg.username);
         break;
-      default:
-        console.warn("Неизвестный тип фигуры:", figure.type);
     }
   };
 
@@ -215,42 +208,18 @@ const Canvas = observer(() => {
     ctx.restore();
   };
 
-  const mouseDownHandler = async () => {
-    if (params.id) {
-      try {
-        await axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-          img: canvasRef.current.toDataURL(),
-        });
-      } catch (error) {
-        console.error("Ошибка сохранения изображения:", error);
-      }
-    }
-  };
-
-  const handleCreateRoomClick = (e) => {
-    e.preventDefault();
-    setModal(true);
-    setIsRoomCreated(true);
-  };
-
-    const updateCursor = (tool) => {
+  const updateCursor = (tool) => {
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.classList.remove(
-        "brush-cursor",
-        "eraser-cursor",
-        "rect-cursor",
-        "circle-cursor",
-        "line-cursor"
-      );
+      canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
       canvas.classList.add(`${tool}-cursor`);
     }
   };
 
   return (
-    <div className="canvas" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
-        <Modal.Header>
+                <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
           <button
             type="button"
@@ -282,23 +251,19 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <canvas
-        ref={canvasRef}
-        tabIndex={0}
-        style={{ border: "1px solid black", zIndex: 1 }}
-        onMouseDown={mouseDownHandler}
-      />
-      <canvas
-        ref={cursorRef}
-        className="cursor-overlay"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          pointerEvents: "none",
-          zIndex: 2
-        }}
-      />
+      <div className="canvas-container" ref={containerRef}>
+        <canvas
+          ref={canvasRef}
+          tabIndex={0}
+          className="main-canvas"
+          onMouseDown={mouseDownHandler}
+        />
+        <canvas
+          ref={cursorRef}
+          className="cursor-overlay"
+        />
+      </div>
+
       {!isRoomCreated && (
         <Button
           variant="primary"
@@ -309,6 +274,7 @@ const Canvas = observer(() => {
           Создать комнату
         </Button>
       )}
+
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((message, index) => (
           <div key={index}>{message}</div>
@@ -319,3 +285,4 @@ const Canvas = observer(() => {
 });
 
 export default Canvas;
+

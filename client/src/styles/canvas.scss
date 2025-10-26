@@ -9,32 +9,35 @@
   position: relative;
 }
 
-canvas {
-  cursor: crosshair;
+.canvas-container {
+  position: relative;
+  display: inline-block;
+}
+
+.main-canvas {
+  display: block;
+  margin: 0;
   border: 1px solid black;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
   background-color: white;
-  margin-top: 80px;
-  margin-bottom: 10px;
   touch-action: none;
   z-index: 1;
 }
 
-canvas.brush-cursor,
-canvas.eraser-cursor,
-canvas.rect-cursor,
-canvas.circle-cursor,
-canvas.line-cursor {
-  cursor: none; // скрываем системный курсор
-}
-
-// 🔵 Курсор-оверлей
 .cursor-overlay {
   position: absolute;
   top: 0;
   left: 0;
   pointer-events: none;
   z-index: 2;
+}
+
+.main-canvas.brush-cursor,
+.main-canvas.eraser-cursor,
+.main-canvas.rect-cursor,
+.main-canvas.circle-cursor,
+.main-canvas.line-cursor {
+  cursor: none;
 }
 
 button {
@@ -122,11 +125,7 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  canvas {
-    width: 100%;
-    height: auto;
-  }
-
+  .main-canvas,
   .cursor-overlay {
     width: 100%;
     height: auto;
