@@ -7,8 +7,15 @@ export default class Brush extends Tool {
     super(canvas, socket, id, username);
     this.strokeColor = "#000000";
     this.lineWidth = 1;
+    this.mouseDown = false;
     this.points = [];
-    this._skipNextSegment = false;
+
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
+    this.boundMouseUp = this.mouseUpHandler.bind(this);
+    this.boundMouseLeave = this.handleExit.bind(this);
+    this.boundTouchCancel = this.handleExit.bind(this);
 
     makeAutoObservable(this);
   }
@@ -24,51 +31,58 @@ export default class Brush extends Tool {
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
 
-    this.listenGlobalEndEvents(); // из Tool.js
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+
+    window.addEventListener("mouseup", this.boundMouseUp);
+    window.addEventListener("touchend", this.boundTouchEnd, { passive: false });
+
+    this.canvas.addEventListener("mouseleave", this.boundMouseLeave);
+    this.canvas.addEventListener("touchcancel", this.boundTouchCancel, { passive: false });
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
 
-    this.removeGlobalEndEvents(); // из Tool.js
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+
+    window.removeEventListener("mouseup", this.boundMouseUp);
+    window.removeEventListener("touchend", this.boundTouchEnd);
+
+    this.canvas.removeEventListener("mouseleave", this.boundMouseLeave);
+    this.canvas.removeEventListener("touchcancel", this.boundTouchCancel);
   }
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this._hasCommitted = false;
-    canvasState.isDrawing = true;
     this.points = [];
+    canvasState.isDrawing = true;
 
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
-    const x = e.pageX - this.canvas.offsetLeft;
-    const y = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
-
-    if (outOfBounds) {
-      if (this.mouseDown) {
-        this._skipNextSegment = true;
-      }
+    if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
+      if (this.mouseDown) this.mouseUpHandler();
       return;
     }
 
-    if (!this.mouseDown) return;
-
-    if (this._skipNextSegment) {
-      this._skipNextSegment = false;
-      this.points = []; // ✅ сбрасываем, чтобы не соединять прямой
+    // Если мышь удерживается, но stroke завершён — начать новый
+    if (e.buttons === 1 && !this.mouseDown) {
+      this.mouseDownHandler(e);
     }
+
+    if (!this.mouseDown) return;
 
     this.points.push({ x, y });
 
@@ -88,40 +102,45 @@ export default class Brush extends Tool {
     ctx.restore();
   }
 
+  mouseUpHandler() {
+    if (!this.mouseDown) return;
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    this._hasCommitted = false;
-    canvasState.isDrawing = true;
     this.points = [];
+    canvasState.isDrawing = true;
 
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     this.points.push({ x, y });
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
 
-    const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
+    if (x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height) {
+      if (this.mouseDown) this.touchEndHandler(e);
+      return;
+    }
 
-    if (outOfBounds) {
-      if (this.mouseDown) {
-        this._skipNextSegment = true;
-      }
+    // Если палец удерживается, но stroke завершён — начать новый
+    if (e.touches.length > 0 && !this.mouseDown) {
+      this.touchStartHandler(e);
       return;
     }
 
     if (!this.mouseDown) return;
-
-    if (this._skipNextSegment) {
-      this._skipNextSegment = false;
-      this.points = [];
-    }
 
     this.points.push({ x, y });
 
@@ -139,6 +158,21 @@ export default class Brush extends Tool {
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
+  }
+
+  handleExit() {
+    if (!this.mouseDown) return;
+    this.mouseDown = false;
+    canvasState.isDrawing = false;
+    this.commitStroke();
   }
 
   commitStroke() {
@@ -164,7 +198,5 @@ export default class Brush extends Tool {
     }
 
     this.points = [];
-    canvasState.isDrawing = false;
   }
 }
-

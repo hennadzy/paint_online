@@ -1,3 +1,4 @@
+
 import React from "react";
 import { observer } from "mobx-react-lite";
 import toolState from "../store/toolState";
@@ -20,7 +21,6 @@ const lineWidth = toolState.tool?.lineWidth ?? 1;
         max={50}
         value={currentWidth}
         onChange={handleChange}
-        onPointerUp={handleChange}
       />
       <span className="line-width-label">{lineWidth}px</span>
     </div>
@@ -28,4 +28,6 @@ const lineWidth = toolState.tool?.lineWidth ?? 1;
 });
 
 export default SettingBar;
+
+
 

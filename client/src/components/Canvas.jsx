@@ -66,7 +66,12 @@ const Canvas = observer(() => {
     canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
     updateCursor("brush");
-    canvasRef.current.style.pointerEvents = "auto";
+
+    return () => {
+      canvasState.strokeList = [];
+      canvasState.redoStacks.clear();
+      canvasState.redrawCanvas();
+    };
   }, [params.id]);
 
   const connectHandler = () => {
@@ -87,7 +92,6 @@ const Canvas = observer(() => {
     const brush = new Brush(canvasRef.current, socket, params.id, username);
     toolState.setTool(brush, "brush");
     updateCursor("brush");
-    canvasRef.current.style.pointerEvents = "auto";
 
     socket.onopen = () => {
       socket.send(JSON.stringify({
@@ -182,7 +186,8 @@ const Canvas = observer(() => {
     });
   };
 
-  const handleCreateRoomClick = () => {
+  const handleCreateRoomClick = (e) => {
+    e.preventDefault();
     setModal(true);
     setIsRoomCreated(true);
   };
@@ -205,6 +210,7 @@ const Canvas = observer(() => {
             className="btn-close"
             aria-label="Close"
             onClick={() => setModal(false)}
+            onTouchEnd={() => setModal(false)}
           ></button>
         </Modal.Header>
         <Modal.Body>
@@ -219,7 +225,11 @@ const Canvas = observer(() => {
           />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={connectHandler}>
+          <Button
+            variant="secondary"
+            onClick={connectHandler}
+            onTouchEnd={connectHandler}
+          >
             Войти
           </Button>
         </Modal.Footer>
@@ -236,10 +246,8 @@ const Canvas = observer(() => {
         <Button
           variant="primary"
           onClick={handleCreateRoomClick}
-          style={{
-            marginTop: "10px",
-            zIndex: 1000
-          }}
+          onTouchEnd={handleCreateRoomClick}
+          style={{ marginTop: "10px" }}
         >
           Создать комнату
         </Button>

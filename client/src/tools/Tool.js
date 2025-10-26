@@ -1,3 +1,4 @@
+import toolState from "../store/toolState";
 
 export default class Tool {
   constructor(canvas, socket, id, username) {
@@ -5,40 +6,30 @@ export default class Tool {
     this.socket = socket;
     this.id = id;
     this.username = username;
+    this.ctx = canvas.getContext("2d");
+
+    // ✅ Устанавливаем настройки по умолчанию
+    this.color = toolState.color;
+    this.strokeColor = toolState.color;
+    this.fillColor = toolState.color;
+   const toolName = this.constructor.name.toLowerCase();
+this.lineWidth = toolState.lineWidths[toolName] ?? 1;
+
     this.mouseDown = false;
-    this._hasCommitted = false;
-
-    this.boundGlobalMouseUp = this.handleGlobalEnd.bind(this);
-    this.boundGlobalTouchEnd = this.handleGlobalEnd.bind(this);
-    this.boundGlobalTouchCancel = this.handleGlobalEnd.bind(this);
   }
 
-  listenGlobalEndEvents() {
-    window.addEventListener("mouseup", this.boundGlobalMouseUp);
-    window.addEventListener("touchend", this.boundGlobalTouchEnd, { passive: false });
-    window.addEventListener("touchcancel", this.boundGlobalTouchCancel, { passive: false });
-  }
-
-  removeGlobalEndEvents() {
-    window.removeEventListener("mouseup", this.boundGlobalMouseUp);
-    window.removeEventListener("touchend", this.boundGlobalTouchEnd);
-    window.removeEventListener("touchcancel", this.boundGlobalTouchCancel);
-  }
-
- handleGlobalEnd(e) {
-  const isTouch = e?.type?.startsWith("touch");
-
-  // ✅ Только на мобильных игнорируем события вне холста
-  if (isTouch && e && !this.canvas.contains(e.target)) return;
-
-  if (!this.mouseDown || this._hasCommitted) return;
-  this.mouseDown = false;
-  this._hasCommitted = true;
-  if (this.commitStroke) this.commitStroke();
-}
-
+  // ✅ Очищаем события, включая addEventListener
   destroyEvents() {
-    this.removeGlobalEndEvents();
+    this.canvas.onmousedown = null;
+    this.canvas.onmouseup = null;
+    this.canvas.onmousemove = null;
+    this.canvas.ontouchstart = null;
+    this.canvas.ontouchmove = null;
+    this.canvas.ontouchend = null;
+
+    if (typeof this.removeTouchEvents === "function") {
+      this.removeTouchEvents();
+    }
   }
 }
 

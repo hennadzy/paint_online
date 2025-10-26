@@ -11,9 +11,10 @@ export default class Circle extends Tool {
     this.startY = 0;
     this.radius = 0;
     this.mouseDown = false;
-    this.committed = false; // Флаг для предотвращения двойного commit
 
-
+    this.boundTouchStart = this.touchStartHandler.bind(this);
+    this.boundTouchMove = this.touchMoveHandler.bind(this);
+    this.boundTouchEnd = this.touchEndHandler.bind(this);
 
     makeAutoObservable(this);
   }
@@ -27,30 +28,35 @@ export default class Circle extends Tool {
   }
 
   listen() {
-    this.canvas.onpointerdown = this.pointerDownHandler.bind(this);
-    this.canvas.onpointermove = this.pointerMoveHandler.bind(this);
-    this.canvas.onpointerup = this.pointerUpHandler.bind(this);
+    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
+    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
+    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
+
+    this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
+    this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
+    this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
-    this.canvas.onpointerdown = null;
-    this.canvas.onpointermove = null;
-    this.canvas.onpointerup = null;
+    this.canvas.onmousedown = null;
+    this.canvas.onmousemove = null;
+    this.canvas.onmouseup = null;
+
+    this.canvas.removeEventListener("touchstart", this.boundTouchStart);
+    this.canvas.removeEventListener("touchmove", this.boundTouchMove);
+    this.canvas.removeEventListener("touchend", this.boundTouchEnd);
   }
 
-  pointerDownHandler(e) {
+  mouseDownHandler(e) {
     this.mouseDown = true;
-    this.committed = false; // Сбрасываем флаг при начале рисования
-    const rect = this.canvas.getBoundingClientRect();
-    this.startX = e.clientX - rect.left;
-    this.startY = e.clientY - rect.top;
+    this.startX = e.pageX - this.canvas.offsetLeft;
+    this.startY = e.pageY - this.canvas.offsetTop;
   }
 
-  pointerMoveHandler(e) {
+  mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");
@@ -64,15 +70,53 @@ export default class Circle extends Tool {
     ctx.restore();
   }
 
-  pointerUpHandler() {
+  mouseUpHandler() {
     this.mouseDown = false;
     this.commitStroke();
   }
 
-  commitStroke() {
-    if (this.committed) return; // Предотвращаем двойной commit
-    this.committed = true;
+  touchStartHandler(e) {
+    e.preventDefault();
+    this.mouseDown = true;
+    const touch = e.touches[0];
+    this.startX = touch.pageX - this.canvas.offsetLeft;
+    this.startY = touch.pageY - this.canvas.offsetTop;
+  }
 
+  touchMoveHandler(e) {
+    e.preventDefault();
+    if (!this.mouseDown) return;
+    const touch = e.touches[0];
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
+    this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
+
+    const ctx = this.canvas.getContext("2d");
+    canvasState.redrawCanvas();
+    ctx.save();
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.lineWidth;
+    ctx.beginPath();
+    ctx.arc(this.startX, this.startY, this.radius, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  touchEndHandler(e) {
+    e.preventDefault();
+    this.mouseDown = false;
+
+    if (this.radius === 0) {
+      const touch = e.changedTouches[0];
+      const x = touch.pageX - this.canvas.offsetLeft;
+      const y = touch.pageY - this.canvas.offsetTop;
+      this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
+    }
+
+    this.commitStroke();
+  }
+
+  commitStroke() {
     const stroke = {
       type: "circle",
       x: this.startX,
@@ -105,4 +149,5 @@ export default class Circle extends Tool {
     ctx.restore();
   }
 }
+
 
