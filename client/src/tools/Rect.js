@@ -49,6 +49,7 @@ export default class Rect extends Tool {
     const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
     ctx.strokeRect(this.startX, this.startY, this.width, this.height);
@@ -82,6 +83,7 @@ export default class Rect extends Tool {
     const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
     ctx.strokeRect(this.startX, this.startY, this.width, this.height);

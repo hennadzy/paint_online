@@ -48,6 +48,7 @@ export default class Line extends Tool {
     const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
     ctx.beginPath();
@@ -81,6 +82,7 @@ export default class Line extends Tool {
     const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.lineWidth;
     ctx.beginPath();
