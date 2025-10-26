@@ -8,6 +8,8 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.points = [];
+    this._skipNextSegment = false;
+
     makeAutoObservable(this);
   }
 
@@ -25,7 +27,7 @@ export default class Brush extends Tool {
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
 
-    this.listenGlobalEndEvents(); // ✅ из Tool.js
+    this.listenGlobalEndEvents(); // из Tool.js
   }
 
   destroyEvents() {
@@ -34,7 +36,7 @@ export default class Brush extends Tool {
     this.canvas.removeEventListener("touchstart", this.touchStartHandler);
     this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
 
-    this.removeGlobalEndEvents(); // ✅ из Tool.js
+    this.removeGlobalEndEvents(); // из Tool.js
   }
 
   mouseDownHandler(e) {
@@ -49,10 +51,25 @@ export default class Brush extends Tool {
   }
 
   mouseMoveHandler(e) {
-    if (!this.mouseDown) return;
-
     const x = e.pageX - this.canvas.offsetLeft;
     const y = e.pageY - this.canvas.offsetTop;
+
+    const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
+
+    if (outOfBounds) {
+      if (this.mouseDown) {
+        this._skipNextSegment = true;
+      }
+      return;
+    }
+
+    if (!this.mouseDown) return;
+
+    if (this._skipNextSegment) {
+      this._skipNextSegment = false;
+      this.points = []; // ✅ сбрасываем, чтобы не соединять прямой
+    }
+
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
@@ -86,11 +103,26 @@ export default class Brush extends Tool {
 
   touchMoveHandler(e) {
     e.preventDefault();
-    if (!this.mouseDown) return;
-
     const touch = e.touches[0];
     const x = touch.pageX - this.canvas.offsetLeft;
     const y = touch.pageY - this.canvas.offsetTop;
+
+    const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
+
+    if (outOfBounds) {
+      if (this.mouseDown) {
+        this._skipNextSegment = true;
+      }
+      return;
+    }
+
+    if (!this.mouseDown) return;
+
+    if (this._skipNextSegment) {
+      this._skipNextSegment = false;
+      this.points = [];
+    }
+
     this.points.push({ x, y });
 
     const ctx = this.canvas.getContext("2d");
