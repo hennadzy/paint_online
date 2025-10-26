@@ -34,9 +34,11 @@ export default class Rect extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
+    canvasState.pushToUndo(this.canvas.toDataURL());
     const rect = this.canvas.getBoundingClientRect();
     this.startX = e.clientX - rect.left;
     this.startY = e.clientY - rect.top;
+    this.saved = this.canvas.toDataURL();
   }
 
   mouseMoveHandler(e) {
