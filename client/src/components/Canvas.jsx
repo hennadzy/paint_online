@@ -13,6 +13,7 @@ import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
   const canvasRef = useRef();
+  const cursorRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -21,6 +22,7 @@ const Canvas = observer(() => {
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
+    const cursor = cursorRef.current;
     const aspectRatio = 600 / 400;
     if (window.innerWidth < 768) {
       canvas.width = window.innerWidth;
@@ -29,6 +31,8 @@ const Canvas = observer(() => {
       canvas.width = 600;
       canvas.height = 400;
     }
+    cursor.width = canvas.width;
+    cursor.height = canvas.height;
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
@@ -69,6 +73,48 @@ const Canvas = observer(() => {
       canvasState.redrawCanvas();
     };
   }, [params.id]);
+
+  const updateCursorOverlay = (x, y) => {
+    const canvas = cursorRef.current;
+    const ctx = canvas.getContext("2d");
+    const diameter = toolState.tool?.lineWidth ?? 1;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const cursor = cursorRef.current;
+
+    const handleMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches?.[0]?.pageX ?? e.pageX) - rect.left;
+      const y = (e.touches?.[0]?.pageY ?? e.pageY) - rect.top;
+      updateCursorOverlay(x, y);
+    };
+
+    const clearCursor = () => {
+      const ctx = cursor.getContext("2d");
+      ctx.clearRect(0, 0, cursor.width, cursor.height);
+    };
+
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("touchmove", handleMove, { passive: false });
+    canvas.addEventListener("mouseleave", clearCursor);
+    canvas.addEventListener("touchend", clearCursor);
+
+    return () => {
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("touchmove", handleMove);
+      canvas.removeEventListener("mouseleave", clearCursor);
+      canvas.removeEventListener("touchend", clearCursor);
+    };
+  }, []);
 
   const connectHandler = async () => {
     const username = usernameRef.current.value.trim();
@@ -187,16 +233,22 @@ const Canvas = observer(() => {
     setIsRoomCreated(true);
   };
 
-  const updateCursor = (tool) => {
+    const updateCursor = (tool) => {
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
+      canvas.classList.remove(
+        "brush-cursor",
+        "eraser-cursor",
+        "rect-cursor",
+        "circle-cursor",
+        "line-cursor"
+      );
       canvas.classList.add(`${tool}-cursor`);
     }
   };
 
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className="canvas" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
@@ -229,11 +281,23 @@ const Canvas = observer(() => {
           </Button>
         </Modal.Footer>
       </Modal>
+
       <canvas
         ref={canvasRef}
         tabIndex={0}
-        style={{ border: "1px solid black" }}
+        style={{ border: "1px solid black", zIndex: 1 }}
         onMouseDown={mouseDownHandler}
+      />
+      <canvas
+        ref={cursorRef}
+        className="cursor-overlay"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          pointerEvents: "none",
+          zIndex: 2
+        }}
       />
       {!isRoomCreated && (
         <Button
