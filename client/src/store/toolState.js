@@ -19,17 +19,26 @@ class ToolState {
   }
 
   setTool(tool, toolNameOverride) {
+    // Удаляем события у предыдущего инструмента
     this.tool?.destroyEvents?.();
+
     this.tool = tool;
     this.toolName = toolNameOverride ?? tool.constructor.name.toLowerCase();
 
+    // Применяем настройки цвета и толщины
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
 
     const savedWidth = this.lineWidths[this.toolName] ?? 1;
     this.tool.setLineWidth?.(savedWidth);
 
+    // Назначаем события
     this.tool.listen?.();
+
+    // Восстанавливаем pointerEvents
+    if (this.tool.canvas) {
+      this.tool.canvas.style.pointerEvents = "auto";
+    }
   }
 
   setLineWidth(lineWidth) {
@@ -52,4 +61,3 @@ class ToolState {
 
 const toolState = new ToolState();
 export default toolState;
-
