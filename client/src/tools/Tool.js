@@ -26,7 +26,7 @@ export default class Tool {
   }
 
   setStrokeColor(color) {
-    this.strokeColor = color;
+    this.strokeColor = color; 
   }
 
   setFillColor(color) {
