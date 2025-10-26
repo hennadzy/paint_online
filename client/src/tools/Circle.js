@@ -10,8 +10,12 @@ export default class Circle extends Tool {
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
 
+    this.mouseDownHandlerBound = this.mouseDownHandler.bind(this);
     this.mouseMoveHandlerBound = this.mouseMoveHandler.bind(this);
     this.mouseUpHandlerBound = this.mouseUpHandler.bind(this);
+    this.touchStartHandlerBound = this.touchStartHandler.bind(this);
+    this.touchMoveHandlerBound = this.touchMoveHandler.bind(this);
+    this.touchEndHandlerBound = this.touchEndHandler.bind(this);
   }
 
   setStrokeColor(color) {
@@ -23,23 +27,25 @@ export default class Circle extends Tool {
   }
 
   listen() {
-    this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+    this.canvas.addEventListener("mousedown", this.mouseDownHandlerBound);
+    this.canvas.addEventListener("touchstart", this.touchStartHandlerBound, { passive: false });
+    this.canvas.addEventListener("touchmove", this.touchMoveHandlerBound, { passive: false });
 
     document.addEventListener("mousemove", this.mouseMoveHandlerBound);
     document.addEventListener("mouseup", this.mouseUpHandlerBound);
+    document.addEventListener("touchend", this.touchEndHandlerBound);
 
     this.listenGlobalEndEvents();
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+    this.canvas.removeEventListener("mousedown", this.mouseDownHandlerBound);
+    this.canvas.removeEventListener("touchstart", this.touchStartHandlerBound);
+    this.canvas.removeEventListener("touchmove", this.touchMoveHandlerBound);
 
     document.removeEventListener("mousemove", this.mouseMoveHandlerBound);
     document.removeEventListener("mouseup", this.mouseUpHandlerBound);
+    document.removeEventListener("touchend", this.touchEndHandlerBound);
 
     this.removeGlobalEndEvents();
   }
@@ -99,6 +105,13 @@ export default class Circle extends Tool {
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
     Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.strokeStyle, this.lineWidth);
+  }
+
+  touchEndHandler(e) {
+    if (this.mouseDown) {
+      this.commitStroke();
+      this.mouseDown = false;
+    }
   }
 
   commitStroke() {
