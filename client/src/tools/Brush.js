@@ -63,7 +63,8 @@ export default class Brush extends Tool {
     }
 
     if (this.isOutOfBounds && this.mouseDown) {
-      // Если вернулись в границы после выхода, начинаем новый stroke
+      // Если вернулись в границы после выхода, коммитим текущий stroke и начинаем новый
+      this.commitStroke();
       this.isOutOfBounds = false;
       this.points = [];
       this.points.push({ x, y });
@@ -117,7 +118,8 @@ export default class Brush extends Tool {
     }
 
     if (this.isOutOfBounds && this.mouseDown) {
-      // Если вернулись в границы после выхода, начинаем новый stroke
+      // Если вернулись в границы после выхода, коммитим текущий stroke и начинаем новый
+      this.commitStroke();
       this.isOutOfBounds = false;
       this.points = [];
       this.points.push({ x, y });
