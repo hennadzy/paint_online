@@ -13,6 +13,7 @@ export default class Rect extends Tool {
 
     this.mouseMoveHandlerBound = this.mouseMoveHandler.bind(this);
     this.mouseUpHandlerBound = this.mouseUpHandler.bind(this);
+    this.touchEndHandlerBound = this.touchEndHandler.bind(this);
   }
 
   setStrokeColor(color) {
@@ -30,6 +31,7 @@ export default class Rect extends Tool {
 
     document.addEventListener("mousemove", this.mouseMoveHandlerBound);
     document.addEventListener("mouseup", this.mouseUpHandlerBound);
+    document.addEventListener("touchend", this.touchEndHandlerBound);
 
     this.listenGlobalEndEvents();
   }
@@ -41,6 +43,7 @@ export default class Rect extends Tool {
 
     document.removeEventListener("mousemove", this.mouseMoveHandlerBound);
     document.removeEventListener("mouseup", this.mouseUpHandlerBound);
+    document.removeEventListener("touchend", this.touchEndHandlerBound);
 
     this.removeGlobalEndEvents();
   }
@@ -102,6 +105,13 @@ export default class Rect extends Tool {
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
     Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.strokeStyle, this.lineWidth);
+  }
+
+  touchEndHandler(e) {
+    if (this.mouseDown) {
+      this.commitStroke();
+      this.mouseDown = false;
+    }
   }
 
   commitStroke() {
