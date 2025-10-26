@@ -103,6 +103,7 @@ class CanvasState {
     requestAnimationFrame(() => {
       this.strokeList.forEach((stroke) => {
         ctx.save();
+        ctx.globalAlpha = 1;
         ctx.lineWidth = stroke.lineWidth || 1;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
