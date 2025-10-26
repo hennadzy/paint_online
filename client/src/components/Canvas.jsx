@@ -24,9 +24,9 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
-    const aspectRatio = 600 / 400;
-    const logicalWidth = 600;
-    const logicalHeight = 400;
+    const aspectRatio = 780 / 520;
+    const logicalWidth = 780;
+    const logicalHeight = 520;
 
     canvas.width = logicalWidth;
     canvas.height = logicalHeight;
