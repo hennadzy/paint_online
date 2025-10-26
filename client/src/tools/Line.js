@@ -65,7 +65,6 @@ export default class Line extends Tool {
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
-    canvasState.pushToUndo(this.canvas.toDataURL());
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     this.startX = touch.clientX - rect.left;
