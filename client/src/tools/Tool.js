@@ -12,6 +12,7 @@ export default class Tool {
     const toolName = this.constructor.name.toLowerCase();
     this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     this.mouseDown = false;
+    this._hasCommitted = false;
   }
 
   destroyEvents() {
@@ -21,6 +22,7 @@ export default class Tool {
     this.canvas.ontouchstart = null;
     this.canvas.ontouchmove = null;
     this.canvas.ontouchend = null;
+    this.removeGlobalEndEvents?.();
   }
 
   setStrokeColor(color) {
@@ -34,5 +36,25 @@ export default class Tool {
   setLineWidth(width) {
     this.lineWidth = width;
   }
-}
 
+  listenGlobalEndEvents() {
+    this._handleGlobalEnd = this.handleGlobalEnd.bind(this);
+    document.addEventListener("mouseup", this._handleGlobalEnd);
+    document.addEventListener("touchend", this._handleGlobalEnd);
+  }
+
+  removeGlobalEndEvents() {
+    document.removeEventListener("mouseup", this._handleGlobalEnd);
+    document.removeEventListener("touchend", this._handleGlobalEnd);
+  }
+
+  handleGlobalEnd(e) {
+    if (!this.mouseDown || this._hasCommitted) return;
+    this.mouseDown = false;
+    this._hasCommitted = true;
+
+    if (typeof this.commitStroke === "function") {
+      this.commitStroke();
+    }
+  }
+}
