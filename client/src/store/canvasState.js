@@ -116,29 +116,17 @@ class CanvasState {
 
       switch (stroke.type) {
         case "brush":
-          ctx.strokeStyle = stroke.strokeStyle || "#000000";
-          ctx.globalCompositeOperation = "source-over";
-          stroke.segments?.forEach(segment => {
-            if (!segment || segment.length < 2) return;
-            ctx.beginPath();
-            ctx.moveTo(segment[0].x, segment[0].y);
-            for (let i = 1; i < segment.length; i++) {
-              ctx.lineTo(segment[i].x, segment[i].y);
-            }
-            ctx.stroke();
-          });
-          break;
-
         case "eraser":
-          ctx.strokeStyle = "rgba(0,0,0,1)";
-          ctx.globalCompositeOperation = "destination-out";
-          stroke.points?.forEach((point, i, arr) => {
-            if (i === 0 || !arr[i - 1]) return;
-            ctx.beginPath();
-            ctx.moveTo(arr[i - 1].x, arr[i - 1].y);
-            ctx.lineTo(point.x, point.y);
-            ctx.stroke();
-          });
+          const points = stroke.points;
+          if (!points || points.length === 0) break;
+          ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
+          ctx.globalCompositeOperation = stroke.type === "eraser" ? "destination-out" : "source-over";
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
+          ctx.stroke();
           break;
 
         case "rect":
@@ -179,4 +167,5 @@ class CanvasState {
   }
 }
 
-export default new CanvasState();
+const canvasState = new CanvasState();
+export default canvasState;
