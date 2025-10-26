@@ -107,48 +107,43 @@ class CanvasState {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.strokeList.forEach((stroke) => {
-      ctx.save();
-      ctx.lineWidth = stroke.lineWidth || 1;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      switch (stroke.type) {
-        case "brush":
-        case "eraser":
-          const points = stroke.points;
-          if (!points || points.length === 0) break;
-          ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
-          ctx.globalCompositeOperation = stroke.type === "eraser" ? "destination-out" : "source-over";
-          ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-          }
-          ctx.stroke();
-          break;
-
-        case "rect":
-          ctx.globalCompositeOperation = "source-over";
-          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
-          break;
-
-        case "circle":
-          ctx.globalCompositeOperation = "source-over";
-          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
-          break;
-
-        case "line":
-          ctx.globalCompositeOperation = "source-over";
-          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
-          break;
-
-        default:
-          console.warn("Неизвестный тип фигуры:", stroke.type);
-      }
-
-      ctx.restore();
+    requestAnimationFrame(() => {
+      this.strokeList.forEach((stroke) => {
+        ctx.save();
+        ctx.lineWidth = stroke.lineWidth || 1;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        switch (stroke.type) {
+          case "brush":
+          case "eraser":
+            const points = stroke.points;
+            if (!points || points.length === 0) break;
+            ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
+            ctx.globalCompositeOperation = stroke.type === "eraser" ? "destination-out" : "source-over";
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+              ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.stroke();
+            break;
+          case "rect":
+            ctx.globalCompositeOperation = "source-over";
+            Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
+            break;
+          case "circle":
+            ctx.globalCompositeOperation = "source-over";
+            Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
+            break;
+          case "line":
+            ctx.globalCompositeOperation = "source-over";
+            Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
+            break;
+          default:
+            console.warn("Неизвестный тип фигуры:", stroke.type);
+        }
+        ctx.restore();
+      });
     });
   }
 

@@ -5,36 +5,24 @@ import { makeAutoObservable } from "mobx";
 export default class Eraser extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.lineWidth = 10;
-    this.mouseDown = false;
     this.points = [];
-
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
     this.boundTouchEnd = this.touchEndHandler.bind(this);
-
     makeAutoObservable(this);
-  }
-
-  setLineWidth(width) {
-    this.lineWidth = width;
   }
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
     this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
-
+    super.destroyEvents();
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
     this.canvas.removeEventListener("touchend", this.boundTouchEnd);
@@ -44,7 +32,6 @@ export default class Eraser extends Tool {
     this.mouseDown = true;
     canvasState.isDrawing = true;
     this.points = [];
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -53,13 +40,11 @@ export default class Eraser extends Tool {
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     this.points.push({ x, y });
-
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.ctx;
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
     ctx.lineWidth = this.lineWidth;
@@ -86,7 +71,6 @@ export default class Eraser extends Tool {
     this.mouseDown = true;
     canvasState.isDrawing = true;
     this.points = [];
-
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
@@ -97,14 +81,12 @@ export default class Eraser extends Tool {
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
-
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
     this.points.push({ x, y });
-
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.ctx;
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
     ctx.lineWidth = this.lineWidth;
@@ -129,16 +111,13 @@ export default class Eraser extends Tool {
 
   commitStroke() {
     if (this.points.length === 0) return;
-
     const stroke = {
       type: "eraser",
       points: this.points,
       lineWidth: this.lineWidth,
       username: this.username
     };
-
     canvasState.pushStroke(stroke);
-
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
@@ -147,7 +126,6 @@ export default class Eraser extends Tool {
         figure: stroke
       }));
     }
-
     this.points = [];
   }
 }

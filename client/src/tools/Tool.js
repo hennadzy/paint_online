@@ -7,18 +7,13 @@ export default class Tool {
     this.id = id;
     this.username = username;
     this.ctx = canvas.getContext("2d");
-
-    // ✅ Устанавливаем настройки по умолчанию
-    this.color = toolState.color;
-    this.strokeColor = toolState.color;
-    this.fillColor = toolState.color;
-   const toolName = this.constructor.name.toLowerCase();
-this.lineWidth = toolState.lineWidths[toolName] ?? 1;
-
+    this.strokeColor = toolState.strokeColor;
+    this.fillColor = toolState.fillColor;
+    const toolName = this.constructor.name.toLowerCase();
+    this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     this.mouseDown = false;
   }
 
-  // ✅ Очищаем события, включая addEventListener
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmouseup = null;
@@ -26,10 +21,18 @@ this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     this.canvas.ontouchstart = null;
     this.canvas.ontouchmove = null;
     this.canvas.ontouchend = null;
+  }
 
-    if (typeof this.removeTouchEvents === "function") {
-      this.removeTouchEvents();
-    }
+  setStrokeColor(color) {
+    this.strokeColor = color;
+  }
+
+  setFillColor(color) {
+    this.fillColor = color;
+  }
+
+  setLineWidth(width) {
+    this.lineWidth = width;
   }
 }
 

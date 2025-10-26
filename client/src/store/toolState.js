@@ -50,5 +50,6 @@ class ToolState {
   }
 }
 
-export default new ToolState();
+const toolState = new ToolState();
+export default toolState;
 

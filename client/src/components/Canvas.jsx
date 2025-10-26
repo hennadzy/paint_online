@@ -9,7 +9,6 @@ import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
 import Line from "../tools/Line";
-import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
   const canvasRef = useRef();
@@ -44,10 +43,8 @@ const Canvas = observer(() => {
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d");
-
     if (params.id) {
-      axios
-        .get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
+      axios.get(`https://paint-online-back.onrender.com/image?id=${params.id}`)
         .then((response) => {
           const img = new Image();
           img.src = response.data;
@@ -61,12 +58,10 @@ const Canvas = observer(() => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-
     const localBrush = new Brush(canvasRef.current, null, params.id, "local");
     canvasState.setUsername("local");
     toolState.setTool(localBrush, "brush");
     updateCursor("brush");
-
     return () => {
       canvasState.strokeList = [];
       canvasState.redoStacks.clear();
@@ -74,60 +69,55 @@ const Canvas = observer(() => {
     };
   }, [params.id]);
 
-  const connectHandler = () => {
+  const connectHandler = async () => {
     const username = usernameRef.current.value.trim();
     if (!username) return alert("Введите ваше имя");
-
     canvasState.setUsername(username);
     setModal(false);
-
     canvasState.strokeList = [];
     canvasState.redoStacks.clear();
     canvasState.redrawCanvas();
-
-    const socket = new WebSocket("wss://paint-online-back.onrender.com/");
-    canvasState.setSocket(socket);
-    canvasState.setSessionId(params.id);
-
-    const brush = new Brush(canvasRef.current, socket, params.id, username);
-    toolState.setTool(brush, "brush");
-    updateCursor("brush");
-
-    socket.onopen = () => {
-      socket.send(JSON.stringify({
-        id: params.id,
-        username,
-        method: "connection",
-      }));
-    };
-
-    socket.onclose = () => {
-      canvasState.strokeList = [];
-      canvasState.redoStacks.clear();
-      canvasState.redrawCanvas();
-    };
-
-    socket.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (!msg.username || msg.username === canvasState.username) return;
-
-      switch (msg.method) {
-        case "draw":
-          drawHandler(msg);
-          break;
-        case "connection":
-          setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
-          break;
-        default:
-          console.warn("Неизвестный метод:", msg.method);
-      }
-    };
+    try {
+      const socket = new WebSocket("wss://paint-online-back.onrender.com/");
+      canvasState.setSocket(socket);
+      canvasState.setSessionId(params.id);
+      const brush = new Brush(canvasRef.current, socket, params.id, username);
+      toolState.setTool(brush, "brush");
+      updateCursor("brush");
+      socket.onopen = () => {
+        socket.send(JSON.stringify({
+          id: params.id,
+          username,
+          method: "connection",
+        }));
+      };
+      socket.onclose = () => {
+        canvasState.strokeList = [];
+        canvasState.redoStacks.clear();
+        canvasState.redrawCanvas();
+      };
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (!msg.username || msg.username === canvasState.username) return;
+        switch (msg.method) {
+          case "draw":
+            drawHandler(msg);
+            break;
+          case "connection":
+            setMessages((prev) => [...prev, `${msg.username} вошел в комнату`]);
+            break;
+          default:
+            console.warn("Неизвестный метод:", msg.method);
+        }
+      };
+    } catch (error) {
+      console.error("Ошибка подключения к WebSocket:", error);
+    }
   };
 
   const drawHandler = (msg) => {
     const figure = msg.figure;
     const ctx = canvasRef.current.getContext("2d");
-
     switch (figure.type) {
       case "brush":
         drawStroke(ctx, figure);
@@ -163,14 +153,12 @@ const Canvas = observer(() => {
   const drawStroke = (ctx, stroke, isEraser = false) => {
     const points = stroke.points;
     if (!points || points.length === 0) return;
-
     ctx.save();
     ctx.lineWidth = stroke.lineWidth || 1;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = isEraser ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
     ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
-
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
@@ -180,10 +168,14 @@ const Canvas = observer(() => {
     ctx.restore();
   };
 
-  const mouseDownHandler = () => {
-    axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-      img: canvasRef.current.toDataURL(),
-    });
+  const mouseDownHandler = async () => {
+    try {
+      await axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+        img: canvasRef.current.toDataURL(),
+      });
+    } catch (error) {
+      console.error("Ошибка сохранения изображения:", error);
+    }
   };
 
   const handleCreateRoomClick = (e) => {
@@ -234,14 +226,12 @@ const Canvas = observer(() => {
           </Button>
         </Modal.Footer>
       </Modal>
-
       <canvas
         ref={canvasRef}
         tabIndex={0}
         style={{ border: "1px solid black" }}
         onMouseDown={mouseDownHandler}
       />
-
       {!isRoomCreated && (
         <Button
           variant="primary"
@@ -252,7 +242,6 @@ const Canvas = observer(() => {
           Создать комнату
         </Button>
       )}
-
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((message, index) => (
           <div key={index}>{message}</div>

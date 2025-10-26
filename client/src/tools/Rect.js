@@ -5,45 +5,28 @@ import { makeAutoObservable } from "mobx";
 export default class Rect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#000000";
-    this.lineWidth = 1;
     this.startX = 0;
     this.startY = 0;
     this.width = 0;
     this.height = 0;
     this.mouseDown = false;
-
-    // Сохраняем привязанные обработчики для корректного удаления
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
     this.boundTouchEnd = this.touchEndHandler.bind(this);
-
     makeAutoObservable(this);
-  }
-
-  setLineWidth(width) {
-    this.lineWidth = width;
-  }
-
-  setStrokeColor(color) {
-    this.strokeColor = color;
   }
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
     this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
-
+    super.destroyEvents();
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
     this.canvas.removeEventListener("touchend", this.boundTouchEnd);
@@ -63,8 +46,7 @@ export default class Rect extends Tool {
     const y = e.clientY - rect.top;
     this.width = x - this.startX;
     this.height = y - this.startY;
-
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -91,12 +73,12 @@ export default class Rect extends Tool {
     e.preventDefault();
     if (!this.mouseDown) return;
     const touch = e.touches[0];
-    const x = touch.pageX - this.canvas.offsetLeft;
-    const y = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     this.width = x - this.startX;
     this.height = y - this.startY;
-
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -108,16 +90,14 @@ export default class Rect extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-
-    // Если не было движения — рассчитать размеры по точке отпускания
     if (this.width === 0 && this.height === 0) {
       const touch = e.changedTouches[0];
-      const x = touch.pageX - this.canvas.offsetLeft;
-      const y = touch.pageY - this.canvas.offsetTop;
+      const rect = this.canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
       this.width = x - this.startX;
       this.height = y - this.startY;
     }
-
     this.commitStroke();
   }
 
@@ -132,9 +112,7 @@ export default class Rect extends Tool {
       lineWidth: this.lineWidth,
       username: this.username
     };
-
     canvasState.pushStroke(stroke);
-
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",

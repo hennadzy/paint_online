@@ -6,44 +6,28 @@ import { makeAutoObservable } from "mobx";
 export default class Line extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
-    this.strokeColor = "#000000";
-    this.lineWidth = 1;
     this.startX = 0;
     this.startY = 0;
     this.endX = 0;
     this.endY = 0;
     this.mouseDown = false;
-
     this.boundTouchStart = this.touchStartHandler.bind(this);
     this.boundTouchMove = this.touchMoveHandler.bind(this);
     this.boundTouchEnd = this.touchEndHandler.bind(this);
-
     makeAutoObservable(this);
-  }
-
-  setLineWidth(width) {
-    this.lineWidth = width;
-  }
-
-  setStrokeColor(color) {
-    this.strokeColor = color;
   }
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
     this.canvas.onmouseup = this.mouseUpHandler.bind(this);
-
     this.canvas.addEventListener("touchstart", this.boundTouchStart, { passive: false });
     this.canvas.addEventListener("touchmove", this.boundTouchMove, { passive: false });
     this.canvas.addEventListener("touchend", this.boundTouchEnd, { passive: false });
   }
 
   destroyEvents() {
-    this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
-
+    super.destroyEvents();
     this.canvas.removeEventListener("touchstart", this.boundTouchStart);
     this.canvas.removeEventListener("touchmove", this.boundTouchMove);
     this.canvas.removeEventListener("touchend", this.boundTouchEnd);
@@ -51,16 +35,17 @@ export default class Line extends Tool {
 
   mouseDownHandler(e) {
     this.mouseDown = true;
-    this.startX = e.pageX - this.canvas.offsetLeft;
-    this.startY = e.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = e.clientX - rect.left;
+    this.startY = e.clientY - rect.top;
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
-    this.endX = e.pageX - this.canvas.offsetLeft;
-    this.endY = e.pageY - this.canvas.offsetTop;
-
-    const ctx = this.canvas.getContext("2d");
+    const rect = this.canvas.getBoundingClientRect();
+    this.endX = e.clientX - rect.left;
+    this.endY = e.clientY - rect.top;
+    const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -81,18 +66,19 @@ export default class Line extends Tool {
     e.preventDefault();
     this.mouseDown = true;
     const touch = e.touches[0];
-    this.startX = touch.pageX - this.canvas.offsetLeft;
-    this.startY = touch.pageY - this.canvas.offsetTop;
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = touch.clientX - rect.left;
+    this.startY = touch.clientY - rect.top;
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
     const touch = e.touches[0];
-    this.endX = touch.pageX - this.canvas.offsetLeft;
-    this.endY = touch.pageY - this.canvas.offsetTop;
-
-    const ctx = this.canvas.getContext("2d");
+    const rect = this.canvas.getBoundingClientRect();
+    this.endX = touch.clientX - rect.left;
+    this.endY = touch.clientY - rect.top;
+    const ctx = this.ctx;
     canvasState.redrawCanvas();
     ctx.save();
     ctx.strokeStyle = this.strokeColor;
@@ -107,13 +93,12 @@ export default class Line extends Tool {
   touchEndHandler(e) {
     e.preventDefault();
     this.mouseDown = false;
-
     if (this.endX === 0 && this.endY === 0) {
       const touch = e.changedTouches[0];
-      this.endX = touch.pageX - this.canvas.offsetLeft;
-      this.endY = touch.pageY - this.canvas.offsetTop;
+      const rect = this.canvas.getBoundingClientRect();
+      this.endX = touch.clientX - rect.left;
+      this.endY = touch.clientY - rect.top;
     }
-
     this.commitStroke();
   }
 
@@ -128,9 +113,7 @@ export default class Line extends Tool {
       lineWidth: this.lineWidth,
       username: this.username
     };
-
     canvasState.pushStroke(stroke);
-
     if (this.socket) {
       this.socket.send(JSON.stringify({
         method: "draw",
