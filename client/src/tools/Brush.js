@@ -55,8 +55,10 @@ export default class Brush extends Tool {
     this.points = [];
 
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.round(e.pageX - rect.left);
-    const y = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = Math.round((e.pageX - rect.left) * scaleX);
+    const y = Math.round((e.pageY - rect.top) * scaleY);
     this.lastX = x;
     this.lastY = y;
     this.points.push({ x, y });
@@ -66,8 +68,10 @@ export default class Brush extends Tool {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.round(e.pageX - rect.left);
-    const y = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = Math.round((e.pageX - rect.left) * scaleX);
+    const y = Math.round((e.pageY - rect.top) * scaleY);
 
     const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
     this.points.push(smoothed);
@@ -92,9 +96,11 @@ export default class Brush extends Tool {
     this.points = [];
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    const x = Math.round(touch.pageX - rect.left);
-    const y = Math.round(touch.pageY - rect.top);
+    const x = Math.round((touch.pageX - rect.left) * scaleX);
+    const y = Math.round((touch.pageY - rect.top) * scaleY);
     this.lastX = x;
     this.lastY = y;
     this.points.push({ x, y });
@@ -105,9 +111,11 @@ export default class Brush extends Tool {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    const x = Math.round(touch.pageX - rect.left);
-    const y = Math.round(touch.pageY - rect.top);
+    const x = Math.round((touch.pageX - rect.left) * scaleX);
+    const y = Math.round((touch.pageY - rect.top) * scaleY);
 
     const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
     this.points.push(smoothed);

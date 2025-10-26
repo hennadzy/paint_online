@@ -37,8 +37,10 @@ export default class Eraser extends Tool {
 
   getCoords(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = (e.touches?.[0]?.pageX ?? e.pageX) - rect.left;
-    const y = (e.touches?.[0]?.pageY ?? e.pageY) - rect.top;
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = ((e.touches?.[0]?.pageX ?? e.pageX) - rect.left) * scaleX;
+    const y = ((e.touches?.[0]?.pageY ?? e.pageY) - rect.top) * scaleY;
     return { x, y };
   }
 

@@ -57,16 +57,20 @@ export default class Line extends Tool {
     canvasState.isDrawing = true;
 
     const rect = this.canvas.getBoundingClientRect();
-    this.startX = Math.round(e.pageX - rect.left);
-    this.startY = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    this.startX = Math.round((e.pageX - rect.left) * scaleX);
+    this.startY = Math.round((e.pageY - rect.top) * scaleY);
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
-    this.endX = Math.round(e.pageX - rect.left);
-    this.endY = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    this.endX = Math.round((e.pageX - rect.left) * scaleX);
+    this.endY = Math.round((e.pageY - rect.top) * scaleY);
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
@@ -87,9 +91,11 @@ export default class Line extends Tool {
     canvasState.isDrawing = true;
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    this.startX = Math.round(touch.pageX - rect.left);
-    this.startY = Math.round(touch.pageY - rect.top);
+    this.startX = Math.round((touch.pageX - rect.left) * scaleX);
+    this.startY = Math.round((touch.pageY - rect.top) * scaleY);
   }
 
   touchMoveHandler(e) {
@@ -97,9 +103,11 @@ export default class Line extends Tool {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    this.endX = Math.round(touch.pageX - rect.left);
-    this.endY = Math.round(touch.pageY - rect.top);
+    this.endX = Math.round((touch.pageX - rect.left) * scaleX);
+    this.endY = Math.round((touch.pageY - rect.top) * scaleY);
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();

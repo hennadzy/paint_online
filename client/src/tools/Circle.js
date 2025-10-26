@@ -56,16 +56,20 @@ export default class Circle extends Tool {
     canvasState.isDrawing = true;
 
     const rect = this.canvas.getBoundingClientRect();
-    this.startX = Math.round(e.pageX - rect.left);
-    this.startY = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    this.startX = Math.round((e.pageX - rect.left) * scaleX);
+    this.startY = Math.round((e.pageY - rect.top) * scaleY);
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.round(e.pageX - rect.left);
-    const y = Math.round(e.pageY - rect.top);
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = Math.round((e.pageX - rect.left) * scaleX);
+    const y = Math.round((e.pageY - rect.top) * scaleY);
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");
@@ -87,9 +91,11 @@ export default class Circle extends Tool {
     canvasState.isDrawing = true;
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    this.startX = Math.round(touch.pageX - rect.left);
-    this.startY = Math.round(touch.pageY - rect.top);
+    this.startX = Math.round((touch.pageX - rect.left) * scaleX);
+    this.startY = Math.round((touch.pageY - rect.top) * scaleY);
   }
 
   touchMoveHandler(e) {
@@ -97,9 +103,11 @@ export default class Circle extends Tool {
     if (!this.mouseDown) return;
 
     const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     const touch = e.touches[0];
-    const x = Math.round(touch.pageX - rect.left);
-    const y = Math.round(touch.pageY - rect.top);
+    const x = Math.round((touch.pageX - rect.left) * scaleX);
+    const y = Math.round((touch.pageY - rect.top) * scaleY);
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");
