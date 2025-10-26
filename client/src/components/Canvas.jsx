@@ -25,23 +25,32 @@ const Canvas = observer(() => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
     const aspectRatio = 600 / 400;
-    const width = window.innerWidth < 768 ? window.innerWidth : 600;
-    const height = width / aspectRatio;
+    const logicalWidth = 600;
+    const logicalHeight = 400;
 
-    canvas.width = width;
-    canvas.height = height;
-    cursor.width = width;
-    cursor.height = height;
+    canvas.width = logicalWidth;
+    canvas.height = logicalHeight;
+    cursor.width = logicalWidth;
+    cursor.height = logicalHeight;
 
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    cursor.style.width = `${width}px`;
-    cursor.style.height = `${height}px`;
+    if (window.innerWidth < 768) {
+      const displayWidth = window.innerWidth;
+      const displayHeight = displayWidth / aspectRatio;
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+      cursor.style.width = `${displayWidth}px`;
+      cursor.style.height = `${displayHeight}px`;
+    } else {
+      canvas.style.width = `${logicalWidth}px`;
+      canvas.style.height = `${logicalHeight}px`;
+      cursor.style.width = `${logicalWidth}px`;
+      cursor.style.height = `${logicalHeight}px`;
+    }
 
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
   };
 
   useEffect(() => {
