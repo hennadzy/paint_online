@@ -21,28 +21,39 @@ const Canvas = observer(() => {
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
-  const adjustCanvasSize = () => {
-    const canvas = canvasRef.current;
-    const cursor = cursorRef.current;
-    const aspectRatio = 600 / 400;
-    const width = window.innerWidth < 768 ? window.innerWidth : 600;
-    const height = width / aspectRatio;
+const adjustCanvasSize = () => {
+  const canvas = canvasRef.current;
+  const cursor = cursorRef.current;
 
-    canvas.width = width;
-    canvas.height = height;
-    cursor.width = width;
-    cursor.height = height;
+  const containerWidth = window.innerWidth;
+  const containerHeight = window.innerHeight;
 
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    cursor.style.width = `${width}px`;
-    cursor.style.height = `${height}px`;
+  const aspectRatio = 3 / 2; // 600x400 → 3:2
 
-    canvasState.setCanvas(canvas);
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, width, height);
-  };
+  let width = containerWidth;
+  let height = containerWidth / aspectRatio;
+
+  if (height > containerHeight) {
+    height = containerHeight;
+    width = height * aspectRatio;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  cursor.width = width;
+  cursor.height = height;
+
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  cursor.style.width = `${width}px`;
+  cursor.style.height = `${height}px`;
+
+  canvasState.setCanvas(canvas);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, width, height);
+};
+
 
   useEffect(() => {
     adjustCanvasSize();
