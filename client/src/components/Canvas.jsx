@@ -25,16 +25,16 @@ const adjustCanvasSize = () => {
   const canvas = canvasRef.current;
   const cursor = cursorRef.current;
 
-  const containerWidth = window.innerWidth;
-  const containerHeight = window.innerHeight;
+  const container = containerRef.current;
+  const containerRect = container.getBoundingClientRect();
 
-  const aspectRatio = 3 / 2; // 600x400 → 3:2
+  const aspectRatio = 3 / 2;
 
-  let width = containerWidth;
-  let height = containerWidth / aspectRatio;
+  let width = containerRect.width;
+  let height = width / aspectRatio;
 
-  if (height > containerHeight) {
-    height = containerHeight;
+  if (height > containerRect.height) {
+    height = containerRect.height;
     width = height * aspectRatio;
   }
 
@@ -53,6 +53,7 @@ const adjustCanvasSize = () => {
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, width, height);
 };
+
 
 
   useEffect(() => {
