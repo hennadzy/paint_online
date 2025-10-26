@@ -9,6 +9,7 @@ import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
 import Line from "../tools/Line";
+import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
   const canvasRef = useRef();
