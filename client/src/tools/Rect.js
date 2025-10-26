@@ -134,7 +134,7 @@ export default class Rect extends Tool {
     canvasState.isDrawing = false;
   }
 
-  staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
+  static staticDraw(ctx, x, y, width, height, strokeStyle, lineWidth) {
     ctx.save();
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
