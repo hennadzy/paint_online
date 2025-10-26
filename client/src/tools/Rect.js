@@ -10,6 +10,9 @@ export default class Rect extends Tool {
     this.height = 0;
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
+
+    this.mouseMoveHandlerBound = this.mouseMoveHandler.bind(this);
+    this.mouseUpHandlerBound = this.mouseUpHandler.bind(this);
   }
 
   setStrokeColor(color) {
@@ -22,23 +25,22 @@ export default class Rect extends Tool {
 
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseleave = this.mouseLeaveHandler.bind(this);
-    this.canvas.onmouseenter = this.mouseEnterHandler.bind(this);
-
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+
+    document.addEventListener("mousemove", this.mouseMoveHandlerBound);
+    document.addEventListener("mouseup", this.mouseUpHandlerBound);
 
     this.listenGlobalEndEvents();
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseleave = null;
-    this.canvas.onmouseenter = null;
     this.canvas.removeEventListener("touchstart", this.touchStartHandler);
     this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+
+    document.removeEventListener("mousemove", this.mouseMoveHandlerBound);
+    document.removeEventListener("mouseup", this.mouseUpHandlerBound);
 
     this.removeGlobalEndEvents();
   }
@@ -48,15 +50,17 @@ export default class Rect extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
 
-    this.startX = Math.round(e.pageX - this.canvas.offsetLeft);
-    this.startY = Math.round(e.pageY - this.canvas.offsetTop);
+    const rect = this.canvas.getBoundingClientRect();
+    this.startX = Math.round(e.pageX - rect.left);
+    this.startY = Math.round(e.pageY - rect.top);
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const x = Math.round(e.pageX - this.canvas.offsetLeft);
-    const y = Math.round(e.pageY - this.canvas.offsetTop);
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.round(e.pageX - rect.left);
+    const y = Math.round(e.pageY - rect.top);
     this.width = x - this.startX;
     this.height = y - this.startY;
 
@@ -65,21 +69,11 @@ export default class Rect extends Tool {
     Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.strokeStyle, this.lineWidth);
   }
 
-  mouseLeaveHandler() {
+  mouseUpHandler(e) {
     if (this.mouseDown) {
       this.commitStroke();
       this.mouseDown = false;
     }
-  }
-
-  mouseEnterHandler(e) {
-    if (e.buttons !== 1) return;
-    this.mouseDown = true;
-    this._hasCommitted = false;
-    canvasState.isDrawing = true;
-
-    this.startX = Math.round(e.pageX - this.canvas.offsetLeft);
-    this.startY = Math.round(e.pageY - this.canvas.offsetTop);
   }
 
   touchStartHandler(e) {
@@ -88,18 +82,20 @@ export default class Rect extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
 
+    const rect = this.canvas.getBoundingClientRect();
     const touch = e.touches[0];
-    this.startX = Math.round(touch.pageX - this.canvas.offsetLeft);
-    this.startY = Math.round(touch.pageY - this.canvas.offsetTop);
+    this.startX = Math.round(touch.pageX - rect.left);
+    this.startY = Math.round(touch.pageY - rect.top);
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
     if (!this.mouseDown) return;
 
+    const rect = this.canvas.getBoundingClientRect();
     const touch = e.touches[0];
-    const x = Math.round(touch.pageX - this.canvas.offsetLeft);
-    const y = Math.round(touch.pageY - this.canvas.offsetTop);
+    const x = Math.round(touch.pageX - rect.left);
+    const y = Math.round(touch.pageY - rect.top);
     this.width = x - this.startX;
     this.height = y - this.startY;
 
