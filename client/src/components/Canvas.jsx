@@ -24,11 +24,9 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
-    const container = containerRef.current;
     const aspectRatio = 600 / 400;
-
     const width = window.innerWidth < 768 ? window.innerWidth : 600;
-    const height = window.innerWidth < 768 ? window.innerWidth / aspectRatio : 400;
+    const height = width / aspectRatio;
 
     canvas.width = width;
     canvas.height = height;
@@ -208,6 +206,24 @@ const Canvas = observer(() => {
     ctx.restore();
   };
 
+  const mouseDownHandler = async () => {
+    if (params.id) {
+      try {
+        await axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+          img: canvasRef.current.toDataURL(),
+        });
+      } catch (error) {
+        console.error("Ошибка сохранения изображения:", error);
+      }
+    }
+  };
+
+  const handleCreateRoomClick = (e) => {
+    e.preventDefault();
+    setModal(true);
+    setIsRoomCreated(true);
+  };
+
   const updateCursor = (tool) => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -218,8 +234,8 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Modal show={modal} onHide={() => setModal(false)}>
-                <Modal.Header>
+            <Modal show={modal} onHide={() => setModal(false)}>
+        <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
           <button
             type="button"
@@ -285,4 +301,3 @@ const Canvas = observer(() => {
 });
 
 export default Canvas;
-
