@@ -120,14 +120,8 @@ export default class Rect extends Tool {
     ctx.lineJoin = "miter";
     ctx.globalCompositeOperation = "source-over";
 
-    // Округление координат для предотвращения размытия
-    const px = Math.round(x) + 0.5;
-    const py = Math.round(y) + 0.5;
-    const w = Math.round(width);
-    const h = Math.round(height);
-
     ctx.beginPath();
-    ctx.rect(px, py, w, h);
+    ctx.rect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(width), Math.round(height));
     ctx.stroke();
     ctx.restore();
   }
