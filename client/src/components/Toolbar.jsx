@@ -107,5 +107,3 @@ const Toolbar = observer(() => {
 });
 
 export default Toolbar;
-
-
