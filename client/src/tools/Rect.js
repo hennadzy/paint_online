@@ -1,4 +1,4 @@
-? import Tool from "./Tool";
+import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import { makeAutoObservable } from "mobx";
 

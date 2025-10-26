@@ -135,4 +135,3 @@ export default class Circle extends Tool {
   }
 }
 
-?
