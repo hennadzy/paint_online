@@ -126,9 +126,12 @@ export default class Brush extends Tool {
   }
 
   drawSegment() {
-    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
-    const p = this.points;
-    if (p.length < 2) return;
+    const ctx = this.canvas.getContext("2d");
+    const len = this.points.length;
+    if (len < 2) return;
+
+    const p1 = this.points[len - 2];
+    const p2 = this.points[len - 1];
 
     ctx.save();
     ctx.strokeStyle = this.strokeStyle;
@@ -138,13 +141,8 @@ export default class Brush extends Tool {
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
-    ctx.moveTo(p[0].x, p[0].y);
-    for (let i = 1; i < p.length - 2; i++) {
-      const xc = (p[i].x + p[i + 1].x) / 2;
-      const yc = (p[i].y + p[i + 1].y) / 2;
-      ctx.quadraticCurveTo(p[i].x, p[i].y, xc, yc);
-    }
-    ctx.lineTo(p[p.length - 1].x, p[p.length - 1].y);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
     ctx.restore();
   }
