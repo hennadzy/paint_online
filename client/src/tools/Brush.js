@@ -8,8 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.points = [];
-    this._skipNextSegment = false;
-    this.isOutOfBounds = false;
+    this.isDrawing = false;
 
     makeAutoObservable(this);
   }
@@ -49,6 +48,7 @@ export default class Brush extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
+    this.isDrawing = false;
 
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -57,6 +57,8 @@ export default class Brush extends Tool {
   }
 
   mouseMoveHandler(e) {
+    if (!this.mouseDown) return;
+
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -64,18 +66,16 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      this.isOutOfBounds = true;
+      this.isDrawing = false;
       return;
     }
 
-    if (this.isOutOfBounds && this.mouseDown) {
-      this.isOutOfBounds = false;
+    if (!this.isDrawing) {
+      this.isDrawing = true;
       this.points = [];
       this.points.push({ x, y });
       return;
     }
-
-    if (!this.mouseDown) return;
 
     this.points.push({ x, y });
 
@@ -106,6 +106,7 @@ export default class Brush extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
+    this.isDrawing = false;
 
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
@@ -116,6 +117,8 @@ export default class Brush extends Tool {
 
   touchMoveHandler(e) {
     e.preventDefault();
+    if (!this.mouseDown) return;
+
     const touch = e.touches[0];
     const rect = this.canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
@@ -124,18 +127,16 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      this.isOutOfBounds = true;
+      this.isDrawing = false;
       return;
     }
 
-    if (this.isOutOfBounds && this.mouseDown) {
-      this.isOutOfBounds = false;
+    if (!this.isDrawing) {
+      this.isDrawing = true;
       this.points = [];
       this.points.push({ x, y });
       return;
     }
-
-    if (!this.mouseDown) return;
 
     this.points.push({ x, y });
 
