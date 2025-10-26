@@ -58,11 +58,7 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      if (this.mouseDown && !this.isOutOfBounds) {
-        // Только при первом выходе за границы коммитим текущий stroke
-        this.commitStroke();
-        this.isOutOfBounds = true;
-      }
+      this.isOutOfBounds = true;
       return;
     }
 
@@ -116,11 +112,7 @@ export default class Brush extends Tool {
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      if (this.mouseDown && !this.isOutOfBounds) {
-        // Только при первом выходе за границы коммитим текущий stroke
-        this.commitStroke();
-        this.isOutOfBounds = true;
-      }
+      this.isOutOfBounds = true;
       return;
     }
 
