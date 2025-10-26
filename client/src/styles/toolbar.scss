@@ -107,6 +107,10 @@ canvas.eraser-cursor {
     z-index: 1;
     pointer-events: auto;
     touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
 
   input[type="range"]::-webkit-slider-thumb {

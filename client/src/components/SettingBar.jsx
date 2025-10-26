@@ -1,26 +1,64 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { observer } from "mobx-react-lite";
 import toolState from "../store/toolState";
 
 const SettingBar = observer(() => {
+  const inputRef = useRef(null);
+  const isDraggingRef = useRef(false);
+
   const handleChange = (e) => {
     const value = +e.target.value;
     toolState.setLineWidth(value);
   };
-const lineWidth = toolState.tool?.lineWidth ?? 1;
+
+  const handleTouchStart = (e) => {
+    isDraggingRef.current = true;
+    // Prevent canvas from interfering
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Calculate value based on touch position
+      const input = inputRef.current;
+      const rect = input.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const width = rect.width;
+      const min = +input.min;
+      const max = +input.max;
+      const value = Math.round(min + (x / width) * (max - min));
+      const clampedValue = Math.max(min, Math.min(max, value));
+      toolState.setLineWidth(clampedValue);
+      input.value = clampedValue;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    isDraggingRef.current = false;
+    e.stopPropagation();
+  };
+
+  const lineWidth = toolState.tool?.lineWidth ?? 1;
   const currentToolName = toolState.toolName;
   const currentWidth = currentToolName ? toolState.lineWidths[currentToolName] : 1;
 
   return (
     <div className="setting-bar">
       <input
+        ref={inputRef}
         id="line-width"
         type="range"
         min={1}
         max={50}
         value={currentWidth}
         onChange={handleChange}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
       <span className="line-width-label">{lineWidth}px</span>
     </div>
