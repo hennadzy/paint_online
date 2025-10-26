@@ -170,12 +170,14 @@ const Canvas = observer(() => {
   };
 
   const mouseDownHandler = async () => {
-    try {
-      await axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
-        img: canvasRef.current.toDataURL(),
-      });
-    } catch (error) {
-      console.error("Ошибка сохранения изображения:", error);
+    if (params.id) {
+      try {
+        await axios.post(`https://paint-online-back.onrender.com/image?id=${params.id}`, {
+          img: canvasRef.current.toDataURL(),
+        });
+      } catch (error) {
+        console.error("Ошибка сохранения изображения:", error);
+      }
     }
   };
 

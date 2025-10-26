@@ -37,13 +37,6 @@ class CanvasState {
       stroke.username = this.username || "local";
     }
 
-    const isDuplicate = this.strokeList.some(s =>
-      s.type === stroke.type &&
-      s.username === stroke.username &&
-      JSON.stringify(s) === JSON.stringify(stroke)
-    );
-    if (isDuplicate) return;
-
     this.strokeList.push(stroke);
     const user = stroke.username;
     this.redoStacks.set(user, []);
