@@ -10,7 +10,6 @@
   position: absolute;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
-  
 
   &__btn {
     height: 25px;
@@ -88,6 +87,7 @@ canvas.eraser-cursor {
   padding: 0 20px;
   color: #fff;
   font-size: 14px;
+  z-index: 1000;
 
   label {
     white-space: nowrap;
@@ -106,6 +106,7 @@ canvas.eraser-cursor {
     position: relative;
     z-index: 1;
     pointer-events: auto;
+    touch-action: manipulation;
   }
 
   input[type="range"]::-webkit-slider-thumb {
@@ -152,8 +153,8 @@ canvas.eraser-cursor {
 }
 
 .toolbar__btn.active {
-  background-color: #ffd700; // постоянный жёлтый фон
-  outline: 1px solid #333;   // тонкая тёмная рамка
+  background-color: #ffd700;
+  outline: 1px solid #333;
   outline-offset: 1px;
   box-shadow: none;
   transform: none;
