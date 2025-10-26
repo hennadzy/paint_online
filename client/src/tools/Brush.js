@@ -8,7 +8,7 @@ export default class Brush extends Tool {
     this.strokeColor = "#000000";
     this.lineWidth = 1;
     this.points = [];
-    this.isDrawing = false;
+    this._skipNextSegment = false;
 
     makeAutoObservable(this);
   }
@@ -24,10 +24,8 @@ export default class Brush extends Tool {
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
     this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseup = this.mouseUpHandler.bind(this);
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
     this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchend", this.touchEndHandler.bind(this), { passive: false });
 
     this.listenGlobalEndEvents(); // из Tool.js
   }
@@ -35,10 +33,8 @@ export default class Brush extends Tool {
   destroyEvents() {
     this.canvas.onmousedown = null;
     this.canvas.onmousemove = null;
-    this.canvas.onmouseup = null;
     this.canvas.removeEventListener("touchstart", this.touchStartHandler);
     this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
-    this.canvas.removeEventListener("touchend", this.touchEndHandler);
 
     this.removeGlobalEndEvents(); // из Tool.js
   }
@@ -48,33 +44,30 @@ export default class Brush extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
-    this.isDrawing = false;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
-    if (!this.mouseDown) return;
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
 
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      this.isDrawing = false;
+      if (this.mouseDown) {
+        this._skipNextSegment = true;
+      }
       return;
     }
 
-    if (!this.isDrawing) {
-      this.isDrawing = true;
-      this.points = [];
-      this.points.push({ x, y });
-      return;
+    if (!this.mouseDown) return;
+
+    if (this._skipNextSegment) {
+      this._skipNextSegment = false;
+      this.points = []; // ✅ сбрасываем, чтобы не соединять прямой
     }
 
     this.points.push({ x, y });
@@ -93,11 +86,6 @@ export default class Brush extends Tool {
       ctx.stroke();
     }
     ctx.restore();
-  }
-
-  mouseUpHandler() {
-    this.mouseDown = false;
-    this.commitStroke();
   }
 
   touchStartHandler(e) {
@@ -106,36 +94,33 @@ export default class Brush extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
-    this.isDrawing = false;
 
     const touch = e.touches[0];
-    const rect = this.canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
     this.points.push({ x, y });
   }
 
   touchMoveHandler(e) {
     e.preventDefault();
-    if (!this.mouseDown) return;
-
     const touch = e.touches[0];
-    const rect = this.canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    const x = touch.pageX - this.canvas.offsetLeft;
+    const y = touch.pageY - this.canvas.offsetTop;
 
     const outOfBounds = x < 0 || y < 0 || x > this.canvas.width || y > this.canvas.height;
 
     if (outOfBounds) {
-      this.isDrawing = false;
+      if (this.mouseDown) {
+        this._skipNextSegment = true;
+      }
       return;
     }
 
-    if (!this.isDrawing) {
-      this.isDrawing = true;
+    if (!this.mouseDown) return;
+
+    if (this._skipNextSegment) {
+      this._skipNextSegment = false;
       this.points = [];
-      this.points.push({ x, y });
-      return;
     }
 
     this.points.push({ x, y });
@@ -154,12 +139,6 @@ export default class Brush extends Tool {
       ctx.stroke();
     }
     ctx.restore();
-  }
-
-  touchEndHandler(e) {
-    e.preventDefault();
-    this.mouseDown = false;
-    this.commitStroke();
   }
 
   commitStroke() {
@@ -188,3 +167,4 @@ export default class Brush extends Tool {
     canvasState.isDrawing = false;
   }
 }
+

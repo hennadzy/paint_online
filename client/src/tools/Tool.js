@@ -1,3 +1,4 @@
+
 export default class Tool {
   constructor(canvas, socket, id, username) {
     this.canvas = canvas;
@@ -25,22 +26,19 @@ export default class Tool {
   }
 
  handleGlobalEnd(e) {
-  // Для brush коммит уже происходит в mouseUpHandler и touchEndHandler
-  // Для других инструментов коммит здесь
-  if (this.constructor.name !== "Brush") {
-    const isTouch = e?.type?.startsWith("touch");
+  const isTouch = e?.type?.startsWith("touch");
 
-    // ✅ Только на мобильных игнорируем события вне холста
-    if (isTouch && e && !this.canvas.contains(e.target)) return;
+  // ✅ Только на мобильных игнорируем события вне холста
+  if (isTouch && e && !this.canvas.contains(e.target)) return;
 
-    if (!this.mouseDown || this._hasCommitted) return;
-    this.mouseDown = false;
-    this._hasCommitted = true;
-    if (this.commitStroke) this.commitStroke();
-  }
+  if (!this.mouseDown || this._hasCommitted) return;
+  this.mouseDown = false;
+  this._hasCommitted = true;
+  if (this.commitStroke) this.commitStroke();
 }
 
   destroyEvents() {
     this.removeGlobalEndEvents();
   }
 }
+
