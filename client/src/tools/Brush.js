@@ -72,7 +72,7 @@ export default class Brush extends Tool {
 
     if (!this.animationFrame) {
       this.animationFrame = requestAnimationFrame(() => {
-        this.drawSegment();
+        this.drawFullStroke();
         this.animationFrame = null;
       });
     }
@@ -119,19 +119,16 @@ export default class Brush extends Tool {
 
     if (!this.animationFrame) {
       this.animationFrame = requestAnimationFrame(() => {
-        this.drawSegment();
+        this.drawFullStroke();
         this.animationFrame = null;
       });
     }
   }
 
-  drawSegment() {
+  drawFullStroke() {
     const ctx = this.canvas.getContext("2d");
-    const len = this.points.length;
-    if (len < 2) return;
-
-    const p1 = this.points[len - 2];
-    const p2 = this.points[len - 1];
+    const p = this.points;
+    if (p.length < 2) return;
 
     ctx.save();
     ctx.strokeStyle = this.strokeStyle;
@@ -141,8 +138,10 @@ export default class Brush extends Tool {
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
+    ctx.moveTo(p[0].x, p[0].y);
+    for (let i = 1; i < p.length; i++) {
+      ctx.lineTo(p[i].x, p[i].y);
+    }
     ctx.stroke();
     ctx.restore();
   }
