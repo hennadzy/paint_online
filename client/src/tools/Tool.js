@@ -24,15 +24,17 @@ export default class Tool {
     window.removeEventListener("touchcancel", this.boundGlobalTouchCancel);
   }
 
-  handleGlobalEnd(e) {
-    // ✅ Игнорируем события, если они пришли не с canvas
-    if (e && !this.canvas.contains(e.target)) return;
+ handleGlobalEnd(e) {
+  const isTouch = e?.type?.startsWith("touch");
 
-    if (!this.mouseDown || this._hasCommitted) return;
-    this.mouseDown = false;
-    this._hasCommitted = true;
-    if (this.commitStroke) this.commitStroke();
-  }
+  // ✅ Только на мобильных игнорируем события вне холста
+  if (isTouch && e && !this.canvas.contains(e.target)) return;
+
+  if (!this.mouseDown || this._hasCommitted) return;
+  this.mouseDown = false;
+  this._hasCommitted = true;
+  if (this.commitStroke) this.commitStroke();
+}
 
   destroyEvents() {
     this.removeGlobalEndEvents();
