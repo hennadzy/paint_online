@@ -9,6 +9,7 @@ export default class Line extends Tool {
     this.endX = 0;
     this.endY = 0;
     this.strokeStyle = "#000000";
+    this.strokeOpacity = 1;
     this.lineWidth = 1;
 
     this.mouseDownHandlerBound = this.mouseDownHandler.bind(this);
@@ -21,6 +22,10 @@ export default class Line extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+  }
+
+  setStrokeOpacity(opacity) {
+    this.strokeOpacity = opacity;
   }
 
   setLineWidth(width) {
@@ -74,7 +79,7 @@ export default class Line extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.strokeStyle, this.lineWidth);
+    Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   mouseUpHandler(e) {
@@ -111,7 +116,7 @@ export default class Line extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.strokeStyle, this.lineWidth);
+    Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   touchEndHandler(e) {
@@ -129,6 +134,7 @@ export default class Line extends Tool {
       x2: this.endX,
       y2: this.endY,
       strokeStyle: this.strokeStyle,
+      strokeOpacity: this.strokeOpacity,
       lineWidth: this.lineWidth,
       username: this.username
     };

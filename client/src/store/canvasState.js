@@ -123,15 +123,21 @@ class CanvasState {
           break;
         case "rect":
           ctx.globalCompositeOperation = "source-over";
-          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
+          const rectOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const rectColor = rectOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${rectOpacity})` : stroke.strokeStyle || "#000000";
+          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, rectColor, stroke.lineWidth);
           break;
         case "circle":
           ctx.globalCompositeOperation = "source-over";
-          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
+          const circleOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const circleColor = circleOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${circleOpacity})` : stroke.strokeStyle || "#000000";
+          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, circleColor, stroke.lineWidth);
           break;
         case "line":
           ctx.globalCompositeOperation = "source-over";
-          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
+          const lineOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const lineColor = lineOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${lineOpacity})` : stroke.strokeStyle || "#000000";
+          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, lineColor, stroke.lineWidth);
           break;
         default:
           console.warn("Неизвестный тип фигуры:", stroke.type);

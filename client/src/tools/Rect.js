@@ -9,6 +9,7 @@ export default class Rect extends Tool {
     this.width = 0;
     this.height = 0;
     this.strokeStyle = "#000000";
+    this.strokeOpacity = 1;
     this.lineWidth = 1;
 
     // Привязанные обработчики
@@ -22,6 +23,10 @@ export default class Rect extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+  }
+
+  setStrokeOpacity(opacity) {
+    this.strokeOpacity = opacity;
   }
 
   setLineWidth(width) {
@@ -77,7 +82,7 @@ export default class Rect extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.strokeStyle, this.lineWidth);
+    Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   mouseUpHandler(e) {
@@ -116,7 +121,7 @@ export default class Rect extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.strokeStyle, this.lineWidth);
+    Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   touchEndHandler(e) {
@@ -134,6 +139,7 @@ export default class Rect extends Tool {
       width: this.width,
       height: this.height,
       strokeStyle: this.strokeStyle,
+      strokeOpacity: this.strokeOpacity,
       lineWidth: this.lineWidth,
       username: this.username
     };

@@ -8,6 +8,7 @@ export default class Circle extends Tool {
     this.startY = 0;
     this.radius = 0;
     this.strokeStyle = "#000000";
+    this.strokeOpacity = 1;
     this.lineWidth = 1;
 
     this.mouseDownHandlerBound = this.mouseDownHandler.bind(this);
@@ -20,6 +21,10 @@ export default class Circle extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+  }
+
+  setStrokeOpacity(opacity) {
+    this.strokeOpacity = opacity;
   }
 
   setLineWidth(width) {
@@ -74,7 +79,7 @@ export default class Circle extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.strokeStyle, this.lineWidth);
+    Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   mouseUpHandler(e) {
@@ -112,7 +117,7 @@ export default class Circle extends Tool {
 
     const ctx = this.canvas.getContext("2d");
     canvasState.redrawCanvas();
-    Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.strokeStyle, this.lineWidth);
+    Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
 
   touchEndHandler(e) {
@@ -129,6 +134,7 @@ export default class Circle extends Tool {
       y: this.startY,
       radius: this.radius,
       strokeStyle: this.strokeStyle,
+      strokeOpacity: this.strokeOpacity,
       lineWidth: this.lineWidth,
       username: this.username
     };
