@@ -111,7 +111,8 @@ class CanvasState {
         case "eraser":
           const points = stroke.points;
           if (!points || points.length === 0) break;
-          ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : stroke.strokeStyle || "#000000";
+          const opacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : (opacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${opacity})` : stroke.strokeStyle || "#000000");
           ctx.globalCompositeOperation = stroke.type === "eraser" ? "destination-out" : "source-over";
           ctx.beginPath();
           ctx.moveTo(points[0].x, points[0].y);

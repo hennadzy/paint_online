@@ -5,6 +5,7 @@ class ToolState {
   toolName = null;
   strokeColor = "#000000";
   fillColor = "#000000";
+  strokeOpacity = 1;
 
   lineWidths = {
     brush: 1,
@@ -26,6 +27,7 @@ setTool(tool, toolNameOverride) {
 
   this.tool.setStrokeColor?.(this.strokeColor);
   this.tool.setFillColor?.(this.fillColor);
+  this.tool.setStrokeOpacity?.(this.strokeOpacity);
 
   const savedWidth = this.lineWidths[this.toolName] ?? 1;
   this.tool.setLineWidth?.(savedWidth);
@@ -48,6 +50,11 @@ setTool(tool, toolNameOverride) {
   setStrokeColor(color) {
     this.strokeColor = color;
     this.tool?.setStrokeColor?.(color);
+  }
+
+  setStrokeOpacity(opacity) {
+    this.strokeOpacity = opacity;
+    this.tool?.setStrokeOpacity?.(opacity);
   }
 
   setFillColor(color) {

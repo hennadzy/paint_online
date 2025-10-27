@@ -7,6 +7,7 @@ export default class Brush extends Tool {
     super(canvas, socket, id, username);
     this.points = [];
     this.strokeStyle = "#000000";
+    this.strokeOpacity = 1;
     this.lineWidth = 1;
     this.lastX = null;
     this.lastY = null;
@@ -19,6 +20,10 @@ export default class Brush extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+  }
+
+  setStrokeOpacity(opacity) {
+    this.strokeOpacity = opacity;
   }
 
   setLineWidth(width) {
@@ -149,13 +154,12 @@ export default class Brush extends Tool {
 
   drawStroke() {
     const ctx = this.canvas.getContext("2d");
-    canvasState.redrawCanvas();
 
     ctx.save();
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = this.strokeStyle;
+    ctx.strokeStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
@@ -168,11 +172,19 @@ export default class Brush extends Tool {
     ctx.restore();
   }
 
+  hexToRgba(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
   commitStroke() {
     const stroke = {
       type: "brush",
       points: this.points,
       strokeStyle: this.strokeStyle,
+      strokeOpacity: this.strokeOpacity,
       lineWidth: this.lineWidth,
       username: this.username
     };
