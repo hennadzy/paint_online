@@ -8,6 +8,9 @@ import Rect from "../tools/Rect";
 import Circle from "../tools/Circle";
 import Line from "../tools/Line";
 import Eraser from "../tools/Eraser";
+import Text from "../tools/Text";
+import Fill from "../tools/Fill";
+import Pipette from "../tools/Pipette";
 
 const Toolbar = observer(() => {
   const changeColor = (e) => {
@@ -74,6 +77,18 @@ const Toolbar = observer(() => {
       <button
         className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
         onPointerUp={() => changeTool(Line, "line-cursor", "line")}
+      />
+      <button
+        className={`toolbar__btn text ${current === "text" ? "active" : ""}`}
+        onPointerUp={() => changeTool(Text, "text-cursor", "text")}
+      />
+      <button
+        className={`toolbar__btn fill ${current === "fill" ? "active" : ""}`}
+        onPointerUp={() => changeTool(Fill, "fill-cursor", "fill")}
+      />
+      <button
+        className={`toolbar__btn pipette ${current === "pipette" ? "active" : ""}`}
+        onPointerUp={() => changeTool(Pipette, "pipette-cursor", "pipette")}
       />
       <input
         type="color"

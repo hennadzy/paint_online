@@ -9,6 +9,8 @@ import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
 import Line from "../tools/Line";
+import Text from "../tools/Text";
+import Fill from "../tools/Fill";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
@@ -196,6 +198,14 @@ const Canvas = observer(() => {
         break;
       case "line":
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
+        canvasState.pushStroke(figure);
+        break;
+      case "text":
+        Text.staticDraw(ctx, figure.x, figure.y, figure.text, figure.fontSize, figure.fontFamily, figure.strokeStyle);
+        canvasState.pushStroke(figure);
+        break;
+      case "fill":
+        Fill.staticDraw(ctx, figure.x, figure.y, figure.fillColor, canvasRef.current.width, canvasRef.current.height);
         canvasState.pushStroke(figure);
         break;
       case "undo":

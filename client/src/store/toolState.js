@@ -12,7 +12,10 @@ class ToolState {
     rect: 1,
     circle: 1,
     eraser: 10,
-    line: 1
+    line: 1,
+    text: 16,
+    fill: 1,
+    pipette: 1
   };
 
   constructor() {
