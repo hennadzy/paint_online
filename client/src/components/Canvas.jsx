@@ -28,6 +28,9 @@ const Canvas = observer(() => {
     const logicalWidth = 720;
     const logicalHeight = 480;
 
+    // Save current canvas content
+    const currentImageData = canvas.toDataURL();
+
     canvas.width = logicalWidth;
     canvas.height = logicalHeight;
     cursor.width = logicalWidth;
@@ -49,8 +52,13 @@ const Canvas = observer(() => {
 
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+
+    // Restore canvas content
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, logicalWidth, logicalHeight);
+    };
+    img.src = currentImageData;
   };
 
   useEffect(() => {
