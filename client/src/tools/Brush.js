@@ -161,15 +161,22 @@ export default class Brush extends Tool {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
+    ctx.fillStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
     const p = this.points;
-    ctx.moveTo(p[0].x, p[0].y);
-    for (let i = 1; i < p.length; i++) {
-      ctx.lineTo(p[i].x, p[i].y);
+    if (p.length > 1) {
+      ctx.moveTo(p[0].x, p[0].y);
+      for (let i = 1; i < p.length; i++) {
+        ctx.lineTo(p[i].x, p[i].y);
+      }
+      ctx.stroke();
+    } else if (p.length === 1) {
+      // Draw a single point for very short strokes
+      ctx.arc(p[0].x, p[0].y, this.lineWidth / 2, 0, 2 * Math.PI);
+      ctx.fill();
     }
-    ctx.stroke();
     ctx.restore();
   }
 
