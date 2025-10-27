@@ -64,9 +64,6 @@ export default class Brush extends Tool {
     if (!this.mouseDown) return;
 
     const { x, y } = this.getCoords(e);
-    const last = this.points[this.points.length - 1];
-    if (last && Math.hypot(x - last.x, y - last.y) < 0.5) return;
-
     this.points.push({ x, y });
 
     if (!this.animationFrame) {
@@ -109,9 +106,6 @@ export default class Brush extends Tool {
     if (!this.mouseDown) return;
 
     const { x, y } = this.getCoords(e);
-    const last = this.points[this.points.length - 1];
-    if (last && Math.hypot(x - last.x, y - last.y) < 0.5) return;
-
     this.points.push({ x, y });
 
     if (!this.animationFrame) {
