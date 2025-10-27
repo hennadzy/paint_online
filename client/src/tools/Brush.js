@@ -142,6 +142,7 @@ export default class Brush extends Tool {
 
   drawStroke() {
     const ctx = this.canvas.getContext("2d");
+    canvasState.redrawCanvas();
 
     ctx.save();
     ctx.lineWidth = this.lineWidth;
