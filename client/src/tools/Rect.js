@@ -23,6 +23,7 @@ export default class Rect extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+    this.strokeColor = color;
   }
 
   setStrokeOpacity(opacity) {

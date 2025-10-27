@@ -21,6 +21,7 @@ export default class Circle extends Tool {
 
   setStrokeColor(color) {
     this.strokeStyle = color;
+    this.strokeColor = color;
   }
 
   setStrokeOpacity(opacity) {
