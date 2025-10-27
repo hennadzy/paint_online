@@ -1,3 +1,4 @@
+
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 
@@ -7,97 +8,102 @@ export default class Brush extends Tool {
     this.points = [];
     this.strokeStyle = "#000000";
     this.lineWidth = 1;
-    this.mouseDown = false;
-    this.animationFrame = null;
-  }
+    this.lastX = null;
+    this.lastY = null;
 
-  setLineWidth(width) {
-    this.lineWidth = width;
+    this.mouseMoveHandlerBound = this.mouseMoveHandler.bind(this);
+    this.mouseUpHandlerBound = this.mouseUpHandler.bind(this);
+    this.touchMoveHandlerBound = this.touchMoveHandler.bind(this);
+    this.touchEndHandlerBound = this.touchEndHandler.bind(this);
   }
 
   setStrokeColor(color) {
     this.strokeStyle = color;
   }
 
+  setLineWidth(width) {
+    this.lineWidth = width;
+  }
+
   listen() {
     this.canvas.onmousedown = this.mouseDownHandler.bind(this);
-    this.canvas.onmousemove = this.mouseMoveHandler.bind(this);
-    this.canvas.onmouseleave = this.mouseLeaveHandler.bind(this);
-    this.canvas.onmouseenter = this.mouseEnterHandler.bind(this);
-
     this.canvas.addEventListener("touchstart", this.touchStartHandler.bind(this), { passive: false });
-    this.canvas.addEventListener("touchmove", this.touchMoveHandler.bind(this), { passive: false });
+
+    document.addEventListener("mousemove", this.mouseMoveHandlerBound);
+    document.addEventListener("mouseup", this.mouseUpHandlerBound);
+    document.addEventListener("touchmove", this.touchMoveHandlerBound, { passive: false });
+    document.addEventListener("touchend", this.touchEndHandlerBound);
 
     this.listenGlobalEndEvents();
   }
 
   destroyEvents() {
     this.canvas.onmousedown = null;
-    this.canvas.onmousemove = null;
-    this.canvas.onmouseleave = null;
-    this.canvas.onmouseenter = null;
     this.canvas.removeEventListener("touchstart", this.touchStartHandler);
-    this.canvas.removeEventListener("touchmove", this.touchMoveHandler);
+
+    document.removeEventListener("mousemove", this.mouseMoveHandlerBound);
+    document.removeEventListener("mouseup", this.mouseUpHandlerBound);
+    document.removeEventListener("touchmove", this.touchMoveHandlerBound);
+    document.removeEventListener("touchend", this.touchEndHandlerBound);
 
     this.removeGlobalEndEvents();
   }
 
-  getCoords(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = ((e.touches?.[0]?.pageX ?? e.pageX) - rect.left) * scaleX;
-    const y = ((e.touches?.[0]?.pageY ?? e.pageY) - rect.top) * scaleY;
-    return { x, y };
-  }
-
   mouseDownHandler(e) {
     this.mouseDown = true;
+    this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
 
-    const { x, y } = this.getCoords(e);
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = Math.round((e.pageX - rect.left) * scaleX);
+    const y = Math.round((e.pageY - rect.top) * scaleY);
+    this.lastX = x;
+    this.lastY = y;
     this.points.push({ x, y });
   }
 
   mouseMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = Math.round((e.pageX - rect.left) * scaleX);
+    const y = Math.round((e.pageY - rect.top) * scaleY);
 
-    if (!this.animationFrame) {
-      this.animationFrame = requestAnimationFrame(() => {
-        this.drawFullStroke();
-        this.animationFrame = null;
-      });
-    }
+    const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
+    this.points.push(smoothed);
+    this.lastX = smoothed.x;
+    this.lastY = smoothed.y;
+
+    this.drawStroke();
   }
 
-  mouseLeaveHandler() {
+  mouseUpHandler(e) {
     if (this.mouseDown) {
       this.commitStroke();
       this.mouseDown = false;
     }
   }
 
-  mouseEnterHandler(e) {
-    if (e.buttons !== 1) return;
-    this.mouseDown = true;
-    canvasState.isDrawing = true;
-    this.points = [];
-
-    const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
-  }
-
   touchStartHandler(e) {
     e.preventDefault();
     this.mouseDown = true;
+    this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
 
-    const { x, y } = this.getCoords(e);
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const touch = e.touches[0];
+    const x = Math.round((touch.pageX - rect.left) * scaleX);
+    const y = Math.round((touch.pageY - rect.top) * scaleY);
+    this.lastX = x;
+    this.lastY = y;
     this.points.push({ x, y });
   }
 
@@ -105,30 +111,48 @@ export default class Brush extends Tool {
     e.preventDefault();
     if (!this.mouseDown) return;
 
-    const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const touch = e.touches[0];
+    const x = Math.round((touch.pageX - rect.left) * scaleX);
+    const y = Math.round((touch.pageY - rect.top) * scaleY);
 
-    if (!this.animationFrame) {
-      this.animationFrame = requestAnimationFrame(() => {
-        this.drawFullStroke();
-        this.animationFrame = null;
-      });
+    const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
+    this.points.push(smoothed);
+    this.lastX = smoothed.x;
+    this.lastY = smoothed.y;
+
+    this.drawStroke();
+  }
+
+  touchEndHandler(e) {
+    if (this.mouseDown) {
+      this.commitStroke();
+      this.mouseDown = false;
     }
   }
 
-  drawFullStroke() {
+  interpolate(x1, y1, x2, y2, smoothing = 0.2) {
+    return {
+      x: x1 + (x2 - x1) * smoothing,
+      y: y1 + (y2 - y1) * smoothing
+    };
+  }
+
+  drawStroke() {
     const ctx = this.canvas.getContext("2d");
-    const p = this.points;
-    if (p.length < 2) return;
+    canvasState.redrawCanvas();
 
     ctx.save();
-    ctx.strokeStyle = this.strokeStyle;
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
+    ctx.strokeStyle = this.strokeStyle;
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
+    const p = this.points;
     ctx.moveTo(p[0].x, p[0].y);
     for (let i = 1; i < p.length; i++) {
       ctx.lineTo(p[i].x, p[i].y);
@@ -137,23 +161,10 @@ export default class Brush extends Tool {
     ctx.restore();
   }
 
-  compressPoints(points) {
-    const step = 2; // оставляем каждую 2-ю точку
-    const compressed = [];
-    for (let i = 0; i < points.length; i += step) {
-      compressed.push(points[i]);
-    }
-    return compressed;
-  }
-
   commitStroke() {
-    if (this.points.length === 0) return;
-
-    const compressed = this.compressPoints(this.points);
-
     const stroke = {
       type: "brush",
-      points: compressed,
+      points: this.points,
       strokeStyle: this.strokeStyle,
       lineWidth: this.lineWidth,
       username: this.username
@@ -170,7 +181,6 @@ export default class Brush extends Tool {
       }));
     }
 
-    this.points = [];
     canvasState.isDrawing = false;
   }
 }

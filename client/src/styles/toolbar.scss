@@ -7,7 +7,7 @@
   background-color: #67676759;
   display: flex;
   align-items: center;
-  position: absolute;
+  position: relative;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
 
@@ -75,30 +75,33 @@ canvas.eraser-cursor {
 
 .setting-bar {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  height: $toolbar-height;
+  width: 40px;
   background-color: #67676759;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  position: absolute;
-  width: 100%;
+  position: relative;
   box-shadow: 0 4px 5px gray;
-  top: $toolbar-height;
   gap: 10px;
-  padding: 0 20px;
+  padding: 10px 0;
   color: #fff;
   font-size: 14px;
   z-index: 1000;
 
   label {
     white-space: nowrap;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    margin-bottom: 10px;
   }
 
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    width: 200px;
-    height: 15px;
-    background: linear-gradient(to right, #ffcc00, #ff6699);
+    width: 15px;
+    height: 200px;
+    background: linear-gradient(to bottom, #ffcc00, #ff6699);
     border-radius: 10px;
     outline: none;
     cursor: pointer;
@@ -111,6 +114,8 @@ canvas.eraser-cursor {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
+    transform: rotate(90deg);
+    transform-origin: center;
   }
 
   input[type="range"]::-webkit-slider-thumb {
