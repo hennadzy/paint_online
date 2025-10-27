@@ -83,7 +83,7 @@ const SettingBar = observer(() => {
 
   return (
     <div className="setting-bar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="setting-row">
         <input
           ref={inputRef}
           id="line-width"
@@ -98,7 +98,7 @@ const SettingBar = observer(() => {
         />
         <span className="line-width-label">{lineWidth}px</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="setting-row">
         <input
           ref={opacityInputRef}
           id="stroke-opacity"

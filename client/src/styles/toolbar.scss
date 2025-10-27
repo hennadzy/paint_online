@@ -59,6 +59,31 @@
     background-size: cover;
     transition: background-color 0.2s ease, transform 0.2s ease;
   }
+
+  // Mobile responsiveness
+  @media (max-width: 768px) {
+    &__btn {
+      height: 22px;
+      width: 22px;
+      margin-left: 8px;
+    }
+
+    .save {
+      margin-right: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    &__btn {
+      height: 20px;
+      width: 20px;
+      margin-left: 5px;
+    }
+
+    .save {
+      margin-right: 5px;
+    }
+  }
 }
 
 canvas {
@@ -75,19 +100,20 @@ canvas.eraser-cursor {
 
 .setting-bar {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  height: $toolbar-height;
   background-color: #67676759;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   position: absolute;
   width: 100%;
   box-shadow: 0 4px 5px gray;
   top: $toolbar-height;
   gap: 10px;
-  padding: 0 20px;
+  padding: 10px 20px;
   color: #fff;
   font-size: 14px;
   z-index: 1000;
+  min-height: $toolbar-height;
 
   label {
     white-space: nowrap;
@@ -117,6 +143,46 @@ canvas.eraser-cursor {
     white-space: nowrap;
     color: #fff;
     font-size: 14px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  // Mobile responsiveness
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 15px;
+
+    .setting-row {
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      width: 150px;
+    }
+
+    .line-width-label,
+    .opacity-label {
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 10px;
+    gap: 5px;
+
+    .setting-row {
+      gap: 5px;
+    }
+
+    input[type="range"] {
+      width: 120px;
+    }
   }
 
   input[type="range"]::-webkit-slider-thumb {
