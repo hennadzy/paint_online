@@ -133,7 +133,7 @@ export default class Brush extends Tool {
     }
   }
 
-  interpolate(x1, y1, x2, y2, smoothing = 0.2) {
+  interpolate(x1, y1, x2, y2, smoothing = 0.1) {
     return {
       x: x1 + (x2 - x1) * smoothing,
       y: y1 + (y2 - y1) * smoothing

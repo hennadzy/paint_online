@@ -7,20 +7,18 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 const App = () => {
     return (
-        <div className="app">
-            <Routes>
-                <Route path='/' element={
-                    <>
-                        <Toolbar />
-                        <SettingBar />
-                        <Canvas />
-                    </>
-                } />
-                <Route path='/:id'>
-                    <Route path="home" />
-                </Route>
-            </Routes>
-        </div>
+        <Routes>
+            <Route path='/' element={
+                <>
+                    <Toolbar />
+                    <SettingBar />
+                    <Canvas />
+                </>
+            } />
+            <Route path='/:id'>
+                <Route path="home" />
+            </Route>
+        </Routes>
         // <Routes>
         //     <Route path='/:id' element={
         //         <>
