@@ -137,12 +137,23 @@ export default class Brush extends Tool {
     ctx.restore();
   }
 
+  compressPoints(points) {
+    const step = 2; // оставляем каждую 2-ю точку
+    const compressed = [];
+    for (let i = 0; i < points.length; i += step) {
+      compressed.push(points[i]);
+    }
+    return compressed;
+  }
+
   commitStroke() {
     if (this.points.length === 0) return;
 
+    const compressed = this.compressPoints(this.points);
+
     const stroke = {
       type: "brush",
-      points: this.points,
+      points: compressed,
       strokeStyle: this.strokeStyle,
       lineWidth: this.lineWidth,
       username: this.username
