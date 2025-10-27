@@ -24,6 +24,7 @@ export default class Brush extends Tool {
 
   setStrokeOpacity(opacity) {
     this.strokeOpacity = opacity;
+    this.strokeColor = this.hexToRgba(this.strokeStyle, opacity);
   }
 
   setLineWidth(width) {
