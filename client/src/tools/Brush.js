@@ -134,9 +134,16 @@ export default class Brush extends Tool {
   }
 
   interpolate(x1, y1, x2, y2, smoothing = 0.2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < 2) {
+      return { x: x2, y: y2 };
+    }
+    const factor = Math.min(smoothing, distance / 2);
     return {
-      x: x1 + (x2 - x1) * smoothing,
-      y: y1 + (y2 - y1) * smoothing
+      x: x1 + dx * factor,
+      y: y1 + dy * factor
     };
   }
 
