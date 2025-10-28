@@ -2,14 +2,16 @@
 
 .toolbar {
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  width: 100%;
-  height: $toolbar-height;
+  width: 60px;
+  height: 100vh;
   background-color: #67676759;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  position: absolute;
+  position: relative;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
+  padding-top: 10px;
 
   &__btn {
     height: 25px;
@@ -18,7 +20,7 @@
     outline: none;
     cursor: pointer;
     background-size: cover;
-    margin-left: 10px;
+    margin-bottom: 10px;
   }
 
   .brush {
@@ -72,7 +74,18 @@
   // Mobile responsiveness
   @media (max-width: 768px) {
     width: 100vw !important;
-    left: 0 !important;
+    height: $toolbar-height !important;
+    flex-direction: row !important;
+    padding-top: 0 !important;
+
+    &__btn {
+      margin-bottom: 0 !important;
+      margin-left: 10px !important;
+    }
+
+    .undo {
+      margin-left: auto !important;
+    }
   }
 }
 
@@ -153,7 +166,7 @@ canvas.eraser-cursor {
     }
 
     input[type="range"] {
-      width: 200px;
+      width: 300px;
     }
 
     .line-width-label,

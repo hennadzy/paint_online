@@ -20,6 +20,12 @@ body {
   flex-direction: row;
 }
 
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 768px) {
   .app {
     flex-direction: column;
