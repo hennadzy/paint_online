@@ -34,13 +34,11 @@
   &__submenu {
     position: absolute;
     display: none;
-    background-color: #67676759;
-    border-radius: 4px;
-    padding: 5px 5px;
+    padding-left: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     white-space: nowrap;
-    gap: 5px;
+    gap: 10px;
     justify-content: center;
     align-items: center;
   }

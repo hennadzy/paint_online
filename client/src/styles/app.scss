@@ -55,12 +55,16 @@ body {
   margin: 0;
 }
 
+.top-menu__actions .toolbar__btn:active {
+  animation: buttonPress 0.2s ease-out;
+}
+
 .top-menu__actions .toolbar__btn:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
   background-size: cover;
   background-color: transparent;
-  transition: transform 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .main-content {
