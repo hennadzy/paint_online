@@ -171,12 +171,7 @@ const Toolbar = observer(() => {
         onPointerUp={() => changeTool(Text, "text-cursor", "text")}
       />
 
-      <input
-        type="color"
-        value={toolState.strokeColor}
-        onChange={changeColor}
-        style={{ marginLeft: 10 }}
-      />
+
     </div>
   );
 });
