@@ -19,7 +19,6 @@ const Canvas = observer(() => {
   const containerRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
-  const [messages, setMessages] = useState([]);
   const [isRoomCreated, setIsRoomCreated] = useState(false);
   const params = useParams();
 
@@ -171,6 +170,14 @@ const Canvas = observer(() => {
       };
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+        if (msg.method === "connection") {
+          const userMessagesDiv = document.getElementById('user-messages');
+          if (userMessagesDiv) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = `Пользователь ${msg.username} вошел в комнату`;
+            userMessagesDiv.appendChild(messageDiv);
+          }
+        }
         if (!msg.username || msg.username === canvasState.username) return;
         drawHandler(msg);
       };
@@ -309,22 +316,7 @@ const Canvas = observer(() => {
         />
       </div>
 
-      {!isRoomCreated && (
-        <Button
-          variant="primary"
-          onClick={handleCreateRoomClick}
-          onTouchEnd={handleCreateRoomClick}
-          style={{ marginTop: "10px" }}
-        >
-          Создать комнату
-        </Button>
-      )}
 
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
-      </div>
     </div>
   );
 });
