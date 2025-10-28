@@ -29,7 +29,7 @@ const App = () => {
             <div className="main-content">
                 <Canvas />
             </div>
-            <div className="room-info" style={{ position: 'absolute', top: '110px', right: '10px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100vw - 730px)' }}>
+            <div className="room-info" style={{ position: 'absolute', top: '110px', left: '620px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100vw - 630px)' }}>
                 <button className="toolbar__btn room-create-btn" onClick={() => {
                     const canvas = document.querySelector('.canvas');
                     const button = canvas.querySelector('button');

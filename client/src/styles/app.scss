@@ -86,11 +86,17 @@ body {
   border: 1px solid #007bff !important;
   border-radius: 4px !important;
   font-weight: bold !important;
+  cursor: pointer !important;
 }
 
 .room-create-btn:hover {
   background-color: #0056b3 !important;
   border-color: #0056b3 !important;
+}
+
+.room-create-btn:active {
+  background-color: #004085 !important;
+  border-color: #004085 !important;
 }
 
 .main-content {
