@@ -44,21 +44,21 @@
     display: flex;
   }
 
-  // Desktop: submenu to the right
+  // Desktop: submenu down
   @media (min-width: 769px) {
-    &__submenu {
-      left: 100%;
-      top: 0;
-      flex-direction: column;
-    }
-  }
-
-  // Mobile: submenu down
-  @media (max-width: 768px) {
     &__submenu {
       top: 100%;
       left: 0;
       flex-direction: row;
+    }
+  }
+
+  // Mobile: submenu to the right
+  @media (max-width: 768px) {
+    &__submenu {
+      left: 100%;
+      top: 0;
+      flex-direction: column;
     }
   }
 
