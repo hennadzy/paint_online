@@ -29,15 +29,15 @@ const App = () => {
             <div className="main-content">
                 <Canvas />
             </div>
-            <div className="room-info" style={{ position: 'absolute', top: '110px', right: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div className="room-info" style={{ position: 'absolute', top: '110px', right: '10px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: 'calc(100vw - 730px)' }}>
                 <button className="toolbar__btn room-create-btn" onClick={() => {
                     const canvas = document.querySelector('.canvas');
                     const button = canvas.querySelector('button');
                     if (button) button.click();
-                }} style={{ marginBottom: '10px', padding: '5px 10px', fontSize: '14px', whiteSpace: 'nowrap' }}>
+                }} style={{ marginBottom: '10px', padding: '5px 10px', fontSize: '12px', whiteSpace: 'nowrap', width: 'auto', minWidth: '120px' }}>
                     Создать комнату
                 </button>
-                <div id="user-messages" style={{ color: '#fff', fontSize: '14px', textAlign: 'left', maxWidth: '200px' }}></div>
+                <div id="user-messages" style={{ color: '#fff', fontSize: '12px', textAlign: 'left', maxWidth: '100%', wordWrap: 'break-word' }}></div>
             </div>
         </div>
     );
