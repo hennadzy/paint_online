@@ -177,18 +177,6 @@ const Toolbar = observer(() => {
         onChange={changeColor}
         style={{ marginLeft: 10 }}
       />
-      <button
-        className="toolbar__btn undo"
-        onPointerUp={safeUndo}
-      />
-      <button
-        className="toolbar__btn redo"
-        onPointerUp={safeRedo}
-      />
-      <button
-        className="toolbar__btn save"
-        onPointerUp={download}
-      />
     </div>
   );
 });

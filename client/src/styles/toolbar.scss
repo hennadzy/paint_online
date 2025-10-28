@@ -87,7 +87,6 @@
     background: url('../assets/img/pipette.png') no-repeat center center;
   }
   .undo {
-    margin-left: auto;
     background: url('../assets/img/undo.png') no-repeat center center;
   }
   .redo {
@@ -95,7 +94,6 @@
   }
   .save {
     background: url('../assets/img/save.png') no-repeat center center;
-    margin-right: 10px;
   }
 
   &__btn:active {
@@ -191,6 +189,27 @@ canvas.eraser-cursor {
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+
+  // Desktop: horizontal layout
+  @media (min-width: 769px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 20px;
+
+    .setting-row {
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      width: 150px;
+    }
+
+    .line-width-label,
+    .opacity-label {
+      font-size: 14px;
+    }
   }
 
   // Mobile responsiveness
