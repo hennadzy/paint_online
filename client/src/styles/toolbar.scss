@@ -14,13 +14,52 @@
   padding-top: 10px;
 
   &__btn {
-    height: 25px;
-    width: 25px;
+    height: 32px;
+    width: 32px;
     border: none;
     outline: none;
     cursor: pointer;
     background-size: cover;
     margin-bottom: 10px;
+    position: relative;
+  }
+
+  &__group {
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  &__submenu {
+    position: absolute;
+    display: none;
+    flex-direction: column;
+    background-color: #67676759;
+    border-radius: 4px;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+  }
+
+  &__submenu.show {
+    display: flex;
+  }
+
+  // Desktop: submenu to the right
+  @media (min-width: 769px) {
+    &__submenu {
+      left: 100%;
+      top: 0;
+      flex-direction: column;
+    }
+  }
+
+  // Mobile: submenu down
+  @media (max-width: 768px) {
+    &__submenu {
+      top: 100%;
+      left: 0;
+      flex-direction: row;
+    }
   }
 
   .brush {
