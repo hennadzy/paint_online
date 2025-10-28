@@ -32,33 +32,33 @@
   &__submenu {
     position: absolute;
     display: none;
-    flex-direction: column;
     background-color: #67676759;
     border-radius: 4px;
     padding: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    white-space: nowrap;
   }
 
   &__submenu.show {
     display: flex;
   }
 
-  // Desktop: submenu down
+  // Desktop: submenu to the right
   @media (min-width: 769px) {
-    &__submenu {
-      top: 100%;
-      left: 0;
-      flex-direction: row;
-    }
-  }
-
-  // Mobile: submenu to the right
-  @media (max-width: 768px) {
     &__submenu {
       left: 100%;
       top: 0;
       flex-direction: column;
+    }
+  }
+
+  // Mobile: submenu down
+  @media (max-width: 768px) {
+    &__submenu {
+      top: 100%;
+      left: 0;
+      flex-direction: row;
     }
   }
 
