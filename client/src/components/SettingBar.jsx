@@ -84,7 +84,6 @@ const SettingBar = observer(() => {
   return (
     <div className="setting-bar">
       <div className="setting-row">
-        <label className="line-width-label">Line width:</label>
         <input
           ref={inputRef}
           id="line-width"
@@ -97,7 +96,7 @@ const SettingBar = observer(() => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         />
-        <label className="opacity-label">Opacity:</label>
+        <span className="line-width-label">{lineWidth}px</span>
         <input
           ref={opacityInputRef}
           id="stroke-opacity"
@@ -111,6 +110,7 @@ const SettingBar = observer(() => {
           onTouchMove={handleOpacityTouchMove}
           onTouchEnd={handleOpacityTouchEnd}
         />
+        <span className="opacity-label">{Math.round(toolState.strokeOpacity * 100)}%</span>
         <input
           type="color"
           value={toolState.strokeColor}

@@ -27,6 +27,7 @@ body {
   background-color: #67676759;
   box-shadow: 0 4px 5px gray;
   z-index: 1000;
+  height: 50px;
 }
 
 .top-menu__actions {
@@ -34,6 +35,8 @@ body {
   justify-content: flex-end;
   padding: 10px 20px;
   gap: 10px;
+  height: 100%;
+  align-items: center;
 }
 
 .main-content {
