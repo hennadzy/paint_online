@@ -53,6 +53,19 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   margin: 0;
+  background-color: transparent;
+}
+
+.top-menu__actions .toolbar__btn.undo {
+  background: url('../assets/img/undo.png') no-repeat center center;
+}
+
+.top-menu__actions .toolbar__btn.redo {
+  background: url('../assets/img/redo.png') no-repeat center center;
+}
+
+.top-menu__actions .toolbar__btn.save {
+  background: url('../assets/img/save.png') no-repeat center center;
 }
 
 .top-menu__actions .toolbar__btn:active {
