@@ -264,8 +264,7 @@ const Canvas = observer(() => {
     }
   };
 
-  const handleCreateRoomClick = (e) => {
-    e.preventDefault();
+  const handleCreateRoomClick = () => {
     setModal(true);
     setIsRoomCreated(true);
   };
