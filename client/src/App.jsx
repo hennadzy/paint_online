@@ -30,10 +30,10 @@ const App = () => {
             </div>
             <div className="room-info">
                 <button className="room-create-btn" onClick={() => {
-                    const canvas = document.querySelector('.canvas');
-                    if (canvas) {
+                    const canvasComponent = document.querySelector('.canvas');
+                    if (canvasComponent) {
                         const event = new Event('createRoom');
-                        canvas.dispatchEvent(event);
+                        canvasComponent.dispatchEvent(event);
                     }
                 }}>
                     Создать комнату
