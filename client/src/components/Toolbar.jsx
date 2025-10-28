@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import "../styles/toolbar.scss";
 import toolState from "../store/toolState";
@@ -14,6 +14,19 @@ import Pipette from "../tools/Pipette";
 
 const Toolbar = observer(() => {
   const [activeGroup, setActiveGroup] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.toolbar')) {
+        setActiveGroup(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const changeColor = (e) => {
     toolState.setStrokeColor(e.target.value);
