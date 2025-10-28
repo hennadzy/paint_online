@@ -28,6 +28,18 @@ const App = () => {
                     } />
                 </Routes>
             </div>
+            <div className="room-info">
+                <button className="room-create-btn" onClick={() => {
+                    const canvas = document.querySelector('.canvas');
+                    if (canvas) {
+                        const event = new Event('createRoom');
+                        canvas.dispatchEvent(event);
+                    }
+                }}>
+                    Создать комнату
+                </button>
+                <div id="user-messages"></div>
+            </div>
         </div>
     );
 };

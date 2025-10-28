@@ -65,7 +65,17 @@ const Canvas = observer(() => {
   useEffect(() => {
     adjustCanvasSize();
     window.addEventListener("resize", adjustCanvasSize);
-    return () => window.removeEventListener("resize", adjustCanvasSize);
+
+    const canvasElement = canvasRef.current;
+    const handleCreateRoom = () => {
+      handleCreateRoomClick();
+    };
+    canvasElement.addEventListener('createRoom', handleCreateRoom);
+
+    return () => {
+      window.removeEventListener("resize", adjustCanvasSize);
+      canvasElement.removeEventListener('createRoom', handleCreateRoom);
+    };
   }, []);
 
   useEffect(() => {
@@ -269,12 +279,7 @@ const Canvas = observer(() => {
   };
 
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      {!params.id && (
-        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginBottom: "10px" }}>
-          Создать комнату
-        </Button>
-      )}
+    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
