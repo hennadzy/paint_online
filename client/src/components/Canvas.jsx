@@ -66,15 +66,8 @@ const Canvas = observer(() => {
     adjustCanvasSize();
     window.addEventListener("resize", adjustCanvasSize);
 
-    const canvasElement = canvasRef.current;
-    const handleCreateRoom = () => {
-      handleCreateRoomClick();
-    };
-    canvasElement.addEventListener('createRoom', handleCreateRoom);
-
     return () => {
       window.removeEventListener("resize", adjustCanvasSize);
-      canvasElement.removeEventListener('createRoom', handleCreateRoom);
     };
   }, []);
 
@@ -279,6 +272,12 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+      <div className="room-info">
+        <button className="room-create-btn" onClick={handleCreateRoomClick}>
+          Создать комнату
+        </button>
+        <div id="user-messages"></div>
+      </div>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>

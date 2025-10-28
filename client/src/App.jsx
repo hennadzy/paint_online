@@ -28,18 +28,7 @@ const App = () => {
                     } />
                 </Routes>
             </div>
-            <div className="room-info">
-                <button className="room-create-btn" onClick={() => {
-                    const canvasComponent = document.querySelector('.canvas');
-                    if (canvasComponent) {
-                        const event = new Event('createRoom');
-                        canvasComponent.dispatchEvent(event);
-                    }
-                }}>
-                    Создать комнату
-                </button>
-                <div id="user-messages"></div>
-            </div>
+
         </div>
     );
 };
