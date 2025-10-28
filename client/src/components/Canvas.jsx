@@ -270,7 +270,12 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Modal show={modal} onHide={() => setModal(false)}>
+      {!params.id && (
+        <Button variant="primary" onClick={handleCreateRoomClick} style={{ marginBottom: "10px" }}>
+          Создать комнату
+        </Button>
+      )}
+      <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
           <button
