@@ -13,10 +13,12 @@ const TopMenu = () => {
   };
 
   return (
-    <div className="toolbar top-menu">
-      <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
-      <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
-      <button className="toolbar__btn save" onClick={download} />
+    <div className="top-menu">
+      <div className="top-menu__actions">
+        <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
+        <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
+        <button className="toolbar__btn save" onClick={download} />
+      </div>
     </div>
   );
 };
