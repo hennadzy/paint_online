@@ -17,25 +17,19 @@ const Toolbar = observer(() => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.toolbar')) {
+      if (!event.target.closest(".toolbar")) {
         setActiveGroup(null);
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const changeColor = (e) => {
-    toolState.setStrokeColor(e.target.value);
-  };
 
   const changeTool = (ToolClass, cursorClass, toolName) => {
     const { canvas, socket, sessionid, username } = canvasState;
     if (!canvas) return;
-
     const safeUsername = username || "local";
     const tool = new ToolClass(canvas, socket, sessionid, safeUsername);
     toolState.setTool(tool, toolName);
@@ -51,8 +45,8 @@ const Toolbar = observer(() => {
       "pipette-cursor"
     );
     canvas.classList.add(cursorClass);
-    canvas.style.pointerEvents = 'auto';
-    setActiveGroup(null); // Close submenu after selection
+    canvas.style.pointerEvents = "auto";
+    setActiveGroup(null);
   };
 
   const toggleGroup = (group) => {
@@ -60,34 +54,14 @@ const Toolbar = observer(() => {
   };
 
   const groups = {
-    brush: ['brush', 'line'],
-    shapes: ['circle', 'rect'],
-    color: ['pipette', 'fill'],
-    eraser: ['eraser'],
-    text: ['text']
+    brush: ["brush", "line"],
+    shapes: ["circle", "rect"],
+    color: ["pipette", "fill"]
   };
 
   const getCurrentToolInGroup = (group) => {
     const groupTools = groups[group];
-    return groupTools.find(tool => toolState.toolName === tool) || groupTools[0];
-  };
-
-  const download = () => {
-    const dataUrl = canvasState.canvas.toDataURL();
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = canvasState.sessionid + ".jpg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const safeUndo = () => {
-    canvasState.undo();
-  };
-
-  const safeRedo = () => {
-    canvasState.redo();
+    return groupTools.find((tool) => toolState.toolName === tool) || groupTools[0];
   };
 
   const current = toolState.toolName;
@@ -97,78 +71,108 @@ const Toolbar = observer(() => {
       {/* Brush group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup('brush')} ${current === getCurrentToolInGroup('brush') ? "active" : ""}`}
+          className={`toolbar__btn ${getCurrentToolInGroup("brush")} ${
+            current === getCurrentToolInGroup("brush") ? "active" : ""
+          }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup('brush');
-            if (currentTool === 'brush') {
+            const currentTool = getCurrentToolInGroup("brush");
+            if (currentTool === "brush") {
               changeTool(Brush, "brush-cursor", "brush");
             } else {
               changeTool(Line, "line-cursor", "line");
             }
           }}
-          onClick={() => toggleGroup('brush')}
-        />
-        <div className={`toolbar__submenu ${activeGroup === 'brush' ? 'show' : ''}`}>
+          onClick={() => toggleGroup("brush")}
+        >
+          <span className="tooltip">
+            {getCurrentToolInGroup("brush") === "brush" ? "Кисть" : "Линия"}
+          </span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === "brush" ? "show" : ""}`}>
           <button
             className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
             onPointerUp={() => changeTool(Brush, "brush-cursor", "brush")}
-          />
+          >
+            <span className="tooltip">Кисть</span>
+          </button>
           <button
             className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
             onPointerUp={() => changeTool(Line, "line-cursor", "line")}
-          />
+          >
+            <span className="tooltip">Линия</span>
+          </button>
         </div>
       </div>
 
       {/* Shapes group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup('shapes')} ${current === getCurrentToolInGroup('shapes') ? "active" : ""}`}
+          className={`toolbar__btn ${getCurrentToolInGroup("shapes")} ${
+            current === getCurrentToolInGroup("shapes") ? "active" : ""
+          }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup('shapes');
-            if (currentTool === 'circle') {
+            const currentTool = getCurrentToolInGroup("shapes");
+            if (currentTool === "circle") {
               changeTool(Circle, "circle-cursor", "circle");
             } else {
               changeTool(Rect, "rect-cursor", "rect");
             }
           }}
-          onClick={() => toggleGroup('shapes')}
-        />
-        <div className={`toolbar__submenu ${activeGroup === 'shapes' ? 'show' : ''}`}>
+          onClick={() => toggleGroup("shapes")}
+        >
+          <span className="tooltip">
+            {getCurrentToolInGroup("shapes") === "circle" ? "Круг" : "Прямоугольник"}
+          </span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === "shapes" ? "show" : ""}`}>
           <button
             className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
             onPointerUp={() => changeTool(Circle, "circle-cursor", "circle")}
-          />
+          >
+            <span className="tooltip">Круг</span>
+          </button>
           <button
             className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
             onPointerUp={() => changeTool(Rect, "rect-cursor", "rect")}
-          />
+          >
+            <span className="tooltip">Прямоугольник</span>
+          </button>
         </div>
       </div>
 
       {/* Color group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup('color')} ${current === getCurrentToolInGroup('color') ? "active" : ""}`}
+          className={`toolbar__btn ${getCurrentToolInGroup("color")} ${
+            current === getCurrentToolInGroup("color") ? "active" : ""
+          }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup('color');
-            if (currentTool === 'pipette') {
+            const currentTool = getCurrentToolInGroup("color");
+            if (currentTool === "pipette") {
               changeTool(Pipette, "pipette-cursor", "pipette");
             } else {
               changeTool(Fill, "fill-cursor", "fill");
             }
           }}
-          onClick={() => toggleGroup('color')}
-        />
-        <div className={`toolbar__submenu ${activeGroup === 'color' ? 'show' : ''}`}>
+          onClick={() => toggleGroup("color")}
+        >
+          <span className="tooltip">
+            {getCurrentToolInGroup("color") === "pipette" ? "Пипетка" : "Заливка"}
+          </span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === "color" ? "show" : ""}`}>
           <button
             className={`toolbar__btn pipette ${current === "pipette" ? "active" : ""}`}
             onPointerUp={() => changeTool(Pipette, "pipette-cursor", "pipette")}
-          />
+          >
+            <span className="tooltip">Пипетка</span>
+          </button>
           <button
             className={`toolbar__btn fill ${current === "fill" ? "active" : ""}`}
             onPointerUp={() => changeTool(Fill, "fill-cursor", "fill")}
-          />
+          >
+            <span className="tooltip">Заливка</span>
+          </button>
         </div>
       </div>
 
@@ -176,15 +180,17 @@ const Toolbar = observer(() => {
       <button
         className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
         onPointerUp={() => changeTool(Eraser, "eraser-cursor", "eraser")}
-      />
+      >
+        <span className="tooltip">Ластик</span>
+      </button>
 
       {/* Text */}
       <button
         className={`toolbar__btn text ${current === "text" ? "active" : ""}`}
         onPointerUp={() => changeTool(Text, "text-cursor", "text")}
-      />
-
-
+      >
+        <span className="tooltip">Текст</span>
+      </button>
     </div>
   );
 });
