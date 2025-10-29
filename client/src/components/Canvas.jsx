@@ -284,29 +284,32 @@ const Canvas = observer(() => {
         </Modal.Footer>
       </Modal>
 
-      <div className="canvas-container" ref={containerRef}>
-        <canvas
-          ref={canvasRef}
-          tabIndex={0}
-          className="main-canvas"
-          onMouseDown={mouseDownHandler}
-        />
-        <canvas
-          ref={cursorRef}
-          className="cursor-overlay"
-        />
+      <div className="canvas-layout">
+        <div className="canvas-container" ref={containerRef}>
+          <canvas
+            ref={canvasRef}
+            tabIndex={0}
+            className="main-canvas"
+            onMouseDown={mouseDownHandler}
+          />
+          <canvas
+            ref={cursorRef}
+            className="cursor-overlay"
+          />
+        </div>
+
+        <div className="create-room-wrapper">
+          <Button
+            variant="primary"
+            onClick={handleCreateRoomClick}
+            onTouchEnd={handleCreateRoomClick}
+            className="create-room-btn"
+          >
+            Создать комнату
+          </Button>
+        </div>
       </div>
 
-      <div className="create-room-wrapper">
-        <Button
-          variant="primary"
-          onClick={handleCreateRoomClick}
-          onTouchEnd={handleCreateRoomClick}
-          className="create-room-btn"
-        >
-          Создать комнату
-        </Button>
-      </div>
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((message, index) => (
