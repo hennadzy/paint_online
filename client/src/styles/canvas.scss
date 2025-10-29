@@ -133,5 +133,24 @@ button:active {
   }
 }
 
+.create-room-wrapper {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.create-room-btn {
+  @media (min-width: 768px) {
+    position: absolute;
+    top: calc($toolbar-height * 2 + 10px); 
+    right: 30px;
+    z-index: 1000;
+  }
+
+  @media (max-width: 767px) {
+    position: static;
+    margin-top: 10px;
+  }
+}
+
 
 

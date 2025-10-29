@@ -235,7 +235,7 @@ const Canvas = observer(() => {
     setModal(true);
   };
 
-const updateCursor = (tool) => {
+  const updateCursor = (tool) => {
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.classList.remove(
@@ -297,14 +297,16 @@ const updateCursor = (tool) => {
         />
       </div>
 
-      <Button
-        variant="primary"
-        onClick={handleCreateRoomClick}
-        onTouchEnd={handleCreateRoomClick}
-        style={{ marginTop: "10px" }}
-      >
-        Создать комнату
-      </Button>
+      <div className="create-room-wrapper">
+        <Button
+          variant="primary"
+          onClick={handleCreateRoomClick}
+          onTouchEnd={handleCreateRoomClick}
+          className="create-room-btn"
+        >
+          Создать комнату
+        </Button>
+      </div>
 
       <div style={{ marginTop: "10px", textAlign: "center" }}>
         {messages.map((message, index) => (
