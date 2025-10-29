@@ -248,9 +248,8 @@ const Canvas = observer(() => {
       canvas.classList.add(`${tool}-cursor`);
     }
   };
-
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className="canvas">
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
@@ -298,7 +297,7 @@ const Canvas = observer(() => {
           />
         </div>
 
-        <div className="create-room-wrapper">
+        <div className="canvas-side-panel">
           <Button
             variant="primary"
             onClick={handleCreateRoomClick}
@@ -307,17 +306,19 @@ const Canvas = observer(() => {
           >
             Создать комнату
           </Button>
+
+          <div className="user-messages-glass">
+            {messages.map((message, index) => (
+              <div key={index} className="user-message-line">
+                {message}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-
-
-      <div style={{ marginTop: "10px", textAlign: "center" }}>
-        {messages.map((message, index) => (
-          <div key={index}>{message}</div>
-        ))}
       </div>
     </div>
   );
+
 });
 
 export default Canvas;
