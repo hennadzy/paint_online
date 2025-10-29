@@ -76,6 +76,30 @@
   pointer-events: none;
 }
 
+
+.toolbar__btn .tooltip {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.toolbar__btn:hover .tooltip {
+  opacity: 1;
+}
+
+
+
 .toolbar__group {
   position: relative;
   margin-bottom: 10px;
@@ -125,17 +149,51 @@
 }
 
 /* Иконки */
-.toolbar__btn.brush    { background-image: url('../assets/img/brush.png'); }
-.toolbar__btn.rect     { background-image: url('../assets/img/rect.png'); }
-.toolbar__btn.circle   { background-image: url('../assets/img/circle.png'); }
-.toolbar__btn.eraser   { background-image: url('../assets/img/eraser.png'); }
-.toolbar__btn.line     { background-image: url('../assets/img/line.png'); }
-.toolbar__btn.text     { background-image: url('../assets/img/text.png'); }
-.toolbar__btn.fill     { background-image: url('../assets/img/fill.png'); }
-.toolbar__btn.pipette  { background-image: url('../assets/img/pipette.png'); }
-.toolbar__btn.undo     { background-image: url('../assets/img/undo.png'); margin-left: auto; }
-.toolbar__btn.redo     { background-image: url('../assets/img/redo.png'); }
-.toolbar__btn.save     { background-image: url('../assets/img/save.png'); margin-right: 10px; }
+.toolbar__btn.brush {
+  background-image: url('../assets/img/brush.png');
+}
+
+.toolbar__btn.rect {
+  background-image: url('../assets/img/rect.png');
+}
+
+.toolbar__btn.circle {
+  background-image: url('../assets/img/circle.png');
+}
+
+.toolbar__btn.eraser {
+  background-image: url('../assets/img/eraser.png');
+}
+
+.toolbar__btn.line {
+  background-image: url('../assets/img/line.png');
+}
+
+.toolbar__btn.text {
+  background-image: url('../assets/img/text.png');
+}
+
+.toolbar__btn.fill {
+  background-image: url('../assets/img/fill.png');
+}
+
+.toolbar__btn.pipette {
+  background-image: url('../assets/img/pipette.png');
+}
+
+.toolbar__btn.undo {
+  background-image: url('../assets/img/undo.png');
+  margin-left: auto;
+}
+
+.toolbar__btn.redo {
+  background-image: url('../assets/img/redo.png');
+}
+
+.toolbar__btn.save {
+  background-image: url('../assets/img/save.png');
+  margin-right: 10px;
+}
 
 /* Курсоры */
 canvas {
@@ -298,9 +356,11 @@ input[type="range"]::-webkit-slider-thumb:active {
   0% {
     background-position: 0 0;
   }
+
   50% {
     background-position: 400% 0;
   }
+
   100% {
     background-position: 0 0;
   }
@@ -310,9 +370,11 @@ input[type="range"]::-webkit-slider-thumb:active {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(0.9);
   }
+
   100% {
     transform: scale(1);
   }
@@ -322,9 +384,11 @@ input[type="range"]::-webkit-slider-thumb:active {
   0% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-5px);
   }
+
   100% {
     transform: translateY(0);
   }
