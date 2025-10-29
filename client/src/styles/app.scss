@@ -44,6 +44,7 @@ body {
 }
 
 .top-menu__actions .toolbar__btn {
+  position: relative;
   width: 32px;
   height: 32px;
   border: none;
@@ -54,7 +55,42 @@ body {
   background-position: center;
   margin: 0 5px;
   background-color: transparent;
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    background-size: 400%;
+    filter: blur(5px);
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    animation: glowing 20s linear infinite;
+    z-index: -1;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: #fff176;
+    transform: scale(1.1);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    animation: buttonPress 0.2s ease-out;
+  }
 }
+
+
 
 .top-menu__actions .toolbar__btn.undo {
   background: url('../assets/img/undo.png') no-repeat center center;

@@ -2,12 +2,14 @@ import React from 'react';
 import "./styles/app.scss"
 import SettingBar from "./components/SettingBar";
 import Toolbar from "./components/Toolbar";
+import TopMenu from "./components/TopMenu";
 import Canvas from "./components/Canvas";
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 const App = () => {
     return (
         <div className="app">
+            <TopMenu />
             <div className="main-content">
                 <Routes>
                     <Route path='/' element={
