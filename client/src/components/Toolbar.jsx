@@ -66,6 +66,16 @@ const Toolbar = observer(() => {
 
   const current = toolState.toolName;
 
+  const renderButton = (toolName, ToolClass, cursorClass, label) => (
+    <button
+      className={`toolbar__btn ${toolName} ${current === toolName ? "active" : ""}`}
+      onPointerUp={() => changeTool(ToolClass, cursorClass, toolName)}
+    >
+      <span className={`icon ${toolName}`} />
+      <span className="tooltip">{label}</span>
+    </button>
+  );
+
   return (
     <div className="toolbar">
       {/* Brush group */}
@@ -75,32 +85,19 @@ const Toolbar = observer(() => {
             current === getCurrentToolInGroup("brush") ? "active" : ""
           }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup("brush");
-            if (currentTool === "brush") {
-              changeTool(Brush, "brush-cursor", "brush");
-            } else {
-              changeTool(Line, "line-cursor", "line");
-            }
+            const tool = getCurrentToolInGroup("brush");
+            changeTool(tool === "brush" ? Brush : Line, `${tool}-cursor`, tool);
           }}
           onClick={() => toggleGroup("brush")}
         >
+          <span className={`icon ${getCurrentToolInGroup("brush")}`} />
           <span className="tooltip">
             {getCurrentToolInGroup("brush") === "brush" ? "Кисть" : "Линия"}
           </span>
         </button>
         <div className={`toolbar__submenu ${activeGroup === "brush" ? "show" : ""}`}>
-          <button
-            className={`toolbar__btn brush ${current === "brush" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Brush, "brush-cursor", "brush")}
-          >
-            <span className="tooltip">Кисть</span>
-          </button>
-          <button
-            className={`toolbar__btn line ${current === "line" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Line, "line-cursor", "line")}
-          >
-            <span className="tooltip">Линия</span>
-          </button>
+          {renderButton("brush", Brush, "brush-cursor", "Кисть")}
+          {renderButton("line", Line, "line-cursor", "Линия")}
         </div>
       </div>
 
@@ -111,32 +108,19 @@ const Toolbar = observer(() => {
             current === getCurrentToolInGroup("shapes") ? "active" : ""
           }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup("shapes");
-            if (currentTool === "circle") {
-              changeTool(Circle, "circle-cursor", "circle");
-            } else {
-              changeTool(Rect, "rect-cursor", "rect");
-            }
+            const tool = getCurrentToolInGroup("shapes");
+            changeTool(tool === "circle" ? Circle : Rect, `${tool}-cursor`, tool);
           }}
           onClick={() => toggleGroup("shapes")}
         >
+          <span className={`icon ${getCurrentToolInGroup("shapes")}`} />
           <span className="tooltip">
             {getCurrentToolInGroup("shapes") === "circle" ? "Круг" : "Прямоугольник"}
           </span>
         </button>
         <div className={`toolbar__submenu ${activeGroup === "shapes" ? "show" : ""}`}>
-          <button
-            className={`toolbar__btn circle ${current === "circle" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Circle, "circle-cursor", "circle")}
-          >
-            <span className="tooltip">Круг</span>
-          </button>
-          <button
-            className={`toolbar__btn rect ${current === "rect" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Rect, "rect-cursor", "rect")}
-          >
-            <span className="tooltip">Прямоугольник</span>
-          </button>
+          {renderButton("circle", Circle, "circle-cursor", "Круг")}
+          {renderButton("rect", Rect, "rect-cursor", "Прямоугольник")}
         </div>
       </div>
 
@@ -147,50 +131,27 @@ const Toolbar = observer(() => {
             current === getCurrentToolInGroup("color") ? "active" : ""
           }`}
           onPointerUp={() => {
-            const currentTool = getCurrentToolInGroup("color");
-            if (currentTool === "pipette") {
-              changeTool(Pipette, "pipette-cursor", "pipette");
-            } else {
-              changeTool(Fill, "fill-cursor", "fill");
-            }
+            const tool = getCurrentToolInGroup("color");
+            changeTool(tool === "pipette" ? Pipette : Fill, `${tool}-cursor`, tool);
           }}
           onClick={() => toggleGroup("color")}
         >
+          <span className={`icon ${getCurrentToolInGroup("color")}`} />
           <span className="tooltip">
             {getCurrentToolInGroup("color") === "pipette" ? "Пипетка" : "Заливка"}
           </span>
         </button>
         <div className={`toolbar__submenu ${activeGroup === "color" ? "show" : ""}`}>
-          <button
-            className={`toolbar__btn pipette ${current === "pipette" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Pipette, "pipette-cursor", "pipette")}
-          >
-            <span className="tooltip">Пипетка</span>
-          </button>
-          <button
-            className={`toolbar__btn fill ${current === "fill" ? "active" : ""}`}
-            onPointerUp={() => changeTool(Fill, "fill-cursor", "fill")}
-          >
-            <span className="tooltip">Заливка</span>
-          </button>
+          {renderButton("pipette", Pipette, "pipette-cursor", "Пипетка")}
+          {renderButton("fill", Fill, "fill-cursor", "Заливка")}
         </div>
       </div>
 
       {/* Eraser */}
-      <button
-        className={`toolbar__btn eraser ${current === "eraser" ? "active" : ""}`}
-        onPointerUp={() => changeTool(Eraser, "eraser-cursor", "eraser")}
-      >
-        <span className="tooltip">Ластик</span>
-      </button>
+      {renderButton("eraser", Eraser, "eraser-cursor", "Ластик")}
 
       {/* Text */}
-      <button
-        className={`toolbar__btn text ${current === "text" ? "active" : ""}`}
-        onPointerUp={() => changeTool(Text, "text-cursor", "text")}
-      >
-        <span className="tooltip">Текст</span>
-      </button>
+      {renderButton("text", Text, "text-cursor", "Текст")}
     </div>
   );
 });
