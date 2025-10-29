@@ -2,6 +2,8 @@ import { makeAutoObservable } from "mobx";
 import Rect from "../tools/Rect";
 import Circle from "../tools/Circle";
 import Line from "../tools/Line";
+import Text from "../tools/Text";
+import Fill from "../tools/Fill";
 
 class CanvasState {
   canvas = null;
@@ -36,6 +38,7 @@ class CanvasState {
     if (!stroke.username || stroke.username === "local") {
       stroke.username = this.username || "local";
     }
+
     this.strokeList.push(stroke);
     const user = stroke.username;
     this.redoStacks.set(user, []);
@@ -61,6 +64,7 @@ class CanvasState {
       const restored = stack.pop();
       this.strokeList.push(restored);
       this.redrawCanvas();
+
       if (this.socket) {
         this.socket.send(JSON.stringify({
           method: "draw",
@@ -98,24 +102,20 @@ class CanvasState {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.strokeList.forEach((stroke) => {
       ctx.save();
+      ctx.globalAlpha = 1;
       ctx.lineWidth = stroke.lineWidth || 1;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-
       switch (stroke.type) {
         case "brush":
-        case "eraser": {
+        case "eraser":
           const points = stroke.points;
           if (!points || points.length === 0) break;
-          ctx.strokeStyle = stroke.type === "eraser"
-            ? "rgba(0,0,0,1)"
-            : stroke.strokeStyle || "#000000";
-          ctx.globalCompositeOperation = stroke.type === "eraser"
-            ? "destination-out"
-            : "source-over";
+          const opacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          ctx.strokeStyle = stroke.type === "eraser" ? "rgba(0,0,0,1)" : (opacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${opacity})` : stroke.strokeStyle || "#000000");
+          ctx.globalCompositeOperation = stroke.type === "eraser" ? "destination-out" : "source-over";
           ctx.beginPath();
           ctx.moveTo(points[0].x, points[0].y);
           for (let i = 1; i < points.length; i++) {
@@ -123,53 +123,35 @@ class CanvasState {
           }
           ctx.stroke();
           break;
-        }
-
-        case "rect": {
+        case "rect":
           ctx.globalCompositeOperation = "source-over";
-          Rect.staticDraw(
-            ctx,
-            stroke.x,
-            stroke.y,
-            stroke.width,
-            stroke.height,
-            stroke.strokeStyle || "#000000",
-            stroke.lineWidth
-          );
+          const rectOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const rectColor = rectOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${rectOpacity})` : stroke.strokeStyle || "#000000";
+          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, rectColor, stroke.lineWidth);
           break;
-        }
-
-        case "circle": {
+        case "circle":
           ctx.globalCompositeOperation = "source-over";
-          Circle.staticDraw(
-            ctx,
-            stroke.x,
-            stroke.y,
-            stroke.radius,
-            stroke.strokeStyle || "#000000",
-            stroke.lineWidth
-          );
+          const circleOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const circleColor = circleOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${circleOpacity})` : stroke.strokeStyle || "#000000";
+          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, circleColor, stroke.lineWidth);
           break;
-        }
-
-        case "line": {
+        case "line":
           ctx.globalCompositeOperation = "source-over";
-          Line.staticDraw(
-            ctx,
-            stroke.x1,
-            stroke.y1,
-            stroke.x2,
-            stroke.y2,
-            stroke.strokeStyle || "#000000",
-            stroke.lineWidth
-          );
+          const lineOpacity = stroke.strokeOpacity !== undefined ? stroke.strokeOpacity : 1;
+          const lineColor = lineOpacity < 1 ? `rgba(${parseInt(stroke.strokeStyle.slice(1, 3), 16)}, ${parseInt(stroke.strokeStyle.slice(3, 5), 16)}, ${parseInt(stroke.strokeStyle.slice(5, 7), 16)}, ${lineOpacity})` : stroke.strokeStyle || "#000000";
+          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, lineColor, stroke.lineWidth);
           break;
-        }
-
+        case "text":
+          ctx.globalCompositeOperation = "source-over";
+          Text.staticDraw(ctx, stroke.x, stroke.y, stroke.text, stroke.fontSize, stroke.fontFamily, stroke.strokeStyle);
+          break;
+        case "fill":
+          ctx.globalCompositeOperation = "source-over";
+          Fill.staticDraw(ctx, stroke.x, stroke.y, stroke.fillColor, this.canvas.width, this.canvas.height);
+          break;
         default:
           console.warn("Неизвестный тип фигуры:", stroke.type);
       }
-
       ctx.restore();
     });
   }
