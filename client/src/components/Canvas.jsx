@@ -284,6 +284,53 @@ const Canvas = observer(() => {
       </Modal>
 
       <div className="canvas-layout">
+        <div className="toolbar">
+          <button className="toolbar__btn">
+            <span className="icon brush" />
+            <span className="tooltip">Кисть</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon rect" />
+            <span className="tooltip">Прямоугольник</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon circle" />
+            <span className="tooltip">Круг</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon eraser" />
+            <span className="tooltip">Ластик</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon line" />
+            <span className="tooltip">Линия</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon text" />
+            <span className="tooltip">Текст</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon fill" />
+            <span className="tooltip">Заливка</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon pipette" />
+            <span className="tooltip">Пипетка</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon undo" />
+            <span className="tooltip">Отменить</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon redo" />
+            <span className="tooltip">Повторить</span>
+          </button>
+          <button className="toolbar__btn">
+            <span className="icon save" />
+            <span className="tooltip">Сохранить</span>
+          </button>
+        </div>
+
         <div className="canvas-container" ref={containerRef}>
           <canvas
             ref={canvasRef}
