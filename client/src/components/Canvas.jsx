@@ -9,8 +9,6 @@ import Brush from "../tools/Brush";
 import Circle from "../tools/Circle";
 import Rect from "../tools/Rect";
 import Line from "../tools/Line";
-import Text from "../tools/Text";
-import Fill from "../tools/Fill";
 import "../styles/canvas.scss";
 
 const Canvas = observer(() => {
@@ -19,7 +17,7 @@ const Canvas = observer(() => {
   const containerRef = useRef();
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
-  const [isRoomCreated, setIsRoomCreated] = useState(false);
+  const [messages, setMessages] = useState([]);
   const params = useParams();
 
   const adjustCanvasSize = () => {
@@ -28,9 +26,6 @@ const Canvas = observer(() => {
     const aspectRatio = 720 / 480;
     const logicalWidth = 720;
     const logicalHeight = 480;
-
-    // Save current canvas content
-    const currentImageData = canvas.toDataURL();
 
     canvas.width = logicalWidth;
     canvas.height = logicalHeight;
@@ -53,22 +48,14 @@ const Canvas = observer(() => {
 
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d");
-
-    // Restore canvas content
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, logicalWidth, logicalHeight);
-    };
-    img.src = currentImageData;
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
   };
 
   useEffect(() => {
     adjustCanvasSize();
     window.addEventListener("resize", adjustCanvasSize);
-
-    return () => {
-      window.removeEventListener("resize", adjustCanvasSize);
-    };
+    return () => window.removeEventListener("resize", adjustCanvasSize);
   }, []);
 
   useEffect(() => {
@@ -174,12 +161,7 @@ const Canvas = observer(() => {
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.method === "connection") {
-          const userMessagesDiv = document.getElementById('user-messages');
-          if (userMessagesDiv) {
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = `Пользователь ${msg.username} вошел в комнату`;
-            userMessagesDiv.appendChild(messageDiv);
-          }
+          setMessages(prev => [...prev, `Пользователь ${msg.username} вошел в комнату`]);
         }
         if (!msg.username || msg.username === canvasState.username) return;
         drawHandler(msg);
@@ -208,14 +190,6 @@ const Canvas = observer(() => {
         break;
       case "line":
         Line.staticDraw(ctx, figure.x1, figure.y1, figure.x2, figure.y2, figure.strokeStyle, figure.lineWidth);
-        canvasState.pushStroke(figure);
-        break;
-      case "text":
-        Text.staticDraw(ctx, figure.x, figure.y, figure.text, figure.fontSize, figure.fontFamily, figure.strokeStyle);
-        canvasState.pushStroke(figure);
-        break;
-      case "fill":
-        Fill.staticDraw(ctx, figure.x, figure.y, figure.fillColor, canvasRef.current.width, canvasRef.current.height);
         canvasState.pushStroke(figure);
         break;
       case "undo":
@@ -259,25 +233,24 @@ const Canvas = observer(() => {
 
   const handleCreateRoomClick = () => {
     setModal(true);
-    setIsRoomCreated(true);
   };
 
-  const updateCursor = (tool) => {
+const updateCursor = (tool) => {
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.classList.remove("brush-cursor", "eraser-cursor", "rect-cursor", "circle-cursor", "line-cursor");
+      canvas.classList.remove(
+        "brush-cursor",
+        "eraser-cursor",
+        "rect-cursor",
+        "circle-cursor",
+        "line-cursor"
+      );
       canvas.classList.add(`${tool}-cursor`);
     }
   };
 
   return (
-    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-      <div className="room-info">
-        <button className="room-create-btn" onClick={handleCreateRoomClick}>
-          Создать комнату
-        </button>
-        <div id="user-messages"></div>
-      </div>
+    <div className="canvas" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Modal show={modal} onHide={() => setModal(false)}>
         <Modal.Header>
           <Modal.Title>Введите ваше имя</Modal.Title>
@@ -324,10 +297,22 @@ const Canvas = observer(() => {
         />
       </div>
 
+      <Button
+        variant="primary"
+        onClick={handleCreateRoomClick}
+        onTouchEnd={handleCreateRoomClick}
+        style={{ marginTop: "10px" }}
+      >
+        Создать комнату
+      </Button>
 
+      <div style={{ marginTop: "10px", textAlign: "center" }}>
+        {messages.map((message, index) => (
+          <div key={index}>{message}</div>
+        ))}
+      </div>
     </div>
   );
 });
 
 export default Canvas;
-

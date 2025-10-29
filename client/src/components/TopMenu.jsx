@@ -14,9 +14,11 @@ const TopMenu = () => {
 
   return (
     <div className="top-menu">
-      <button className="top-menu__btn undo" onClick={() => canvasState.undo()} />
-      <button className="top-menu__btn redo" onClick={() => canvasState.redo()} />
-      <button className="top-menu__btn save" onClick={download} />
+      <div className="top-menu__actions">
+        <button className="toolbar__btn undo" onClick={() => canvasState.undo()} />
+        <button className="toolbar__btn redo" onClick={() => canvasState.redo()} />
+        <button className="toolbar__btn save" onClick={download} />
+      </div>
     </div>
   );
 };
