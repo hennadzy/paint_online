@@ -21,56 +21,75 @@
     border: none;
     outline: none;
     cursor: pointer;
-    background-size: cover;
     margin-bottom: 10px;
     position: relative;
     border-radius: 10px;
-    z-index: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
 
-  &__btn:before {
-    content: '';
-    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    background-size: 400%;
-    z-index: -1;
-    filter: blur(5px);
-    width: calc(100% + 4px);
-    height: calc(100% + 4px);
-    animation: glowing 20s linear infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    border-radius: 10px;
-  }
+    &:before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      width: calc(100% + 4px);
+      height: calc(100% + 4px);
+      background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+      background-size: 400%;
+      filter: blur(5px);
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      animation: glowing 20s linear infinite;
+      z-index: 0;
+    }
 
-  &__btn:hover:before {
-    opacity: 1;
-  }
+    &:hover:before {
+      opacity: 1;
+    }
 
-  &__btn:after {
-    z-index: -1;
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    left: 0;
-    top: 0;
-    border-radius: 10px;
-  }
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    }
 
-  &__btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-  }
+    &:active {
+      animation: buttonPress 0.2s ease-out;
+    }
 
-  &__btn:active {
-    animation: buttonPress 0.2s ease-out;
-    color: #000;
-    background: transparent;
+    .icon {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      border-radius: 6px;
+    }
+
+    .tooltip {
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 2;
+    }
+
+    &:hover .tooltip {
+      opacity: 1;
+    }
   }
 
   &__group {
@@ -102,26 +121,6 @@
   }
 
   @media (max-width: 768px) {
-    &__submenu {
-      top: 100%;
-      left: 0;
-      flex-direction: row;
-    }
-  }
-
-  .brush    { background: url('../assets/img/brush.png') no-repeat center center; }
-  .rect     { background: url('../assets/img/rect.png') no-repeat center center; }
-  .circle   { background: url('../assets/img/circle.png') no-repeat center center; }
-  .eraser   { background: url('../assets/img/eraser.png') no-repeat center center; }
-  .line     { background: url('../assets/img/line.png') no-repeat center center; }
-  .text     { background: url('../assets/img/text.png') no-repeat center center; }
-  .fill     { background: url('../assets/img/fill.png') no-repeat center center; }
-  .pipette  { background: url('../assets/img/pipette.png') no-repeat center center; }
-  .undo     { background: url('../assets/img/undo.png') no-repeat center center; }
-  .redo     { background: url('../assets/img/redo.png') no-repeat center center; }
-  .save     { background: url('../assets/img/save.png') no-repeat center center; }
-
-  @media (max-width: 768px) {
     width: 100vw !important;
     height: $toolbar-height !important;
     flex-direction: row !important;
@@ -135,6 +134,42 @@
     .undo {
       margin-left: auto !important;
     }
+
+    &__submenu {
+      top: 100%;
+      left: 0;
+      flex-direction: row;
+    }
+  }
+
+  .brush    { background-image: url('../assets/img/brush.png'); }
+  .rect     { background-image: url('../assets/img/rect.png'); }
+  .circle   { background-image: url('../assets/img/circle.png'); }
+  .eraser   { background-image: url('../assets/img/eraser.png'); }
+  .line     { background-image: url('../assets/img/line.png'); }
+  .text     { background-image: url('../assets/img/text.png'); }
+  .fill     { background-image: url('../assets/img/fill.png'); }
+  .pipette  { background-image: url('../assets/img/pipette.png'); }
+  .undo     { background-image: url('../assets/img/undo.png'); }
+  .redo     { background-image: url('../assets/img/redo.png'); }
+  .save     { background-image: url('../assets/img/save.png'); }
+
+  &__btn:focus {
+    outline: none;
+  }
+
+  &__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &__btn.active {
+    background-color: #ffd700;
+    outline: 1px solid #333;
+    outline-offset: 1px;
+    box-shadow: none;
+    transform: none;
   }
 }
 
@@ -262,7 +297,7 @@ canvas.eraser-cursor {
     }
   }
 
-  input[type="range"]::-webkit-slider-thumb {
+   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 24px;
