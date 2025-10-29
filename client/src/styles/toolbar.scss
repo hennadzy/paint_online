@@ -158,17 +158,49 @@
   }
 
   // Иконки инструментов
-  .icon.brush    { background-image: url('../assets/img/brush.png'); }
-  .icon.rect     { background-image: url('../assets/img/rect.png'); }
-  .icon.circle   { background-image: url('../assets/img/circle.png'); }
-  .icon.eraser   { background-image: url('../assets/img/eraser.png'); }
-  .icon.line     { background-image: url('../assets/img/line.png'); }
-  .icon.text     { background-image: url('../assets/img/text.png'); }
-  .icon.fill     { background-image: url('../assets/img/fill.png'); }
-  .icon.pipette  { background-image: url('../assets/img/pipette.png'); }
-  .icon.undo     { background-image: url('../assets/img/undo.png'); }
-  .icon.redo     { background-image: url('../assets/img/redo.png'); }
-  .icon.save     { background-image: url('../assets/img/save.png'); }
+  .icon.brush {
+    background-image: url('../assets/img/brush.png');
+  }
+
+  .icon.rect {
+    background-image: url('../assets/img/rect.png');
+  }
+
+  .icon.circle {
+    background-image: url('../assets/img/circle.png');
+  }
+
+  .icon.eraser {
+    background-image: url('../assets/img/eraser.png');
+  }
+
+  .icon.line {
+    background-image: url('../assets/img/line.png');
+  }
+
+  .icon.text {
+    background-image: url('../assets/img/text.png');
+  }
+
+  .icon.fill {
+    background-image: url('../assets/img/fill.png');
+  }
+
+  .icon.pipette {
+    background-image: url('../assets/img/pipette.png');
+  }
+
+  .icon.undo {
+    background-image: url('../assets/img/undo.png');
+  }
+
+  .icon.redo {
+    background-image: url('../assets/img/redo.png');
+  }
+
+  .icon.save {
+    background-image: url('../assets/img/save.png');
+  }
 }
 
 // Курсоры
@@ -285,42 +317,43 @@ canvas.eraser-cursor {
   }
 
   @media (max-width: 480px) {
-  padding: 10px 20px;
-  gap: 10px;
-
-  .setting-row {
+    padding: 10px 20px;
     gap: 10px;
-  }
 
-  input[type="range"] {
-    width: 200px;
-  }
-
-  .line-width-label,
-  .opacity-label {
-    font-size: 14px;
-  }
-
-  label {
-    font-size: 13px;
-  }
-
-  .toolbar__btn {
-    width: 28px;
-    height: 28px;
-
-    .icon {
-      width: 20px;
-      height: 20px;
+    .setting-row {
+      gap: 10px;
     }
 
-    .tooltip {
-      font-size: 11px;
-      padding: 3px 6px;
+    input[type="range"] {
+      width: 200px;
     }
-  }
 
-  .toolbar__submenu {
-    gap: 8px;
+    .line-width-label,
+    .opacity-label {
+      font-size: 14px;
+    }
+
+    label {
+      font-size: 13px;
+    }
+
+    .toolbar__btn {
+      width: 28px;
+      height: 28px;
+
+      .icon {
+        width: 20px;
+        height: 20px;
+      }
+
+      .tooltip {
+        font-size: 11px;
+        padding: 3px 6px;
+      }
+    }
+
+    .toolbar__submenu {
+      gap: 8px;
+    }
   }
 }
