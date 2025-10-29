@@ -161,7 +161,7 @@ const Canvas = observer(() => {
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.method === "connection") {
-          setMessages(prev => [...prev, `Пользователь ${msg.username} вошел в комнату`]);
+          setMessages(prev => [...prev, `${msg.username} вошел в комнату`]);
         }
         if (!msg.username || msg.username === canvasState.username) return;
         drawHandler(msg);
