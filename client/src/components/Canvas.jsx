@@ -19,6 +19,7 @@ const Canvas = observer(() => {
   const usernameRef = useRef();
   const [modal, setModal] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
   const params = useParams();
 
   const adjustCanvasSize = () => {
@@ -137,6 +138,7 @@ const Canvas = observer(() => {
     if (!username) return alert("Введите ваше имя");
     canvasState.setUsername(username);
     setModal(false);
+    setIsConnected(true);
     canvasState.strokeList = [];
     canvasState.redoStacks.clear();
     canvasState.redrawCanvas();
@@ -155,6 +157,7 @@ const Canvas = observer(() => {
         }));
       };
       socket.onclose = () => {
+        setIsConnected(false);
         canvasState.strokeList = [];
         canvasState.redoStacks.clear();
         canvasState.redrawCanvas();
@@ -169,7 +172,22 @@ const Canvas = observer(() => {
       };
     } catch (error) {
       console.error("Ошибка подключения к WebSocket:", error);
+      setIsConnected(false);
     }
+  };
+
+  const disconnectHandler = () => {
+    if (canvasState.socket) {
+      canvasState.socket.close();
+    }
+    setIsConnected(false);
+    canvasState.setUsername("local");
+    canvasState.strokeList = [];
+    canvasState.redoStacks.clear();
+    canvasState.redrawCanvas();
+    const localBrush = new Brush(canvasRef.current, null, params.id, "local");
+    toolState.setTool(localBrush, "brush");
+    updateCursor("brush");
   };
 
   const drawHandler = (msg) => {
@@ -300,14 +318,25 @@ const Canvas = observer(() => {
         </div>
 
         <div className="canvas-side-panel">
-          <Button
-            variant="primary"
-            onClick={handleCreateRoomClick}
-            onTouchEnd={handleCreateRoomClick}
-            className="create-room-btn"
-          >
-            Создать комнату
-          </Button>
+          {!isConnected ? (
+            <Button
+              variant="primary"
+              onClick={handleCreateRoomClick}
+              onTouchEnd={handleCreateRoomClick}
+              className="create-room-btn"
+            >
+              Создать комнату
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={disconnectHandler}
+              onTouchEnd={disconnectHandler}
+              className="create-room-btn"
+            >
+              Выйти
+            </Button>
+          )}
 
           <div className="user-messages-glass">
             {messages.map((message, index) => (
