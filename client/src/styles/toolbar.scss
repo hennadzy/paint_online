@@ -18,7 +18,7 @@
     position: relative;
     width: 32px;
     height: 32px;
-    margin: 0 10px 10px 10px;
+    margin: 10px;
     border: none;
     border-radius: 10px;
     background-color: transparent;
@@ -26,24 +26,23 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
     &::before {
       content: '';
       position: absolute;
-      top: -4px;
-      left: -4px;
-      width: calc(100% + 8px);
-      height: calc(100% + 8px);
-      background: linear-gradient(45deg,
-          #ffcc00, #ff6699, #66ccff, #ccff66, #ffcc00);
+      bottom: -2px;
+      left: -2px;
+      width: calc(100% + 4px);
+      height: calc(100% + 4px);
+      background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
       background-size: 400%;
-      border-radius: 12px;
-      filter: blur(4px);
+      filter: blur(5px);
+      border-radius: 10px;
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
-      animation: glowing 8s linear infinite;
-      z-index: 0;
+      animation: glowing 20s linear infinite;
+      z-index: -1;
     }
 
     &:hover::before {
@@ -88,7 +87,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
-      z-index: 2;
+      z-index: 1000;
     }
 
     &:hover .tooltip {
