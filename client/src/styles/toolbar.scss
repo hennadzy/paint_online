@@ -1,38 +1,37 @@
 @import "./variables";
 
 .toolbar {
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  width: 60px;
-  height: calc(100vh - 100px);
-  background-color: #67676759;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 60px;
+  height: calc(100vh - 100px);
   position: fixed;
   top: 100px;
   left: 0;
+  background-color: #67676759;
   box-shadow: 0 4px 5px gray;
   z-index: 999;
   padding-top: 10px;
 
   &__btn {
+    position: relative;
     width: 32px;
     height: 32px;
+    margin: 0 10px 10px 10px;
     border: none;
-    outline: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-    position: relative;
     border-radius: 10px;
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     &::before {
       content: '';
       position: absolute;
-      bottom: -2px;
+      top: -2px;
       left: -2px;
       width: calc(100% + 4px);
       height: calc(100% + 4px);
@@ -43,7 +42,7 @@
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
       animation: glowing 20s linear infinite;
-      z-index: -1;
+      z-index: 0;
     }
 
     &:hover::before {
@@ -51,13 +50,8 @@
     }
 
     &:hover {
-      background-color: #fff176;
       transform: scale(1.1);
       box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    &:active {
-      animation: buttonPress 0.2s ease-out;
     }
 
     &.active {
@@ -69,9 +63,19 @@
     }
 
     &:disabled {
-      opacity: 1;
+      opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    .icon {
+      position: relative;
+      z-index: 1;
+      width: 24px;
+      height: 24px;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
     }
 
     .tooltip {
@@ -110,10 +114,10 @@
     gap: 10px;
     justify-content: center;
     align-items: center;
-  }
 
-  &__submenu.show {
-    display: flex;
+    &.show {
+      display: flex;
+    }
   }
 
   @media (min-width: 769px) {
@@ -131,12 +135,7 @@
     padding-top: 0 !important;
 
     &__btn {
-      margin-bottom: 0 !important;
-      margin-left: 10px !important;
-    }
-
-    .undo {
-      margin-left: auto !important;
+      margin: 0 10px !important;
     }
 
     &__submenu {
@@ -145,20 +144,20 @@
       flex-direction: row;
     }
   }
+}
 
   // Иконки инструментов
-  &__btn.brush    { background-image: url('../assets/img/brush.png'); }
-  &__btn.rect     { background-image: url('../assets/img/rect.png'); }
-  &__btn.circle   { background-image: url('../assets/img/circle.png'); }
-  &__btn.eraser   { background-image: url('../assets/img/eraser.png'); }
-  &__btn.line     { background-image: url('../assets/img/line.png'); }
-  &__btn.text     { background-image: url('../assets/img/text.png'); }
-  &__btn.fill     { background-image: url('../assets/img/fill.png'); }
-  &__btn.pipette  { background-image: url('../assets/img/pipette.png'); }
-  &__btn.undo     { background-image: url('../assets/img/undo.png'); margin-left: auto; }
-  &__btn.redo     { background-image: url('../assets/img/redo.png'); }
-  &__btn.save     { background-image: url('../assets/img/save.png'); margin-right: 10px; }
-}
+.icon.brush    { background-image: url('../assets/img/brush.png'); }
+.icon.rect     { background-image: url('../assets/img/rect.png'); }
+.icon.circle   { background-image: url('../assets/img/circle.png'); }
+.icon.eraser   { background-image: url('../assets/img/eraser.png'); }
+.icon.line     { background-image: url('../assets/img/line.png'); }
+.icon.text     { background-image: url('../assets/img/text.png'); }
+.icon.fill     { background-image: url('../assets/img/fill.png'); }
+.icon.pipette  { background-image: url('../assets/img/pipette.png'); }
+.icon.undo     { background-image: url('../assets/img/undo.png'); }
+.icon.redo     { background-image: url('../assets/img/redo.png'); }
+.icon.save     { background-image: url('../assets/img/save.png'); }
 
 // Курсоры
 canvas {

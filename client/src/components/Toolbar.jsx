@@ -68,7 +68,7 @@ const Toolbar = observer(() => {
 
   const renderButton = (toolName, ToolClass, cursorClass, label) => (
     <button
-      className={`toolbar__btn ${toolName} ${current === toolName ? "active" : ""}`}
+      className={`toolbar__btn ${current === toolName ? "active" : ""}`}
       onPointerUp={() => changeTool(ToolClass, cursorClass, toolName)}
     >
       <span className={`icon ${toolName}`} />
@@ -76,14 +76,14 @@ const Toolbar = observer(() => {
     </button>
   );
 
+
   return (
     <div className="toolbar">
       {/* Brush group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup("brush")} ${
-            current === getCurrentToolInGroup("brush") ? "active" : ""
-          }`}
+          className={`toolbar__btn ${getCurrentToolInGroup("brush")} ${current === getCurrentToolInGroup("brush") ? "active" : ""
+            }`}
           onPointerUp={() => {
             const tool = getCurrentToolInGroup("brush");
             changeTool(tool === "brush" ? Brush : Line, `${tool}-cursor`, tool);
@@ -104,9 +104,8 @@ const Toolbar = observer(() => {
       {/* Shapes group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup("shapes")} ${
-            current === getCurrentToolInGroup("shapes") ? "active" : ""
-          }`}
+          className={`toolbar__btn ${getCurrentToolInGroup("shapes")} ${current === getCurrentToolInGroup("shapes") ? "active" : ""
+            }`}
           onPointerUp={() => {
             const tool = getCurrentToolInGroup("shapes");
             changeTool(tool === "circle" ? Circle : Rect, `${tool}-cursor`, tool);
@@ -127,9 +126,8 @@ const Toolbar = observer(() => {
       {/* Color group */}
       <div className="toolbar__group">
         <button
-          className={`toolbar__btn ${getCurrentToolInGroup("color")} ${
-            current === getCurrentToolInGroup("color") ? "active" : ""
-          }`}
+          className={`toolbar__btn ${getCurrentToolInGroup("color")} ${current === getCurrentToolInGroup("color") ? "active" : ""
+            }`}
           onPointerUp={() => {
             const tool = getCurrentToolInGroup("color");
             changeTool(tool === "pipette" ? Pipette : Fill, `${tool}-cursor`, tool);
