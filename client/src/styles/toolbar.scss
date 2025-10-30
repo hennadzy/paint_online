@@ -31,17 +31,18 @@
     &::before {
       content: '';
       position: absolute;
-      top: -2px;
-      left: -2px;
-      width: calc(100% + 4px);
-      height: calc(100% + 4px);
-      background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+      top: -4px;
+      left: -4px;
+      width: calc(100% + 8px);
+      height: calc(100% + 8px);
+      background: linear-gradient(45deg,
+          #ffcc00, #ff6699, #66ccff, #ccff66, #ffcc00);
       background-size: 400%;
-      filter: blur(5px);
-      border-radius: 10px;
+      border-radius: 12px;
+      filter: blur(4px);
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
-      animation: glowing 20s linear infinite;
+      animation: glowing 8s linear infinite;
       z-index: 0;
     }
 
@@ -50,7 +51,7 @@
     }
 
     &:hover {
-      background-color: #fff176;
+      background-color: #ffd700;
       transform: scale(1.1);
       box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
     }
@@ -61,12 +62,6 @@
       outline-offset: 1px;
       box-shadow: none;
       transform: none;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      pointer-events: none;
     }
 
     .icon {
@@ -147,18 +142,50 @@
   }
 }
 
-  // Иконки инструментов
-.icon.brush    { background-image: url('../assets/img/brush.png'); }
-.icon.rect     { background-image: url('../assets/img/rect.png'); }
-.icon.circle   { background-image: url('../assets/img/circle.png'); }
-.icon.eraser   { background-image: url('../assets/img/eraser.png'); }
-.icon.line     { background-image: url('../assets/img/line.png'); }
-.icon.text     { background-image: url('../assets/img/text.png'); }
-.icon.fill     { background-image: url('../assets/img/fill.png'); }
-.icon.pipette  { background-image: url('../assets/img/pipette.png'); }
-.icon.undo     { background-image: url('../assets/img/undo.png'); }
-.icon.redo     { background-image: url('../assets/img/redo.png'); }
-.icon.save     { background-image: url('../assets/img/save.png'); }
+// Иконки инструментов
+.icon.brush {
+  background-image: url('../assets/img/brush.png');
+}
+
+.icon.rect {
+  background-image: url('../assets/img/rect.png');
+}
+
+.icon.circle {
+  background-image: url('../assets/img/circle.png');
+}
+
+.icon.eraser {
+  background-image: url('../assets/img/eraser.png');
+}
+
+.icon.line {
+  background-image: url('../assets/img/line.png');
+}
+
+.icon.text {
+  background-image: url('../assets/img/text.png');
+}
+
+.icon.fill {
+  background-image: url('../assets/img/fill.png');
+}
+
+.icon.pipette {
+  background-image: url('../assets/img/pipette.png');
+}
+
+.icon.undo {
+  background-image: url('../assets/img/undo.png');
+}
+
+.icon.redo {
+  background-image: url('../assets/img/redo.png');
+}
+
+.icon.save {
+  background-image: url('../assets/img/save.png');
+}
 
 // Курсоры
 canvas {
@@ -300,7 +327,7 @@ canvas.eraser-cursor {
     background: #ff6699;
     border: 3px solid #fff;
     border-radius: 50%;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   }
 
   input[type="range"]::-moz-range-thumb {
@@ -322,9 +349,11 @@ canvas.eraser-cursor {
   0% {
     background-position: 0 0;
   }
+
   50% {
     background-position: 400% 0;
   }
+
   100% {
     background-position: 0 0;
   }
@@ -334,9 +363,11 @@ canvas.eraser-cursor {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(0.9);
   }
+
   100% {
     transform: scale(1);
   }
@@ -346,9 +377,11 @@ canvas.eraser-cursor {
   0% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-5px);
   }
+
   100% {
     transform: translateY(0);
   }
