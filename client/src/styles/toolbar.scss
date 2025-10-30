@@ -21,7 +21,7 @@
     margin: 10px;
     border: none;
     border-radius: 10px;
-    background-color: transparent;
+    // background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -42,7 +42,7 @@
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
       animation: glowing 20s linear infinite;
-      z-index: 0;
+      z-index: -1;
     }
 
     &:hover::before {
