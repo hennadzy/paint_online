@@ -1,0 +1,36 @@
+.modal-dialog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100% - 1rem);
+
+  @media (max-width: 768px) {
+    margin: 0.5rem;
+    min-height: calc(100% - 0.5rem);
+    align-items: flex-start; 
+    padding-top: 15vh; 
+    transition: padding-top 0.3s ease-out;
+  }
+}
+
+.modal-body {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+
+  input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+}
+
+.modal-header {
+  .btn-close {
+    &:focus {
+      box-shadow: none;
+    }
+  }
+}

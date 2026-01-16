@@ -1,0 +1,277 @@
+import React, { useEffect, useRef } from "react";
+import { observer } from "mobx-react-lite";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import canvasState from "../store/canvasState";
+import toolState from "../store/toolState";
+import Brush from "../tools/Brush";
+import Chat from "./Chat";
+import RoomInterface from "./RoomInterface";
+import AboutModal from "./AboutModal";
+import "../styles/canvas.scss";
+import Eraser from "../tools/Eraser";
+import Line from "../tools/Line";
+import Rect from "../tools/Rect";
+import Circle from "../tools/Circle";
+import Text from "../tools/Text";
+
+const Canvas = observer(() => {
+  const canvasRef = useRef();
+  const cursorRef = useRef();
+  const containerRef = useRef();
+  const layoutRef = useRef();
+  const params = useParams();
+  const navigate = useNavigate();
+
+  const adjustCanvasSize = () => {
+    const canvas = canvasRef.current;
+    const cursor = cursorRef.current;
+    const aspectRatio = 720 / 480;
+    const logicalWidth = 720;
+    const logicalHeight = 480;
+
+    canvas.width = logicalWidth;
+    canvas.height = logicalHeight;
+    cursor.width = logicalWidth;
+    cursor.height = logicalHeight;
+
+    if (window.innerWidth < 768) {
+      const displayWidth = window.innerWidth;
+      const displayHeight = displayWidth / aspectRatio;
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+      cursor.style.width = `${displayWidth}px`;
+      cursor.style.height = `${displayHeight}px`;
+    } else {
+      canvas.style.width = `${logicalWidth}px`;
+      canvas.style.height = `${logicalHeight}px`;
+      cursor.style.width = `${logicalWidth}px`;
+      cursor.style.height = `${logicalHeight}px`;
+    }
+
+    canvasState.setCanvas(canvas);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+    canvasState.rebuildBuffer();
+    canvasState.redrawCanvas();
+  };
+
+  useEffect(() => {
+    adjustCanvasSize();
+    window.addEventListener("resize", adjustCanvasSize);
+    return () => window.removeEventListener("resize", adjustCanvasSize);
+  }, []);
+
+  useEffect(() => {
+    canvasState.setCanvas(canvasRef.current);
+    const ctx = canvasRef.current.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+    if (!params.id) {
+        canvasState.setCurrentRoomId(null);
+        canvasState.setUsername("local");
+        toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
+    } else {
+        canvasState.setCurrentRoomId(params.id);
+        canvasState.setUsername("");
+    }
+
+    return () => {
+        if (params.id) {
+            canvasState.disconnect();
+        }
+        canvasState.strokeList = [];
+        canvasState.redoStacks.clear();
+    };
+}, [params.id]);
+
+  useEffect(() => {
+    if (canvasState.isConnected && params.id) {
+      toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionId), "brush");
+    }
+  }, [canvasState.isConnected, params.id]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const preventScroll = (e) => e.preventDefault();
+      canvas.addEventListener('wheel', preventScroll, { passive: false });
+      return () => canvas.removeEventListener('wheel', preventScroll);
+    }
+  }, []);
+
+  const updateCursorOverlay = (x, y) => {
+    const canvas = cursorRef.current;
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const diameter = toolState.tool?.lineWidth ?? 1;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (toolState.toolName === 'text') {
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'white';
+      ctx.beginPath();
+      ctx.moveTo(x, y - 10);
+      ctx.lineTo(x, y + 10);
+      ctx.stroke();
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'black';
+      ctx.beginPath();
+      ctx.moveTo(x, y - 10);
+      ctx.lineTo(x, y + 10);
+      ctx.stroke();
+
+      return;
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const cursor = cursorRef.current;
+    if(!canvas || !cursor) return;
+
+    const handleMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.pageX - rect.left) * scaleX;
+      const y = (e.pageY - rect.top) * scaleY;
+      updateCursorOverlay(x, y);
+    };
+
+    const clearCursor = () => {
+      const ctx = cursor.getContext("2d");
+      ctx.clearRect(0, 0, cursor.width, cursor.height);
+    };
+
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("pointermove", handleMove);
+    canvas.addEventListener("mouseleave", clearCursor);
+    canvas.addEventListener("pointerleave", clearCursor);
+
+    return () => {
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("pointermove", handleMove);
+      canvas.removeEventListener("mouseleave", clearCursor);
+      canvas.removeEventListener("pointerleave", clearCursor);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.style.cursor = 'none';
+    }
+  }, [toolState.toolName]);
+
+  useEffect(() => {
+    if (canvasState.isConnected && window.innerWidth < 768) {
+      setTimeout(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }), 100);
+    }
+  }, [canvasState.chatMessages.length]);
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (toolState.textInputActive || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const { canvas, socket, sessionid, username } = canvasState;
+      if (!canvas) return;
+      const safeUsername = username || "local";
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        canvasState.undo();
+        return;
+      }
+
+      if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') || 
+          ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+        e.preventDefault();
+        canvasState.redo();
+        return;
+      }
+
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        canvasState.zoomIn();
+        return;
+      }
+
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        canvasState.zoomOut();
+        return;
+      }
+
+      const toolMap = {
+        'b': [Brush, 'brush'],
+        'e': [Eraser, 'eraser'],
+        'l': [Line, 'line'],
+        'r': [Rect, 'rect'],
+        'c': [Circle, 'circle'],
+        't': [Text, 'text']
+      };
+
+      const tool = toolMap[e.key.toLowerCase()];
+      if (tool) {
+        toolState.setTool(new tool[0](canvas, socket, sessionid, safeUsername), tool[1]);
+      } else if (e.key.toLowerCase() === 'g') {
+        canvasState.toggleGrid();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+
+  return (
+    <div className="canvas">
+      <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : ''}`}>
+        <div className="canvas-container" ref={containerRef}>
+          <canvas
+            ref={canvasRef}
+            tabIndex={0}
+            className="main-canvas"
+          />
+          <canvas
+            ref={cursorRef}
+            className="cursor-overlay"
+          />
+          
+          {(canvasState.modalOpen || canvasState.showRoomInterface) && (
+            <RoomInterface roomId={params.id} />
+          )}
+          
+          <AboutModal />
+        </div>
+
+        {!canvasState.isConnected && !params.id && (
+          <button 
+            className="about-btn-mobile"
+            onClick={() => canvasState.setShowAboutModal(true)}
+          >
+            О программе
+          </button>
+        )}
+
+        <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
+          {canvasState.isConnected && <Chat />}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export default Canvas;
