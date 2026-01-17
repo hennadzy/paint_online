@@ -88,6 +88,7 @@ app.use((req, res, next) => {
 app.use(cors({
     origin: [
         'https://risovanie.online',
+        'https://www.risovanie.online',
         'http://localhost:3000',
         /^https:\/\/.*\.onrender\.com$/
     ],
