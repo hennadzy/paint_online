@@ -12,8 +12,8 @@ const AboutModal = observer(() => {
         <button className="room-close-btn" onClick={() => canvasState.setShowAboutModal(false)}>×</button>
         
         <div className="room-welcome">
-          <h1 itemProp="name">Рисование.Онлайн - Онлайн редактор для рисования</h1>
-          <p itemProp="description">Бесплатный графический редактор для совместного рисования в реальном времени</p>
+          <h1 itemProp="name">Рисование онлайн - Бесплатный графический редактор</h1>
+          <p itemProp="description">Рисуйте онлайн в браузере бесплатно. Совместное рисование в реальном времени</p>
         </div>
 
         <div className="room-card about-content" itemScope itemType="https://schema.org/SoftwareApplication">
@@ -25,9 +25,9 @@ const AboutModal = observer(() => {
           <meta itemProp="priceCurrency" content="RUB" />
           
           <div className="about-section">
-            <h2>О программе Рисование.Онлайн</h2>
+            <h2>О программе</h2>
             <p itemProp="description">
-              <strong>Рисование.Онлайн</strong> — это современный бесплатный онлайн редактор для рисования, 
+              <strong>Рисование онлайн</strong> — это современный бесплатный графический редактор, 
               который работает прямо в браузере без установки. Наше веб-приложение позволяет рисовать 
               онлайн как в одиночку, так и совместно с друзьями в режиме реального времени.
             </p>
@@ -53,7 +53,7 @@ const AboutModal = observer(() => {
           </div>
 
           <div className="about-section">
-            <h3>Для кого подходит Рисование.Онлайн?</h3>
+            <h3>Для кого подходит рисование онлайн?</h3>
             <p>
               Наш онлайн редактор идеально подходит для:
             </p>
@@ -97,7 +97,7 @@ const AboutModal = observer(() => {
           <div className="about-section">
             <h3>Как начать рисовать онлайн?</h3>
             <ol>
-              <li>Откройте Рисование.Онлайн в браузере</li>
+              <li>Откройте редактор в браузере</li>
               <li>Выберите инструмент рисования на панели слева или используйте горячие клавиши</li>
               <li>Настройте цвет, размер и прозрачность на панели настроек</li>
               <li>Начните рисовать на белом холсте</li>
@@ -110,7 +110,7 @@ const AboutModal = observer(() => {
 
           <div className="about-section">
             <p className="copyright">
-              © 2024-2026 Рисование.Онлайн. Бесплатный онлайн редактор для совместного рисования.
+              © 2024-2026 Рисование онлайн. Бесплатный графический редактор для совместного рисования.
             </p>
           </div>
 

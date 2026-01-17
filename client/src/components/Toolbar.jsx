@@ -77,7 +77,7 @@ const Toolbar = observer(() => {
   );
 
   return (
-    <div className="toolbar">
+    <div className="toolbar" data-nosnippet>
       <div className="toolbar__group">
         <button
           className={`toolbar__btn ${toolState.getLastInGroup("brush")} ${toolState.isToolInGroup(toolState.toolName, "brush") ? "active" : ""}`}

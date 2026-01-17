@@ -77,12 +77,17 @@ const deleteRoomData = (roomId) => {
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
 
+app.use((req, res, next) => {
+    const host = req.get('host');
+    if (host === 'paint-art.ru' || host === 'www.paint-art.ru' || host === 'www.risovanie.online') {
+        return res.redirect(301, `https://risovanie.online${req.url}`);
+    }
+    next();
+});
+
 app.use(cors({
     origin: [
-        'https://paint-art.ru',
-        'https://www.paint-art.ru',
         'https://risovanie.online',
-        'https://www.risovanie.online',
         'http://localhost:3000',
         /^https:\/\/.*\.onrender\.com$/
     ],

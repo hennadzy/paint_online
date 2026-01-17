@@ -77,7 +77,7 @@ const SettingBar = observer(() => {
   const setColor = isFillTool ? toolState.setFillColor.bind(toolState) : toolState.setStrokeColor.bind(toolState);
 
   return (
-    <div className="setting-bar">
+    <div className="setting-bar" data-nosnippet>
       <div className="setting-row">
         <input
           ref={inputRef}

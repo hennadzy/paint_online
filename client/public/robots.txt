@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /static/
+Disallow: /*.json$
+
+Sitemap: https://risovanie.online/sitemap.xml
+
+Host: risovanie.online
