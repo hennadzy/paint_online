@@ -33,7 +33,6 @@ app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
       'https://risovanie.online',
-      'https://www.risovanie.online',
       'http://localhost:3000'
     ];
     
