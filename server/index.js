@@ -3,6 +3,10 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const WebSocket = require('ws');
+const bcrypt = require('bcrypt');
+const validator = require('validator');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const app = express();
 const WSServer = require('express-ws')(app);
@@ -22,6 +26,7 @@ const MAX_USERS_PER_ROOM = 10;
 const INACTIVE_USER_TIMEOUT = 10 * 60 * 1000;
 const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
 const ROOM_EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000;
+const BCRYPT_ROUNDS = 10;
 
 if (!fs.existsSync(roomDataDir)) {
   fs.mkdirSync(roomDataDir, { recursive: true });
@@ -35,9 +40,23 @@ if (fs.existsSync(roomInfoFile)) {
   }
 }
 
+// Improved XSS protection with validator
 const sanitizeInput = (input, maxLength) => {
   if (typeof input !== 'string') return '';
-  return input.trim().slice(0, maxLength).replace(/[<>]/g, '');
+  
+  // Remove any HTML tags and dangerous characters
+  let sanitized = input.trim().slice(0, maxLength);
+  
+  // Use validator to escape HTML entities
+  sanitized = validator.escape(sanitized);
+  
+  // Additional protection: remove any remaining script-like patterns
+  sanitized = sanitized.replace(/javascript:/gi, '')
+                       .replace(/on\w+\s*=/gi, '')
+                       .replace(/<script/gi, '')
+                       .replace(/<\/script>/gi, '');
+  
+  return sanitized;
 };
 
 const saveRoomStrokes = (roomId) => {
@@ -77,25 +96,105 @@ const deleteRoomData = (roomId) => {
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
 
+// Redirect www to non-www
 app.use((req, res, next) => {
     const host = req.get('host');
-    if (host === 'paint-art.ru' || host === 'www.paint-art.ru' || host === 'www.risovanie.online') {
+    if (host === 'www.risovanie.online') {
         return res.redirect(301, `https://risovanie.online${req.url}`);
     }
     next();
 });
 
-app.use(cors({
-    origin: [
-        'https://risovanie.online',
-        'https://www.risovanie.online',
-        'http://localhost:3000',
-        /^https:\/\/.*\.onrender\.com$/
-    ],
-    credentials: true
+// Security headers with helmet
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://maxcdn.bootstrapcdn.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://mc.yandex.ru"],
+            imgSrc: ["'self'", "data:", "https:", "https://mc.yandex.ru"],
+            connectSrc: ["'self'", "wss:", "https:"],
+            fontSrc: ["'self'", "data:"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: []
+        }
+    },
+    crossOriginEmbedderPolicy: false
 }));
+
+// Stricter CORS policy
+app.use(cors({
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'https://risovanie.online',
+            'http://localhost:3000'
+        ];
+        
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Check if origin is in allowed list
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else if (process.env.NODE_ENV === 'production' && origin.endsWith('.onrender.com')) {
+            // Only allow onrender.com in production for deployment
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, '../client/build')));
+
+// Rate limiting for API endpoints
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const createRoomLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // Limit each IP to 10 room creations per hour
+    message: 'Too many rooms created from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const passwordVerifyLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // Limit password attempts
+    message: 'Too many password attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// WebSocket message rate limiting
+const wsMessageLimits = new Map();
+
+const checkWsRateLimit = (ws) => {
+    const now = Date.now();
+    const limit = wsMessageLimits.get(ws) || { count: 0, resetTime: now + 1000 };
+    
+    if (now > limit.resetTime) {
+        wsMessageLimits.set(ws, { count: 1, resetTime: now + 1000 });
+        return true;
+    }
+    
+    if (limit.count >= 50) { // Max 50 messages per second
+        return false;
+    }
+    
+    limit.count++;
+    return true;
+};
 
 const broadcast = (roomId, message, excludeWs = null) => {
     const room = rooms.get(roomId);
@@ -112,6 +211,12 @@ const broadcast = (roomId, message, excludeWs = null) => {
 app.ws('/', (ws, req) => {
     ws.on('message', (msgStr) => {
         try {
+            // Rate limiting for WebSocket messages
+            if (!checkWsRateLimit(ws)) {
+                ws.close(1008, 'Rate limit exceeded');
+                return;
+            }
+
             const msg = JSON.parse(msgStr);
 
             if (msg.method === "connection") {
@@ -194,6 +299,7 @@ app.ws('/', (ws, req) => {
     });
 
     ws.on('close', () => {
+        wsMessageLimits.delete(ws);
         const userInfo = wsToUserInfo.get(ws);
         if (!userInfo) return;
 
@@ -215,32 +321,42 @@ app.ws('/', (ws, req) => {
     });
 });
 
-app.post('/rooms', (req, res) => {
-    const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
-    const isPublic = Boolean(req.body.isPublic);
-    const password = sanitizeInput(req.body.password, 50);
+app.post('/rooms', createRoomLimiter, async (req, res) => {
+    try {
+        const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
+        const isPublic = Boolean(req.body.isPublic);
+        const password = req.body.password ? sanitizeInput(req.body.password, 50) : null;
 
-    if (!name) {
-        return res.status(400).json({ error: 'Name required' });
+        if (!name) {
+            return res.status(400).json({ error: 'Name required' });
+        }
+
+        const roomId = generateId();
+        const now = Date.now();
+        
+        // Hash password if provided
+        let hashedPassword = null;
+        if (!isPublic && password) {
+            hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+        }
+        
+        roomInfo[roomId] = { 
+            name, 
+            isPublic, 
+            hasPassword: !isPublic && !!password,
+            passwordHash: hashedPassword,
+            createdAt: now,
+            lastActivity: now
+        };
+        
+        fs.writeFileSync(roomInfoFile, JSON.stringify(roomInfo));
+        res.json({ roomId });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
     }
-
-    const roomId = generateId();
-    const now = Date.now();
-    
-    roomInfo[roomId] = { 
-        name, 
-        isPublic, 
-        hasPassword: !isPublic && !!password,
-        password: !isPublic && password ? password : null,
-        createdAt: now,
-        lastActivity: now
-    };
-    
-    fs.writeFileSync(roomInfoFile, JSON.stringify(roomInfo));
-    res.json({ roomId });
 });
 
-app.get('/rooms/public', (req, res) => {
+app.get('/rooms/public', apiLimiter, (req, res) => {
     const publicRooms = Object.entries(roomInfo).map(([id, info]) => ({ 
         id, 
         name: info.name, 
@@ -250,7 +366,7 @@ app.get('/rooms/public', (req, res) => {
     res.json(publicRooms);
 });
 
-app.get('/rooms/:id/exists', (req, res) => {
+app.get('/rooms/:id/exists', apiLimiter, (req, res) => {
     const id = sanitizeInput(req.params.id, 20);
     const room = roomInfo[id];
     
@@ -265,20 +381,26 @@ app.get('/rooms/:id/exists', (req, res) => {
     });
 });
 
-app.post('/rooms/:id/verify-password', (req, res) => {
-    const id = sanitizeInput(req.params.id, 20);
-    const password = sanitizeInput(req.body.password, 50);
-    const room = roomInfo[id];
-    
-    if (!room) {
-        return res.status(404).json({ error: 'Room not found' });
+app.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res) => {
+    try {
+        const id = sanitizeInput(req.params.id, 20);
+        const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
+        const room = roomInfo[id];
+        
+        if (!room) {
+            return res.status(404).json({ error: 'Room not found' });
+        }
+        
+        if (!room.hasPassword || !room.passwordHash) {
+            return res.json({ valid: true });
+        }
+        
+        // Use bcrypt to compare hashed password
+        const isValid = await bcrypt.compare(password, room.passwordHash);
+        res.json({ valid: isValid });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
     }
-    
-    if (!room.hasPassword) {
-        return res.json({ valid: true });
-    }
-    
-    res.json({ valid: room.password === password });
 });
 
 app.get('*', (req, res) => {

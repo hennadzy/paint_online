@@ -127,7 +127,6 @@ client/src/
 
 #### Тесты редиректов
 - Редирект с www.risovanie.online
-- Редирект с paint-art.ru
 - Отсутствие редиректа для risovanie.online
 
 ### 2. Тесты состояния холста (CanvasState)

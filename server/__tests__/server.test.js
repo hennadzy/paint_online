@@ -230,7 +230,7 @@ describe('Server API Tests', () => {
 
       const middleware = (req, res, next) => {
         const host = req.get('host');
-        if (host === 'paint-art.ru' || host === 'www.paint-art.ru' || host === 'www.risovanie.online') {
+        if (host === 'www.risovanie.online') {
           return res.redirect(301, `https://risovanie.online${req.url}`);
         }
         next();
@@ -240,29 +240,6 @@ describe('Server API Tests', () => {
 
       expect(mockRes.redirect).toHaveBeenCalledWith(301, 'https://risovanie.online/test');
       expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    test('should redirect from paint-art.ru', () => {
-      const mockReq = {
-        get: (header) => header === 'host' ? 'paint-art.ru' : null,
-        url: '/'
-      };
-      const mockRes = {
-        redirect: jest.fn()
-      };
-      const mockNext = jest.fn();
-
-      const middleware = (req, res, next) => {
-        const host = req.get('host');
-        if (host === 'paint-art.ru' || host === 'www.paint-art.ru' || host === 'www.risovanie.online') {
-          return res.redirect(301, `https://risovanie.online${req.url}`);
-        }
-        next();
-      };
-
-      middleware(mockReq, mockRes, mockNext);
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(301, 'https://risovanie.online/');
     });
 
     test('should not redirect risovanie.online', () => {
@@ -277,7 +254,7 @@ describe('Server API Tests', () => {
 
       const middleware = (req, res, next) => {
         const host = req.get('host');
-        if (host === 'paint-art.ru' || host === 'www.paint-art.ru' || host === 'www.risovanie.online') {
+        if (host === 'www.risovanie.online') {
           return res.redirect(301, `https://risovanie.online${req.url}`);
         }
         next();
