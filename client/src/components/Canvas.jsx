@@ -26,7 +26,7 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
-    const aspectRatio = 720 / 480;
+    const aspectRatio = 720 / 480; // 3:2 ratio
     const logicalWidth = 720;
     const logicalHeight = 480;
 
@@ -36,6 +36,7 @@ const Canvas = observer(() => {
     cursor.height = logicalHeight;
 
     if (window.innerWidth < 768) {
+      // Mobile: maintain aspect ratio
       const displayWidth = window.innerWidth;
       const displayHeight = displayWidth / aspectRatio;
       canvas.style.width = `${displayWidth}px`;
@@ -43,6 +44,7 @@ const Canvas = observer(() => {
       cursor.style.width = `${displayWidth}px`;
       cursor.style.height = `${displayHeight}px`;
     } else {
+      // Desktop: use fixed size
       canvas.style.width = `${logicalWidth}px`;
       canvas.style.height = `${logicalHeight}px`;
       cursor.style.width = `${logicalWidth}px`;

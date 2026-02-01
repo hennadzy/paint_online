@@ -259,8 +259,20 @@ class CanvasState {
   setZoom(zoom) {
     this.zoom = Math.max(0.5, Math.min(3, zoom));
     if (this.canvas) {
-      const baseWidth = window.innerWidth < 768 ? window.innerWidth : 720;
-      const baseHeight = window.innerWidth < 768 ? window.innerWidth / 1.5 : 480;
+      // Always maintain 720x480 aspect ratio (3:2)
+      const aspectRatio = 720 / 480;
+      let baseWidth, baseHeight;
+      
+      if (window.innerWidth < 768) {
+        // Mobile: fit to screen width
+        baseWidth = window.innerWidth;
+        baseHeight = baseWidth / aspectRatio;
+      } else {
+        // Desktop: use fixed size
+        baseWidth = 720;
+        baseHeight = 480;
+      }
+      
       const newWidth = baseWidth * this.zoom;
       const newHeight = baseHeight * this.zoom;
       

@@ -214,9 +214,10 @@ button:active {
   }
 
   .canvas-layout:not(.has-chat) {
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     padding-top: 0;
+    overflow: auto;
   }
 
   .canvas-layout.has-chat {
@@ -224,6 +225,7 @@ button:active {
     align-items: stretch;
     padding-top: 0;
     gap: 10px;
+    overflow: auto;
   }
 
   .canvas-layout .toolbar {
@@ -241,6 +243,26 @@ button:active {
     flex: none;
     width: 100%;
     flex-shrink: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 204, 0, 0.5);
+      border-radius: 4px;
+      
+      &:hover {
+        background: rgba(255, 204, 0, 0.8);
+      }
+    }
   }
 
   .canvas-side-panel {
