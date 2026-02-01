@@ -89,7 +89,8 @@ class CanvasState {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
     });
-    HistoryService.on('strokeRedone', () => {
+    HistoryService.on('strokeRedone', ({ stroke }) => {
+      CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
     });
     HistoryService.on('strokesCleared', () => {
@@ -175,8 +176,13 @@ class CanvasState {
 
   redo() {
     const restored = HistoryService.redo(this.username);
-    if (restored && WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "redo", stroke: restored });
+    if (restored) {
+      if (WebSocketService.isConnected) {
+        WebSocketService.sendDraw({ type: "redo", stroke: restored });
+      } else {
+        CanvasService.drawStroke(CanvasService.bufferCtx, restored);
+        CanvasService.redraw();
+      }
     }
   }
 
@@ -186,6 +192,7 @@ class CanvasState {
 
   redoRemote(stroke) {
     HistoryService.redoStroke(stroke);
+    CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
     CanvasService.redraw();
   }
 
