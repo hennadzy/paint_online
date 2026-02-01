@@ -72,11 +72,8 @@ class WebSocketHandler {
     const { roomId, username } = userInfo;
     if (msg.figure) {
       if (msg.figure.type === "undo") {
-        // Глобальный Undo для всей комнаты!
-        const stroke = RoomManager.removeLastStroke(roomId);
-        if (stroke) {
-          this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: stroke.id } }, ws);
-        }
+        RoomManager.removeStroke(roomId, msg.figure.strokeId);
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } }, ws);
         RoomManager.updateUserActivity(ws);
         return;
       } else if (msg.figure.type === "redo") {

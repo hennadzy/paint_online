@@ -167,10 +167,9 @@ class CanvasState {
   }
 
   undo() {
-    if (WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "undo" }); // отправляем только тип!
-    } else {
-      HistoryService.undo(this.username);
+    const removed = HistoryService.undo(this.username);
+    if (removed && WebSocketService.isConnected) {
+      WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
     }
   }
 
