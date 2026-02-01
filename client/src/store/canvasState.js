@@ -1,257 +1,317 @@
 import { makeAutoObservable } from "mobx";
-import CanvasService from "../services/CanvasService";
-import WebSocketService from "../services/WebSocketService";
-import HistoryService from "../services/HistoryService";
+import axios from "axios";
+import Rect from "../tools/Rect";
+import Circle from "../tools/Circle";
+import Line from "../tools/Line";
+import Text from "../tools/Text";
+import Fill from "../tools/Fill";
+import Polygon from "../tools/Polygon";
+import Arrow from "../tools/Arrow";
 
-export const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000' 
-  : 'https://paint-online-back.onrender.com';
-export const WS_URL = window.location.hostname === 'localhost' 
-  ? 'ws://localhost:5000' 
-  : 'wss://paint-online-back.onrender.com';
+export const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com';
+export const WS_URL = window.location.hostname === 'localhost' ? 'ws://localhost:5000' : 'wss://paint-online-back.onrender.com';
 
-/**
- * CanvasState - main coordinator for canvas application
- * Delegates to specialized services, maintains observable state
- */
 class CanvasState {
-  // Connection state
+  canvas = null;
+  ctx = null;
+  bufferCanvas = null;
+  bufferCtx = null;
+  socket = null;
+  sessionid = null;
   currentRoomId = null;
   username = "";
   usernameReady = false;
-  isConnected = false;
+  strokeList = [];
+  redoStacks = new Map();
   isDrawing = false;
-
-  // Users and chat
+  isConnected = false;
   users = [];
   chatMessages = [];
+  modalOpen = false;
+  showRoomInterface = false;
+  showAboutModal = false;
+  roomModalOpen = false;
+  roomMode = 'create'; 
+  publicRooms = [];
+  createdRoomId = null;
+  createdRoomLink = '';
+  showGrid = false;
+  zoom = 1;
 
   constructor() {
     makeAutoObservable(this);
-    this.setupServiceListeners();
-  }
-
-  /**
-   * Setup listeners for service events
-   */
-  setupServiceListeners() {
-    // WebSocket events
-    WebSocketService.on('connected', () => {
-      this.isConnected = true;
-    });
-
-    WebSocketService.on('disconnected', () => {
-      this.isConnected = false;
-    });
-
-    WebSocketService.on('userConnected', ({ username }) => {
-      this.addUser(username);
-      this.addChatMessage({ type: "system", username, message: `вошел в комнату` });
-    });
-
-    WebSocketService.on('userDisconnected', ({ username }) => {
-      this.removeUser(username);
-      this.addChatMessage({ type: "system", username, message: `покинул комнату` });
-    });
-
-    WebSocketService.on('usersList', ({ users }) => {
-      this.users = users;
-    });
-
-    WebSocketService.on('drawsReceived', ({ strokes }) => {
-      HistoryService.setStrokes(strokes);
-      CanvasService.rebuildBuffer(strokes);
-      CanvasService.redraw();
-    });
-
-    WebSocketService.on('drawReceived', ({ username, figure }) => {
-      if (username === this.username) return;
-      
-      switch (figure.type) {
-        case "undo":
-          this.undoRemote(figure.strokeId);
-          break;
-        case "redo":
-          this.redoRemote(figure.stroke);
-          break;
-        default:
-          this.pushStroke(figure);
-          break;
-      }
-    });
-
-    WebSocketService.on('clearReceived', ({ username }) => {
-      if (username !== this.username) {
-        HistoryService.clearStrokes();
-        CanvasService.rebuildBuffer([]);
-        CanvasService.redraw();
-        this.addChatMessage({ type: "system", username, message: `очистил холст` });
-      }
-    });
-
-    WebSocketService.on('chatReceived', ({ username, message }) => {
-      if (username !== this.username) {
-        this.addChatMessage({ type: "chat", username, message });
-      }
-    });
-
-    // History events
-    HistoryService.on('strokeAdded', () => {
-      CanvasService.redraw();
-    });
-
-    HistoryService.on('strokeUndone', () => {
-      CanvasService.rebuildBuffer(HistoryService.getStrokes());
-      CanvasService.redraw();
-    });
-
-    HistoryService.on('strokeRedone', () => {
-      CanvasService.redraw();
-    });
-
-    HistoryService.on('strokesCleared', () => {
-      CanvasService.rebuildBuffer([]);
-      CanvasService.redraw();
-    });
-  }
-
-  // Canvas management
-  get canvas() {
-    return CanvasService.canvas;
-  }
-
-  get ctx() {
-    return CanvasService.ctx;
-  }
-
-  get bufferCanvas() {
-    return CanvasService.bufferCanvas;
-  }
-
-  get bufferCtx() {
-    return CanvasService.bufferCtx;
-  }
-
-  get showGrid() {
-    return CanvasService.showGrid;
-  }
-
-  get zoom() {
-    return CanvasService.zoom;
   }
 
   setCanvas(canvas) {
-    CanvasService.initialize(canvas);
-  }
-
-  toggleGrid() {
-    CanvasService.toggleGrid();
-  }
-
-  setZoom(zoom) {
-    CanvasService.setZoom(zoom);
-  }
-
-  zoomIn() {
-    CanvasService.setZoom(CanvasService.zoom + 0.1);
-  }
-
-  zoomOut() {
-    CanvasService.setZoom(CanvasService.zoom - 0.1);
-  }
-
-  redrawCanvas() {
-    CanvasService.redraw();
-  }
-
-  rebuildBuffer() {
-    CanvasService.rebuildBuffer(HistoryService.getStrokes());
-  }
-
-  // WebSocket management
-  get socket() {
-    return WebSocketService.socket;
-  }
-
-  get sessionid() {
-    return WebSocketService.sessionId;
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d", { willReadFrequently: true });
+    
+    this.bufferCanvas = document.createElement('canvas');
+    this.bufferCanvas.width = canvas.width;
+    this.bufferCanvas.height = canvas.height;
+    this.bufferCtx = this.bufferCanvas.getContext('2d', { willReadFrequently: true });
+    this.bufferCtx.fillStyle = "white";
+    this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
   }
 
   setSocket(socket) {
-    // Legacy compatibility - not needed with new service
+    this.socket = socket;
   }
 
   setSessionId(id) {
-    // Legacy compatibility - not needed with new service
+    this.sessionid = id;
   }
 
-  // History management
-  get strokeList() {
-    return HistoryService.getStrokes();
+  setUsername(username) {
+    this.username = username;
+    this.usernameReady = username && username !== 'local';
   }
 
-  set strokeList(strokes) {
-    HistoryService.setStrokes(strokes);
+
+  drawSingleStroke(ctx, stroke) {
+      if (!stroke) return;
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = stroke.lineWidth || 1;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      switch (stroke.type) {
+        case "brush":
+        case "eraser":
+          this.renderBrushStroke(ctx, stroke, stroke.type === "eraser");
+          break;
+        case "rect":
+          Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
+          break;
+        case "circle":
+          Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
+          break;
+        case "line":
+          Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
+          break;
+        case "arrow":
+          Arrow.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth, stroke.opacity);
+          break;
+        case "polygon":
+          Polygon.staticDraw(ctx, stroke.points, stroke.strokeStyle, stroke.lineWidth, stroke.opacity);
+          break;
+        case "text":
+          Text.staticDraw(ctx, stroke.x, stroke.y, stroke.text, stroke.fontSize, stroke.fontFamily, stroke.strokeStyle, stroke.width || 200, stroke.opacity ?? 1);
+          break;
+        case "fill":
+          Fill.staticDraw(ctx, stroke.x, stroke.y, stroke.fillColor);
+          break;
+        case "fill_image":
+          ctx.putImageData(stroke.imageData, 0, 0);
+          break;
+        default:
+          break;
+      }
+      ctx.restore();
   }
 
-  get redoStacks() {
-    return HistoryService.redoStacks;
+  rebuildBuffer() {
+    if (!this.bufferCtx) return;
+    this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+    this.bufferCtx.fillStyle = "white";
+    this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+    this.bufferCtx.globalCompositeOperation = "source-over";
+    this.strokeList.forEach(stroke => this.drawSingleStroke(this.bufferCtx, stroke));
   }
 
   pushStroke(stroke) {
-    const added = HistoryService.addStroke(stroke, this.username);
-    if (added) {
-      CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+    if (stroke.id && this.strokeList.some(s => s.id === stroke.id)) return;
+    if (!stroke.username || stroke.username === "local") {
+      stroke.username = this.username || "local";
     }
+    this.strokeList.push(stroke);
+    this.drawSingleStroke(this.bufferCtx, stroke);
+    const user = stroke.username;
+    this.redoStacks.set(user, []);
   }
 
   undo() {
-    const removed = HistoryService.undo(this.username);
-    if (removed && WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
+    const user = this.username || "local";
+    const index = [...this.strokeList].reverse().findIndex(s => s.username === user);
+    if (index !== -1) {
+      const actualIndex = this.strokeList.length - 1 - index;
+      const removed = this.strokeList.splice(actualIndex, 1)[0];
+      if (!this.redoStacks.has(user)) this.redoStacks.set(user, []);
+      this.redoStacks.get(user).push(removed);
+      
+      this.rebuildBuffer();
+      this.redrawCanvas();
+
+      if (this.socket) {
+        this.socket.send(JSON.stringify({
+          method: "draw",
+          id: this.sessionid,
+          username: this.username,
+          figure: { type: "undo", strokeId: removed.id }
+        }));
+      }
     }
   }
 
   redo() {
-    const restored = HistoryService.redo(this.username);
-    if (restored && WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "redo", stroke: restored });
+    const user = this.username || "local";
+    const stack = this.redoStacks.get(user);
+    if (stack && stack.length > 0) {
+      const restored = stack.pop();
+      this.strokeList.push(restored);
+      this.drawSingleStroke(this.bufferCtx, restored);
+      this.redrawCanvas();
+
+      if (this.socket) {
+        this.socket.send(JSON.stringify({
+          method: "draw",
+          id: this.sessionid,
+          username: this.username,
+          figure: { type: "redo", stroke: restored }
+        }));
+      }
     }
   }
 
   undoRemote(strokeId) {
-    HistoryService.undoById(strokeId);
+    const idx = this.strokeList.findIndex(s => s.id === strokeId);
+    if (idx !== -1) {
+      const removed = this.strokeList.splice(idx, 1)[0];
+      const stack = this.redoStacks.get(removed.username) || [];
+      stack.push(removed);
+      this.redoStacks.set(removed.username, stack);
+      this.rebuildBuffer();
+      this.redrawCanvas();
+    }
   }
 
   redoRemote(stroke) {
-    HistoryService.redoStroke(stroke);
-    CanvasService.redraw();
+    this.pushStroke(stroke);
+    this.redrawCanvas();
   }
 
-  clearCanvas() {
-    if (!window.confirm('Очистить весь холст? Это действие нельзя отменить.')) {
-      return;
-    }
+  redrawCanvas() {
+    if (!this.ctx || !this.bufferCanvas) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.drawImage(this.bufferCanvas, 0, 0);
     
-    HistoryService.clearStrokes();
-    
-    if (WebSocketService.isConnected) {
-      WebSocketService.sendClear();
+    if (this.showGrid) {
+      this.drawGrid();
     }
   }
 
-  // User management
-  setUsername(username) {
-    this.username = username;
-    this.usernameReady = username && username !== 'local';
+  drawGrid() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const gridSize = 20;
+    
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+    ctx.lineWidth = 1;
+    
+    for (let x = 0; x <= this.canvas.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.canvas.height);
+      ctx.stroke();
+    }
+    
+    for (let y = 0; y <= this.canvas.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.canvas.width, y);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  }
+
+  setIsConnected(val) {
+    this.isConnected = val;
+  }
+
+  setModalOpen(val) {
+    this.modalOpen = val;
+  }
+
+  setModal(val) {
+    this.setModalOpen(val);
+  }
+
+  setShowRoomInterface(val) {
+    this.showRoomInterface = val;
+  }
+
+  setShowAboutModal(val) {
+    this.showAboutModal = val;
   }
 
   setCurrentRoomId(id) {
     this.currentRoomId = id;
   }
 
-  setIsConnected(val) {
-    this.isConnected = val;
+  toggleGrid() {
+    this.showGrid = !this.showGrid;
+    this.redrawCanvas();
+  }
+
+  setZoom(zoom) {
+    this.zoom = Math.max(0.5, Math.min(3, zoom));
+    if (this.canvas) {
+      // Always maintain 720x480 aspect ratio (3:2)
+      const aspectRatio = 720 / 480;
+      let baseWidth, baseHeight;
+      
+      if (window.innerWidth < 768) {
+        // Mobile: fit to screen width
+        baseWidth = window.innerWidth;
+        baseHeight = baseWidth / aspectRatio;
+      } else {
+        // Desktop: use fixed size
+        baseWidth = 720;
+        baseHeight = 480;
+      }
+      
+      const newWidth = baseWidth * this.zoom;
+      const newHeight = baseHeight * this.zoom;
+      
+      this.canvas.style.width = `${newWidth}px`;
+      this.canvas.style.height = `${newHeight}px`;
+      
+      // Update cursor overlay to match canvas size
+      const cursorOverlay = document.querySelector('.cursor-overlay');
+      if (cursorOverlay) {
+        cursorOverlay.style.width = `${newWidth}px`;
+        cursorOverlay.style.height = `${newHeight}px`;
+      }
+    }
+  }
+
+  zoomIn() {
+    this.setZoom(this.zoom + 0.1);
+  }
+
+  zoomOut() {
+    this.setZoom(this.zoom - 0.1);
+  }
+
+  clearCanvas() {
+    if (!window.confirm('Очистить весь холст? Это действие нельзя отменить.')) {
+      return;
+    }
+    this.strokeList = [];
+    this.redoStacks.clear();
+    this.rebuildBuffer();
+    this.redrawCanvas();
+    
+    if (this.socket) {
+      this.socket.send(JSON.stringify({
+        method: "clear",
+        id: this.sessionid,
+        username: this.username
+      }));
+    }
   }
 
   addUser(user) {
@@ -264,52 +324,102 @@ class CanvasState {
     this.users = this.users.filter(u => u !== user);
   }
 
-  // Chat management
   addChatMessage(msg) {
     this.chatMessages.push(msg);
   }
 
-  sendChatMessage(message) {
-    if (WebSocketService.isConnected) {
-      WebSocketService.sendChat(message);
-      this.addChatMessage({ type: "chat", username: this.username, message });
-    }
-  }
-
-  // Connection management
-  async connectToRoom(roomId, username) {
-    try {
-      await WebSocketService.connect(WS_URL, roomId, username);
-      this.setCurrentRoomId(roomId);
-      this.setUsername(username);
-    } catch (error) {
-      console.error('Failed to connect:', error);
-      throw error;
-    }
-  }
-
   disconnect() {
-    WebSocketService.disconnect();
+    if (this.socket) {
+        this.socket.close();
+    }
     this.isConnected = false;
     this.username = "local";
-    HistoryService.clearStrokes();
+    this.strokeList = [];
+    this.redoStacks.clear();
     this.users = [];
     this.chatMessages = [];
-    CanvasService.rebuildBuffer([]);
-    CanvasService.redraw();
+    this.setModalOpen(false);
+    this.rebuildBuffer();
+    this.redrawCanvas();
   }
 
-  // Legacy compatibility methods
+  renderBrushStroke(ctx, stroke, isEraser = false) {
+    const { points, lineWidth = 1, strokeStyle = '#000000', strokeOpacity = 1 } = stroke;
+    if (!points || points.length === 0) return;
+    
+    ctx.save();
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (!isEraser && strokeStyle) {
+        const r = parseInt(strokeStyle.slice(1, 3), 16);
+        const g = parseInt(strokeStyle.slice(3, 5), 16);
+        const b = parseInt(strokeStyle.slice(5, 7), 16);
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${strokeOpacity})`;
+    } else {
+        ctx.strokeStyle = strokeStyle;
+    }
+
+    ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
+    ctx.beginPath();
+    
+    if (points.length === 1) {
+      ctx.arc(points[0].x, points[0].y, lineWidth / 2, 0, 2 * Math.PI);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
+    } else {
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   handleMessage(msg) {
-    WebSocketService.handleMessage(msg);
-  }
-
-  drawSingleStroke(ctx, stroke) {
-    CanvasService.drawStroke(ctx, stroke);
-  }
-
-  renderBrushStroke(ctx, stroke, isEraser) {
-    CanvasService.renderBrushStroke(ctx, stroke, isEraser);
+    if (msg.method === "connection") {
+      this.addUser(msg.username);
+      this.addChatMessage({ type: "system", username: msg.username, message: `вошел в комнату` });
+      this.setIsConnected(true);
+    } else if (msg.method === "disconnection") {
+      this.removeUser(msg.username);
+      this.addChatMessage({ type: "system", username: msg.username, message: `покинул комнату` });
+    } else if (msg.method === "chat") {
+      if (msg.username !== this.username) {
+        this.addChatMessage({ type: "chat", username: msg.username, message: msg.message });
+      }
+    } else if (msg.method === "users") {
+      this.users = msg.users;
+    } else if (msg.method === "draws") {
+      this.strokeList = msg.strokes;
+      this.rebuildBuffer();
+      this.redrawCanvas();
+    } else if (msg.method === "clear") {
+      if (msg.username !== this.username) {
+        this.strokeList = [];
+        this.redoStacks.clear();
+        this.rebuildBuffer();
+        this.redrawCanvas();
+        this.addChatMessage({ type: "system", username: msg.username, message: `очистил холст` });
+      }
+    } else if (msg.method === "draw") {
+      if (!msg.username || msg.username === this.username) return;
+      const figure = msg.figure;
+      switch (figure.type) {
+        case "undo":
+          this.undoRemote(figure.strokeId);
+          break;
+        case "redo":
+          this.redoRemote(figure.stroke);
+          break;
+        default:
+          this.pushStroke(figure);
+          this.redrawCanvas();
+          break;
+      }
+    }
   }
 }
 
