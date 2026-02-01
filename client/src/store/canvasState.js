@@ -259,11 +259,20 @@ class CanvasState {
   setZoom(zoom) {
     this.zoom = Math.max(0.5, Math.min(3, zoom));
     if (this.canvas) {
-      const rect = this.canvas.getBoundingClientRect();
       const baseWidth = window.innerWidth < 768 ? window.innerWidth : 720;
       const baseHeight = window.innerWidth < 768 ? window.innerWidth / 1.5 : 480;
-      this.canvas.style.width = `${baseWidth * this.zoom}px`;
-      this.canvas.style.height = `${baseHeight * this.zoom}px`;
+      const newWidth = baseWidth * this.zoom;
+      const newHeight = baseHeight * this.zoom;
+      
+      this.canvas.style.width = `${newWidth}px`;
+      this.canvas.style.height = `${newHeight}px`;
+      
+      // Update cursor overlay to match canvas size
+      const cursorOverlay = document.querySelector('.cursor-overlay');
+      if (cursorOverlay) {
+        cursorOverlay.style.width = `${newWidth}px`;
+        cursorOverlay.style.height = `${newHeight}px`;
+      }
     }
   }
 
