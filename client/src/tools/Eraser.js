@@ -42,8 +42,8 @@ export default class Eraser extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
-    const x = (e.pageX - rect.left) * scaleX;
-    const y = (e.pageY - rect.top) * scaleY;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     return { x, y };
   }
 

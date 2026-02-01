@@ -62,21 +62,15 @@ export default class Circle extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    this.startX = Math.round((e.pageX - rect.left) * scaleX);
-    this.startY = Math.round((e.pageY - rect.top) * scaleY);
+    const { x, y } = this.getCanvasCoordinates(e);
+    this.startX = x;
+    this.startY = y;
   }
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = Math.round((e.pageX - rect.left) * scaleX);
-    const y = Math.round((e.pageY - rect.top) * scaleY);
+    const { x, y } = this.getCanvasCoordinates(e);
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
     const ctx = this.canvas.getContext("2d");

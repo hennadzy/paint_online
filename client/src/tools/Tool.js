@@ -64,6 +64,18 @@ export default class Tool {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  getCanvasCoordinates(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    
+    // Use clientX/clientY instead of pageX/pageY for better mobile support
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top) * scaleY);
+    
+    return { x, y };
+  }
+
   send(msg) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(msg);

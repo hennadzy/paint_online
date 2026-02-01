@@ -143,8 +143,8 @@ const Canvas = observer(() => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-      const x = (e.pageX - rect.left) * scaleX;
-      const y = (e.pageY - rect.top) * scaleY;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
       updateCursorOverlay(x, y);
     };
 

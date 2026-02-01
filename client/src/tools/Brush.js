@@ -56,11 +56,7 @@ export default class Brush extends Tool {
     canvasState.isDrawing = true;
     this.points = [];
 
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = Math.round((e.pageX - rect.left) * scaleX);
-    const y = Math.round((e.pageY - rect.top) * scaleY);
+    const { x, y } = this.getCanvasCoordinates(e);
     this.lastX = x;
     this.lastY = y;
     this.points.push({ x, y });
@@ -70,11 +66,7 @@ export default class Brush extends Tool {
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = Math.round((e.pageX - rect.left) * scaleX);
-    const y = Math.round((e.pageY - rect.top) * scaleY);
+    const { x, y } = this.getCanvasCoordinates(e);
 
     const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
     this.points.push(smoothed);
