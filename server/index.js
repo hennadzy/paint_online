@@ -127,6 +127,7 @@ app.use(cors({
     origin: function (origin, callback) {
         const allowedOrigins = [
             'https://risovanie.online',
+            'https://www.risovanie.online',
             'http://localhost:3000'
         ];
         
@@ -144,8 +145,10 @@ app.use(cors({
         }
     },
     credentials: true,
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type']
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Length', 'X-Requested-With'],
+    maxAge: 86400 // 24 hours
 }));
 
 app.use(express.json({ limit: '5mb' }));
