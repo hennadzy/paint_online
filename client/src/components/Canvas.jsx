@@ -22,6 +22,7 @@ const Canvas = observer(() => {
   const layoutRef = useRef();
   const params = useParams();
   const navigate = useNavigate();
+  const isPinching = useRef(false);
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
@@ -96,6 +97,9 @@ const Canvas = observer(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    // Expose isPinching check globally
+    window.isPinching = () => isPinching.current;
+
     let initialDistance = 0;
     let initialZoom = 1;
 
@@ -108,6 +112,7 @@ const Canvas = observer(() => {
     const handleTouchStart = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
+        isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
       }
@@ -116,6 +121,7 @@ const Canvas = observer(() => {
     const handleTouchMove = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
+        isPinching.current = true;
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
         const scale = currentDistance / initialDistance;
         const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
@@ -126,6 +132,10 @@ const Canvas = observer(() => {
     const handleTouchEnd = (e) => {
       if (e.touches.length < 2) {
         initialDistance = 0;
+        // Delay resetting isPinching to prevent accidental drawing
+        setTimeout(() => {
+          isPinching.current = false;
+        }, 100);
       }
     };
 

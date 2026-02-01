@@ -48,6 +48,8 @@ export default class Eraser extends Tool {
   }
 
   pointerDownHandler(e) {
+    if (this.isPinchingActive()) return;
+    
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
     this._hasCommitted = false;
@@ -59,7 +61,7 @@ export default class Eraser extends Tool {
   }
 
   pointerMoveHandler(e) {
-    if (!this.mouseDown) return;
+    if (!this.mouseDown || this.isPinchingActive()) return;
 
     const { x, y } = this.getCoords(e);
     this.points.push({ x, y });

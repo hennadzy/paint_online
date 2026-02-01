@@ -85,6 +85,8 @@ export default class Line extends Tool {
   }
 
   pointerDownHandler(e) {
+    if (this.isPinchingActive()) return;
+    
     e.preventDefault();
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
@@ -97,7 +99,7 @@ export default class Line extends Tool {
   }
 
   pointerMoveHandler(e) {
-    if (!this.mouseDown) return;
+    if (!this.mouseDown || this.isPinchingActive()) return;
 
     const { x, y } = this.getCanvasCoordinates(e);
     this.endX = x;

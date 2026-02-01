@@ -76,6 +76,10 @@ export default class Tool {
     return { x, y };
   }
 
+  isPinchingActive() {
+    return window.isPinching && window.isPinching();
+  }
+
   send(msg) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(msg);
