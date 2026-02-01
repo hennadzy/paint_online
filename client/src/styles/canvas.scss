@@ -252,7 +252,6 @@ button:active {
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
-    padding: 50vh 50vw;
     
     &::-webkit-scrollbar {
       width: 14px;
@@ -285,7 +284,6 @@ button:active {
     position: relative;
     width: fit-content;
     height: fit-content;
-    margin: -50vh -50vw;
   }
 
   .canvas-side-panel {
