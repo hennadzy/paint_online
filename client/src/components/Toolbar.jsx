@@ -148,6 +148,24 @@ const Toolbar = observer(() => {
         <span className="icon clear" />
         <span className="tooltip">Очистить</span>
       </button>
+
+      <button
+        className="toolbar__btn zoom-btn"
+        onClick={() => canvasState.zoomOut()}
+        title="Уменьшить (Ctrl+-)"
+      >
+        <span className="zoom-text">−</span>
+        <span className="tooltip">Уменьшить</span>
+      </button>
+
+      <button
+        className="toolbar__btn zoom-btn"
+        onClick={() => canvasState.zoomIn()}
+        title="Увеличить (Ctrl++)"
+      >
+        <span className="zoom-text">+</span>
+        <span className="tooltip">Увеличить</span>
+      </button>
     </div>
   );
 });

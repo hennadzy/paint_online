@@ -92,12 +92,6 @@ const TopMenu = observer(() => {
         <button className="toolbar__btn" onClick={download}>
           <span className="icon save"></span>
         </button>
-        <button className="toolbar__btn zoom-btn" onClick={() => canvasState.zoomOut()} title="Уменьшить (Ctrl+-)">
-          <span className="zoom-text">−</span>
-        </button>
-        <button className="toolbar__btn zoom-btn" onClick={() => canvasState.zoomIn()} title="Увеличить (Ctrl++)">
-          <span className="zoom-text">+</span>
-        </button>
         {!canvasState.isConnected && !canvasState.currentRoomId ? (
           <>
             <button
