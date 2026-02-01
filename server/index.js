@@ -13,14 +13,6 @@ const PORT = process.env.PORT || 5000;
 const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
 const ROOM_EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000;
 
-app.use((req, res, next) => {
-  const host = req.get('host');
-  if (host === 'www.risovanie.online') {
-    return res.redirect(301, `https://risovanie.online${req.url}`);
-  }
-  next();
-});
-
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
