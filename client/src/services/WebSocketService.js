@@ -13,6 +13,7 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
+    this.shouldReconnect = true;
   }
 
   /**
@@ -28,6 +29,7 @@ class WebSocketService {
         this.socket.onopen = () => {
           this.isConnected = true;
           this.reconnectAttempts = 0;
+          this.shouldReconnect = true;
           this.sessionId = this.generateSessionId();
           
           // Send connection message
@@ -59,8 +61,8 @@ class WebSocketService {
           this.isConnected = false;
           this.emit('disconnected', {});
           
-          // Attempt reconnection
-          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          // Attempt reconnection only if not explicitly disconnected
+          if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             setTimeout(() => {
               this.emit('reconnecting', { attempt: this.reconnectAttempts });
@@ -78,6 +80,7 @@ class WebSocketService {
    * Disconnect from server
    */
   disconnect() {
+    this.shouldReconnect = false;
     if (this.socket) {
       this.socket.close();
       this.socket = null;

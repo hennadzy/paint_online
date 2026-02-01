@@ -302,7 +302,9 @@ class CanvasState {
   disconnect() {
     WebSocketService.disconnect();
     this.isConnected = false;
+    this.currentRoomId = null;
     this.username = "local";
+    this.usernameReady = false;
     HistoryService.clearStrokes();
     this.users = [];
     this.chatMessages = [];

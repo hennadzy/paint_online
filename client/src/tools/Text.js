@@ -147,7 +147,12 @@ export default class Text extends Tool {
     }
 
     this.input.addEventListener('keydown', this.handleKeyDown.bind(this));
-    this.input.addEventListener('blur', this.confirmText.bind(this));
+    this.input.addEventListener('blur', (e) => {
+      // Don't confirm text if we're resizing
+      if (!this._isResizing && !this.isResizing) {
+        this.confirmText();
+      }
+    });
     this.input.addEventListener('input', this.autoResize.bind(this));
     this.input.addEventListener('mousedown', this.handleMoveDown.bind(this));
     if (isMobile) {
@@ -291,6 +296,11 @@ export default class Text extends Tool {
   handleMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
+    // Prevent text confirmation when starting resize
+    if (this.input && !this._isCommitted) {
+      // Temporarily prevent blur event from confirming text
+      this._isResizing = true;
+    }
     this.isResizing = true;
     this.resizeHandle = e.target.dataset.pos;
     this.startResizeX = e.clientX || e.touches[0].clientX;
@@ -330,6 +340,7 @@ export default class Text extends Tool {
 
   handleMouseUp() {
     this.isResizing = false;
+    this._isResizing = false;
     this.resizeHandle = null;
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
@@ -338,6 +349,10 @@ export default class Text extends Tool {
   }
 
   handleMoveDown(e) {
+    // Don't start moving if clicking on a resize handle
+    if (e.target.classList && e.target.classList.contains('resize-handle')) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     this.isMoving = true;
@@ -414,7 +429,10 @@ export default class Text extends Tool {
     if (this.input && this.input.parentElement) {
       const target = e.target;
       const isInputClick = target === this.input || this.input.contains(target);
-      if (!isInputClick) {
+      const isResizeHandle = target.classList && target.classList.contains('resize-handle');
+      const isHandleClick = this.handles.some(handle => handle === target || handle.contains(target));
+      
+      if (!isInputClick && !isResizeHandle && !isHandleClick) {
         this.confirmText();
       }
     }
