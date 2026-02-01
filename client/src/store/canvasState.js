@@ -36,34 +36,27 @@ class CanvasState {
     WebSocketService.on('connected', () => {
       this.isConnected = true;
     });
-
     WebSocketService.on('disconnected', () => {
       this.isConnected = false;
     });
-
     WebSocketService.on('userConnected', ({ username }) => {
       this.addUser(username);
       this.addChatMessage({ type: "system", username, message: `вошел в комнату` });
     });
-
     WebSocketService.on('userDisconnected', ({ username }) => {
       this.removeUser(username);
       this.addChatMessage({ type: "system", username, message: `покинул комнату` });
     });
-
     WebSocketService.on('usersList', ({ users }) => {
       this.users = users;
     });
-
     WebSocketService.on('drawsReceived', ({ strokes }) => {
       HistoryService.setStrokes(strokes);
       CanvasService.rebuildBuffer(strokes);
       CanvasService.redraw();
     });
-
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
-      
       switch (figure.type) {
         case "undo":
           this.undoRemote(figure.strokeId);
@@ -76,7 +69,6 @@ class CanvasState {
           break;
       }
     });
-
     WebSocketService.on('clearReceived', ({ username }) => {
       if (username !== this.username) {
         HistoryService.clearStrokes();
@@ -85,26 +77,21 @@ class CanvasState {
         this.addChatMessage({ type: "system", username, message: `очистил холст` });
       }
     });
-
     WebSocketService.on('chatReceived', ({ username, message }) => {
       if (username !== this.username) {
         this.addChatMessage({ type: "chat", username, message });
       }
     });
-
     HistoryService.on('strokeAdded', () => {
       CanvasService.redraw();
     });
-
     HistoryService.on('strokeUndone', () => {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
     });
-
     HistoryService.on('strokeRedone', () => {
       CanvasService.redraw();
     });
-
     HistoryService.on('strokesCleared', () => {
       CanvasService.rebuildBuffer([]);
       CanvasService.redraw();
@@ -114,23 +101,18 @@ class CanvasState {
   get canvas() {
     return CanvasService.canvas;
   }
-
   get ctx() {
     return CanvasService.ctx;
   }
-
   get bufferCanvas() {
     return CanvasService.bufferCanvas;
   }
-
   get bufferCtx() {
     return CanvasService.bufferCtx;
   }
-
   get showGrid() {
     return CanvasService.showGrid;
   }
-
   get zoom() {
     return CanvasService.zoom;
   }
@@ -138,27 +120,21 @@ class CanvasState {
   setCanvas(canvas) {
     CanvasService.initialize(canvas);
   }
-
   toggleGrid() {
     CanvasService.toggleGrid();
   }
-
   setZoom(zoom) {
     CanvasService.setZoom(zoom);
   }
-
   zoomIn() {
     CanvasService.setZoom(CanvasService.zoom + 0.1);
   }
-
   zoomOut() {
     CanvasService.setZoom(CanvasService.zoom - 0.1);
   }
-
   redrawCanvas() {
     CanvasService.redraw();
   }
-
   rebuildBuffer() {
     CanvasService.rebuildBuffer(HistoryService.getStrokes());
   }
@@ -166,23 +142,18 @@ class CanvasState {
   get socket() {
     return WebSocketService.socket;
   }
-
   get sessionid() {
     return WebSocketService.sessionId;
   }
-
   setSocket() {}
-
   setSessionId() {}
 
   get strokeList() {
     return HistoryService.getStrokes();
   }
-
   set strokeList(strokes) {
     HistoryService.setStrokes(strokes);
   }
-
   get redoStacks() {
     return HistoryService.redoStacks;
   }
@@ -196,9 +167,10 @@ class CanvasState {
   }
 
   undo() {
-    const removed = HistoryService.undo(this.username);
-    if (removed && WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
+    if (WebSocketService.isConnected) {
+      WebSocketService.sendDraw({ type: "undo" }); // отправляем только тип!
+    } else {
+      HistoryService.undo(this.username);
     }
   }
 
@@ -222,9 +194,7 @@ class CanvasState {
     if (!window.confirm('Очистить весь холст? Это действие нельзя отменить.')) {
       return;
     }
-    
     HistoryService.clearStrokes();
-    
     if (WebSocketService.isConnected) {
       WebSocketService.sendClear();
     }
@@ -234,29 +204,23 @@ class CanvasState {
     this.username = username;
     this.usernameReady = username && username !== 'local';
   }
-
   setCurrentRoomId(id) {
     this.currentRoomId = id;
   }
-
   setIsConnected(val) {
     this.isConnected = val;
   }
-
   addUser(user) {
     if (!this.users.includes(user)) {
       this.users.push(user);
     }
   }
-
   removeUser(user) {
     this.users = this.users.filter(u => u !== user);
   }
-
   addChatMessage(msg) {
     this.chatMessages.push(msg);
   }
-
   sendChatMessage(message) {
     if (WebSocketService.isConnected) {
       WebSocketService.sendChat(message);
@@ -287,31 +251,24 @@ class CanvasState {
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
   }
-
   setModalOpen(val) {
     this.modalOpen = val;
   }
-
   setModal(val) {
     this.setModalOpen(val);
   }
-
   setShowRoomInterface(val) {
     this.showRoomInterface = val;
   }
-
   setShowAboutModal(val) {
     this.showAboutModal = val;
   }
-
   handleMessage(msg) {
     WebSocketService.handleMessage(msg);
   }
-
   drawSingleStroke(ctx, stroke) {
     CanvasService.drawStroke(ctx, stroke);
   }
-
   renderBrushStroke(ctx, stroke, isEraser) {
     CanvasService.renderBrushStroke(ctx, stroke, isEraser);
   }

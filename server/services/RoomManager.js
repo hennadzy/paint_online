@@ -31,45 +31,35 @@ class RoomManager {
 
   addUser(roomId, username, ws) {
     const room = this.getOrCreateRoom(roomId);
-    
     if (room.users.size >= MAX_USERS_PER_ROOM) {
       throw new Error('Room is full');
     }
-    
     if (room.users.has(username)) {
       throw new Error('Username taken');
     }
-    
     room.users.set(username, {
       ws,
       lastActivity: Date.now()
     });
-    
     this.wsToUserInfo.set(ws, { roomId, username });
     DataStore.updateRoomActivity(roomId);
-    
     return room;
   }
 
   removeUser(ws) {
     const userInfo = this.wsToUserInfo.get(ws);
     if (!userInfo) return null;
-    
     const { roomId, username } = userInfo;
     const room = this.rooms.get(roomId);
-    
     if (room && room.users.has(username)) {
       room.users.delete(username);
       this.wsToUserInfo.delete(ws);
-      
       if (room.users.size === 0) {
         DataStore.saveRoomStrokes(roomId, room.strokes);
         this.rooms.delete(roomId);
       }
-      
       return { roomId, username };
     }
-    
     return null;
   }
 
@@ -80,16 +70,13 @@ class RoomManager {
   updateUserActivity(ws) {
     const userInfo = this.wsToUserInfo.get(ws);
     if (!userInfo) return false;
-    
     const { roomId, username } = userInfo;
     const room = this.rooms.get(roomId);
-    
     if (room && room.users.has(username)) {
       room.users.get(username).lastActivity = Date.now();
       DataStore.updateRoomActivity(roomId);
       return true;
     }
-    
     return false;
   }
 
@@ -123,6 +110,17 @@ class RoomManager {
     return false;
   }
 
+  // Новый метод — удалить последний штрих глобально, вернуть его
+  removeLastStroke(roomId) {
+    const room = this.rooms.get(roomId);
+    if (room && room.strokes.length) {
+      const stroke = room.strokes.pop();
+      DataStore.saveRoomStrokes(roomId, room.strokes);
+      return stroke;
+    }
+    return null;
+  }
+
   clearStrokes(roomId) {
     const room = this.rooms.get(roomId);
     if (room) {
@@ -136,7 +134,7 @@ class RoomManager {
   cleanupInactiveUsers() {
     const now = Date.now();
     let cleanedCount = 0;
-    
+
     this.rooms.forEach((room, roomId) => {
       room.users.forEach(({ ws, lastActivity }, username) => {
         if (now - lastActivity > INACTIVE_USER_TIMEOUT) {
@@ -147,7 +145,6 @@ class RoomManager {
         }
       });
     });
-    
     return cleanedCount;
   }
 
