@@ -99,7 +99,15 @@ export default class Line extends Tool {
   }
 
   pointerMoveHandler(e) {
-    if (!this.mouseDown || this.isPinchingActive()) return;
+    if (!this.mouseDown) return;
+    
+    // Check if pinch started during drawing
+    if (this.isPinchingActive()) {
+      this.mouseDown = false;
+      canvasState.isDrawing = false;
+      // Don't commit incomplete line
+      return;
+    }
 
     const { x, y } = this.getCanvasCoordinates(e);
     this.endX = x;

@@ -102,6 +102,7 @@ const Canvas = observer(() => {
 
     let initialDistance = 0;
     let initialZoom = 1;
+    let activeTouches = 0;
 
     const getDistance = (touch1, touch2) => {
       const dx = touch2.clientX - touch1.clientX;
@@ -109,44 +110,96 @@ const Canvas = observer(() => {
       return Math.sqrt(dx * dx + dy * dy);
     };
 
+    const stopDrawing = () => {
+      // Stop any active drawing when pinch starts
+      if (toolState.tool && toolState.tool.mouseDown) {
+        const tool = toolState.tool;
+        tool.mouseDown = false;
+        canvasState.isDrawing = false;
+        
+        // Commit stroke if it has content
+        if (typeof tool.commitStroke === 'function') {
+          // Check if there's something to commit based on tool type
+          let shouldCommit = false;
+          if (tool.points && tool.points.length > 0) {
+            shouldCommit = true;
+          } else if (tool.startX !== undefined && tool.startY !== undefined) {
+            // For shape tools (line, rect, circle)
+            shouldCommit = true;
+          }
+          
+          if (shouldCommit) {
+            tool.commitStroke();
+          }
+        }
+      }
+    };
+
     const handleTouchStart = (e) => {
+      activeTouches = e.touches.length;
       if (e.touches.length === 2) {
         e.preventDefault();
+        stopDrawing();
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
+      } else if (e.touches.length > 2) {
+        // More than 2 touches - definitely not drawing
+        e.preventDefault();
+        stopDrawing();
+        isPinching.current = true;
       }
     };
 
     const handleTouchMove = (e) => {
-      if (e.touches.length === 2) {
+      const touchCount = e.touches.length;
+      
+      // If we have 2 or more touches, it's a pinch gesture
+      if (touchCount >= 2) {
         e.preventDefault();
+        stopDrawing();
         isPinching.current = true;
-        const currentDistance = getDistance(e.touches[0], e.touches[1]);
-        const scale = currentDistance / initialDistance;
-        const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
-        canvasState.setZoom(newZoom);
+        
+        if (touchCount === 2 && initialDistance > 0) {
+          const currentDistance = getDistance(e.touches[0], e.touches[1]);
+          const scale = currentDistance / initialDistance;
+          const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
+          canvasState.setZoom(newZoom);
+        } else if (touchCount === 2 && initialDistance === 0) {
+          // Initialize distance if we just got 2 touches
+          initialDistance = getDistance(e.touches[0], e.touches[1]);
+          initialZoom = canvasState.zoom;
+        }
+      } else if (touchCount === 1 && isPinching.current) {
+        // If we had 2 touches and now have 1, keep isPinching true briefly
+        // to prevent accidental drawing
+        e.preventDefault();
       }
     };
 
     const handleTouchEnd = (e) => {
+      activeTouches = e.touches.length;
       if (e.touches.length < 2) {
         initialDistance = 0;
         // Delay resetting isPinching to prevent accidental drawing
         setTimeout(() => {
-          isPinching.current = false;
-        }, 100);
+          if (e.touches.length < 2) {
+            isPinching.current = false;
+          }
+        }, 150);
       }
     };
 
     container.addEventListener('touchstart', handleTouchStart, { passive: false });
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 

@@ -21,6 +21,8 @@ export default class Fill extends Tool {
   }
 
   pointerDownHandler(e) {
+    if (this.isPinchingActive()) return;
+    
     e.preventDefault();
     e.stopPropagation();
 

@@ -66,7 +66,17 @@ export default class Brush extends Tool {
   }
 
   pointerMoveHandler(e) {
-    if (!this.mouseDown || this.isPinchingActive()) return;
+    if (!this.mouseDown) return;
+    
+    // Check if pinch started during drawing
+    if (this.isPinchingActive()) {
+      this.mouseDown = false;
+      canvasState.isDrawing = false;
+      if (this.points.length > 0) {
+        this.commitStroke();
+      }
+      return;
+    }
 
     const { x, y } = this.getCanvasCoordinates(e);
 

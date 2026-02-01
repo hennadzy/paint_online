@@ -15,6 +15,8 @@ export default class Arrow extends Tool {
   }
 
   pointerDownHandler(e) {
+    if (this.isPinchingActive()) return;
+    
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
@@ -27,6 +29,14 @@ export default class Arrow extends Tool {
   }
 
   pointerMoveHandler(e) {
+    // Check if pinch started during drawing
+    if (this.isPinchingActive()) {
+      this.canvas.onpointermove = null;
+      this.canvas.onpointerup = null;
+      canvasState.redrawCanvas();
+      return;
+    }
+    
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;

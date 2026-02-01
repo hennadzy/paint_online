@@ -70,7 +70,15 @@ export default class Circle extends Tool {
   }
 
   pointerMoveHandler(e) {
-    if (!this.mouseDown || this.isPinchingActive()) return;
+    if (!this.mouseDown) return;
+    
+    // Check if pinch started during drawing
+    if (this.isPinchingActive()) {
+      this.mouseDown = false;
+      canvasState.isDrawing = false;
+      // Don't commit incomplete circle
+      return;
+    }
 
     const { x, y } = this.getCanvasCoordinates(e);
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
