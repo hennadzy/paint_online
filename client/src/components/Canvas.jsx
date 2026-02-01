@@ -162,6 +162,17 @@ const Canvas = observer(() => {
     }
   }, [toolState.toolName]);
 
+  // Center canvas on mount
+  useEffect(() => {
+    const container = document.querySelector('.canvas-container');
+    if (container) {
+      const scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+      const scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+      container.scrollLeft = scrollLeft;
+      container.scrollTop = scrollTop;
+    }
+  }, []);
+
   useEffect(() => {
     if (canvasState.isConnected && window.innerWidth < 768) {
       setTimeout(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }), 100);
