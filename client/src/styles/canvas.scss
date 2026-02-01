@@ -18,6 +18,13 @@
   overflow: hidden;
 }
 
+.canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: min-content;
+  min-height: min-content;
+}
+
 .main-canvas {
   display: block;
   margin: 0;
@@ -239,30 +246,46 @@ button:active {
   }
 
   .canvas-container {
-    height: auto;
-    flex: none;
+    flex: 1;
     width: 100%;
-    flex-shrink: 0;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    position: relative;
     
     &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 14px;
+      height: 14px;
     }
     
     &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.3);
     }
     
     &::-webkit-scrollbar-thumb {
-      background: rgba(255, 204, 0, 0.5);
-      border-radius: 4px;
+      background: rgba(255, 204, 0, 0.8);
+      border-radius: 7px;
+      border: 3px solid rgba(0, 0, 0, 0.3);
+      min-width: 40px;
+      min-height: 40px;
       
       &:hover {
-        background: rgba(255, 204, 0, 0.8);
+        background: rgba(255, 204, 0, 1);
+      }
+      
+      &:active {
+        background: rgba(255, 102, 153, 1);
       }
     }
+  }
+
+  .canvas-wrapper {
+    display: inline-block;
+    min-width: 100%;
+    min-height: 100%;
+    position: relative;
   }
 
   .canvas-side-panel {

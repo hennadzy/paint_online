@@ -26,30 +26,14 @@ const Canvas = observer(() => {
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
     const cursor = cursorRef.current;
-    const aspectRatio = 720 / 480; // 3:2 ratio
     const logicalWidth = 720;
     const logicalHeight = 480;
 
+    // Set logical size (actual pixels)
     canvas.width = logicalWidth;
     canvas.height = logicalHeight;
     cursor.width = logicalWidth;
     cursor.height = logicalHeight;
-
-    if (window.innerWidth < 768) {
-      // Mobile: maintain aspect ratio
-      const displayWidth = window.innerWidth;
-      const displayHeight = displayWidth / aspectRatio;
-      canvas.style.width = `${displayWidth}px`;
-      canvas.style.height = `${displayHeight}px`;
-      cursor.style.width = `${displayWidth}px`;
-      cursor.style.height = `${displayHeight}px`;
-    } else {
-      // Desktop: use fixed size
-      canvas.style.width = `${logicalWidth}px`;
-      canvas.style.height = `${logicalHeight}px`;
-      cursor.style.width = `${logicalWidth}px`;
-      cursor.style.height = `${logicalHeight}px`;
-    }
 
     canvasState.setCanvas(canvas);
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -57,6 +41,9 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
     canvasState.rebuildBuffer();
     canvasState.redrawCanvas();
+    
+    // Apply zoom after setting canvas
+    canvasState.setZoom(canvasState.zoom);
   };
 
   useEffect(() => {
@@ -242,15 +229,17 @@ const Canvas = observer(() => {
     <div className="canvas">
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : ''}`}>
         <div className="canvas-container" ref={containerRef}>
-          <canvas
-            ref={canvasRef}
-            tabIndex={0}
-            className="main-canvas"
-          />
-          <canvas
-            ref={cursorRef}
-            className="cursor-overlay"
-          />
+          <div className="canvas-wrapper">
+            <canvas
+              ref={canvasRef}
+              tabIndex={0}
+              className="main-canvas"
+            />
+            <canvas
+              ref={cursorRef}
+              className="cursor-overlay"
+            />
+          </div>
           
           {(canvasState.modalOpen || canvasState.showRoomInterface) && (
             <RoomInterface roomId={params.id} />
