@@ -1,7 +1,3 @@
-/**
- * WebSocketService - manages WebSocket connection and messaging
- * Responsibilities: connection, reconnection, message handling
- */
 class WebSocketService {
   constructor() {
     this.socket = null;
@@ -16,9 +12,6 @@ class WebSocketService {
     this.shouldReconnect = true;
   }
 
-  /**
-   * Connect to WebSocket server
-   */
   connect(wsUrl, roomId, username) {
     return new Promise((resolve, reject) => {
       try {
@@ -32,7 +25,6 @@ class WebSocketService {
           this.shouldReconnect = true;
           this.sessionId = this.generateSessionId();
           
-          // Send connection message
           this.send({
             method: "connection",
             id: roomId,
@@ -48,7 +40,7 @@ class WebSocketService {
             const message = JSON.parse(event.data);
             this.handleMessage(message);
           } catch (error) {
-            console.error('Failed to parse message:', error);
+            this.emit('error', { error });
           }
         };
         
@@ -61,7 +53,6 @@ class WebSocketService {
           this.isConnected = false;
           this.emit('disconnected', {});
           
-          // Attempt reconnection only if not explicitly disconnected
           if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             setTimeout(() => {
@@ -76,9 +67,6 @@ class WebSocketService {
     });
   }
 
-  /**
-   * Disconnect from server
-   */
   disconnect() {
     this.shouldReconnect = false;
     if (this.socket) {
@@ -92,16 +80,12 @@ class WebSocketService {
     this.reconnectAttempts = 0;
   }
 
-  /**
-   * Send message to server
-   */
   send(message) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       try {
         this.socket.send(JSON.stringify(message));
         return true;
       } catch (error) {
-        console.error('Failed to send message:', error);
         this.emit('error', { error });
         return false;
       }
@@ -109,9 +93,6 @@ class WebSocketService {
     return false;
   }
 
-  /**
-   * Send draw command
-   */
   sendDraw(figure) {
     return this.send({
       method: "draw",
@@ -121,9 +102,6 @@ class WebSocketService {
     });
   }
 
-  /**
-   * Send clear command
-   */
   sendClear() {
     return this.send({
       method: "clear",
@@ -132,9 +110,6 @@ class WebSocketService {
     });
   }
 
-  /**
-   * Send chat message
-   */
   sendChat(message) {
     return this.send({
       method: "chat",
@@ -144,13 +119,9 @@ class WebSocketService {
     });
   }
 
-  /**
-   * Handle incoming message
-   */
   handleMessage(message) {
     this.emit('message', message);
     
-    // Emit specific events for different message types
     switch (message.method) {
       case 'connection':
         this.emit('userConnected', { username: message.username });
@@ -176,14 +147,10 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Generate unique session ID
-   */
   generateSessionId() {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  // Event system
   on(event, callback) {
     this.listeners.add({ event, callback });
   }
@@ -202,7 +169,7 @@ class WebSocketService {
         try {
           listener.callback(data);
         } catch (error) {
-          console.error(`Error in ${event} listener:`, error);
+          this.emit('error', { error });
         }
       }
     });

@@ -9,7 +9,6 @@ const router = express.Router();
 const MAX_ROOM_NAME_LENGTH = 100;
 const BCRYPT_ROUNDS = 10;
 
-// Rate limiters
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -34,9 +33,6 @@ const passwordVerifyLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/**
- * Create new room
- */
 router.post('/rooms', createRoomLimiter, async (req, res) => {
   try {
     const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
@@ -49,7 +45,6 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
 
     const roomId = generateId();
     
-    // Hash password if provided
     let hashedPassword = null;
     if (!isPublic && password) {
       hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -64,27 +59,19 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
     
     res.json({ roomId });
   } catch (error) {
-    console.error('Error creating room:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-/**
- * Get public rooms
- */
 router.get('/rooms/public', apiLimiter, (req, res) => {
   try {
     const publicRooms = DataStore.getPublicRooms();
     res.json(publicRooms);
   } catch (error) {
-    console.error('Error getting public rooms:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-/**
- * Check if room exists
- */
 router.get('/rooms/:id/exists', apiLimiter, (req, res) => {
   try {
     const id = sanitizeInput(req.params.id, 20);
@@ -100,14 +87,10 @@ router.get('/rooms/:id/exists', apiLimiter, (req, res) => {
       name: room.name
     });
   } catch (error) {
-    console.error('Error checking room existence:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-/**
- * Verify room password
- */
 router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res) => {
   try {
     const id = sanitizeInput(req.params.id, 20);
@@ -125,7 +108,6 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
     const isValid = await bcrypt.compare(password, room.passwordHash);
     res.json({ valid: isValid });
   } catch (error) {
-    console.error('Error verifying password:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

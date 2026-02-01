@@ -10,12 +10,9 @@ const app = express();
 const WSServer = require('express-ws')(app);
 const PORT = process.env.PORT || 5000;
 
-const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
-const ROOM_EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000; // 3 days
+const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
+const ROOM_EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000;
 
-/**
- * Middleware: Redirect www to non-www
- */
 app.use((req, res, next) => {
   const host = req.get('host');
   if (host === 'www.risovanie.online') {
@@ -24,9 +21,6 @@ app.use((req, res, next) => {
   next();
 });
 
-/**
- * Security: Helmet configuration
- */
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -43,9 +37,6 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-/**
- * CORS configuration
- */
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -71,65 +62,33 @@ app.use(cors({
   maxAge: 86400
 }));
 
-/**
- * Body parser
- */
 app.use(express.json({ limit: '5mb' }));
-
-/**
- * Static files
- */
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-/**
- * WebSocket endpoint
- */
 app.ws('/', (ws, req) => {
   WebSocketHandler.setupConnection(ws);
 });
 
-/**
- * API routes
- */
 app.use('/', apiRouter);
 
-/**
- * Catch-all route for SPA
- */
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
 
-/**
- * Cleanup timer for expired rooms
- */
 setInterval(() => {
   try {
     DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
-  } catch (error) {
-    console.error('Error during room cleanup:', error);
-  }
+  } catch (error) {}
 }, ROOM_CLEANUP_INTERVAL);
 
-/**
- * Graceful shutdown
- */
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
   process.exit(0);
 });
 
-/**
- * Start server
- */
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+app.listen(PORT, () => {});
 
 module.exports = app;

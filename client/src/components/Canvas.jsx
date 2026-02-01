@@ -30,7 +30,6 @@ const Canvas = observer(() => {
     const logicalWidth = 720;
     const logicalHeight = 480;
 
-    // Set logical size (actual pixels)
     canvas.width = logicalWidth;
     canvas.height = logicalHeight;
     cursor.width = logicalWidth;
@@ -42,8 +41,6 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
     canvasState.rebuildBuffer();
     canvasState.redrawCanvas();
-    
-    // Apply zoom after setting canvas
     canvasState.setZoom(canvasState.zoom);
   };
 
@@ -92,12 +89,10 @@ const Canvas = observer(() => {
     }
   }, []);
 
-  // Pinch-to-zoom gesture support
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Expose isPinching check globally
     window.isPinching = () => isPinching.current;
 
     let initialDistance = 0;
@@ -111,20 +106,16 @@ const Canvas = observer(() => {
     };
 
     const stopDrawing = () => {
-      // Stop any active drawing when pinch starts
       if (toolState.tool && toolState.tool.mouseDown) {
         const tool = toolState.tool;
         tool.mouseDown = false;
         canvasState.isDrawing = false;
         
-        // Commit stroke if it has content
         if (typeof tool.commitStroke === 'function') {
-          // Check if there's something to commit based on tool type
           let shouldCommit = false;
           if (tool.points && tool.points.length > 0) {
             shouldCommit = true;
           } else if (tool.startX !== undefined && tool.startY !== undefined) {
-            // For shape tools (line, rect, circle)
             shouldCommit = true;
           }
           
@@ -144,7 +135,6 @@ const Canvas = observer(() => {
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
       } else if (e.touches.length > 2) {
-        // More than 2 touches - definitely not drawing
         e.preventDefault();
         stopDrawing();
         isPinching.current = true;
@@ -154,7 +144,6 @@ const Canvas = observer(() => {
     const handleTouchMove = (e) => {
       const touchCount = e.touches.length;
       
-      // If we have 2 or more touches, it's a pinch gesture
       if (touchCount >= 2) {
         e.preventDefault();
         stopDrawing();
@@ -166,13 +155,10 @@ const Canvas = observer(() => {
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           canvasState.setZoom(newZoom);
         } else if (touchCount === 2 && initialDistance === 0) {
-          // Initialize distance if we just got 2 touches
           initialDistance = getDistance(e.touches[0], e.touches[1]);
           initialZoom = canvasState.zoom;
         }
       } else if (touchCount === 1 && isPinching.current) {
-        // If we had 2 touches and now have 1, keep isPinching true briefly
-        // to prevent accidental drawing
         e.preventDefault();
       }
     };
@@ -181,7 +167,6 @@ const Canvas = observer(() => {
       activeTouches = e.touches.length;
       if (e.touches.length < 2) {
         initialDistance = 0;
-        // Delay resetting isPinching to prevent accidental drawing
         setTimeout(() => {
           if (e.touches.length < 2) {
             isPinching.current = false;

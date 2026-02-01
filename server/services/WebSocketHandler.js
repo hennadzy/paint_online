@@ -6,18 +6,11 @@ const { sanitizeInput } = require('../utils/security');
 const MAX_USERNAME_LENGTH = 50;
 const MAX_MESSAGE_LENGTH = 500;
 
-/**
- * WebSocketHandler - handles WebSocket connections and messages
- * Responsibilities: message routing, broadcasting, rate limiting
- */
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
   }
 
-  /**
-   * Check WebSocket rate limit
-   */
   checkRateLimit(ws) {
     const now = Date.now();
     const limit = this.wsMessageLimits.get(ws) || { count: 0, resetTime: now + 1000 };
@@ -27,7 +20,7 @@ class WebSocketHandler {
       return true;
     }
     
-    if (limit.count >= 50) { // Max 50 messages per second
+    if (limit.count >= 50) {
       return false;
     }
     
@@ -35,9 +28,6 @@ class WebSocketHandler {
     return true;
   }
 
-  /**
-   * Broadcast message to room
-   */
   broadcast(roomId, message, excludeWs = null) {
     const room = RoomManager.getRoom(roomId);
     if (!room) return;
@@ -47,16 +37,11 @@ class WebSocketHandler {
       if (clientWs !== excludeWs && clientWs.readyState === WebSocket.OPEN) {
         try {
           clientWs.send(messageString);
-        } catch (error) {
-          console.error('Error broadcasting message:', error);
-        }
+        } catch (error) {}
       }
     });
   }
 
-  /**
-   * Handle connection message
-   */
   handleConnection(ws, msg) {
     const roomId = sanitizeInput(msg.id, 20);
     const username = sanitizeInput(msg.username, MAX_USERNAME_LENGTH);
@@ -75,13 +60,11 @@ class WebSocketHandler {
     try {
       const room = RoomManager.addUser(roomId, username, ws);
       
-      // Send current strokes to new user
       ws.send(JSON.stringify({ 
         method: "draws", 
         strokes: room.strokes 
       }));
       
-      // Notify others
       this.broadcast(roomId, { method: 'connection', username });
       this.broadcast(roomId, { 
         method: "users", 
@@ -92,9 +75,6 @@ class WebSocketHandler {
     }
   }
 
-  /**
-   * Handle draw message
-   */
   handleDraw(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -115,9 +95,6 @@ class WebSocketHandler {
     RoomManager.updateUserActivity(ws);
   }
 
-  /**
-   * Handle clear message
-   */
   handleClear(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -129,9 +106,6 @@ class WebSocketHandler {
     RoomManager.updateUserActivity(ws);
   }
 
-  /**
-   * Handle chat message
-   */
   handleChat(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -146,12 +120,8 @@ class WebSocketHandler {
     RoomManager.updateUserActivity(ws);
   }
 
-  /**
-   * Handle incoming message
-   */
   handleMessage(ws, msgStr) {
     try {
-      // Rate limiting
       if (!this.checkRateLimit(ws)) {
         ws.close(1008, 'Rate limit exceeded');
         return;
@@ -172,17 +142,10 @@ class WebSocketHandler {
         case "chat":
           this.handleChat(ws, msg);
           break;
-        default:
-          console.warn('Unknown message method:', msg.method);
       }
-    } catch (error) {
-      console.error('Error handling message:', error);
-    }
+    } catch (error) {}
   }
 
-  /**
-   * Handle WebSocket close
-   */
   handleClose(ws) {
     this.wsMessageLimits.delete(ws);
     
@@ -197,15 +160,10 @@ class WebSocketHandler {
     }
   }
 
-  /**
-   * Setup WebSocket connection
-   */
   setupConnection(ws) {
     ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));
     ws.on('close', () => this.handleClose(ws));
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
+    ws.on('error', () => {});
   }
 }
 

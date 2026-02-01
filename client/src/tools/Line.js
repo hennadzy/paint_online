@@ -101,11 +101,9 @@ export default class Line extends Tool {
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
     
-    // Check if pinch started during drawing
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;
-      // Don't commit incomplete line
       return;
     }
 

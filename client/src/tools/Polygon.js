@@ -39,7 +39,6 @@ export default class Polygon extends Tool {
   pointerMoveHandler(e) {
     if (!this.isDrawing || this.points.length === 0) return;
     
-    // Check if pinch started during drawing
     if (this.isPinchingActive()) {
       this.isDrawing = false;
       this.points = [];

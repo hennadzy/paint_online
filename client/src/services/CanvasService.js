@@ -6,10 +6,6 @@ import Fill from "../tools/Fill";
 import Polygon from "../tools/Polygon";
 import Arrow from "../tools/Arrow";
 
-/**
- * CanvasService - manages canvas rendering and drawing operations
- * Responsibilities: canvas setup, drawing strokes, grid, zoom
- */
 class CanvasService {
   constructor() {
     this.canvas = null;
@@ -21,9 +17,6 @@ class CanvasService {
     this.listeners = new Set();
   }
 
-  /**
-   * Initialize canvas and buffer
-   */
   initialize(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -38,9 +31,6 @@ class CanvasService {
     this.emit('initialized', { canvas });
   }
 
-  /**
-   * Draw a single stroke on context
-   */
   drawStroke(ctx, stroke) {
     if (!stroke) return;
     
@@ -79,16 +69,11 @@ class CanvasService {
       case "fill_image":
         ctx.putImageData(stroke.imageData, 0, 0);
         break;
-      default:
-        break;
     }
     
     ctx.restore();
   }
 
-  /**
-   * Render brush/eraser stroke
-   */
   renderBrushStroke(ctx, stroke, isEraser = false) {
     const { points, lineWidth = 1, strokeStyle = '#000000', strokeOpacity = 1 } = stroke;
     if (!points || points.length === 0) return;
@@ -125,9 +110,6 @@ class CanvasService {
     ctx.restore();
   }
 
-  /**
-   * Rebuild buffer from stroke list
-   */
   rebuildBuffer(strokes) {
     if (!this.bufferCtx) return;
     
@@ -139,9 +121,6 @@ class CanvasService {
     strokes.forEach(stroke => this.drawStroke(this.bufferCtx, stroke));
   }
 
-  /**
-   * Redraw main canvas from buffer
-   */
   redraw() {
     if (!this.ctx || !this.bufferCanvas) return;
     
@@ -154,9 +133,6 @@ class CanvasService {
     }
   }
 
-  /**
-   * Draw grid overlay
-   */
   drawGrid() {
     if (!this.ctx) return;
     
@@ -184,18 +160,12 @@ class CanvasService {
     ctx.restore();
   }
 
-  /**
-   * Toggle grid visibility
-   */
   toggleGrid() {
     this.showGrid = !this.showGrid;
     this.redraw();
     this.emit('gridToggled', { showGrid: this.showGrid });
   }
 
-  /**
-   * Set zoom level
-   */
   setZoom(zoom) {
     this.zoom = Math.max(0.5, Math.min(3, zoom));
     
@@ -227,7 +197,6 @@ class CanvasService {
     this.emit('zoomChanged', { zoom: this.zoom });
   }
 
-  // Event system
   on(event, callback) {
     this.listeners.add({ event, callback });
   }
@@ -246,7 +215,7 @@ class CanvasService {
         try {
           listener.callback(data);
         } catch (error) {
-          console.error(`Error in ${event} listener:`, error);
+          this.emit('error', { error });
         }
       }
     });

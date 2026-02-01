@@ -29,7 +29,6 @@ export default class Arrow extends Tool {
   }
 
   pointerMoveHandler(e) {
-    // Check if pinch started during drawing
     if (this.isPinchingActive()) {
       this.canvas.onpointermove = null;
       this.canvas.onpointerup = null;

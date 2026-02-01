@@ -36,9 +36,7 @@ const TopMenu = observer(() => {
       
       try {
         await canvasState.connectToRoom(roomId, username);
-        // Tool will be set by Canvas.jsx useEffect
       } catch (error) {
-        console.error('Failed to connect to room:', error);
         canvasState.setIsConnected(false);
       }
     };

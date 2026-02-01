@@ -69,7 +69,6 @@ export default class Tool {
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
     
-    // Use clientX/clientY instead of pageX/pageY for better mobile support
     const x = Math.round((e.clientX - rect.left) * scaleX);
     const y = Math.round((e.clientY - rect.top) * scaleY);
     

@@ -10,23 +10,14 @@ export const WS_URL = window.location.hostname === 'localhost'
   ? 'ws://localhost:5000' 
   : 'wss://paint-online-back.onrender.com';
 
-/**
- * CanvasState - main coordinator for canvas application
- * Delegates to specialized services, maintains observable state
- */
 class CanvasState {
-  // Connection state
   currentRoomId = null;
   username = "";
   usernameReady = false;
   isConnected = false;
   isDrawing = false;
-
-  // Users and chat
   users = [];
   chatMessages = [];
-
-  // UI state
   modalOpen = false;
   showRoomInterface = false;
   showAboutModal = false;
@@ -41,11 +32,7 @@ class CanvasState {
     this.setupServiceListeners();
   }
 
-  /**
-   * Setup listeners for service events
-   */
   setupServiceListeners() {
-    // WebSocket events
     WebSocketService.on('connected', () => {
       this.isConnected = true;
     });
@@ -105,7 +92,6 @@ class CanvasState {
       }
     });
 
-    // History events
     HistoryService.on('strokeAdded', () => {
       CanvasService.redraw();
     });
@@ -125,7 +111,6 @@ class CanvasState {
     });
   }
 
-  // Canvas management
   get canvas() {
     return CanvasService.canvas;
   }
@@ -178,7 +163,6 @@ class CanvasState {
     CanvasService.rebuildBuffer(HistoryService.getStrokes());
   }
 
-  // WebSocket management
   get socket() {
     return WebSocketService.socket;
   }
@@ -187,15 +171,10 @@ class CanvasState {
     return WebSocketService.sessionId;
   }
 
-  setSocket(socket) {
-    // Legacy compatibility - not needed with new service
-  }
+  setSocket() {}
 
-  setSessionId(id) {
-    // Legacy compatibility - not needed with new service
-  }
+  setSessionId() {}
 
-  // History management
   get strokeList() {
     return HistoryService.getStrokes();
   }
@@ -251,7 +230,6 @@ class CanvasState {
     }
   }
 
-  // User management
   setUsername(username) {
     this.username = username;
     this.usernameReady = username && username !== 'local';
@@ -275,7 +253,6 @@ class CanvasState {
     this.users = this.users.filter(u => u !== user);
   }
 
-  // Chat management
   addChatMessage(msg) {
     this.chatMessages.push(msg);
   }
@@ -287,14 +264,12 @@ class CanvasState {
     }
   }
 
-  // Connection management
   async connectToRoom(roomId, username) {
     try {
       await WebSocketService.connect(WS_URL, roomId, username);
       this.setCurrentRoomId(roomId);
       this.setUsername(username);
     } catch (error) {
-      console.error('Failed to connect:', error);
       throw error;
     }
   }
@@ -313,7 +288,6 @@ class CanvasState {
     CanvasService.redraw();
   }
 
-  // UI management
   setModalOpen(val) {
     this.modalOpen = val;
   }
@@ -330,7 +304,6 @@ class CanvasState {
     this.showAboutModal = val;
   }
 
-  // Legacy compatibility methods
   handleMessage(msg) {
     WebSocketService.handleMessage(msg);
   }

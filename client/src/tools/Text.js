@@ -31,7 +31,6 @@ export default class Text extends Tool {
     this.fontSize = width;
     this.borderWidth = Math.min(5, width);
     if (this.input) {
-      // Учитываем масштаб холста
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = rect.width / this.canvas.width;
       const displayFontSize = this.fontSize * scaleX;
@@ -148,7 +147,6 @@ export default class Text extends Tool {
 
     this.input.addEventListener('keydown', this.handleKeyDown.bind(this));
     this.input.addEventListener('blur', (e) => {
-      // Don't confirm text if we're resizing
       if (!this._isResizing && !this.isResizing) {
         this.confirmText();
       }
@@ -296,9 +294,7 @@ export default class Text extends Tool {
   handleMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    // Prevent text confirmation when starting resize
     if (this.input && !this._isCommitted) {
-      // Temporarily prevent blur event from confirming text
       this._isResizing = true;
     }
     this.isResizing = true;
@@ -349,7 +345,6 @@ export default class Text extends Tool {
   }
 
   handleMoveDown(e) {
-    // Don't start moving if clicking on a resize handle
     if (e.target.classList && e.target.classList.contains('resize-handle')) {
       return;
     }
