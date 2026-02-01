@@ -26,15 +26,7 @@ const Chat = observer(() => {
   const handleSend = () => {
     const message = inputRef.current.value.trim();
     if (message) {
-      if (canvasState.socket) {
-        canvasState.socket.send(JSON.stringify({
-          method: "chat",
-          id: canvasState.sessionid,
-          username: canvasState.username,
-          message
-        }));
-      }
-      canvasState.addChatMessage({ type: "chat", username: canvasState.username, message });
+      canvasState.sendChatMessage(message);
       inputRef.current.value = "";
     }
   };

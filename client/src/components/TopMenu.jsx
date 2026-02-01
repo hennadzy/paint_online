@@ -24,7 +24,7 @@ const TopMenu = observer(() => {
   }, [canvasState.currentRoomId, navigate]);
 
   useEffect(() => {
-    const connectToRoom = () => {
+    const connectToRoom = async () => {
       const { username, currentRoomId: roomId, isConnected, canvas } = canvasState;
       
       if (!username || username === 'local' || !roomId || isConnected || !canvas) {
@@ -33,34 +33,12 @@ const TopMenu = observer(() => {
       
       canvasState.setModalOpen(false);
       canvasState.setShowRoomInterface(false);
-      canvasState.setIsConnected(true);
-      canvasState.strokeList = [];
-      canvasState.redoStacks.clear();
-      canvasState.users = [];
-      canvasState.chatMessages = [];
-      canvasState.redrawCanvas();
       
       try {
-        const socket = new WebSocket(WS_URL);
-        canvasState.setSocket(socket);
-        canvasState.setSessionId(roomId);
-        toolState.setTool(new Brush(canvas, socket, roomId, username), "brush");
-        
-        socket.onopen = () => {
-          socket.send(JSON.stringify({ id: roomId, username, method: "connection" }));
-        };
-        
-        socket.onclose = (event) => {
-          canvasState.setIsConnected(false);
-          canvasState.strokeList = [];
-          canvasState.redoStacks.clear();
-          canvasState.redrawCanvas();
-        };
-        
-        socket.onmessage = (event) => {
-          canvasState.handleMessage(JSON.parse(event.data));
-        };
+        await canvasState.connectToRoom(roomId, username);
+        // Tool will be set by Canvas.jsx useEffect
       } catch (error) {
+        console.error('Failed to connect to room:', error);
         canvasState.setIsConnected(false);
       }
     };
