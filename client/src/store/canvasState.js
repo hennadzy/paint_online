@@ -2,6 +2,7 @@ import { makeAutoObservable } from "mobx";
 import CanvasService from "../services/CanvasService";
 import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
+import AutoSaveService from "../services/AutoSaveService";
 
 export const API_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000' 
@@ -26,10 +27,13 @@ class CanvasState {
   publicRooms = [];
   createdRoomId = null;
   createdRoomLink = '';
+  showRestoreDialog = false;
+  restoreTimestamp = null;
 
   constructor() {
     makeAutoObservable(this);
     this.setupServiceListeners();
+    this.setupAutoSave();
   }
 
   setupServiceListeners() {
@@ -164,6 +168,7 @@ class CanvasState {
     if (added) {
       CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
+      AutoSaveService.markChanged();
     }
   }
 
@@ -171,6 +176,9 @@ class CanvasState {
     const removed = HistoryService.undo(this.username);
     if (removed && WebSocketService.isConnected) {
       WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
+    }
+    if (removed) {
+      AutoSaveService.markChanged();
     }
   }
 
@@ -183,6 +191,7 @@ class CanvasState {
         CanvasService.drawStroke(CanvasService.bufferCtx, restored);
         CanvasService.redraw();
       }
+      AutoSaveService.markChanged();
     }
   }
 
@@ -204,6 +213,7 @@ class CanvasState {
     if (WebSocketService.isConnected) {
       WebSocketService.sendClear();
     }
+    AutoSaveService.clear(this.currentRoomId);
   }
 
   setUsername(username) {
@@ -247,6 +257,7 @@ class CanvasState {
   disconnect() {
     WebSocketService.disconnect();
     this.isConnected = false;
+    const wasInRoom = this.currentRoomId !== null;
     this.currentRoomId = null;
     this.username = "local";
     this.usernameReady = false;
@@ -256,6 +267,9 @@ class CanvasState {
     this.setModalOpen(false);
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
+    if (wasInRoom) {
+      AutoSaveService.clear(null);
+    }
   }
   setModalOpen(val) {
     this.modalOpen = val;
@@ -277,6 +291,82 @@ class CanvasState {
   }
   renderBrushStroke(ctx, stroke, isEraser) {
     CanvasService.renderBrushStroke(ctx, stroke, isEraser);
+  }
+
+  setupAutoSave() {
+    setInterval(() => {
+      if (AutoSaveService.shouldSave() && !this.isConnected) {
+        this.performAutoSave();
+      }
+    }, 1000);
+
+    window.addEventListener('beforeunload', () => {
+      if (!this.isConnected && AutoSaveService.hasChanges) {
+        this.performAutoSave();
+      }
+    });
+
+    AutoSaveService.cleanupAllOldSaves();
+  }
+
+  performAutoSave() {
+    const data = {
+      strokes: HistoryService.getStrokes(),
+      zoom: CanvasService.zoom,
+      showGrid: CanvasService.showGrid,
+      toolName: this.canvas ? 'brush' : 'brush',
+      strokeColor: '#000000',
+      fillColor: '#000000',
+      lineWidth: 1,
+      strokeOpacity: 1,
+      sessionId: WebSocketService.sessionId
+    };
+
+    AutoSaveService.save(data, this.currentRoomId);
+  }
+
+  checkForAutoSave() {
+    const savedData = AutoSaveService.restore(this.currentRoomId);
+    
+    if (savedData && savedData.strokes && savedData.strokes.length > 0) {
+      this.restoreTimestamp = savedData.timestamp;
+      this.showRestoreDialog = true;
+      return savedData;
+    }
+    
+    return null;
+  }
+
+  restoreAutoSave() {
+    const savedData = AutoSaveService.restore(this.currentRoomId);
+    
+    if (savedData) {
+      HistoryService.setStrokes(savedData.strokes);
+      CanvasService.rebuildBuffer(savedData.strokes);
+      CanvasService.redraw();
+      
+      if (savedData.canvasState) {
+        if (savedData.canvasState.zoom) {
+          CanvasService.setZoom(savedData.canvasState.zoom);
+        }
+        if (savedData.canvasState.showGrid) {
+          CanvasService.toggleGrid();
+        }
+      }
+    }
+    
+    this.showRestoreDialog = false;
+    this.restoreTimestamp = null;
+  }
+
+  discardAutoSave() {
+    AutoSaveService.clear(this.currentRoomId);
+    this.showRestoreDialog = false;
+    this.restoreTimestamp = null;
+  }
+
+  setShowRestoreDialog(val) {
+    this.showRestoreDialog = val;
   }
 }
 

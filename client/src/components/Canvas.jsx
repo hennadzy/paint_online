@@ -8,6 +8,7 @@ import Brush from "../tools/Brush";
 import Chat from "./Chat";
 import RoomInterface from "./RoomInterface";
 import AboutModal from "./AboutModal";
+import RestoreDialog from "./RestoreDialog";
 import "../styles/canvas.scss";
 import Eraser from "../tools/Eraser";
 import Line from "../tools/Line";
@@ -60,6 +61,10 @@ const Canvas = observer(() => {
         canvasState.setCurrentRoomId(null);
         canvasState.setUsername("local");
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
+        
+        setTimeout(() => {
+          canvasState.checkForAutoSave();
+        }, 500);
     } else {
         canvasState.setCurrentRoomId(params.id);
         canvasState.setUsername("");
@@ -357,6 +362,13 @@ const Canvas = observer(() => {
         <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
           {canvasState.isConnected && <Chat />}
         </div>
+
+        <RestoreDialog 
+          show={canvasState.showRestoreDialog}
+          timestamp={canvasState.restoreTimestamp}
+          onRestore={() => canvasState.restoreAutoSave()}
+          onDiscard={() => canvasState.discardAutoSave()}
+        />
       </div>
     </div>
   );
