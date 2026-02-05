@@ -60,6 +60,8 @@ const Canvas = observer(() => {
     if (!params.id) {
         canvasState.setCurrentRoomId(null);
         canvasState.setUsername("local");
+        canvasState.setModalOpen(false);
+        canvasState.setShowRoomInterface(false);
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
         
         setTimeout(() => {

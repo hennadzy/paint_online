@@ -330,17 +330,29 @@ class CanvasState {
   }
 
   checkForAutoSave() {
-    const savedData = AutoSaveService.restore(this.currentRoomId);
-    
-    if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
-      this.restoreTimestamp = savedData.timestamp;
-      this.showRestoreDialog = true;
-      return savedData;
+    try {
+      const savedData = AutoSaveService.restore(this.currentRoomId);
+      
+      console.log('checkForAutoSave - savedData:', savedData);
+      
+      if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
+        console.log('Setting restore dialog - timestamp:', savedData.timestamp);
+        this.restoreTimestamp = savedData.timestamp;
+        this.showRestoreDialog = true;
+        return savedData;
+      }
+      
+      console.log('No valid autosave data found');
+      this.showRestoreDialog = false;
+      this.restoreTimestamp = null;
+      return null;
+    } catch (error) {
+      console.error('Error in checkForAutoSave:', error);
+      this.showRestoreDialog = false;
+      this.restoreTimestamp = null;
+      AutoSaveService.clear(this.currentRoomId);
+      return null;
     }
-    
-    this.showRestoreDialog = false;
-    this.restoreTimestamp = null;
-    return null;
   }
 
   restoreAutoSave() {

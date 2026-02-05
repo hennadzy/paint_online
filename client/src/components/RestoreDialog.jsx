@@ -3,8 +3,12 @@ import { observer } from 'mobx-react-lite';
 import '../styles/modal.scss';
 
 const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
+  console.log('RestoreDialog render - show:', show, 'timestamp:', timestamp);
+  
   if (!show) return null;
+  
   if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+    console.log('Invalid timestamp, calling onDiscard');
     if (onDiscard) onDiscard();
     return null;
   }
