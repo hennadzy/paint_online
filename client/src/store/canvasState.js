@@ -34,6 +34,8 @@ class CanvasState {
     makeAutoObservable(this);
     this.setupServiceListeners();
     this.setupAutoSave();
+    this.showRestoreDialog = false;
+    this.restoreTimestamp = null;
   }
 
   setupServiceListeners() {
@@ -265,6 +267,8 @@ class CanvasState {
     this.users = [];
     this.chatMessages = [];
     this.setModalOpen(false);
+    this.showRestoreDialog = false;
+    this.restoreTimestamp = null;
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
     if (wasInRoom) {
@@ -334,6 +338,8 @@ class CanvasState {
       return savedData;
     }
     
+    this.showRestoreDialog = false;
+    this.restoreTimestamp = null;
     return null;
   }
 
