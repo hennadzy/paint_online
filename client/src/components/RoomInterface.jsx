@@ -58,17 +58,29 @@ const RoomInterface = observer(({ roomId }) => {
         return;
       }
       
-      if (roomInfo.data.hasPassword) {
+      const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
+      
+      if (roomInfo.data.hasPassword && !passwordVerified) {
         setPasswordPrompt({ id: roomId, name: roomInfo.data.name });
         return;
       }
       
-      const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/join-public`, {
-        username: username.trim()
-      });
+      const endpoint = roomInfo.data.hasPassword ? 'join-private' : 'join-public';
+      const payload = { username: username.trim() };
+      
+      if (roomInfo.data.hasPassword) {
+        const tempPassword = localStorage.getItem(`temp_room_password_${roomId}`);
+        if (tempPassword) {
+          payload.password = tempPassword;
+          localStorage.removeItem(`temp_room_password_${roomId}`);
+        }
+      }
+      
+      const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
       
       const token = tokenResponse.data.token;
       localStorage.setItem(`room_token_${roomId}`, token);
+      localStorage.removeItem(`room_password_verified_${roomId}`);
       
       canvasState.setUsername(username);
       canvasState.setModalOpen(false);
@@ -121,51 +133,17 @@ const RoomInterface = observer(({ roomId }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const enterCreatedRoom = async () => {
-    try {
-      const creatorUsername = 'creator_' + Math.random().toString(36).substring(2, 7);
-      const endpoint = createdRoom.isPublic ? 'join-public' : 'join-private';
-      
-      const payload = {
-        username: creatorUsername
-      };
-      
-      if (!createdRoom.isPublic && createdRoom.password) {
-        payload.password = createdRoom.password;
-      }
-      
-      const tokenResponse = await axios.post(`${API_URL}/rooms/${createdRoom.id}/${endpoint}`, payload);
-      
-      const token = tokenResponse.data.token;
-      localStorage.setItem(`room_token_${createdRoom.id}`, token);
-      localStorage.setItem(`temp_username_${createdRoom.id}`, creatorUsername);
-      
-      navigate('/' + createdRoom.id);
-      setCreatedRoom(null);
-    } catch (error) {
-      setError('Ошибка входа в комнату');
+  const enterCreatedRoom = () => {
+    if (!createdRoom.isPublic && createdRoom.password) {
+      localStorage.setItem(`temp_room_password_${createdRoom.id}`, createdRoom.password);
+      localStorage.setItem(`room_password_verified_${createdRoom.id}`, 'true');
     }
+    navigate('/' + createdRoom.id);
+    setCreatedRoom(null);
   };
 
   const joinPublicRoom = async (room) => {
-    if (room.hasPassword) {
-      setPasswordPrompt({ id: room.id, name: room.name });
-    } else {
-      try {
-        const guestUsername = 'guest_' + Math.random().toString(36).substring(2, 7);
-        const tokenResponse = await axios.post(`${API_URL}/rooms/${room.id}/join-public`, {
-          username: guestUsername
-        });
-        
-        const token = tokenResponse.data.token;
-        localStorage.setItem(`room_token_${room.id}`, token);
-        localStorage.setItem(`temp_username_${room.id}`, guestUsername);
-        
-        navigate('/' + room.id);
-      } catch (error) {
-        setError('Ошибка подключения к комнате');
-      }
-    }
+    navigate('/' + room.id);
   };
 
   const verifyPasswordAndJoin = async () => {
@@ -175,27 +153,21 @@ const RoomInterface = observer(({ roomId }) => {
     }
     
     try {
-      const currentUsername = username.trim() || 'guest';
       const roomIdToJoin = passwordPrompt.id;
       
-      const tokenResponse = await axios.post(`${API_URL}/rooms/${roomIdToJoin}/join-private`, {
-        username: currentUsername,
+      const response = await axios.post(`${API_URL}/rooms/${roomIdToJoin}/verify-password`, {
         password: roomPassword
       });
       
-      const token = tokenResponse.data.token;
-      localStorage.setItem(`room_token_${roomIdToJoin}`, token);
-      
-      setPasswordPrompt(null);
-      setRoomPassword('');
-      setError('');
-      
-      if (roomId) {
-        canvasState.setUsername(currentUsername);
-        canvasState.setModalOpen(false);
-        canvasState.setShowRoomInterface(false);
-      } else {
+      if (response.data.valid) {
+        localStorage.setItem(`temp_room_password_${roomIdToJoin}`, roomPassword);
+        localStorage.setItem(`room_password_verified_${roomIdToJoin}`, 'true');
+        setPasswordPrompt(null);
+        setRoomPassword('');
+        setError('');
         navigate('/' + roomIdToJoin);
+      } else {
+        setError('Неверный пароль');
       }
     } catch (error) {
       if (error.response?.status === 401) {

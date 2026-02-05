@@ -62,13 +62,7 @@ const Canvas = observer(() => {
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
     } else {
         canvasState.setCurrentRoomId(params.id);
-        const tempUsername = localStorage.getItem(`temp_username_${params.id}`);
-        if (tempUsername) {
-          canvasState.setUsername(tempUsername);
-          localStorage.removeItem(`temp_username_${params.id}`);
-        } else {
-          canvasState.setUsername("");
-        }
+        canvasState.setUsername("");
     }
 
     return () => {
