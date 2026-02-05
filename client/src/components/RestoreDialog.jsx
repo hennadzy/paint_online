@@ -3,7 +3,11 @@ import { observer } from 'mobx-react-lite';
 import '../styles/modal.scss';
 
 const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
-  if (!show || !timestamp) return null;
+  if (!show) return null;
+  if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+    if (onDiscard) onDiscard();
+    return null;
+  }
 
   const formatTime = (ts) => {
     const date = new Date(ts);

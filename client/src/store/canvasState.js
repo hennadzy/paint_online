@@ -332,7 +332,7 @@ class CanvasState {
   checkForAutoSave() {
     const savedData = AutoSaveService.restore(this.currentRoomId);
     
-    if (savedData && savedData.strokes && savedData.strokes.length > 0) {
+    if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
       this.restoreTimestamp = savedData.timestamp;
       this.showRestoreDialog = true;
       return savedData;
