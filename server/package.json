@@ -17,6 +17,7 @@
     "express-rate-limit": "^7.1.5",
     "express-ws": "^4.0.0",
     "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.3",
     "validator": "^13.11.0"
   },
   "devDependencies": {

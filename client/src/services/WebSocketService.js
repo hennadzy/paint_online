@@ -4,6 +4,7 @@ class WebSocketService {
     this.sessionId = null;
     this.roomId = null;
     this.username = null;
+    this.token = null;
     this.isConnected = false;
     this.listeners = new Set();
     this.reconnectAttempts = 0;
@@ -12,11 +13,12 @@ class WebSocketService {
     this.shouldReconnect = true;
   }
 
-  connect(wsUrl, roomId, username) {
+  connect(wsUrl, roomId, username, token) {
     return new Promise((resolve, reject) => {
       try {
         this.roomId = roomId;
         this.username = username;
+        this.token = token;
         this.socket = new WebSocket(wsUrl);
         
         this.socket.onopen = () => {
@@ -28,7 +30,8 @@ class WebSocketService {
           this.send({
             method: "connection",
             id: roomId,
-            username: username
+            username: username,
+            token: token
           });
           
           this.emit('connected', { roomId, username });
@@ -57,7 +60,7 @@ class WebSocketService {
             this.reconnectAttempts++;
             setTimeout(() => {
               this.emit('reconnecting', { attempt: this.reconnectAttempts });
-              this.connect(wsUrl, roomId, username).catch(() => {});
+              this.connect(wsUrl, roomId, username, token).catch(() => {});
             }, this.reconnectDelay * this.reconnectAttempts);
           }
         };
@@ -77,6 +80,7 @@ class WebSocketService {
     this.sessionId = null;
     this.roomId = null;
     this.username = null;
+    this.token = null;
     this.reconnectAttempts = 0;
   }
 

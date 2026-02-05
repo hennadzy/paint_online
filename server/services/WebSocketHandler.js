@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
 const { sanitizeInput } = require('../utils/security');
+const { verifyToken } = require('../utils/jwt');
 
 const MAX_USERNAME_LENGTH = 50;
 const MAX_MESSAGE_LENGTH = 500;
@@ -39,17 +40,39 @@ class WebSocketHandler {
   }
 
   handleConnection(ws, msg) {
+    const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
     const username = sanitizeInput(msg.username, MAX_USERNAME_LENGTH);
-    if (!roomId || !username) {
+    
+    if (!token || !roomId || !username) {
       ws.close(1008, 'Invalid request');
       return;
     }
+    
+    const payload = verifyToken(token);
+    
+    if (!payload) {
+      ws.close(1008, 'Invalid or expired token');
+      return;
+    }
+    
+    if (payload.roomId !== roomId || payload.username !== username) {
+      ws.close(1008, 'Token mismatch');
+      return;
+    }
+    
     const roomInfo = DataStore.getRoomInfo(roomId);
+    
     if (!roomInfo) {
       ws.close(1008, 'Room not found');
       return;
     }
+    
+    if (!roomInfo.isPublic && payload.isPublic) {
+      ws.close(1008, 'Invalid token for private room');
+      return;
+    }
+    
     try {
       const room = RoomManager.addUser(roomId, username, ws);
       ws.send(JSON.stringify({ 

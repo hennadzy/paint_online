@@ -31,13 +31,22 @@ const TopMenu = observer(() => {
         return;
       }
       
+      const token = localStorage.getItem(`room_token_${roomId}`);
+      
+      if (!token) {
+        canvasState.setModalOpen(true);
+        return;
+      }
+      
       canvasState.setModalOpen(false);
       canvasState.setShowRoomInterface(false);
       
       try {
-        await canvasState.connectToRoom(roomId, username);
+        await canvasState.connectToRoom(roomId, username, token);
       } catch (error) {
+        localStorage.removeItem(`room_token_${roomId}`);
         canvasState.setIsConnected(false);
+        canvasState.setModalOpen(true);
       }
     };
 

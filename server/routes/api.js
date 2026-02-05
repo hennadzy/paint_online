@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
 const { sanitizeInput, generateId } = require('../utils/security');
+const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
 
@@ -29,6 +30,14 @@ const passwordVerifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: 'Too many password attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const tokenRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: 'Too many token requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -107,6 +116,66 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
     
     const isValid = await bcrypt.compare(password, room.passwordHash);
     res.json({ valid: isValid });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
+  try {
+    const roomId = sanitizeInput(req.params.id, 20);
+    const username = sanitizeInput(req.body.username, 50);
+    
+    if (!roomId || !username) {
+      return res.status(400).json({ error: 'RoomId and username required' });
+    }
+    
+    const room = DataStore.getRoomInfo(roomId);
+    
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    if (!room.isPublic) {
+      return res.status(403).json({ error: 'Room is private' });
+    }
+    
+    const token = generateToken(roomId, username, true);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => {
+  try {
+    const roomId = sanitizeInput(req.params.id, 20);
+    const username = sanitizeInput(req.body.username, 50);
+    const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
+    
+    if (!roomId || !username) {
+      return res.status(400).json({ error: 'RoomId and username required' });
+    }
+    
+    const room = DataStore.getRoomInfo(roomId);
+    
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    if (room.isPublic) {
+      return res.status(400).json({ error: 'Use join-public for public rooms' });
+    }
+    
+    if (room.hasPassword && room.passwordHash) {
+      const isValid = await bcrypt.compare(password, room.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+    }
+    
+    const token = generateToken(roomId, username, false);
+    res.json({ token });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }

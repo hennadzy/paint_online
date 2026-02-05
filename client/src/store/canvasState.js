@@ -234,9 +234,9 @@ class CanvasState {
     }
   }
 
-  async connectToRoom(roomId, username) {
+  async connectToRoom(roomId, username, token) {
     try {
-      await WebSocketService.connect(WS_URL, roomId, username);
+      await WebSocketService.connect(WS_URL, roomId, username, token);
       this.setCurrentRoomId(roomId);
       this.setUsername(username);
     } catch (error) {
