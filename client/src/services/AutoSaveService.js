@@ -18,25 +18,25 @@ class AutoSaveService {
   }
 
   save(data, roomId = null) {
-    try {
-      const saveData = {
-        strokes: data.strokes || [],
-        canvasState: {
-          zoom: data.zoom || 1,
-          showGrid: data.showGrid || false
-        },
-        toolState: {
-          toolName: data.toolName || 'brush',
-          strokeColor: data.strokeColor || '#000000',
-          fillColor: data.fillColor || '#000000',
-          lineWidth: data.lineWidth || 1,
-          strokeOpacity: data.strokeOpacity || 1
-        },
-        timestamp: Date.now(),
-        sessionId: data.sessionId || this.generateSessionId(),
-        version: this.version
-      };
+    const saveData = {
+      strokes: data.strokes || [],
+      canvasState: {
+        zoom: data.zoom || 1,
+        showGrid: data.showGrid || false
+      },
+      toolState: {
+        toolName: data.toolName || 'brush',
+        strokeColor: data.strokeColor || '#000000',
+        fillColor: data.fillColor || '#000000',
+        lineWidth: data.lineWidth || 1,
+        strokeOpacity: data.strokeOpacity || 1
+      },
+      timestamp: Date.now(),
+      sessionId: data.sessionId || this.generateSessionId(),
+      version: this.version
+    };
 
+    try {
       const key = this.getStorageKey(roomId);
       
       const existing = localStorage.getItem(key);
