@@ -15,10 +15,12 @@ const RoomInterface = observer(({ roomId }) => {
   const [createdRoom, setCreatedRoom] = useState(null);
   const [passwordPrompt, setPasswordPrompt] = useState(null);
   const [roomPassword, setRoomPassword] = useState('');
+  const [roomInfo, setRoomInfo] = useState(null);
   const usernameInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const showUsernameForm = roomId && !canvasState.isConnected;
+  const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
+  const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
 
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
@@ -31,6 +33,24 @@ const RoomInterface = observer(({ roomId }) => {
       usernameInputRef.current.focus();
     }
   }, [showUsernameForm]);
+
+  useEffect(() => {
+    if (roomId && !canvasState.isConnected) {
+      axios.get(`${API_URL}/rooms/${roomId}/exists`)
+        .then(response => {
+          if (response.data.exists) {
+            setRoomInfo(response.data);
+            const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
+            if (response.data.hasPassword && !passwordVerified) {
+              setPasswordPrompt({ id: roomId, name: response.data.name });
+            }
+          } else {
+            navigate('/');
+          }
+        })
+        .catch(() => navigate('/'));
+    }
+  }, [roomId, canvasState.isConnected, navigate]);
 
   const fetchPublicRooms = async () => {
     try {
@@ -165,7 +185,12 @@ const RoomInterface = observer(({ roomId }) => {
         setPasswordPrompt(null);
         setRoomPassword('');
         setError('');
-        navigate('/' + roomIdToJoin);
+        
+        if (roomId) {
+          // Уже на странице комнаты, просто закрываем диалог пароля
+        } else {
+          navigate('/' + roomIdToJoin);
+        }
       } else {
         setError('Неверный пароль');
       }
@@ -177,6 +202,39 @@ const RoomInterface = observer(({ roomId }) => {
       }
     }
   };
+
+  if (roomId && !canvasState.isConnected && passwordPrompt) {
+    return (
+      <div className="room-interface-overlay" data-nosnippet>
+        <div className="room-interface">
+          <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
+          <div className="room-card password-form">
+            <div className="room-card-header">
+              <h2>Вход в комнату "{passwordPrompt.name}"</h2>
+              <p>Эта комната защищена паролем</p>
+            </div>
+            <div className="room-card-body">
+              {error && <div className="room-error">{error}</div>}
+              <input
+                type="password"
+                className="room-input"
+                placeholder="Введите пароль"
+                value={roomPassword}
+                onChange={(e) => {setRoomPassword(e.target.value); setError('');}}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') verifyPasswordAndJoin();
+                }}
+                autoFocus
+              />
+              <button className="room-btn room-btn-primary" onClick={verifyPasswordAndJoin}>
+                Продолжить
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showUsernameForm) {
     return (
