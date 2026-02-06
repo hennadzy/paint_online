@@ -21,6 +21,8 @@ const RoomInterface = observer(({ roomId }) => {
 
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
   const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
+  
+  console.log('RoomInterface render - roomId:', roomId, 'isConnected:', canvasState.isConnected, 'showRoomInterface:', canvasState.showRoomInterface, 'modalOpen:', canvasState.modalOpen, 'showUsernameForm:', showUsernameForm, 'passwordPrompt:', passwordPrompt);
 
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
@@ -204,6 +206,7 @@ const RoomInterface = observer(({ roomId }) => {
   };
 
   if (roomId && !canvasState.isConnected && passwordPrompt) {
+    console.log('RoomInterface - showing password prompt');
     return (
       <div className="room-interface-overlay" data-nosnippet>
         <div className="room-interface">
@@ -237,6 +240,7 @@ const RoomInterface = observer(({ roomId }) => {
   }
 
   if (showUsernameForm) {
+    console.log('RoomInterface - showing username form');
     return (
       <div className="room-interface-overlay" data-nosnippet>
         <div className="room-interface">
@@ -270,6 +274,7 @@ const RoomInterface = observer(({ roomId }) => {
   }
 
   if (!canvasState.isConnected && canvasState.showRoomInterface) {
+    console.log('RoomInterface - showing room interface');
     return (
       <div className="room-interface-overlay" onClick={closeInterface} data-nosnippet>
         <div className="room-interface" onClick={(e) => e.stopPropagation()}>
