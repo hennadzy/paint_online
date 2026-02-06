@@ -56,7 +56,6 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   console.log('🔴 RestoreDialog: About to return JSX...');
   return (
     <div 
-      className="modal-overlay" 
       data-nosnippet
       style={{
         position: 'fixed',
@@ -85,24 +84,24 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
         ТЕСТ: RestoreDialog overlay виден!
       </div>
       <div 
-        className="modal restore-dialog"
         style={{
           background: 'white',
           borderRadius: '12px',
           padding: '2rem',
           maxWidth: '500px',
           width: '90%',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+          zIndex: 1000001
         }}
       >
-        <div className="modal-header">
-          <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Восстановить работу?</h2>
+        <div style={{ marginBottom: '1rem' }}>
+          <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', color: '#333' }}>Восстановить работу?</h2>
         </div>
-        <div className="modal-body">
-          <p style={{ margin: '0 0 0.75rem 0' }}>Найдена несохранённая работа от {formattedTime}</p>
-          <p className="restore-hint" style={{ color: '#777', fontSize: '0.9rem' }}>Вы хотите продолжить с того места, где остановились?</p>
+        <div style={{ marginBottom: '1rem' }}>
+          <p style={{ margin: '0 0 0.75rem 0', color: '#555', fontSize: '1rem' }}>Найдена несохранённая работа от {formattedTime}</p>
+          <p style={{ color: '#777', fontSize: '0.9rem', margin: 0 }}>Вы хотите продолжить с того места, где остановились?</p>
         </div>
-        <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <button 
             onClick={onDiscard}
             style={{
