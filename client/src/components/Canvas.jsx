@@ -72,13 +72,15 @@ const Canvas = observer(() => {
         console.log('After reset - modalOpen:', canvasState.modalOpen, 'showRoomInterface:', canvasState.showRoomInterface);
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
         
-        setTimeout(() => {
-          console.log('Calling checkForAutoSave...');
+        console.log('Setting up setTimeout for checkForAutoSave');
+        const timeoutId = setTimeout(() => {
+          console.log('setTimeout executed - Calling checkForAutoSave...');
           const result = canvasState.checkForAutoSave();
           console.log('checkForAutoSave result:', result);
           console.log('showRestoreDialog:', canvasState.showRestoreDialog);
           console.log('restoreTimestamp:', canvasState.restoreTimestamp);
         }, 500);
+        console.log('setTimeout ID:', timeoutId);
     } else {
         console.log('Room mode - setting up for room:', params.id);
         canvasState.setCurrentRoomId(params.id);
@@ -88,6 +90,7 @@ const Canvas = observer(() => {
     }
 
     return () => {
+        console.log('Canvas cleanup - params.id:', params.id);
         if (params.id) {
             canvasState.disconnect();
         }
