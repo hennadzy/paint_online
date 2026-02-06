@@ -348,13 +348,9 @@ const Canvas = observer(() => {
           </div>
           
           {(canvasState.modalOpen || canvasState.showRoomInterface) && (
-            <>
-              {console.log('🔵 RoomInterface RENDERING - modalOpen:', canvasState.modalOpen, 'showRoomInterface:', canvasState.showRoomInterface)}
-              <RoomInterface roomId={params.id} />
-            </>
+            <RoomInterface roomId={params.id} />
           )}
           
-          {console.log('🟢 AboutModal check - showAboutModal:', canvasState.showAboutModal)}
           <AboutModal />
         </div>
 

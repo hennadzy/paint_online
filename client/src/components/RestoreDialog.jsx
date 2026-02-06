@@ -3,25 +3,16 @@ import { observer } from 'mobx-react-lite';
 import '../styles/modal.scss';
 
 const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
-  console.log('🔴 RestoreDialog render:', { show, timestamp, type: typeof timestamp });
-  
-  if (!show) {
-    console.log('🔴 RestoreDialog: show=false, returning null');
-    return null;
-  }
+  if (!show) return null;
   
   if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
-    console.log('🔴 RestoreDialog: invalid timestamp, calling onDiscard');
     if (onDiscard) onDiscard();
     return null;
   }
   
-  console.log('🔴 RestoreDialog: RENDERING DIALOG!');
-  
   let formattedTime = 'неизвестно';
   try {
     const date = new Date(timestamp);
-    console.log('🔴 RestoreDialog: date object:', date);
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
     
@@ -48,12 +39,9 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
         });
       }
     }
-    console.log('🔴 RestoreDialog: formattedTime:', formattedTime);
   } catch (error) {
-    console.error('🔴 RestoreDialog: Error formatting time:', error);
+    formattedTime = 'неизвестно';
   }
-
-  console.log('🔴 RestoreDialog: About to return JSX...');
   return (
     <div 
       data-nosnippet
@@ -63,26 +51,14 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(255, 0, 0, 0.8)',
+        background: 'rgba(0, 0, 0, 0.6)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 999999
+        zIndex: 999999,
+        padding: '1rem'
       }}
     >
-      <div style={{
-        position: 'absolute',
-        top: '50px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'yellow',
-        padding: '20px',
-        fontSize: '24px',
-        fontWeight: 'bold',
-        zIndex: 1000000
-      }}>
-        ТЕСТ: RestoreDialog overlay виден!
-      </div>
       <div 
         style={{
           background: 'white',
@@ -91,26 +67,47 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
           maxWidth: '500px',
           width: '90%',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-          zIndex: 1000001
+          zIndex: 1000001,
+          animation: 'slideIn 0.3s ease-out'
         }}
       >
-        <div style={{ marginBottom: '1rem' }}>
-          <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', color: '#333' }}>Восстановить работу?</h2>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#333', fontWeight: '600' }}>Восстановить работу?</h2>
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <p style={{ margin: '0 0 0.75rem 0', color: '#555', fontSize: '1rem' }}>Найдена несохранённая работа от {formattedTime}</p>
-          <p style={{ color: '#777', fontSize: '0.9rem', margin: 0 }}>Вы хотите продолжить с того места, где остановились?</p>
+        <div style={{ marginBottom: '2rem' }}>
+          <p style={{ margin: '0 0 0.5rem 0', color: '#555', fontSize: '1rem', lineHeight: '1.5' }}>
+            Найдена несохранённая работа от {formattedTime}
+          </p>
+          <p style={{ color: '#777', fontSize: '0.9rem', margin: 0, lineHeight: '1.4' }}>
+            Вы хотите продолжить с того места, где остановились?
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.75rem', 
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap'
+        }}>
           <button 
             onClick={onDiscard}
             style={{
               padding: '0.75rem 1.5rem',
-              border: '1px solid #ccc',
+              border: '1px solid #ddd',
               background: 'white',
               borderRadius: '8px',
               cursor: 'pointer',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              minWidth: '140px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#f5f5f5';
+              e.target.style.borderColor = '#ccc';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'white';
+              e.target.style.borderColor = '#ddd';
             }}
           >
             Начать заново
@@ -124,7 +121,16 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
               color: 'white',
               borderRadius: '8px',
               cursor: 'pointer',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              fontWeight: '500',
+              transition: 'all 0.2s',
+              minWidth: '140px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#0056b3';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#007bff';
             }}
           >
             Восстановить
