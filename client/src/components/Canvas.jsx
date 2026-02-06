@@ -57,11 +57,14 @@ const Canvas = observer(() => {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+    canvasState.setShowAboutModal(false);
+    canvasState.setShowRoomInterface(false);
+    canvasState.setShowRestoreDialog(false);
+
     if (!params.id) {
         canvasState.setCurrentRoomId(null);
         canvasState.setUsername("local");
         canvasState.setModalOpen(false);
-        canvasState.setShowRoomInterface(false);
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
         
         setTimeout(() => {
@@ -74,6 +77,7 @@ const Canvas = observer(() => {
     } else {
         canvasState.setCurrentRoomId(params.id);
         canvasState.setUsername("");
+        canvasState.setModalOpen(false);
     }
 
     return () => {

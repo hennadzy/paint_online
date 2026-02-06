@@ -10,16 +10,20 @@ const TopMenu = observer(() => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (canvasState.currentRoomId && !canvasState.isConnected) {
-      axios.get(`${API_URL}/rooms/${canvasState.currentRoomId}/exists`)
-        .then(response => {
-          if (response.data.exists) {
-            canvasState.setModalOpen(true);
-          } else {
-            navigate('/');
-          }
-        })
-        .catch(() => navigate('/'));
+    if (canvasState.currentRoomId && !canvasState.isConnected && !canvasState.modalOpen) {
+      const timer = setTimeout(() => {
+        axios.get(`${API_URL}/rooms/${canvasState.currentRoomId}/exists`)
+          .then(response => {
+            if (response.data.exists) {
+              canvasState.setModalOpen(true);
+            } else {
+              navigate('/');
+            }
+          })
+          .catch(() => navigate('/'));
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [canvasState.currentRoomId, navigate]);
 
