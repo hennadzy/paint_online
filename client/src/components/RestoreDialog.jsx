@@ -92,8 +92,9 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
             onClick={onDiscard}
             style={{
               padding: '0.75rem 1.5rem',
-              border: '1px solid #ddd',
-              background: 'white',
+              border: '1px solid #ccc',
+              background: '#f8f9fa',
+              color: '#333',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
@@ -102,12 +103,12 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
               minWidth: '140px'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = '#f5f5f5';
-              e.target.style.borderColor = '#ccc';
+              e.target.style.background = '#e9ecef';
+              e.target.style.borderColor = '#adb5bd';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'white';
-              e.target.style.borderColor = '#ddd';
+              e.target.style.background = '#f8f9fa';
+              e.target.style.borderColor = '#ccc';
             }}
           >
             Начать заново
