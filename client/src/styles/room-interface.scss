@@ -492,12 +492,16 @@
 @media (max-width: 768px) {
   .room-interface-overlay {
     padding: 10px;
-    padding-top: 10px;
+    padding-top: env(safe-area-inset-top, 10px);
+    padding-bottom: env(safe-area-inset-bottom, 10px);
     align-items: flex-start;
     justify-content: flex-start;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    height: 100vh;
+    height: -webkit-fill-available;
   
     &::-webkit-scrollbar {
       display: none;
