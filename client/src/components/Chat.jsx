@@ -2,6 +2,34 @@ import React, { useRef, useLayoutEffect } from "react";
 import { observer } from "mobx-react-lite";
 import canvasState from "../store/canvasState";
 
+const sanitizeMessage = (text) => {
+  if (typeof text !== 'string') return '';
+  
+  let sanitized = text.trim();
+  
+  if (sanitized.length > 1000) {
+    sanitized = sanitized.slice(0, 1000);
+  }
+  
+  sanitized = sanitized.normalize('NFKC');
+  
+  sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+  
+  const dangerousPatterns = [
+    /<script/gi,
+    /<\/script>/gi,
+    /javascript:/gi,
+    /onerror/gi,
+    /onload/gi
+  ];
+  
+  dangerousPatterns.forEach(pattern => {
+    sanitized = sanitized.replace(pattern, '');
+  });
+  
+  return sanitized;
+};
+
 const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
@@ -24,8 +52,8 @@ const Chat = observer(() => {
   };
 
   const handleSend = () => {
-    const message = inputRef.current.value.trim();
-    if (message) {
+    const message = sanitizeMessage(inputRef.current.value);
+    if (message && message.trim().length > 0) {
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
     }

@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
-const { sanitizeInput, generateId } = require('../utils/security');
+const { sanitizeInput, sanitizeUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
@@ -124,10 +124,10 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
 router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
-    const username = sanitizeInput(req.body.username, 50);
+    const username = sanitizeUsername(req.body.username);
     
-    if (!roomId || !username) {
-      return res.status(400).json({ error: 'RoomId and username required' });
+    if (!roomId || !username || username.length < 2) {
+      return res.status(400).json({ error: 'RoomId and valid username required' });
     }
     
     const room = DataStore.getRoomInfo(roomId);
@@ -150,11 +150,11 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
 router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
-    const username = sanitizeInput(req.body.username, 50);
+    const username = sanitizeUsername(req.body.username);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
     
-    if (!roomId || !username) {
-      return res.status(400).json({ error: 'RoomId and username required' });
+    if (!roomId || !username || username.length < 2) {
+      return res.status(400).json({ error: 'RoomId and valid username required' });
     }
     
     const room = DataStore.getRoomInfo(roomId);

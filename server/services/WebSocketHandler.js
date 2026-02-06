@@ -1,11 +1,11 @@
 const WebSocket = require('ws');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
-const { sanitizeInput } = require('../utils/security');
+const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam } = require('../utils/security');
 const { verifyToken } = require('../utils/jwt');
 
-const MAX_USERNAME_LENGTH = 50;
-const MAX_MESSAGE_LENGTH = 500;
+const MAX_USERNAME_LENGTH = 30;
+const MAX_MESSAGE_LENGTH = 1000;
 
 class WebSocketHandler {
   constructor() {
@@ -42,10 +42,15 @@ class WebSocketHandler {
   handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
-    const username = sanitizeInput(msg.username, MAX_USERNAME_LENGTH);
+    let username = sanitizeUsername(msg.username);
     
     if (!token || !roomId || !username) {
       ws.close(1008, 'Invalid request');
+      return;
+    }
+    
+    if (username.length < 2) {
+      ws.close(1008, 'Username too short');
       return;
     }
     
@@ -56,7 +61,8 @@ class WebSocketHandler {
       return;
     }
     
-    if (payload.roomId !== roomId || payload.username !== username) {
+    const sanitizedPayloadUsername = sanitizeUsername(payload.username);
+    if (payload.roomId !== roomId || sanitizedPayloadUsername !== username) {
       ws.close(1008, 'Token mismatch');
       return;
     }
@@ -126,10 +132,43 @@ class WebSocketHandler {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
-    const message = sanitizeInput(msg.message, MAX_MESSAGE_LENGTH);
-    if (message) {
-      this.broadcast(roomId, { method: "chat", username, message }, ws);
+    
+    const room = RoomManager.getRoom(roomId);
+    if (!room) return;
+    
+    const messageHistory = room.messageHistory || [];
+    
+    const spamCheck = checkSpam(msg.message, username, messageHistory);
+    if (spamCheck.isSpam) {
+      ws.send(JSON.stringify({
+        method: "error",
+        message: `Сообщение заблокировано: ${spamCheck.reason}`
+      }));
+      return;
     }
+    
+    const message = sanitizeChatMessage(msg.message);
+    
+    if (!message || message.trim().length === 0) {
+      return;
+    }
+    
+    const messageData = {
+      username,
+      message,
+      timestamp: Date.now()
+    };
+    
+    if (!room.messageHistory) {
+      room.messageHistory = [];
+    }
+    room.messageHistory.push(messageData);
+    
+    if (room.messageHistory.length > 100) {
+      room.messageHistory = room.messageHistory.slice(-100);
+    }
+    
+    this.broadcast(roomId, { method: "chat", username, message }, ws);
     RoomManager.updateUserActivity(ws);
   }
 

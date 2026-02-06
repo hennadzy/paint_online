@@ -23,10 +23,17 @@ app.use(helmet({
       connectSrc: ["'self'", "wss:", "https:"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
       upgradeInsecureRequests: []
     }
   },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 app.use(cors({
