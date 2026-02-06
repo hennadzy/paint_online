@@ -52,9 +52,6 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    console.log('Canvas useEffect - params.id:', params.id);
-    console.log('Initial states - modalOpen:', canvasState.modalOpen, 'showRoomInterface:', canvasState.showRoomInterface, 'showAboutModal:', canvasState.showAboutModal);
-    
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "white";
@@ -65,36 +62,19 @@ const Canvas = observer(() => {
     canvasState.setShowRestoreDialog(false);
 
     if (!params.id) {
-        console.log('Local mode - setting up');
         canvasState.setCurrentRoomId(null);
         canvasState.setUsername("local");
         canvasState.setModalOpen(false);
-        console.log('After reset - modalOpen:', canvasState.modalOpen, 'showRoomInterface:', canvasState.showRoomInterface);
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
         
-        console.log('Setting up setTimeout for checkForAutoSave');
-        const timeoutId = setTimeout(() => {
-          console.log('setTimeout executed - Calling checkForAutoSave...');
-          const result = canvasState.checkForAutoSave();
-          console.log('checkForAutoSave result:', result);
-          console.log('showRestoreDialog:', canvasState.showRestoreDialog);
-          console.log('restoreTimestamp:', canvasState.restoreTimestamp);
-        }, 100);
-        console.log('setTimeout ID:', timeoutId);
-        
-        console.log('Calling checkForAutoSave immediately (without setTimeout)...');
-        const immediateResult = canvasState.checkForAutoSave();
-        console.log('Immediate checkForAutoSave result:', immediateResult);
+        canvasState.checkForAutoSave();
     } else {
-        console.log('Room mode - setting up for room:', params.id);
         canvasState.setCurrentRoomId(params.id);
         canvasState.setUsername("");
         canvasState.setModalOpen(false);
-        console.log('After reset - modalOpen:', canvasState.modalOpen);
     }
 
     return () => {
-        console.log('Canvas cleanup - params.id:', params.id);
         if (params.id) {
             canvasState.disconnect();
         }

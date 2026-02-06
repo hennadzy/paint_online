@@ -314,11 +314,8 @@ class CanvasState {
   }
 
   performAutoSave() {
-    const strokes = HistoryService.getStrokes();
-    console.log('performAutoSave called - strokes count:', strokes.length, 'roomId:', this.currentRoomId);
-    
     const data = {
-      strokes: strokes,
+      strokes: HistoryService.getStrokes(),
       zoom: CanvasService.zoom,
       showGrid: CanvasService.showGrid,
       toolName: this.canvas ? 'brush' : 'brush',
@@ -329,29 +326,23 @@ class CanvasState {
       sessionId: WebSocketService.sessionId
     };
 
-    const saved = AutoSaveService.save(data, this.currentRoomId);
-    console.log('AutoSave result:', saved);
+    AutoSaveService.save(data, this.currentRoomId);
   }
 
   checkForAutoSave() {
     try {
       const savedData = AutoSaveService.restore(this.currentRoomId);
       
-      console.log('checkForAutoSave - savedData:', savedData);
-      
       if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
-        console.log('Setting restore dialog - timestamp:', savedData.timestamp);
         this.restoreTimestamp = savedData.timestamp;
         this.showRestoreDialog = true;
         return savedData;
       }
       
-      console.log('No valid autosave data found');
       this.showRestoreDialog = false;
       this.restoreTimestamp = null;
       return null;
     } catch (error) {
-      console.error('Error in checkForAutoSave:', error);
       this.showRestoreDialog = false;
       this.restoreTimestamp = null;
       AutoSaveService.clear(this.currentRoomId);
