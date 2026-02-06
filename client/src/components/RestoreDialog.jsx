@@ -6,10 +6,12 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   if (!show) return null;
   
   if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+    console.error('RestoreDialog: Invalid timestamp but show=true! Dismissing...', { show, timestamp });
     if (onDiscard) onDiscard();
     return null;
   }
 
+  console.log('RestoreDialog: Rendering dialog with timestamp:', timestamp);
   const formatTime = (ts) => {
     const date = new Date(ts);
     const today = new Date();

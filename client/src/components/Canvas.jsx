@@ -348,7 +348,12 @@ const Canvas = observer(() => {
           </div>
           
           {(canvasState.modalOpen || canvasState.showRoomInterface) && (
-            <RoomInterface roomId={params.id} />
+            <>
+              <div style={{position: 'fixed', top: 50, left: 0, zIndex: 99999, background: 'blue', color: 'white', padding: '10px'}}>
+                DEBUG: RoomInterface showing - modalOpen: {String(canvasState.modalOpen)}, showRoomInterface: {String(canvasState.showRoomInterface)}
+              </div>
+              <RoomInterface roomId={params.id} />
+            </>
           )}
           
           <AboutModal />
@@ -367,6 +372,12 @@ const Canvas = observer(() => {
           {canvasState.isConnected && <Chat />}
         </div>
 
+        {canvasState.showRestoreDialog && (
+          <div style={{position: 'fixed', top: 0, left: 0, zIndex: 99999, background: 'red', color: 'white', padding: '10px'}}>
+            DEBUG: RestoreDialog should show - timestamp: {canvasState.restoreTimestamp}
+          </div>
+        )}
+        
         <RestoreDialog 
           show={canvasState.showRestoreDialog}
           timestamp={canvasState.restoreTimestamp}

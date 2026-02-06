@@ -6,8 +6,12 @@ import '../styles/room-interface.scss';
 const AboutModal = observer(() => {
   if (!canvasState.showAboutModal) return null;
 
+  console.log('AboutModal: Rendering modal');
   return (
     <div className="room-interface-overlay" onClick={() => canvasState.setShowAboutModal(false)}>
+      <div style={{position: 'fixed', top: 100, left: 0, zIndex: 99999, background: 'green', color: 'white', padding: '10px'}}>
+        DEBUG: AboutModal showing
+      </div>
       <div className="room-interface" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={() => canvasState.setShowAboutModal(false)}>×</button>
         
