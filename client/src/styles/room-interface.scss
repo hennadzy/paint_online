@@ -30,6 +30,8 @@
   position: relative;
   width: 90%;
   max-width: 600px;
+  margin-top: env(safe-area-inset-top, 0px);
+  margin-bottom: env(safe-area-inset-bottom, 0px);
   animation: slideUp 0.3s ease;
 
   @keyframes slideUp {
@@ -46,7 +48,7 @@
 
 .room-close-btn {
   position: absolute;
-  top: 10px;
+  top: calc(10px + env(safe-area-inset-top, 0px));
   right: 10px;
   width: 36px;
   height: 36px;
@@ -75,7 +77,9 @@
 .room-welcome {
   text-align: center;
   margin-bottom: 30px;
+  margin-top: env(safe-area-inset-top, 0px);
   padding: 25px;
+  padding-top: calc(25px + env(safe-area-inset-top, 0px));
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(255, 204, 0, 0.15) 0%, rgba(255, 102, 153, 0.15) 100%);
   backdrop-filter: blur(10px);
@@ -133,6 +137,7 @@
   background: rgba(103, 103, 103, 0.45);
   border-radius: 20px;
   padding: 30px;
+  padding-top: calc(30px + env(safe-area-inset-top, 0px));
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -604,7 +609,7 @@
   }
 
   .room-close-btn {
-    top: 5px;
+    top: calc(5px + env(safe-area-inset-top, 0px));
     right: 5px;
     width: 32px;
     height: 32px;
