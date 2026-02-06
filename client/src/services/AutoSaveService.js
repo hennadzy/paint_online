@@ -36,8 +36,11 @@ class AutoSaveService {
       version: this.version
     };
 
+    console.log('AutoSaveService.save - strokes:', saveData.strokes.length, 'roomId:', roomId);
+
     try {
       const key = this.getStorageKey(roomId);
+      console.log('Saving to key:', key);
       
       const existing = localStorage.getItem(key);
       if (existing) {
@@ -45,11 +48,13 @@ class AutoSaveService {
       }
 
       localStorage.setItem(key, JSON.stringify(saveData));
+      console.log('Saved successfully to localStorage');
       this.hasChanges = false;
       this.lastSaveTime = Date.now();
       
       return true;
     } catch (error) {
+      console.error('Error saving:', error);
       if (error.name === 'QuotaExceededError') {
         this.cleanupOldBackups(roomId);
         try {

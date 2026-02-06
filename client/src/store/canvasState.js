@@ -314,8 +314,11 @@ class CanvasState {
   }
 
   performAutoSave() {
+    const strokes = HistoryService.getStrokes();
+    console.log('performAutoSave called - strokes count:', strokes.length, 'roomId:', this.currentRoomId);
+    
     const data = {
-      strokes: HistoryService.getStrokes(),
+      strokes: strokes,
       zoom: CanvasService.zoom,
       showGrid: CanvasService.showGrid,
       toolName: this.canvas ? 'brush' : 'brush',
@@ -326,7 +329,8 @@ class CanvasState {
       sessionId: WebSocketService.sessionId
     };
 
-    AutoSaveService.save(data, this.currentRoomId);
+    const saved = AutoSaveService.save(data, this.currentRoomId);
+    console.log('AutoSave result:', saved);
   }
 
   checkForAutoSave() {
