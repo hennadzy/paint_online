@@ -65,7 +65,11 @@ const Canvas = observer(() => {
         toolState.setTool(new Brush(canvasRef.current, null, null, "local"), "brush");
         
         setTimeout(() => {
-          canvasState.checkForAutoSave();
+          console.log('Calling checkForAutoSave...');
+          const result = canvasState.checkForAutoSave();
+          console.log('checkForAutoSave result:', result);
+          console.log('showRestoreDialog:', canvasState.showRestoreDialog);
+          console.log('restoreTimestamp:', canvasState.restoreTimestamp);
         }, 500);
     } else {
         canvasState.setCurrentRoomId(params.id);

@@ -67,24 +67,35 @@ class AutoSaveService {
   restore(roomId = null) {
     try {
       const key = this.getStorageKey(roomId);
+      console.log('AutoSaveService.restore - key:', key);
       const data = localStorage.getItem(key);
+      console.log('AutoSaveService.restore - data:', data ? 'exists' : 'null');
       
-      if (!data) return null;
+      if (!data) {
+        console.log('No data in localStorage');
+        return null;
+      }
       
       const parsed = JSON.parse(data);
+      console.log('AutoSaveService.restore - parsed:', parsed);
       
       if (!parsed.version || parsed.version !== this.version) {
+        console.log('Version mismatch:', parsed.version, 'vs', this.version);
         return null;
       }
       
       const age = Date.now() - parsed.timestamp;
+      console.log('AutoSaveService.restore - age:', age, 'maxAge:', this.maxAge);
       if (age > this.maxAge) {
+        console.log('Data too old, clearing');
         this.clear(roomId);
         return null;
       }
       
+      console.log('Returning valid data with', parsed.strokes?.length, 'strokes');
       return parsed;
     } catch (error) {
+      console.error('Error in restore:', error);
       return null;
     }
   }
