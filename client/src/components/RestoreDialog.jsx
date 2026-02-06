@@ -17,8 +17,11 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   }
   
   console.log('🔴 RestoreDialog: RENDERING DIALOG!');
-  const formatTime = (ts) => {
-    const date = new Date(ts);
+  
+  let formattedTime = 'неизвестно';
+  try {
+    const date = new Date(timestamp);
+    console.log('🔴 RestoreDialog: date object:', date);
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
     
@@ -28,25 +31,29 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
     });
     
     if (isToday) {
-      return `сегодня в ${timeStr}`;
+      formattedTime = `сегодня в ${timeStr}`;
+    } else {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday = date.toDateString() === yesterday.toDateString();
+      
+      if (isYesterday) {
+        formattedTime = `вчера в ${timeStr}`;
+      } else {
+        formattedTime = date.toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
     }
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const isYesterday = date.toDateString() === yesterday.toDateString();
-    
-    if (isYesterday) {
-      return `вчера в ${timeStr}`;
-    }
-    
-    return date.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+    console.log('🔴 RestoreDialog: formattedTime:', formattedTime);
+  } catch (error) {
+    console.error('🔴 RestoreDialog: Error formatting time:', error);
+  }
 
+  console.log('🔴 RestoreDialog: About to return JSX...');
   return (
     <div 
       className="modal-overlay" 
@@ -64,6 +71,19 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
         zIndex: 999999
       }}
     >
+      <div style={{
+        position: 'absolute',
+        top: '50px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'yellow',
+        padding: '20px',
+        fontSize: '24px',
+        fontWeight: 'bold',
+        zIndex: 1000000
+      }}>
+        ТЕСТ: RestoreDialog overlay виден!
+      </div>
       <div 
         className="modal restore-dialog"
         style={{
@@ -79,7 +99,7 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
           <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Восстановить работу?</h2>
         </div>
         <div className="modal-body">
-          <p style={{ margin: '0 0 0.75rem 0' }}>Найдена несохранённая работа от {formatTime(timestamp)}</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>Найдена несохранённая работа от {formattedTime}</p>
           <p className="restore-hint" style={{ color: '#777', fontSize: '0.9rem' }}>Вы хотите продолжить с того места, где остановились?</p>
         </div>
         <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
