@@ -63,7 +63,7 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
                 Восстановить
               </button>
               <button 
-                className="room-btn room-btn-ghost" 
+                className="room-btn room-btn-secondary" 
                 onClick={onDiscard}
               >
                 Начать заново
