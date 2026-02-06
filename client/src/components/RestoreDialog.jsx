@@ -3,12 +3,20 @@ import { observer } from 'mobx-react-lite';
 import '../styles/modal.scss';
 
 const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
-  if (!show) return null;
+  console.log('🔴 RestoreDialog render:', { show, timestamp, type: typeof timestamp });
+  
+  if (!show) {
+    console.log('🔴 RestoreDialog: show=false, returning null');
+    return null;
+  }
   
   if (!timestamp || typeof timestamp !== 'number' || timestamp <= 0) {
+    console.log('🔴 RestoreDialog: invalid timestamp, calling onDiscard');
     if (onDiscard) onDiscard();
     return null;
   }
+  
+  console.log('🔴 RestoreDialog: RENDERING DIALOG!');
   const formatTime = (ts) => {
     const date = new Date(ts);
     const today = new Date();
@@ -40,27 +48,67 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   };
 
   return (
-    <div className="modal-overlay" data-nosnippet>
-      <div className="modal restore-dialog">
+    <div 
+      className="modal-overlay" 
+      data-nosnippet
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000
+      }}
+    >
+      <div 
+        className="modal restore-dialog"
+        style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '2rem',
+          maxWidth: '500px',
+          width: '90%',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
+        }}
+      >
         <div className="modal-header">
-          <h2>Восстановить работу?</h2>
+          <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Восстановить работу?</h2>
         </div>
         <div className="modal-body">
-          <p>Найдена несохранённая работа от {formatTime(timestamp)}</p>
-          <p className="restore-hint">Вы хотите продолжить с того места, где остановились?</p>
+          <p style={{ margin: '0 0 0.75rem 0' }}>Найдена несохранённая работа от {formatTime(timestamp)}</p>
+          <p className="restore-hint" style={{ color: '#777', fontSize: '0.9rem' }}>Вы хотите продолжить с того места, где остановились?</p>
         </div>
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <button 
-            className="room-btn room-btn-primary" 
-            onClick={onRestore}
-          >
-            Восстановить
-          </button>
-          <button 
-            className="room-btn room-btn-ghost" 
             onClick={onDiscard}
+            style={{
+              padding: '0.75rem 1.5rem',
+              border: '1px solid #ccc',
+              background: 'white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '1rem'
+            }}
           >
             Начать заново
+          </button>
+          <button 
+            onClick={onRestore}
+            style={{
+              padding: '0.75rem 1.5rem',
+              border: 'none',
+              background: '#007bff',
+              color: 'white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '1rem'
+            }}
+          >
+            Восстановить
           </button>
         </div>
       </div>
