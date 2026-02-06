@@ -4,8 +4,11 @@ import canvasState from '../store/canvasState';
 import '../styles/room-interface.scss';
 
 const AboutModal = observer(() => {
+  console.log('🟢 AboutModal render - showAboutModal:', canvasState.showAboutModal);
+  
   if (!canvasState.showAboutModal) return null;
 
+  console.log('🟢 AboutModal: RENDERING OVERLAY!');
   return (
     <div className="room-interface-overlay" onClick={() => canvasState.setShowAboutModal(false)}>
       <div className="room-interface" onClick={(e) => e.stopPropagation()}>

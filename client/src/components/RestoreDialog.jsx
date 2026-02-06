@@ -57,11 +57,11 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
+        background: 'rgba(255, 0, 0, 0.8)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 10000
+        zIndex: 999999
       }}
     >
       <div 
