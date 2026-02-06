@@ -1,6 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import '../styles/modal.scss';
+import '../styles/room-interface.scss';
 
 const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   if (!show) return null;
@@ -42,100 +42,34 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   } catch (error) {
     formattedTime = 'неизвестно';
   }
+  
   return (
-    <div 
-      data-nosnippet
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 999999,
-        padding: '1rem'
-      }}
-    >
-      <div 
-        style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '2rem',
-          maxWidth: '500px',
-          width: '90%',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-          zIndex: 1000001,
-          animation: 'slideIn 0.3s ease-out'
-        }}
-      >
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#333', fontWeight: '600' }}>Восстановить работу?</h2>
-        </div>
-        <div style={{ marginBottom: '2rem' }}>
-          <p style={{ margin: '0 0 0.5rem 0', color: '#555', fontSize: '1rem', lineHeight: '1.5' }}>
-            Найдена несохранённая работа от {formattedTime}
-          </p>
-          <p style={{ color: '#777', fontSize: '0.9rem', margin: 0, lineHeight: '1.4' }}>
-            Вы хотите продолжить с того места, где остановились?
-          </p>
-        </div>
-        <div style={{ 
-          display: 'flex', 
-          gap: '0.75rem', 
-          justifyContent: 'flex-end',
-          flexWrap: 'wrap'
-        }}>
-          <button 
-            onClick={onDiscard}
-            style={{
-              padding: '0.75rem 1.5rem',
-              border: '1px solid #ccc',
-              background: '#f8f9fa',
-              color: '#333',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              minWidth: '140px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#e9ecef';
-              e.target.style.borderColor = '#adb5bd';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#f8f9fa';
-              e.target.style.borderColor = '#ccc';
-            }}
-          >
-            Начать заново
-          </button>
-          <button 
-            onClick={onRestore}
-            style={{
-              padding: '0.75rem 1.5rem',
-              border: 'none',
-              background: '#007bff',
-              color: 'white',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500',
-              transition: 'all 0.2s',
-              minWidth: '140px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#0056b3';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#007bff';
-            }}
-          >
-            Восстановить
-          </button>
+    <div className="room-interface-overlay" data-nosnippet>
+      <div className="room-interface">
+        <div className="room-card">
+          <div className="room-card-header">
+            <h2>Восстановить работу?</h2>
+            <p>Найдена несохранённая работа от {formattedTime}</p>
+          </div>
+          <div className="room-card-body">
+            <p style={{ color: '#777', fontSize: '0.95rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+              Вы хотите продолжить с того места, где остановились?
+            </p>
+            <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
+              <button 
+                className="room-btn room-btn-primary" 
+                onClick={onRestore}
+              >
+                Восстановить
+              </button>
+              <button 
+                className="room-btn room-btn-ghost" 
+                onClick={onDiscard}
+              >
+                Начать заново
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
