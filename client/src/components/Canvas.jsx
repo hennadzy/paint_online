@@ -79,8 +79,12 @@ const Canvas = observer(() => {
           console.log('checkForAutoSave result:', result);
           console.log('showRestoreDialog:', canvasState.showRestoreDialog);
           console.log('restoreTimestamp:', canvasState.restoreTimestamp);
-        }, 500);
+        }, 100);
         console.log('setTimeout ID:', timeoutId);
+        
+        console.log('Calling checkForAutoSave immediately (without setTimeout)...');
+        const immediateResult = canvasState.checkForAutoSave();
+        console.log('Immediate checkForAutoSave result:', immediateResult);
     } else {
         console.log('Room mode - setting up for room:', params.id);
         canvasState.setCurrentRoomId(params.id);
