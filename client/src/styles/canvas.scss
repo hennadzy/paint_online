@@ -353,8 +353,8 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Меньшие стартовые отступы; справа и снизу 20px — только под скроллбары, холст под них не заходит */
-    padding: 6px 20px 20px 6px;
+    /* Равные отступы слева и справа (20px); снизу 20px под скроллбар */
+    padding: 6px 20px 20px 20px;
     
     scrollbar-width: none;
     -ms-overflow-style: none;

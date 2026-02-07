@@ -61,7 +61,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 26;
+      const availableW = container.clientWidth - 40; // 20px left + 20px right
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -411,12 +411,24 @@ const Canvas = observer(() => {
       }
       const canvas = canvasRef.current;
       if (canvas && containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 26; // 6px left + 20px right padding
+        const availableW = containerRef.current.clientWidth - 40; // 20px left + 20px right
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
     }
   }, [canvasState.isConnected]);
+
+  // При смене режима рисования (инструмента) на мобильном — начальное положение и размер холста
+  useEffect(() => {
+    if (window.innerWidth > 768) return;
+    const container = containerRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
+    container.scrollLeft = 0;
+    const availableW = container.clientWidth - 40;
+    const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
+    canvasState.setZoom(fitZoom);
+  }, [toolState.toolName]);
 
   // Кастомные скроллбары для мобильных устройств
   useEffect(() => {
