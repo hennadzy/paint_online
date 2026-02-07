@@ -68,7 +68,7 @@ const Canvas = observer(() => {
     return () => clearTimeout(timer);
   }, []);
 
-  // На мобильном: при зуме (холст больше контейнера) задаём скроллируемой области размер холста, иначе сбрасываем — скроллбары только при overflow, без ResizeObserver чтобы не мешать жесту перемещения.
+  // На мобильном: скроллируемая область = размер холста при зуме, чтобы пролистывать от угла до угла. ResizeObserver только когда не в жесте.
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const container = containerRef.current;
@@ -77,6 +77,7 @@ const Canvas = observer(() => {
     const inner = container.querySelector('.canvas-container-inner');
     if (!inner) return;
     const syncScrollSize = () => {
+      if (isPinching.current) return;
       const cw = container.clientWidth;
       const ch = container.clientHeight;
       const canvasW = canvas.offsetWidth;
@@ -96,9 +97,12 @@ const Canvas = observer(() => {
     syncScrollSize();
     const raf = requestAnimationFrame(syncScrollSize);
     const t = setTimeout(syncScrollSize, 120);
+    const ro = new ResizeObserver(() => syncScrollSize());
+    ro.observe(canvas);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(t);
+      ro.disconnect();
     };
   }, [canvasState.zoom]);
 
@@ -248,29 +252,32 @@ const Canvas = observer(() => {
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
 
-          // Сдвиг двумя пальцами: дельта центра жеста (инвертировано — палец вправо = холст вправо)
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
           const pannedScrollLeft = initialScrollLeft - translationX;
           const pannedScrollTop = initialScrollTop - translationY;
 
           const scale = currentDistance / initialDistance;
-          const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
-
-          // Viewport-координаты центра жеста
-          const viewportX = currentCenter.x - containerRect.left;
-          const viewportY = currentCenter.y - containerRect.top;
-          // Точка на холсте под центром жеста (с учётом уже применённого сдвига)
-          const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
-          const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
-
-          canvasState.setZoom(newZoom);
+          const zoomThreshold = 0.04;
+          const isPinch = Math.abs(scale - 1) >= zoomThreshold;
 
           requestAnimationFrame(() => {
             const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
             const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-            container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, canvasPointX * newZoom - viewportX));
-            container.scrollTop = Math.max(0, Math.min(maxScrollTop, canvasPointY * newZoom - viewportY));
+
+            if (isPinch) {
+              const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
+              const viewportX = currentCenter.x - containerRect.left;
+              const viewportY = currentCenter.y - containerRect.top;
+              const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
+              const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
+              canvasState.setZoom(newZoom);
+              container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, canvasPointX * newZoom - viewportX));
+              container.scrollTop = Math.max(0, Math.min(maxScrollTop, canvasPointY * newZoom - viewportY));
+            } else {
+              container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, pannedScrollLeft));
+              container.scrollTop = Math.max(0, Math.min(maxScrollTop, pannedScrollTop));
+            }
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
