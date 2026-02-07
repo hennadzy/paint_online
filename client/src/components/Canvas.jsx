@@ -61,7 +61,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 25; // 20px left + 20px right
+      const availableW = container.clientWidth - 25; // 5px left + 20px right
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -418,6 +418,7 @@ const Canvas = observer(() => {
     };
     if (!canvasState.isConnected) {
       requestAnimationFrame(() => requestAnimationFrame(apply));
+      setTimeout(apply, 80);
     } else {
       apply();
     }
