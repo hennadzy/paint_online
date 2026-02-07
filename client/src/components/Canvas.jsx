@@ -436,61 +436,77 @@ const Canvas = observer(() => {
     canvasState.setZoom(fitZoom);
   }, [toolState.toolName]);
 
-  // Кастомные скроллбары для мобильных устройств
+  // Кастомные скроллбары для мобильных: поведение как у нативных (трек + ползунок, клик по треку = прокрутка на страницу)
   useEffect(() => {
     const container = containerRef.current;
     if (!container || window.innerWidth > 768) return;
 
+    const TRACK_VERTICAL_INSET = 20; // место под горизонтальный скроллбар
+    const TRACK_HORIZONTAL_INSET = 20; // место под вертикальный скроллбар
+    const MIN_THUMB_SIZE = 40; // минимальный размер ползунка для удобного тапа
+
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
       scrollbar.className = `custom-scrollbar ${isVertical ? 'vertical' : 'horizontal'}`;
-      
+
       const thumb = document.createElement('div');
       thumb.className = 'custom-scrollbar-thumb';
       scrollbar.appendChild(thumb);
-      
+
       container.appendChild(scrollbar);
-      
+
       let isDragging = false;
       let startPos = 0;
       let startScroll = 0;
 
       const updateThumb = () => {
-        const containerRect = container.getBoundingClientRect();
-        
         if (isVertical) {
-          const hasScroll = container.scrollHeight > container.clientHeight;
+          const scrollHeight = container.scrollHeight;
+          const clientHeight = container.clientHeight;
+          const scrollableRange = Math.max(0, scrollHeight - clientHeight);
+          const hasScroll = scrollableRange > 0;
           scrollbar.style.display = hasScroll ? 'block' : 'none';
-          
+
           if (hasScroll) {
-            const scrollRatio = container.scrollTop / (container.scrollHeight - container.clientHeight);
-            const trackHeight = container.clientHeight - 20; // место под горизонтальный скроллбар
-            const thumbHeight = Math.max(100, (container.clientHeight / container.scrollHeight) * trackHeight);
-            const maxThumbTop = trackHeight - thumbHeight;
-            
-            thumb.style.height = thumbHeight + 'px';
-            thumb.style.top = (scrollRatio * maxThumbTop) + 'px';
+            const trackHeight = clientHeight - TRACK_VERTICAL_INSET;
+            const thumbHeight = Math.max(
+              MIN_THUMB_SIZE,
+              Math.min(trackHeight, (clientHeight / scrollHeight) * trackHeight)
+            );
+            const thumbTravel = Math.max(0, trackHeight - thumbHeight);
+            const scrollRatio = scrollableRange > 0 ? container.scrollTop / scrollableRange : 0;
+            const thumbTop = thumbTravel * scrollRatio;
+
+            thumb.style.height = `${thumbHeight}px`;
+            thumb.style.top = `${thumbTop}px`;
           }
         } else {
-          const hasScroll = container.scrollWidth > container.clientWidth;
+          const scrollWidth = container.scrollWidth;
+          const clientWidth = container.clientWidth;
+          const scrollableRange = Math.max(0, scrollWidth - clientWidth);
+          const hasScroll = scrollableRange > 0;
           scrollbar.style.display = hasScroll ? 'block' : 'none';
-          
+
           if (hasScroll) {
-            const scrollRatio = container.scrollLeft / (container.scrollWidth - container.clientWidth);
-            const trackWidth = container.clientWidth - 20; // место под вертикальный скроллбар
-            const thumbWidth = Math.max(100, (container.clientWidth / container.scrollWidth) * trackWidth);
-            const maxThumbLeft = trackWidth - thumbWidth;
-            
-            thumb.style.width = thumbWidth + 'px';
-            thumb.style.left = (scrollRatio * maxThumbLeft) + 'px';
+            const trackWidth = clientWidth - TRACK_HORIZONTAL_INSET;
+            const thumbWidth = Math.max(
+              MIN_THUMB_SIZE,
+              Math.min(trackWidth, (clientWidth / scrollWidth) * trackWidth)
+            );
+            const thumbTravel = Math.max(0, trackWidth - thumbWidth);
+            const scrollRatio = scrollableRange > 0 ? container.scrollLeft / scrollableRange : 0;
+            const thumbLeft = thumbTravel * scrollRatio;
+
+            thumb.style.width = `${thumbWidth}px`;
+            thumb.style.left = `${thumbLeft}px`;
           }
         }
       };
 
-      const handleStart = (e) => {
+      const handleThumbStart = (e) => {
         isDragging = true;
         const touch = e.touches?.[0];
-        startPos = isVertical ? (touch?.clientY || e.clientY) : (touch?.clientX || e.clientX);
+        startPos = isVertical ? (touch?.clientY ?? e.clientY) : (touch?.clientX ?? e.clientX);
         startScroll = isVertical ? container.scrollTop : container.scrollLeft;
         thumb.classList.add('active');
         e.preventDefault();
@@ -500,19 +516,29 @@ const Canvas = observer(() => {
       const handleMove = (e) => {
         if (!isDragging) return;
         const touch = e.touches?.[0];
-        const currentPos = isVertical ? (touch?.clientY || e.clientY) : (touch?.clientX || e.clientX);
+        const currentPos = isVertical ? (touch?.clientY ?? e.clientY) : (touch?.clientX ?? e.clientX);
         const delta = currentPos - startPos;
-        
+
         if (isVertical) {
-          const trackHeight = container.clientHeight - 20;
-          const thumbHeight = parseFloat(thumb.style.height);
-          const scrollRatio = delta / (trackHeight - thumbHeight);
-          container.scrollTop = startScroll + scrollRatio * (container.scrollHeight - container.clientHeight);
+          const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET;
+          const thumbHeight = parseFloat(thumb.style.height) || MIN_THUMB_SIZE;
+          const thumbTravel = Math.max(0, trackHeight - thumbHeight);
+          const scrollableRange = container.scrollHeight - container.clientHeight;
+          if (thumbTravel > 0 && scrollableRange > 0) {
+            const scrollDelta = (delta / thumbTravel) * scrollableRange;
+            const next = Math.max(0, Math.min(container.scrollHeight - container.clientHeight, startScroll + scrollDelta));
+            container.scrollTop = next;
+          }
         } else {
-          const trackWidth = container.clientWidth - 20;
-          const thumbWidth = parseFloat(thumb.style.width);
-          const scrollRatio = delta / (trackWidth - thumbWidth);
-          container.scrollLeft = startScroll + scrollRatio * (container.scrollWidth - container.clientWidth);
+          const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET;
+          const thumbWidth = parseFloat(thumb.style.width) || MIN_THUMB_SIZE;
+          const thumbTravel = Math.max(0, trackWidth - thumbWidth);
+          const scrollableRange = container.scrollWidth - container.clientWidth;
+          if (thumbTravel > 0 && scrollableRange > 0) {
+            const scrollDelta = (delta / thumbTravel) * scrollableRange;
+            const next = Math.max(0, Math.min(container.scrollWidth - container.clientWidth, startScroll + scrollDelta));
+            container.scrollLeft = next;
+          }
         }
         e.preventDefault();
         e.stopPropagation();
@@ -523,27 +549,75 @@ const Canvas = observer(() => {
         thumb.classList.remove('active');
       };
 
-      thumb.addEventListener('mousedown', handleStart);
-      thumb.addEventListener('touchstart', handleStart, { passive: false });
+      // Клик по треку (не по ползунку): прокрутка на одну страницу вверх/вниз или влево/вправо
+      const handleTrackClick = (e) => {
+        if (e.target !== scrollbar) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isVertical) {
+          const scrollableRange = container.scrollHeight - container.clientHeight;
+          if (scrollableRange <= 0) return;
+          const trackRect = scrollbar.getBoundingClientRect();
+          const thumbRect = thumb.getBoundingClientRect();
+          const clickY = (e.touches?.[0]?.clientY ?? e.clientY) - trackRect.top;
+          const thumbTop = thumbRect.top - trackRect.top;
+          const thumbHeight = thumbRect.height;
+          const page = container.clientHeight;
+          if (clickY < thumbTop) {
+            container.scrollTop = Math.max(0, container.scrollTop - page);
+          } else if (clickY > thumbTop + thumbHeight) {
+            container.scrollTop = Math.min(scrollableRange, container.scrollTop + page);
+          }
+        } else {
+          const scrollableRange = container.scrollWidth - container.clientWidth;
+          if (scrollableRange <= 0) return;
+          const trackRect = scrollbar.getBoundingClientRect();
+          const thumbRect = thumb.getBoundingClientRect();
+          const clickX = (e.touches?.[0]?.clientX ?? e.clientX) - trackRect.left;
+          const thumbLeft = thumbRect.left - trackRect.left;
+          const thumbWidth = thumbRect.width;
+          const page = container.clientWidth;
+          if (clickX < thumbLeft) {
+            container.scrollLeft = Math.max(0, container.scrollLeft - page);
+          } else if (clickX > thumbLeft + thumbWidth) {
+            container.scrollLeft = Math.min(scrollableRange, container.scrollLeft + page);
+          }
+        }
+      };
+
+      thumb.addEventListener('mousedown', handleThumbStart);
+      thumb.addEventListener('touchstart', handleThumbStart, { passive: false });
+      scrollbar.addEventListener('mousedown', handleTrackClick);
+      scrollbar.addEventListener('touchstart', handleTrackClick, { passive: false });
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchend', handleEnd);
-      
+
       container.addEventListener('scroll', updateThumb);
       const resizeObserver = new ResizeObserver(updateThumb);
       resizeObserver.observe(container);
+      const inner = container.querySelector('.canvas-container-inner');
+      let innerRO = null;
+      if (inner) {
+        innerRO = new ResizeObserver(updateThumb);
+        innerRO.observe(inner);
+      }
       updateThumb();
 
       return () => {
-        thumb.removeEventListener('mousedown', handleStart);
-        thumb.removeEventListener('touchstart', handleStart);
+        thumb.removeEventListener('mousedown', handleThumbStart);
+        thumb.removeEventListener('touchstart', handleThumbStart);
+        scrollbar.removeEventListener('mousedown', handleTrackClick);
+        scrollbar.removeEventListener('touchstart', handleTrackClick);
         document.removeEventListener('mousemove', handleMove);
         document.removeEventListener('touchmove', handleMove);
         document.removeEventListener('mouseup', handleEnd);
         document.removeEventListener('touchend', handleEnd);
         container.removeEventListener('scroll', updateThumb);
         resizeObserver.disconnect();
+        if (innerRO) innerRO.disconnect();
         scrollbar.remove();
       };
     };
