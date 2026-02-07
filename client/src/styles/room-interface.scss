@@ -501,11 +501,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 10px;
-    padding-top: calc(170px + env(safe-area-inset-top, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 10px);
-    align-items: flex-start;
-    justify-content: center;
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    align-items: stretch;
+    justify-content: stretch;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -517,29 +517,16 @@
     }
   }
 
-  .room-interface-overlay.fullscreen {
-    padding: 0;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    align-items: stretch;
-    justify-content: stretch;
-  }
-
   .room-interface {
     width: 100%;
+    height: 100%;
     max-width: none;
     max-height: none;
-    overflow-y: visible;
-    padding: 0;
-    margin: 0;
-  }
-
-  .room-interface.fullscreen {
-    height: 100%;
     overflow-y: auto;
     padding: 15px;
     padding-top: calc(15px + env(safe-area-inset-top, 0px));
     padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -563,9 +550,6 @@
   .room-card {
     padding: 20px;
     padding-top: 20px;
-  }
-
-  .room-card.fullscreen {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -618,18 +602,14 @@
   }
 
   .rooms-list {
-    max-height: 300px;
+    max-height: none;
+    flex: 1;
     scrollbar-width: none;
     -ms-overflow-style: none;
     
     &::-webkit-scrollbar {
       display: none;
     }
-  }
-
-  .rooms-list.fullscreen {
-    max-height: none;
-    flex: 1;
   }
 
   .room-item {
@@ -647,17 +627,12 @@
   }
 
   .room-close-btn {
-    top: calc(5px + env(safe-area-inset-top, 0px));
-    right: 5px;
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-  }
-
-  .room-interface-overlay.fullscreen .room-close-btn {
     position: fixed;
     top: calc(15px + env(safe-area-inset-top, 0px));
     right: 15px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
   }
 }
 
