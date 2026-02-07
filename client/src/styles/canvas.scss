@@ -245,6 +245,8 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
+  $mobile-menu-height: 160px;
+
   html {
     height: 100%;
     height: -webkit-fill-available;
@@ -272,19 +274,32 @@ button:active {
     position: relative;
   }
 
+  /* Холст ВСЕГДА ниже меню: не выше 160px от верха при любом зуме/режиме */
   .canvas {
-    position: absolute;
-    top: calc(160px + env(safe-area-inset-top, 0px));
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0;
-    justify-content: flex-start;
-    align-items: stretch;
-    z-index: 1;
+    position: absolute !important;
+    top: calc(#{$mobile-menu-height} + env(safe-area-inset-top, 0px)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    max-height: calc(100vh - #{$mobile-menu-height} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    z-index: 0 !important;
+    margin: 0 !important;
+  }
+
+  .canvas-container,
+  .canvas-wrapper {
+    max-height: 100% !important;
+  }
+
+  .canvas-container {
+    margin-top: 0 !important;
   }
 
   .canvas-layout {
@@ -400,7 +415,7 @@ button:active {
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - 160px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+    max-height: calc(100vh - #{$mobile-menu-height} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
   }
   
   .canvas-layout.has-chat .canvas-container {
