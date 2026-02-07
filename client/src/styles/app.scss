@@ -22,7 +22,14 @@ body.modal-open {
   .toolbar,
   .setting-bar {
     z-index: 1 !important;
-    pointer-events: none !important;
+  }
+  
+  @media (max-width: 768px) {
+    .top-menu,
+    .toolbar,
+    .setting-bar {
+      pointer-events: none !important;
+    }
   }
 }
 
