@@ -68,6 +68,28 @@ const Canvas = observer(() => {
     return () => clearTimeout(timer);
   }, []);
 
+  // На мобильном: скроллируемая область не меньше холста, чтобы при зуме можно было пролистать весь холст. Скроллбары по-прежнему показываются только при overflow (hasScroll).
+  useEffect(() => {
+    if (window.innerWidth > 768) return;
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+    const inner = container.querySelector('.canvas-container-inner');
+    if (!inner) return;
+    const syncScrollSize = () => {
+      const w = Math.max(container.clientWidth, canvas.offsetWidth);
+      const h = Math.max(container.clientHeight, canvas.offsetHeight);
+      inner.style.minWidth = `${w}px`;
+      inner.style.minHeight = `${h}px`;
+      inner.style.width = `${w}px`;
+      inner.style.height = `${h}px`;
+    };
+    syncScrollSize();
+    const ro = new ResizeObserver(syncScrollSize);
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }, [canvasState.zoom]);
+
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
     const ctx = canvasRef.current.getContext("2d", { willReadFrequently: true });
