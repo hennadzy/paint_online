@@ -243,7 +243,7 @@ button:active {
 
   .canvas {
     position: absolute;
-    top: calc(100px + env(safe-area-inset-top, 0px));
+    top: calc(150px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     bottom: 0;
@@ -296,19 +296,51 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
-    overflow: scroll !important;
+    overflow: auto !important;
     -webkit-overflow-scrolling: touch;
     position: relative;
-    display: block;
-    min-height: 0;
-    min-width: 0;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    scrollbar-width: auto;
+    scrollbar-color: rgba(255, 204, 0, 0.95) rgba(103, 103, 103, 0.3);
+    
+    &::-webkit-scrollbar {
+      width: 14px !important;
+      height: 14px !important;
+      display: block !important;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(103, 103, 103, 0.3);
+      border-radius: 7px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, rgba(255, 204, 0, 0.95), rgba(255, 102, 153, 0.95));
+      border-radius: 7px;
+      border: 2px solid rgba(103, 103, 103, 0.3);
+      min-height: 60px;
+      min-width: 60px;
+      
+      &:hover {
+        background: linear-gradient(135deg, rgba(255, 204, 0, 1), rgba(255, 102, 153, 1));
+      }
+      
+      &:active {
+        background: linear-gradient(135deg, rgba(255, 102, 153, 1), rgba(255, 204, 0, 1));
+      }
+    }
+    
+    &::-webkit-scrollbar-corner {
+      background: rgba(103, 103, 103, 0.3);
+    }
   }
 
   .canvas-wrapper {
     display: inline-block;
     position: relative;
-    margin: 0 auto;
+    flex-shrink: 0;
   }
 
   .canvas-side-panel {
@@ -413,8 +445,8 @@ button:active {
     display: block !important;
     position: relative;
     width: calc(100% - 20px);
-    margin: 10px auto;
-    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    margin: 15px auto;
+    margin-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
     white-space: nowrap;
     font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #ffcc00, rgb(255, 102, 153));
@@ -424,7 +456,7 @@ button:active {
     color: white;
     font-size: 16px;
     text-align: center;
-    padding: 12px 15px;
+    padding: 14px 20px;
     cursor: pointer;
     transition: all 0.3s ease;
     flex-shrink: 0;

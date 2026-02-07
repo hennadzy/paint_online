@@ -365,6 +365,16 @@ const Canvas = observer(() => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
+  useEffect(() => {
+    const isModalOpen = canvasState.showAboutModal || canvasState.showRoomInterface || canvasState.modalOpen;
+    if (isModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen]);
+
 
   return (
     <div className="canvas">
