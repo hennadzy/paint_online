@@ -245,7 +245,8 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height: 210px; /* 160 + 50: в совместном режиме сетингбар занимает больше */
+  $mobile-menu-height-local: 160px;   /* локальный режим: топ + тулбар + сетингбар */
+  $mobile-menu-height-chat: 220px;    /* совместный режим: сетингбар выше */
 
   html {
     height: 100%;
@@ -274,14 +275,14 @@ button:active {
     position: relative;
   }
 
-  /* Холст ВСЕГДА ниже меню: не выше 210px от верха (топ+тулбар+сетингбар) */
+  /* Локальный режим: холст ниже меню (160px) */
   .canvas {
     position: absolute !important;
-    top: calc(#{$mobile-menu-height} + env(safe-area-inset-top, 0px)) !important;
+    top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    max-height: calc(100vh - #{$mobile-menu-height} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -291,6 +292,12 @@ button:active {
     align-items: stretch !important;
     z-index: 0 !important;
     margin: 0 !important;
+  }
+
+  /* Совместный режим: больше отступ сверху, холст не залазит под сетингбар */
+  .canvas.canvas--has-chat {
+    top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .canvas-container,
@@ -346,8 +353,8 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Место под скроллбары справа и снизу — холст под них не заходит */
-    padding: 10px 20px 20px 10px;
+    /* Симметричные отступы: центрирование + место под скроллбары справа и снизу */
+    padding: 10px 20px 20px 20px;
     
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -426,7 +433,7 @@ button:active {
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - #{$mobile-menu-height} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
   }
   
   .canvas-layout.has-chat .canvas-container {

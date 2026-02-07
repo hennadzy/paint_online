@@ -507,7 +507,7 @@ const Canvas = observer(() => {
 
 
   return (
-    <div className="canvas">
+    <div className={`canvas ${canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-container-inner">
