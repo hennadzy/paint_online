@@ -417,8 +417,10 @@ const Canvas = observer(() => {
       }
     };
     if (!canvasState.isConnected) {
-      requestAnimationFrame(() => requestAnimationFrame(apply));
-      setTimeout(apply, 80);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        apply();
+        setTimeout(apply, 120);
+      }));
     } else {
       apply();
     }

@@ -245,7 +245,7 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height-local: 175px;   /* локальный: холст не залазит под сетингбар при возврате из совместного */
+  $mobile-menu-height-local: 180px;   /* локальный: запас под сетингбар, холст не залазит при возврате из совместного */
   $mobile-menu-height-chat: 230px;    /* совместный: не слишком низко, при зуме не под сетингбар */
 
   html {
@@ -275,7 +275,7 @@ button:active {
     position: relative;
   }
 
-  /* Локальный режим: холст ниже меню (175px) */
+  /* Локальный режим: холст ниже меню (180px) */
   .canvas {
     position: absolute !important;
     top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
