@@ -269,10 +269,10 @@ button:active {
   }
 
   .canvas-layout:not(.has-chat) {
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
     padding-top: 10px;
-    padding-bottom: 0;
+    padding-bottom: 10px;
   }
 
   .canvas-layout.has-chat {

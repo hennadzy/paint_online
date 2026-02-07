@@ -500,6 +500,14 @@
 }
 
 @media (max-width: 768px) {
+  body.modal-open {
+    .top-menu,
+    .toolbar,
+    .setting-bar {
+      display: none !important;
+    }
+  }
+
   .room-interface-overlay {
     position: fixed !important;
     top: 0 !important;
