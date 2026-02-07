@@ -384,6 +384,14 @@ const Canvas = observer(() => {
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
+  // При выходе из комнаты сбрасываем скролл холста, чтобы в локальном режиме не оставался баг
+  useEffect(() => {
+    if (!canvasState.isConnected && containerRef.current && window.innerWidth <= 768) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollLeft = 0;
+    }
+  }, [canvasState.isConnected]);
+
   // Кастомные скроллбары для мобильных устройств
   useEffect(() => {
     const container = containerRef.current;

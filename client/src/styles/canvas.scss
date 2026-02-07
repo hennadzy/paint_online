@@ -246,7 +246,7 @@ button:active {
 
 @media only screen and (max-width: 768px) {
   $mobile-menu-height-local: 160px;   /* локальный режим: топ + тулбар + сетингбар */
-  $mobile-menu-height-chat: 220px;    /* совместный режим: сетингбар выше */
+  $mobile-menu-height-chat: 270px;   /* совместный режим: +50px чтобы при зуме не залазил под сетингбар */
 
   html {
     height: 100%;
