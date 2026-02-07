@@ -243,7 +243,7 @@ button:active {
 
   .canvas {
     position: absolute;
-    top: 160px;
+    top: calc(100px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     bottom: 0;
@@ -272,6 +272,7 @@ button:active {
     justify-content: center;
     align-items: center;
     padding-top: 0;
+    padding-bottom: 60px;
   }
 
   .canvas-layout.has-chat {
@@ -295,8 +296,7 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
-    overflow-x: auto !important;
-    overflow-y: auto !important;
+    overflow: auto !important;
     -webkit-overflow-scrolling: touch;
     position: relative;
     display: flex;
@@ -344,8 +344,8 @@ button:active {
     align-items: center;
     position: relative;
     flex-shrink: 0;
-    width: 100%;
-    height: 100%;
+    min-width: min-content;
+    min-height: min-content;
   }
 
   .canvas-side-panel {
@@ -448,8 +448,11 @@ button:active {
   
   @media (max-width: 768px) {
     display: block !important;
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
     width: calc(100% - 20px);
-    margin: 10px auto;
     white-space: nowrap;
     font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #ffcc00, rgb(255, 102, 153));
@@ -460,11 +463,10 @@ button:active {
     font-size: 16px;
     text-align: center;
     padding: 12px 15px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     cursor: pointer;
     transition: all 0.3s ease;
-    flex-shrink: 0;
-    z-index: 100;
-    position: relative;
+    z-index: 999;
   }
 }
 

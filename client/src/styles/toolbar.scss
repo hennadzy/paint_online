@@ -13,6 +13,10 @@
   justify-content: flex-start;
   align-items: center;
   padding: 0 5px;
+  
+  @media (max-width: 768px) {
+    top: calc(50px + env(safe-area-inset-top, 0px));
+  }
 
   &__btn {
     position: relative;
@@ -152,6 +156,10 @@
   font-size: 14px;
   z-index: 1000;
   min-height: 50px;
+  
+  @media (max-width: 768px) {
+    top: calc(100px + env(safe-area-inset-top, 0px));
+  }
 
   label {
     white-space: nowrap;

@@ -368,7 +368,7 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas">
-      <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : ''}`}>
+      <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-wrapper">
             <canvas
@@ -392,6 +392,9 @@ const Canvas = observer(() => {
         <button 
           className="about-btn-mobile"
           onClick={() => canvasState.setShowAboutModal(true)}
+          style={{ 
+            display: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'block' : 'none'
+          }}
         >
           О программе
         </button>

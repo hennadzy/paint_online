@@ -37,6 +37,11 @@ body::-webkit-scrollbar {
   box-shadow: 0 4px 5px gray;
   z-index: 1000;
   height: 50px;
+  
+  @media (max-width: 768px) {
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(50px + env(safe-area-inset-top, 0px));
+  }
 }
 
 .top-menu__actions {
