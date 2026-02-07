@@ -353,8 +353,8 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Симметричные отступы: центрирование + место под скроллбары справа и снизу */
-    padding: 10px 20px 20px 20px;
+    /* Меньшие стартовые отступы; справа и снизу 20px — только под скроллбары, холст под них не заходит */
+    padding: 6px 20px 20px 6px;
     
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -373,7 +373,7 @@ button:active {
     flex-shrink: 0;
   }
 
-  // Кастомные скроллбары: справа и снизу у края контейнера, не на холсте
+  /* Справа: вдоль всего края холста (высота вьюпорта). Снизу: вдоль края холста на всю длину, у края экрана/чата не уезжает на холст */
   .custom-scrollbar {
     position: absolute;
     background: rgba(103, 103, 103, 0.6);
@@ -384,7 +384,7 @@ button:active {
     &.vertical {
       right: 0;
       top: 0;
-      bottom: 20px; /* не пересекается с горизонтальным */
+      bottom: 20px;
       width: 20px;
     }
     

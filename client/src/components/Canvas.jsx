@@ -61,7 +61,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 40;
+      const availableW = container.clientWidth - 26;
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -411,7 +411,7 @@ const Canvas = observer(() => {
       }
       const canvas = canvasRef.current;
       if (canvas && containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 40;
+        const availableW = containerRef.current.clientWidth - 26; // 6px left + 20px right padding
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
