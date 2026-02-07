@@ -15,6 +15,9 @@
   padding: 20px;
   overflow-y: auto;
   animation: fadeIn 0.3s ease;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
 
   @keyframes fadeIn {
     from {
@@ -497,12 +500,15 @@
 @media (max-width: 768px) {
   .room-interface-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
     padding: 15px;
-    padding-top: calc(100px + env(safe-area-inset-top, 0px));
+    padding-top: calc(15px + env(safe-area-inset-top, 0px));
     padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     align-items: flex-start;
     justify-content: center;
@@ -510,7 +516,7 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    z-index: 10000;
+    z-index: 10000 !important;
     box-sizing: border-box;
   
     &::-webkit-scrollbar {
@@ -662,6 +668,29 @@
     position: fixed;
     top: calc(15px + env(safe-area-inset-top, 0px));
     right: 15px;
+  }
+
+  .room-interface-overlay.input-dialog-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .room-interface.input-dialog {
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    margin: 0 auto;
+    position: relative;
+    top: -10vh;
+  }
+
+  .room-card.password-form,
+  .room-card.username-form {
+    max-height: none;
+    overflow: visible;
   }
 }
 

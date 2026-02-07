@@ -253,10 +253,10 @@ const RoomInterface = observer(({ roomId }) => {
 
   if (roomId && !canvasState.isConnected && passwordPrompt) {
     return (
-      <div className="room-interface-overlay" data-nosnippet style={{alignItems: 'flex-end', justifyContent: 'center'}}>
-        <div className="room-interface" style={{maxHeight: '80vh', overflowY: 'auto'}}>
+      <div className="room-interface-overlay input-dialog-overlay" data-nosnippet>
+        <div className="room-interface input-dialog">
           <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
-          <div className="room-card password-form" style={{maxHeight: '70vh', overflow: 'auto'}}>
+          <div className="room-card password-form">
             <div className="room-card-header">
               <h2>Вход в комнату "{passwordPrompt.name}"</h2>
               <p>Эта комната защищена паролем</p>
@@ -274,7 +274,6 @@ const RoomInterface = observer(({ roomId }) => {
                 }}
                 autoFocus
                 inputMode="text"
-                style={{position: 'relative', zIndex: 12001}}
               />
               <button className="room-btn room-btn-primary" onClick={verifyPasswordAndJoin}>
                 Продолжить
@@ -288,10 +287,10 @@ const RoomInterface = observer(({ roomId }) => {
 
   if (showUsernameForm) {
     return (
-      <div className="room-interface-overlay" data-nosnippet style={{alignItems: 'flex-end', justifyContent: 'center'}}>
-        <div className="room-interface" style={{maxHeight: '80vh', overflowY: 'auto'}}>
+      <div className="room-interface-overlay input-dialog-overlay" data-nosnippet>
+        <div className="room-interface input-dialog">
           <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
-          <div className="room-card username-form" style={{maxHeight: '70vh', overflow: 'auto'}}>
+          <div className="room-card username-form">
             <div className="room-card-header">
               <h2>Добро пожаловать!</h2>
               <p>Введите ваше имя для входа в комнату</p>
@@ -310,7 +309,6 @@ const RoomInterface = observer(({ roomId }) => {
                 }}
                 autoFocus
                 inputMode="text"
-                style={{position: 'relative', zIndex: 12001}}
               />
               <button className="room-btn room-btn-primary" onClick={handleJoinRoom}>
                 Войти в комнату
