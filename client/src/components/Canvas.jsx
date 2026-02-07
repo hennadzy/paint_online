@@ -412,12 +412,12 @@ const Canvas = observer(() => {
           
           if (hasScroll) {
             const scrollRatio = container.scrollTop / (container.scrollHeight - container.clientHeight);
-            const availableHeight = container.clientHeight - 20; // padding
-            const thumbHeight = Math.max(100, (container.clientHeight / container.scrollHeight) * availableHeight);
-            const maxThumbTop = availableHeight - thumbHeight;
+            const trackHeight = container.clientHeight - 20; // место под горизонтальный скроллбар
+            const thumbHeight = Math.max(100, (container.clientHeight / container.scrollHeight) * trackHeight);
+            const maxThumbTop = trackHeight - thumbHeight;
             
             thumb.style.height = thumbHeight + 'px';
-            thumb.style.top = (10 + scrollRatio * maxThumbTop) + 'px';
+            thumb.style.top = (scrollRatio * maxThumbTop) + 'px';
           }
         } else {
           const hasScroll = container.scrollWidth > container.clientWidth;
@@ -425,12 +425,12 @@ const Canvas = observer(() => {
           
           if (hasScroll) {
             const scrollRatio = container.scrollLeft / (container.scrollWidth - container.clientWidth);
-            const availableWidth = container.clientWidth - 20; // padding
-            const thumbWidth = Math.max(100, (container.clientWidth / container.scrollWidth) * availableWidth);
-            const maxThumbLeft = availableWidth - thumbWidth;
+            const trackWidth = container.clientWidth - 20; // место под вертикальный скроллбар
+            const thumbWidth = Math.max(100, (container.clientWidth / container.scrollWidth) * trackWidth);
+            const maxThumbLeft = trackWidth - thumbWidth;
             
             thumb.style.width = thumbWidth + 'px';
-            thumb.style.left = (10 + scrollRatio * maxThumbLeft) + 'px';
+            thumb.style.left = (scrollRatio * maxThumbLeft) + 'px';
           }
         }
       };
@@ -452,14 +452,14 @@ const Canvas = observer(() => {
         const delta = currentPos - startPos;
         
         if (isVertical) {
-          const availableHeight = container.clientHeight - 20;
+          const trackHeight = container.clientHeight - 20;
           const thumbHeight = parseFloat(thumb.style.height);
-          const scrollRatio = delta / (availableHeight - thumbHeight);
+          const scrollRatio = delta / (trackHeight - thumbHeight);
           container.scrollTop = startScroll + scrollRatio * (container.scrollHeight - container.clientHeight);
         } else {
-          const availableWidth = container.clientWidth - 20;
+          const trackWidth = container.clientWidth - 20;
           const thumbWidth = parseFloat(thumb.style.width);
-          const scrollRatio = delta / (availableWidth - thumbWidth);
+          const scrollRatio = delta / (trackWidth - thumbWidth);
           container.scrollLeft = startScroll + scrollRatio * (container.scrollWidth - container.clientWidth);
         }
         e.preventDefault();
@@ -510,7 +510,8 @@ const Canvas = observer(() => {
     <div className="canvas">
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
         <div className="canvas-container" ref={containerRef}>
-          <div className="canvas-wrapper">
+          <div className="canvas-container-inner">
+            <div className="canvas-wrapper">
             <canvas
               ref={canvasRef}
               tabIndex={0}
@@ -520,6 +521,7 @@ const Canvas = observer(() => {
               ref={cursorRef}
               className="cursor-overlay"
             />
+          </div>
           </div>
         </div>
 

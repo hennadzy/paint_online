@@ -341,13 +341,14 @@ button:active {
   .canvas-container {
     width: 100%;
     position: relative;
-    display: block;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 10px;
+    /* Место под скроллбары справа и снизу — холст под них не заходит */
+    padding: 10px 20px 20px 10px;
     
-    // Скрыть нативные скроллбары на мобильных
     scrollbar-width: none;
     -ms-overflow-style: none;
     &::-webkit-scrollbar {
@@ -355,7 +356,17 @@ button:active {
     }
   }
 
-  // Кастомные JS скроллбары для мобильных
+  /* Внутренняя обёртка: центрирует холст, при маленьком холсте — по центру, при большом — скролл */
+  .canvas-container-inner {
+    min-width: 100%;
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  // Кастомные скроллбары: справа и снизу у края контейнера, не на холсте
   .custom-scrollbar {
     position: absolute;
     background: rgba(103, 103, 103, 0.6);
@@ -366,13 +377,13 @@ button:active {
     &.vertical {
       right: 0;
       top: 0;
-      bottom: 0;
+      bottom: 20px; /* не пересекается с горизонтальным */
       width: 20px;
     }
     
     &.horizontal {
       left: 0;
-      right: 0;
+      right: 20px;
       bottom: 0;
       height: 20px;
     }
