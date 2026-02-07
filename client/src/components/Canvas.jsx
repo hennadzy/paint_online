@@ -128,6 +128,8 @@ const Canvas = observer(() => {
     let pinchCenterY = 0;
     let initialScrollLeft = 0;
     let initialScrollTop = 0;
+    let initialCenterX = 0;
+    let initialCenterY = 0;
 
     const getDistance = (touch1, touch2) => {
       const dx = touch2.clientX - touch1.clientX;
@@ -171,8 +173,9 @@ const Canvas = observer(() => {
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
-        
         const center = getPinchCenter(e.touches[0], e.touches[1]);
+        initialCenterX = center.x;
+        initialCenterY = center.y;
         const containerRect = container.getBoundingClientRect();
         pinchCenterX = center.x - containerRect.left + container.scrollLeft;
         pinchCenterY = center.y - containerRect.top + container.scrollTop;
@@ -195,24 +198,27 @@ const Canvas = observer(() => {
         
         if (touchCount === 2 && initialDistance > 0) {
           const currentDistance = getDistance(e.touches[0], e.touches[1]);
+          const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
+          const containerRect = container.getBoundingClientRect();
+
+          // Сдвиг двумя пальцами: дельта центра жеста в экранных координатах
+          const translationX = currentCenter.x - initialCenterX;
+          const translationY = currentCenter.y - initialCenterY;
+          const pannedScrollLeft = initialScrollLeft + translationX;
+          const pannedScrollTop = initialScrollTop + translationY;
+
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
-          
-          // Увеличение относительно центра жеста
-          const zoomChange = newZoom / canvasState.zoom;
-          const containerRect = container.getBoundingClientRect();
-          
-          // Центр жеста относительно viewport
-          const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
+
+          // Viewport-координаты центра жеста
           const viewportX = currentCenter.x - containerRect.left;
           const viewportY = currentCenter.y - containerRect.top;
-          
-          // Точка на холсте, которую нужно сохранить под пальцами
-          const canvasPointX = (container.scrollLeft + viewportX) / canvasState.zoom;
-          const canvasPointY = (container.scrollTop + viewportY) / canvasState.zoom;
-          
+          // Точка на холсте под центром жеста (с учётом уже применённого сдвига)
+          const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
+          const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
+
           canvasState.setZoom(newZoom);
-          
+
           requestAnimationFrame(() => {
             container.scrollLeft = canvasPointX * newZoom - viewportX;
             container.scrollTop = canvasPointY * newZoom - viewportY;
@@ -220,8 +226,9 @@ const Canvas = observer(() => {
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
           initialZoom = canvasState.zoom;
-          
           const center = getPinchCenter(e.touches[0], e.touches[1]);
+          initialCenterX = center.x;
+          initialCenterY = center.y;
           const containerRect = container.getBoundingClientRect();
           pinchCenterX = center.x - containerRect.left + container.scrollLeft;
           pinchCenterY = center.y - containerRect.top + container.scrollTop;
