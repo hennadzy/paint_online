@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
-const { sanitizeInput, sanitizeUsername, generateId } = require('../utils/security');
+const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
@@ -124,11 +124,17 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
 router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
-    const username = sanitizeUsername(req.body.username);
     
-    if (!roomId || !username || username.length < 2) {
-      return res.status(400).json({ error: 'RoomId and valid username required' });
+    if (!roomId) {
+      return res.status(400).json({ error: 'ID комнаты не указан' });
     }
+    
+    const validation = validateUsername(req.body.username);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+    
+    const username = sanitizeUsername(validation.username);
     
     const room = DataStore.getRoomInfo(roomId);
     
@@ -150,12 +156,18 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
 router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
-    const username = sanitizeUsername(req.body.username);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
     
-    if (!roomId || !username || username.length < 2) {
-      return res.status(400).json({ error: 'RoomId and valid username required' });
+    if (!roomId) {
+      return res.status(400).json({ error: 'ID комнаты не указан' });
     }
+    
+    const validation = validateUsername(req.body.username);
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error });
+    }
+    
+    const username = sanitizeUsername(validation.username);
     
     const room = DataStore.getRoomInfo(roomId);
     

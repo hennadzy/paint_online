@@ -119,6 +119,55 @@ const checkSpam = (text, username, messageHistory = []) => {
   return { isSpam: false };
 };
 
+const validateUsername = (username) => {
+  if (typeof username !== 'string') {
+    return { valid: false, error: 'Имя должно быть текстом' };
+  }
+  
+  const trimmed = username.trim();
+  
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Введите ваше имя' };
+  }
+  
+  if (trimmed.length < 2) {
+    return { valid: false, error: 'Имя должно содержать минимум 2 символа' };
+  }
+  
+  if (trimmed.length > 30) {
+    return { valid: false, error: 'Имя не должно превышать 30 символов' };
+  }
+  
+  const invalidChars = trimmed.match(/[^a-zA-Zа-яА-ЯёЁ0-9\s]/g);
+  if (invalidChars) {
+    const uniqueChars = [...new Set(invalidChars)].join(', ');
+    return { 
+      valid: false, 
+      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы` 
+    };
+  }
+  
+  const dangerousWords = [
+    { pattern: /admin/gi, word: 'admin' },
+    { pattern: /moderator/gi, word: 'moderator' },
+    { pattern: /system/gi, word: 'system' },
+    { pattern: /bot/gi, word: 'bot' },
+    { pattern: /null/gi, word: 'null' },
+    { pattern: /undefined/gi, word: 'undefined' }
+  ];
+  
+  for (const { pattern, word } of dangerousWords) {
+    if (pattern.test(trimmed)) {
+      return { 
+        valid: false, 
+        error: `Слово "${word}" запрещено в имени` 
+      };
+    }
+  }
+  
+  return { valid: true, username: trimmed };
+};
+
 const sanitizeUsername = (username) => {
   if (typeof username !== 'string') return '';
   
@@ -160,6 +209,7 @@ module.exports = {
   sanitizeInput,
   sanitizeChatMessage,
   sanitizeUsername,
+  validateUsername,
   checkSpam,
   generateId
 };

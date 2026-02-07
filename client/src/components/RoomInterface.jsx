@@ -5,6 +5,49 @@ import axios from 'axios';
 import canvasState, { API_URL } from '../store/canvasState';
 import '../styles/room-interface.scss';
 
+const validateUsername = (username) => {
+  if (typeof username !== 'string') {
+    return { valid: false, error: 'Имя должно быть текстом' };
+  }
+  
+  const trimmed = username.trim();
+  
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Введите ваше имя' };
+  }
+  
+  if (trimmed.length < 2) {
+    return { valid: false, error: 'Имя должно содержать минимум 2 символа' };
+  }
+  
+  if (trimmed.length > 30) {
+    return { valid: false, error: 'Имя не должно превышать 30 символов' };
+  }
+  
+  const invalidChars = trimmed.match(/[^a-zA-Zа-яА-ЯёЁ0-9\s]/g);
+  if (invalidChars) {
+    const uniqueChars = [...new Set(invalidChars)].join(', ');
+    return { 
+      valid: false, 
+      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы` 
+    };
+  }
+  
+  const dangerousWords = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
+  const lowerUsername = trimmed.toLowerCase();
+  
+  for (const word of dangerousWords) {
+    if (lowerUsername.includes(word)) {
+      return { 
+        valid: false, 
+        error: `Слово "${word}" запрещено в имени` 
+      };
+    }
+  }
+  
+  return { valid: true, username: trimmed };
+};
+
 const RoomInterface = observer(({ roomId }) => {
   const [activeTab, setActiveTab] = useState('create');
   const [username, setUsername] = useState('');
@@ -64,8 +107,9 @@ const RoomInterface = observer(({ roomId }) => {
   const [error, setError] = useState('');
 
   const handleJoinRoom = async () => {
-    if (!username.trim()) {
-      setError('Введите ваше имя');
+    const validation = validateUsername(username);
+    if (!validation.valid) {
+      setError(validation.error);
       return;
     }
     setError('');
@@ -106,7 +150,11 @@ const RoomInterface = observer(({ roomId }) => {
       canvasState.setModalOpen(false);
       canvasState.setShowRoomInterface(false);
     } catch (error) {
-      setError('Ошибка подключения к комнате');
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError('Ошибка подключения к комнате');
+      }
     }
   };
 
