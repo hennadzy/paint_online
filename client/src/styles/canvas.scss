@@ -262,12 +262,11 @@ button:active {
     gap: 0;
     padding-bottom: 0;
     min-height: 0;
-    max-height: 100%;
   }
 
   .canvas-layout:not(.has-chat) {
-    justify-content: flex-start;
-    align-items: stretch;
+    justify-content: center;
+    align-items: center;
     padding-top: 0;
   }
 
@@ -292,17 +291,19 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
-    max-height: 100%;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 204, 0, 0.8) rgba(0, 0, 0, 0.3);
     
     &::-webkit-scrollbar {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
+      display: block !important;
     }
     
     &::-webkit-scrollbar-track {
@@ -311,10 +312,7 @@ button:active {
     
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 204, 0, 0.8);
-      border-radius: 6px;
-      border: 2px solid rgba(0, 0, 0, 0.3);
-      min-width: 30px;
-      min-height: 30px;
+      border-radius: 5px;
       
       &:hover {
         background: rgba(255, 204, 0, 1);
@@ -327,15 +325,11 @@ button:active {
   }
 
   .canvas-wrapper {
-    display: inline-block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     position: relative;
-    width: fit-content;
-    height: fit-content;
-    min-width: 100%;
-    min-height: 100%;
-    max-width: max-content;
-    max-height: max-content;
-    margin: 0 auto;
+    flex-shrink: 0;
   }
 
   .canvas-side-panel {
@@ -437,9 +431,9 @@ button:active {
   display: none;
   
   @media (max-width: 768px) {
-    display: block;
+    display: block !important;
     width: calc(100% - 20px);
-    margin: 10px;
+    margin: 10px auto;
     white-space: nowrap;
     font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #ffcc00, rgb(255, 102, 153));
@@ -448,6 +442,7 @@ button:active {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     color: white;
     font-size: 16px;
+    text-align: center;
     padding: 12px 15px;
     cursor: pointer;
     transition: all 0.3s ease;
