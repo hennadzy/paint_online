@@ -328,43 +328,46 @@ button:active {
     position: relative;
     display: block;
     text-align: center;
-    overflow: scroll !important;
+    overflow: auto !important;
     -webkit-overflow-scrolling: touch;
     padding: 10px;
-    scrollbar-width: auto !important;
-    scrollbar-color: #ff8533 #676767 !important;
+    scrollbar-width: auto;
+    scrollbar-color: rgba(255, 204, 0, 0.98) rgba(103, 103, 103, 0.5);
   }
   
-  /* Толстые скроллбары для Webkit (Chrome/Safari/Brave/Android) */
+  /* Градиентные скроллбары как в ползунках */
   .canvas-container::-webkit-scrollbar {
-    -webkit-appearance: none !important;
-    width: 40px !important;
-    height: 40px !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: block !important;
   }
   
   .canvas-container::-webkit-scrollbar-track {
-    background: rgba(103, 103, 103, 0.8) !important;
-    border-radius: 0 !important;
+    background: rgba(103, 103, 103, 0.5);
+    border-radius: 12px;
+    margin: 3px;
   }
   
   .canvas-container::-webkit-scrollbar-thumb {
-    background: #ff8533 !important;
-    border-radius: 20px !important;
-    border: 8px solid rgba(103, 103, 103, 0.8) !important;
-    min-height: 200px !important;
-    min-width: 200px !important;
+    background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
+    border-radius: 12px;
+    border: 4px solid rgba(103, 103, 103, 0.5);
+    min-height: 120px;
+    min-width: 120px;
   }
   
   .canvas-container::-webkit-scrollbar-thumb:hover {
-    background: #ffaa00 !important;
+    background: linear-gradient(135deg, #ff6699 0%, #ffcc00 100%);
+    box-shadow: 0 2px 6px rgba(255, 204, 0, 0.6);
   }
   
   .canvas-container::-webkit-scrollbar-thumb:active {
-    background: #ff6699 !important;
+    background: linear-gradient(135deg, #ff6699 0%, #ffcc00 100%);
   }
   
   .canvas-container::-webkit-scrollbar-corner {
-    background: rgba(103, 103, 103, 0.8) !important;
+    background: rgba(103, 103, 103, 0.5);
+    border-radius: 12px;
   }
   
   .canvas-layout:not(.has-chat) .canvas-container {
