@@ -107,11 +107,22 @@ const Canvas = observer(() => {
     let initialDistance = 0;
     let initialZoom = 1;
     let activeTouches = 0;
+    let pinchCenterX = 0;
+    let pinchCenterY = 0;
+    let initialScrollLeft = 0;
+    let initialScrollTop = 0;
 
     const getDistance = (touch1, touch2) => {
       const dx = touch2.clientX - touch1.clientX;
       const dy = touch2.clientY - touch1.clientY;
       return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getPinchCenter = (touch1, touch2) => {
+      return {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      };
     };
 
     const stopDrawing = () => {
@@ -143,6 +154,13 @@ const Canvas = observer(() => {
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
+        
+        const center = getPinchCenter(e.touches[0], e.touches[1]);
+        const containerRect = container.getBoundingClientRect();
+        pinchCenterX = center.x - containerRect.left + container.scrollLeft;
+        pinchCenterY = center.y - containerRect.top + container.scrollTop;
+        initialScrollLeft = container.scrollLeft;
+        initialScrollTop = container.scrollTop;
       } else if (e.touches.length > 2) {
         e.preventDefault();
         stopDrawing();
@@ -162,10 +180,27 @@ const Canvas = observer(() => {
           const currentDistance = getDistance(e.touches[0], e.touches[1]);
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
+          
+          const zoomRatio = newZoom / initialZoom;
+          const newScrollLeft = pinchCenterX * zoomRatio - (pinchCenterX - initialScrollLeft);
+          const newScrollTop = pinchCenterY * zoomRatio - (pinchCenterY - initialScrollTop);
+          
           canvasState.setZoom(newZoom);
+          
+          requestAnimationFrame(() => {
+            container.scrollLeft = Math.max(0, newScrollLeft);
+            container.scrollTop = Math.max(0, newScrollTop);
+          });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
           initialZoom = canvasState.zoom;
+          
+          const center = getPinchCenter(e.touches[0], e.touches[1]);
+          const containerRect = container.getBoundingClientRect();
+          pinchCenterX = center.x - containerRect.left + container.scrollLeft;
+          pinchCenterY = center.y - containerRect.top + container.scrollTop;
+          initialScrollLeft = container.scrollLeft;
+          initialScrollTop = container.scrollTop;
         }
       } else if (touchCount === 1 && isPinching.current) {
         e.preventDefault();
