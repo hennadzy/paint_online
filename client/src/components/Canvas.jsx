@@ -95,7 +95,11 @@ const Canvas = observer(() => {
     };
     syncScrollSize();
     const raf = requestAnimationFrame(syncScrollSize);
-    return () => cancelAnimationFrame(raf);
+    const t = setTimeout(syncScrollSize, 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+    };
   }, [canvasState.zoom]);
 
   useEffect(() => {
@@ -263,8 +267,10 @@ const Canvas = observer(() => {
           canvasState.setZoom(newZoom);
 
           requestAnimationFrame(() => {
-            container.scrollLeft = canvasPointX * newZoom - viewportX;
-            container.scrollTop = canvasPointY * newZoom - viewportY;
+            const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+            const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+            container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, canvasPointX * newZoom - viewportX));
+            container.scrollTop = Math.max(0, Math.min(maxScrollTop, canvasPointY * newZoom - viewportY));
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -295,16 +301,18 @@ const Canvas = observer(() => {
       }
     };
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchcancel', handleTouchEnd);
+    const canvas = container.querySelector('.main-canvas');
+    const target = canvas || container;
+    target.addEventListener('touchstart', handleTouchStart, { passive: false });
+    target.addEventListener('touchmove', handleTouchMove, { passive: false });
+    target.addEventListener('touchend', handleTouchEnd);
+    target.addEventListener('touchcancel', handleTouchEnd);
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchcancel', handleTouchEnd);
+      target.removeEventListener('touchstart', handleTouchStart);
+      target.removeEventListener('touchmove', handleTouchMove);
+      target.removeEventListener('touchend', handleTouchEnd);
+      target.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 
