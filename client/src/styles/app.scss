@@ -21,16 +21,7 @@ body.modal-open {
   .top-menu,
   .toolbar,
   .setting-bar {
-    z-index: 1 !important;
-    pointer-events: none !important;
-  }
-  
-  @media (max-width: 768px) {
-    .top-menu,
-    .toolbar,
-    .setting-bar {
-      display: none !important;
-    }
+    display: none !important;
   }
 }
 
