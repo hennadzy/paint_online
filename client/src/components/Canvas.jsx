@@ -404,44 +404,66 @@ const Canvas = observer(() => {
       let startScroll = 0;
 
       const updateThumb = () => {
+        const containerRect = container.getBoundingClientRect();
+        
         if (isVertical) {
-          const scrollRatio = container.scrollTop / (container.scrollHeight - container.clientHeight);
-          const thumbHeight = Math.max(120, (container.clientHeight / container.scrollHeight) * container.clientHeight);
-          const maxThumbTop = container.clientHeight - thumbHeight;
-          thumb.style.height = thumbHeight + 'px';
-          thumb.style.top = (scrollRatio * maxThumbTop) + 'px';
-          scrollbar.style.display = container.scrollHeight > container.clientHeight ? 'block' : 'none';
+          const hasScroll = container.scrollHeight > container.clientHeight;
+          scrollbar.style.display = hasScroll ? 'block' : 'none';
+          
+          if (hasScroll) {
+            const scrollRatio = container.scrollTop / (container.scrollHeight - container.clientHeight);
+            const availableHeight = container.clientHeight - 20; // padding
+            const thumbHeight = Math.max(100, (container.clientHeight / container.scrollHeight) * availableHeight);
+            const maxThumbTop = availableHeight - thumbHeight;
+            
+            thumb.style.height = thumbHeight + 'px';
+            thumb.style.top = (10 + scrollRatio * maxThumbTop) + 'px';
+          }
         } else {
-          const scrollRatio = container.scrollLeft / (container.scrollWidth - container.clientWidth);
-          const thumbWidth = Math.max(120, (container.clientWidth / container.scrollWidth) * container.clientWidth);
-          const maxThumbLeft = container.clientWidth - thumbWidth;
-          thumb.style.width = thumbWidth + 'px';
-          thumb.style.left = (scrollRatio * maxThumbLeft) + 'px';
-          scrollbar.style.display = container.scrollWidth > container.clientWidth ? 'block' : 'none';
+          const hasScroll = container.scrollWidth > container.clientWidth;
+          scrollbar.style.display = hasScroll ? 'block' : 'none';
+          
+          if (hasScroll) {
+            const scrollRatio = container.scrollLeft / (container.scrollWidth - container.clientWidth);
+            const availableWidth = container.clientWidth - 20; // padding
+            const thumbWidth = Math.max(100, (container.clientWidth / container.scrollWidth) * availableWidth);
+            const maxThumbLeft = availableWidth - thumbWidth;
+            
+            thumb.style.width = thumbWidth + 'px';
+            thumb.style.left = (10 + scrollRatio * maxThumbLeft) + 'px';
+          }
         }
       };
 
       const handleStart = (e) => {
         isDragging = true;
-        startPos = isVertical ? e.touches?.[0]?.clientY || e.clientY : e.touches?.[0]?.clientX || e.clientX;
+        const touch = e.touches?.[0];
+        startPos = isVertical ? (touch?.clientY || e.clientY) : (touch?.clientX || e.clientX);
         startScroll = isVertical ? container.scrollTop : container.scrollLeft;
         thumb.classList.add('active');
         e.preventDefault();
+        e.stopPropagation();
       };
 
       const handleMove = (e) => {
         if (!isDragging) return;
-        const currentPos = isVertical ? e.touches?.[0]?.clientY || e.clientY : e.touches?.[0]?.clientX || e.clientX;
+        const touch = e.touches?.[0];
+        const currentPos = isVertical ? (touch?.clientY || e.clientY) : (touch?.clientX || e.clientX);
         const delta = currentPos - startPos;
         
         if (isVertical) {
-          const scrollRatio = delta / (container.clientHeight - thumb.offsetHeight);
+          const availableHeight = container.clientHeight - 20;
+          const thumbHeight = parseFloat(thumb.style.height);
+          const scrollRatio = delta / (availableHeight - thumbHeight);
           container.scrollTop = startScroll + scrollRatio * (container.scrollHeight - container.clientHeight);
         } else {
-          const scrollRatio = delta / (container.clientWidth - thumb.offsetWidth);
+          const availableWidth = container.clientWidth - 20;
+          const thumbWidth = parseFloat(thumb.style.width);
+          const scrollRatio = delta / (availableWidth - thumbWidth);
           container.scrollLeft = startScroll + scrollRatio * (container.scrollWidth - container.clientWidth);
         }
         e.preventDefault();
+        e.stopPropagation();
       };
 
       const handleEnd = () => {
@@ -457,6 +479,8 @@ const Canvas = observer(() => {
       document.addEventListener('touchend', handleEnd);
       
       container.addEventListener('scroll', updateThumb);
+      const resizeObserver = new ResizeObserver(updateThumb);
+      resizeObserver.observe(container);
       updateThumb();
 
       return () => {
@@ -467,6 +491,7 @@ const Canvas = observer(() => {
         document.removeEventListener('mouseup', handleEnd);
         document.removeEventListener('touchend', handleEnd);
         container.removeEventListener('scroll', updateThumb);
+        resizeObserver.disconnect();
         scrollbar.remove();
       };
     };
