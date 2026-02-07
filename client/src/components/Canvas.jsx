@@ -61,7 +61,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 40; // 20px left + 20px right
+      const availableW = container.clientWidth - 25; // 20px left + 20px right
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -404,15 +404,22 @@ const Canvas = observer(() => {
   // При смене режима (локальный ↔ совместный): на мобильном всегда исходное положение и размер холста
   useEffect(() => {
     if (window.innerWidth > 768) return;
-    const container = containerRef.current;
-    if (container) {
-      container.scrollTop = 0;
-      container.scrollLeft = 0;
-    }
-    if (containerRef.current) {
-      const availableW = containerRef.current.clientWidth - 40;
-      const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
-      canvasState.setZoom(fitZoom);
+    const apply = () => {
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+      }
+      if (containerRef.current) {
+        const availableW = containerRef.current.clientWidth - 25; // 5px left + 20px right
+        const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
+        canvasState.setZoom(fitZoom);
+      }
+    };
+    if (!canvasState.isConnected) {
+      requestAnimationFrame(() => requestAnimationFrame(apply));
+    } else {
+      apply();
     }
   }, [canvasState.isConnected]);
 
@@ -423,7 +430,7 @@ const Canvas = observer(() => {
     if (!container) return;
     container.scrollTop = 0;
     container.scrollLeft = 0;
-    const availableW = container.clientWidth - 40;
+    const availableW = container.clientWidth - 25;
     const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
     canvasState.setZoom(fitZoom);
   }, [toolState.toolName]);

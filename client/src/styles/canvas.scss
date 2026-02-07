@@ -245,7 +245,7 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height-local: 160px;   /* локальный режим: топ + тулбар + сетингбар */
+  $mobile-menu-height-local: 165px;   /* локальный: с запасом, чтобы при возврате из совместного не под сетингбар */
   $mobile-menu-height-chat: 230px;    /* совместный: не слишком низко, при зуме не под сетингбар */
 
   html {
@@ -275,7 +275,7 @@ button:active {
     position: relative;
   }
 
-  /* Локальный режим: холст ниже меню (160px) */
+  /* Локальный режим: холст ниже меню (165px) */
   .canvas {
     position: absolute !important;
     top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
@@ -353,8 +353,8 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Равные отступы слева и справа (20px); снизу 20px под скроллбар */
-    padding: 6px 20px 20px 20px;
+    /* Базовые отступы 5px слева/справа; справа 20px под скроллбар, снизу 20px */
+    padding: 5px 20px 20px 5px;
     
     scrollbar-width: none;
     -ms-overflow-style: none;
