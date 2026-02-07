@@ -61,7 +61,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 25; // 5px left + 20px right
+      const availableW = container.clientWidth - 20; // 20px под вертикальный скроллбар (базовые 5px слева/справа — в padding)
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -411,7 +411,7 @@ const Canvas = observer(() => {
         container.scrollLeft = 0;
       }
       if (containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 25; // 5px left + 20px right
+        const availableW = containerRef.current.clientWidth - 20; // 20px под вертикальный скроллбар
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
@@ -431,7 +431,7 @@ const Canvas = observer(() => {
     if (!container) return;
     container.scrollTop = 0;
     container.scrollLeft = 0;
-    const availableW = container.clientWidth - 25;
+    const availableW = container.clientWidth - 20; // 20px под вертикальный скроллбар
     const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
     canvasState.setZoom(fitZoom);
   }, [toolState.toolName]);

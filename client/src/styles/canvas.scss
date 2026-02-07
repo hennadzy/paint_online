@@ -353,8 +353,8 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Базовые отступы 5px слева и справа; справа ещё 20px под скроллбар (итого 25px), снизу 20px */
-    padding: 5px 25px 20px 5px;
+    /* Базовые отступы 5px слева и справа от края экрана; скроллбар справа — поверх зоны холста; снизу 20px */
+    padding: 5px 5px 20px 5px;
     
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -382,7 +382,7 @@ button:active {
     pointer-events: none;
     
     &.vertical {
-      right: 5px; /* 5px от края экрана, в зоне padding 25px справа */
+      right: 0; /* у правого края; перекрывает край холста (базовый отступ 5px сохранён) */
       top: 0;
       bottom: 20px;
       width: 20px;
@@ -390,7 +390,7 @@ button:active {
     
     &.horizontal {
       left: 0;
-      right: 25px; /* 5px от края + 20px под вертикальный скроллбар */
+      right: 20px; /* не заходить под вертикальный скроллбар */
       bottom: 0;
       height: 20px;
     }
