@@ -245,7 +245,7 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height: 160px;
+  $mobile-menu-height: 210px; /* 160 + 50: в совместном режиме сетингбар занимает больше */
 
   html {
     height: 100%;
@@ -274,7 +274,7 @@ button:active {
     position: relative;
   }
 
-  /* Холст ВСЕГДА ниже меню: не выше 160px от верха при любом зуме/режиме */
+  /* Холст ВСЕГДА ниже меню: не выше 210px от верха (топ+тулбар+сетингбар) */
   .canvas {
     position: absolute !important;
     top: calc(#{$mobile-menu-height} + env(safe-area-inset-top, 0px)) !important;
