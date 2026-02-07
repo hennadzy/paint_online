@@ -274,7 +274,7 @@ button:active {
 
   .canvas {
     position: absolute;
-    top: calc(100px + env(safe-area-inset-top, 0px));
+    top: calc(150px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     bottom: 0;
@@ -328,14 +328,40 @@ button:active {
     position: relative;
     display: block;
     text-align: center;
-    overflow: scroll;
+    overflow: scroll !important;
     -webkit-overflow-scrolling: touch;
     padding: 10px;
+    
+    /* Толстые скроллбары для Firefox/Android */
+    scrollbar-width: thick;
+    scrollbar-color: #ff8533 #676767;
+  }
+  
+  /* Толстые скроллбары для Webkit (Chrome/Safari/Brave) */
+  .canvas-container::-webkit-scrollbar {
+    width: 20px !important;
+    height: 20px !important;
+    display: block !important;
+  }
+  
+  .canvas-container::-webkit-scrollbar-track {
+    background: #676767;
+  }
+  
+  .canvas-container::-webkit-scrollbar-thumb {
+    background: #ff8533;
+    border-radius: 10px;
+    min-height: 100px;
+    min-width: 100px;
+  }
+  
+  .canvas-container::-webkit-scrollbar-thumb:active {
+    background: #ff6699;
   }
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - 100px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+    max-height: calc(100vh - 150px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
   }
   
   .canvas-layout.has-chat .canvas-container {
