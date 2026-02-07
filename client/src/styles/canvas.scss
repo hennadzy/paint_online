@@ -269,10 +269,10 @@ button:active {
   }
 
   .canvas-layout:not(.has-chat) {
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding-top: 10px;
-    padding-bottom: 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 
   .canvas-layout.has-chat {
@@ -293,9 +293,8 @@ button:active {
   }
 
   .canvas-container {
-    flex: 1;
+    flex-shrink: 0;
     width: 100%;
-    min-height: 0;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch;
     position: relative;
@@ -335,6 +334,11 @@ button:active {
     &::-webkit-scrollbar-corner {
       background: rgba(103, 103, 103, 0.3);
     }
+  }
+  
+  .canvas-layout.has-chat .canvas-container {
+    flex: 1;
+    min-height: 0;
   }
 
   .canvas-wrapper {
