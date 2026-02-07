@@ -373,11 +373,11 @@ button:active {
     flex-shrink: 0;
   }
 
-  /* Полоса прокрутки жёстко у края экрана (position: fixed в JS); трек = видимая область, ползунок уменьшается при росте холста */
+  /* Полоса прокрутки жёстко у края экрана (position: fixed в JS); приглушённые, ровные концы трека */
   .custom-scrollbar {
     position: fixed;
-    background: rgba(103, 103, 103, 0.6);
-    border-radius: 10px;
+    background: rgba(80, 80, 80, 0.35);
+    border-radius: 0;
     z-index: 1100;
     pointer-events: auto;
     /* top/height и left/width задаются в JS по getBoundingClientRect() контейнера */
@@ -395,23 +395,23 @@ button:active {
 
   .custom-scrollbar-thumb {
     position: absolute;
-    background: linear-gradient(to right, #ffcc00, #ff6699);
-    border-radius: 10px;
-    border: 2px solid rgba(103, 103, 103, 0.6);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(to right, rgba(255, 204, 0, 0.75), rgba(255, 102, 153, 0.75));
+    border-radius: 4px;
+    border: 1px solid rgba(80, 80, 80, 0.4);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     pointer-events: auto;
     cursor: grab;
     transition: background 0.2s ease, box-shadow 0.2s ease;
     touch-action: none;
     
     &:hover {
-      background: linear-gradient(to right, #ff6699, #ffcc00);
-      box-shadow: 0 2px 8px rgba(255, 204, 0, 0.6);
+      background: linear-gradient(to right, rgba(255, 102, 153, 0.85), rgba(255, 204, 0, 0.85));
+      box-shadow: 0 2px 6px rgba(255, 204, 0, 0.4);
     }
     
     &.active {
-      background: linear-gradient(to right, #ff6699, #ffcc00);
-      box-shadow: 0 2px 10px rgba(255, 204, 0, 0.8);
+      background: linear-gradient(to right, rgba(255, 102, 153, 0.9), rgba(255, 204, 0, 0.9));
+      box-shadow: 0 2px 8px rgba(255, 204, 0, 0.5);
       cursor: grabbing;
     }
     
