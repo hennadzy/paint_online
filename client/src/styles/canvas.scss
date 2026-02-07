@@ -328,36 +328,35 @@ button:active {
     position: relative;
     display: block;
     text-align: center;
-    overflow: auto !important;
+    overflow: scroll !important;
     -webkit-overflow-scrolling: touch;
     padding: 10px;
-  }
-  
-  /* Толстые скроллбары для Firefox/Android */
-  .canvas-container {
-    scrollbar-width: thick !important;
+    scrollbar-width: auto !important;
     scrollbar-color: #ff8533 #676767 !important;
   }
   
-  /* Толстые скроллбары для Webkit (Chrome/Safari/Brave) */
+  /* Толстые скроллбары для Webkit (Chrome/Safari/Brave/Android) */
   .canvas-container::-webkit-scrollbar {
-    width: 30px !important;
-    height: 30px !important;
-    display: block !important;
     -webkit-appearance: none !important;
+    width: 40px !important;
+    height: 40px !important;
   }
   
   .canvas-container::-webkit-scrollbar-track {
-    background: #676767 !important;
+    background: rgba(103, 103, 103, 0.8) !important;
     border-radius: 0 !important;
   }
   
   .canvas-container::-webkit-scrollbar-thumb {
     background: #ff8533 !important;
-    border-radius: 15px !important;
-    border: 5px solid #676767 !important;
-    min-height: 150px !important;
-    min-width: 150px !important;
+    border-radius: 20px !important;
+    border: 8px solid rgba(103, 103, 103, 0.8) !important;
+    min-height: 200px !important;
+    min-width: 200px !important;
+  }
+  
+  .canvas-container::-webkit-scrollbar-thumb:hover {
+    background: #ffaa00 !important;
   }
   
   .canvas-container::-webkit-scrollbar-thumb:active {
@@ -365,7 +364,7 @@ button:active {
   }
   
   .canvas-container::-webkit-scrollbar-corner {
-    background: #676767 !important;
+    background: rgba(103, 103, 103, 0.8) !important;
   }
   
   .canvas-layout:not(.has-chat) .canvas-container {
