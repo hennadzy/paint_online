@@ -8,7 +8,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  z-index: 10000;
+  z-index: 100000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,7 +63,7 @@
   line-height: 1;
   cursor: pointer;
   transition: all 0.3s ease;
-  z-index: 10001;
+  z-index: 100002;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -516,7 +516,7 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    z-index: 10000 !important;
+    z-index: 100000 !important;
     box-sizing: border-box;
   
     &::-webkit-scrollbar {
@@ -539,7 +539,7 @@
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    z-index: 10001 !important;
+    z-index: 100001 !important;
   }
 
   .room-interface {
@@ -687,7 +687,7 @@
     padding: 20px !important;
     padding-top: calc(20vh + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: calc(20vh + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 10002 !important;
+    z-index: 100002 !important;
   }
 
   .room-interface.input-dialog {
@@ -715,7 +715,7 @@
   height: 100vh !important;
   height: 100dvh !important;
   max-height: none !important;
-  z-index: 10001 !important;
+  z-index: 100001 !important;
   padding: 0 !important;
   
   @media (max-width: 768px) {
