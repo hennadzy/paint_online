@@ -165,11 +165,24 @@ const Canvas = observer(() => {
       }
     };
 
+    // Отмена текущего штриха без сохранения на холст (для жестов — не оставлять отметок)
+    const cancelDrawing = () => {
+      if (toolState.tool && toolState.tool.mouseDown) {
+        const tool = toolState.tool;
+        tool.mouseDown = false;
+        canvasState.isDrawing = false;
+        if (tool.points) tool.points.length = 0;
+        if (tool.startX !== undefined) tool.startX = undefined;
+        if (tool.startY !== undefined) tool.startY = undefined;
+        canvasState.redrawCanvas();
+      }
+    };
+
     const handleTouchStart = (e) => {
       activeTouches = e.touches.length;
       if (e.touches.length === 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
@@ -183,7 +196,7 @@ const Canvas = observer(() => {
         initialScrollTop = container.scrollTop;
       } else if (e.touches.length > 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
       }
     };
@@ -193,7 +206,7 @@ const Canvas = observer(() => {
       
       if (touchCount >= 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
         
         if (touchCount === 2 && initialDistance > 0) {
@@ -201,11 +214,11 @@ const Canvas = observer(() => {
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
 
-          // Сдвиг двумя пальцами: дельта центра жеста в экранных координатах
+          // Сдвиг двумя пальцами: дельта центра жеста (инвертировано — палец вправо = холст вправо)
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
-          const pannedScrollLeft = initialScrollLeft + translationX;
-          const pannedScrollTop = initialScrollTop + translationY;
+          const pannedScrollLeft = initialScrollLeft - translationX;
+          const pannedScrollTop = initialScrollTop - translationY;
 
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
