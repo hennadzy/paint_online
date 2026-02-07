@@ -20,7 +20,8 @@ body::-webkit-scrollbar {
 body.modal-open {
   .top-menu,
   .toolbar,
-  .setting-bar {
+  .setting-bar,
+  .custom-scrollbar {
     display: none !important;
   }
 }
