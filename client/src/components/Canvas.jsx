@@ -388,14 +388,12 @@ const Canvas = observer(() => {
         </div>
       </div>
 
-      {!canvasState.isConnected && !params.id && (
-        <button 
-          className="about-btn-mobile"
-          onClick={() => canvasState.setShowAboutModal(true)}
-        >
-          О программе
-        </button>
-      )}
+      <button 
+        className="about-btn-mobile"
+        onClick={() => canvasState.setShowAboutModal(true)}
+      >
+        О программе
+      </button>
 
       {(canvasState.modalOpen || canvasState.showRoomInterface) && (
         <RoomInterface roomId={params.id} />

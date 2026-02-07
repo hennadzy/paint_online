@@ -25,6 +25,7 @@ html, body {
   position: relative;
   width: 100%;
   height: 100%;
+  z-index: 0;
 }
 
 @media (min-width: 769px) {
@@ -262,6 +263,8 @@ button:active {
     gap: 0;
     padding-bottom: 0;
     min-height: 0;
+    justify-content: center;
+    align-items: center;
   }
 
   .canvas-layout:not(.has-chat) {
@@ -291,12 +294,15 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 0;
+    min-width: 0;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 204, 0, 0.8) rgba(0, 0, 0, 0.3);
     
@@ -330,6 +336,8 @@ button:active {
     align-items: center;
     position: relative;
     flex-shrink: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .canvas-side-panel {
