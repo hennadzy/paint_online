@@ -269,10 +269,10 @@ button:active {
   }
 
   .canvas-layout:not(.has-chat) {
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    padding-top: 0;
-    padding-bottom: 70px;
+    padding-top: 10px;
+    padding-bottom: 0;
   }
 
   .canvas-layout.has-chat {
@@ -296,60 +296,19 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
-    overflow: auto !important;
+    overflow: scroll !important;
     -webkit-overflow-scrolling: touch;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;
     min-height: 0;
     min-width: 0;
-    scrollbar-width: auto;
-    scrollbar-color: rgba(255, 204, 0, 0.95) rgba(0, 0, 0, 0.5);
-    
-    &::-webkit-scrollbar {
-      width: 20px !important;
-      height: 20px !important;
-      display: block !important;
-      -webkit-appearance: none;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      margin: 2px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 204, 0, 0.95);
-      border-radius: 10px;
-      border: 3px solid rgba(0, 0, 0, 0.5);
-      min-height: 50px;
-      min-width: 50px;
-      
-      &:hover {
-        background: rgba(255, 204, 0, 1);
-      }
-      
-      &:active {
-        background: rgba(255, 102, 153, 1);
-      }
-    }
-    
-    &::-webkit-scrollbar-corner {
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-    }
+    text-align: center;
   }
 
   .canvas-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: inline-block;
     position: relative;
-    flex-shrink: 0;
-    min-width: min-content;
-    min-height: min-content;
+    margin: 0 auto;
   }
 
   .canvas-side-panel {
@@ -452,11 +411,10 @@ button:active {
   
   @media (max-width: 768px) {
     display: block !important;
-    position: fixed;
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
+    position: relative;
     width: calc(100% - 20px);
+    margin: 10px auto;
+    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     white-space: nowrap;
     font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #ffcc00, rgb(255, 102, 153));
@@ -467,10 +425,10 @@ button:active {
     font-size: 16px;
     text-align: center;
     padding: 12px 15px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 999;
+    flex-shrink: 0;
+    z-index: 100;
   }
 }
 

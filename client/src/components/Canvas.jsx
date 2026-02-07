@@ -383,22 +383,19 @@ const Canvas = observer(() => {
           </div>
         </div>
 
+        {!canvasState.isConnected && !canvasState.currentRoomId && (
+          <button 
+            className="about-btn-mobile"
+            onClick={() => canvasState.setShowAboutModal(true)}
+          >
+            О программе
+          </button>
+        )}
+
         <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
           {canvasState.isConnected && <Chat />}
         </div>
       </div>
-
-      {!canvasState.isConnected && !canvasState.currentRoomId && (
-        <button 
-          className="about-btn-mobile"
-          onClick={() => canvasState.setShowAboutModal(true)}
-          style={{ 
-            display: typeof window !== 'undefined' && window.innerWidth <= 768 ? 'block' : 'none'
-          }}
-        >
-          О программе
-        </button>
-      )}
 
       {(canvasState.modalOpen || canvasState.showRoomInterface) && (
         <RoomInterface roomId={params.id} />

@@ -2,22 +2,24 @@
 
 .room-interface-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  z-index: 100000;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 999999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
   animation: fadeIn 0.3s ease;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  box-sizing: border-box;
 
   @keyframes fadeIn {
     from {
@@ -63,7 +65,7 @@
   line-height: 1;
   cursor: pointer;
   transition: all 0.3s ease;
-  z-index: 100002;
+  z-index: 9999999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -499,7 +501,7 @@
 
 @media (max-width: 768px) {
   .room-interface-overlay {
-    position: fixed;
+    position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
@@ -516,8 +518,10 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    z-index: 100000 !important;
+    z-index: 999999 !important;
     box-sizing: border-box;
+    margin: 0 !important;
+    background: rgba(0, 0, 0, 0.98) !important;
   
     &::-webkit-scrollbar {
       display: none;
@@ -539,7 +543,8 @@
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    z-index: 100001 !important;
+    z-index: 999999 !important;
+    background: rgba(0, 0, 0, 1) !important;
   }
 
   .room-interface {
@@ -685,9 +690,10 @@
     align-items: flex-start !important;
     justify-content: center !important;
     padding: 20px !important;
-    padding-top: calc(20vh + env(safe-area-inset-top, 0px)) !important;
-    padding-bottom: calc(20vh + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 100002 !important;
+    padding-top: calc(15vh + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(15vh + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 999999 !important;
+    background: rgba(0, 0, 0, 0.98) !important;
   }
 
   .room-interface.input-dialog {
@@ -715,8 +721,9 @@
   height: 100vh !important;
   height: 100dvh !important;
   max-height: none !important;
-  z-index: 100001 !important;
+  z-index: 999999 !important;
   padding: 0 !important;
+  background: rgba(0, 0, 0, 1) !important;
   
   @media (max-width: 768px) {
     padding-top: env(safe-area-inset-top, 0px) !important;
