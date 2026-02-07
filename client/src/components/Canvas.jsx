@@ -368,15 +368,6 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas">
-      {!canvasState.isConnected && !params.id && (
-        <button 
-          className="about-btn-mobile"
-          onClick={() => canvasState.setShowAboutModal(true)}
-        >
-          О программе
-        </button>
-      )}
-
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : ''}`}>
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-wrapper">
@@ -396,6 +387,15 @@ const Canvas = observer(() => {
           {canvasState.isConnected && <Chat />}
         </div>
       </div>
+
+      {!canvasState.isConnected && !params.id && (
+        <button 
+          className="about-btn-mobile"
+          onClick={() => canvasState.setShowAboutModal(true)}
+        >
+          О программе
+        </button>
+      )}
 
       {(canvasState.modalOpen || canvasState.showRoomInterface) && (
         <RoomInterface roomId={params.id} />

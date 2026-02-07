@@ -319,8 +319,8 @@ const RoomInterface = observer(({ roomId }) => {
 
   if (!canvasState.isConnected && canvasState.showRoomInterface) {
     return (
-      <div className="room-interface-overlay" onClick={closeInterface} data-nosnippet>
-        <div className="room-interface" onClick={(e) => e.stopPropagation()}>
+      <div className="room-interface-overlay fullscreen" onClick={closeInterface} data-nosnippet>
+        <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
           <button className="room-close-btn" onClick={closeInterface}>×</button>
           <div className="room-welcome">
             <h1>Рисуй онлайн вместе с друзьями</h1>
@@ -328,7 +328,7 @@ const RoomInterface = observer(({ roomId }) => {
           </div>
 
         {createdRoom ? (
-          <div className="room-card created-room">
+          <div className="room-card created-room fullscreen">
             <div className="room-card-header">
               <h2>Комната "{createdRoom.name}" создана!</h2>
               <p>Поделитесь ссылкой с друзьями</p>
@@ -470,7 +470,7 @@ const RoomInterface = observer(({ roomId }) => {
                       <p className="empty-hint">Создайте первую комнату!</p>
                     </div>
                   ) : (
-                    <div className="rooms-list">
+                    <div className="rooms-list fullscreen">
                       {publicRooms.map(room => (
                         <div key={room.id} className="room-item">
                           <div className="room-item-info">

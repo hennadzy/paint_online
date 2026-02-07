@@ -7,8 +7,8 @@ const AboutModal = observer(() => {
   if (!canvasState.showAboutModal) return null;
 
   return (
-    <div className="room-interface-overlay" onClick={() => canvasState.setShowAboutModal(false)}>
-      <div className="room-interface" onClick={(e) => e.stopPropagation()}>
+    <div className="room-interface-overlay fullscreen" onClick={() => canvasState.setShowAboutModal(false)}>
+      <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={() => canvasState.setShowAboutModal(false)}>×</button>
         
         <div className="room-welcome">
@@ -16,7 +16,7 @@ const AboutModal = observer(() => {
           <p itemProp="description">Рисуйте онлайн в браузере бесплатно. Совместное рисование в реальном времени</p>
         </div>
 
-        <div className="room-card about-content" itemScope itemType="https://schema.org/SoftwareApplication">
+        <div className="room-card about-content fullscreen" itemScope itemType="https://schema.org/SoftwareApplication">
           <meta itemProp="name" content="Рисование.Онлайн - Онлайн редактор для рисования" />
           <meta itemProp="applicationCategory" content="GraphicsApplication" />
           <meta itemProp="operatingSystem" content="Web Browser" />

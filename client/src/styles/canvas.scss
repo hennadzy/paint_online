@@ -262,6 +262,7 @@ button:active {
     gap: 0;
     padding-bottom: 0;
     min-height: 0;
+    max-height: 100%;
   }
 
   .canvas-layout:not(.has-chat) {
@@ -291,6 +292,7 @@ button:active {
     flex: 1;
     width: 100%;
     min-height: 0;
+    max-height: 100%;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
@@ -331,6 +333,8 @@ button:active {
     height: fit-content;
     min-width: 100%;
     min-height: 100%;
+    max-width: max-content;
+    max-height: max-content;
     margin: 0 auto;
   }
 
