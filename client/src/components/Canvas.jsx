@@ -252,10 +252,11 @@ const Canvas = observer(() => {
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
 
+          // Инвертированное перемещение: палец вправо — холст вправо (как перетаскивание листа)
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
-          const pannedScrollLeft = initialScrollLeft - translationX;
-          const pannedScrollTop = initialScrollTop - translationY;
+          const pannedScrollLeft = initialScrollLeft + translationX;
+          const pannedScrollTop = initialScrollTop + translationY;
 
           const scale = currentDistance / initialDistance;
           const zoomThreshold = 0.04;
