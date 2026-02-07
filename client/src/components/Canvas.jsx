@@ -384,6 +384,102 @@ const Canvas = observer(() => {
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
+  // Кастомные скроллбары для мобильных устройств
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || window.innerWidth > 768) return;
+
+    const createScrollbar = (isVertical) => {
+      const scrollbar = document.createElement('div');
+      scrollbar.className = `custom-scrollbar ${isVertical ? 'vertical' : 'horizontal'}`;
+      
+      const thumb = document.createElement('div');
+      thumb.className = 'custom-scrollbar-thumb';
+      scrollbar.appendChild(thumb);
+      
+      container.appendChild(scrollbar);
+      
+      let isDragging = false;
+      let startPos = 0;
+      let startScroll = 0;
+
+      const updateThumb = () => {
+        if (isVertical) {
+          const scrollRatio = container.scrollTop / (container.scrollHeight - container.clientHeight);
+          const thumbHeight = Math.max(120, (container.clientHeight / container.scrollHeight) * container.clientHeight);
+          const maxThumbTop = container.clientHeight - thumbHeight;
+          thumb.style.height = thumbHeight + 'px';
+          thumb.style.top = (scrollRatio * maxThumbTop) + 'px';
+          scrollbar.style.display = container.scrollHeight > container.clientHeight ? 'block' : 'none';
+        } else {
+          const scrollRatio = container.scrollLeft / (container.scrollWidth - container.clientWidth);
+          const thumbWidth = Math.max(120, (container.clientWidth / container.scrollWidth) * container.clientWidth);
+          const maxThumbLeft = container.clientWidth - thumbWidth;
+          thumb.style.width = thumbWidth + 'px';
+          thumb.style.left = (scrollRatio * maxThumbLeft) + 'px';
+          scrollbar.style.display = container.scrollWidth > container.clientWidth ? 'block' : 'none';
+        }
+      };
+
+      const handleStart = (e) => {
+        isDragging = true;
+        startPos = isVertical ? e.touches?.[0]?.clientY || e.clientY : e.touches?.[0]?.clientX || e.clientX;
+        startScroll = isVertical ? container.scrollTop : container.scrollLeft;
+        thumb.classList.add('active');
+        e.preventDefault();
+      };
+
+      const handleMove = (e) => {
+        if (!isDragging) return;
+        const currentPos = isVertical ? e.touches?.[0]?.clientY || e.clientY : e.touches?.[0]?.clientX || e.clientX;
+        const delta = currentPos - startPos;
+        
+        if (isVertical) {
+          const scrollRatio = delta / (container.clientHeight - thumb.offsetHeight);
+          container.scrollTop = startScroll + scrollRatio * (container.scrollHeight - container.clientHeight);
+        } else {
+          const scrollRatio = delta / (container.clientWidth - thumb.offsetWidth);
+          container.scrollLeft = startScroll + scrollRatio * (container.scrollWidth - container.clientWidth);
+        }
+        e.preventDefault();
+      };
+
+      const handleEnd = () => {
+        isDragging = false;
+        thumb.classList.remove('active');
+      };
+
+      thumb.addEventListener('mousedown', handleStart);
+      thumb.addEventListener('touchstart', handleStart, { passive: false });
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('touchmove', handleMove, { passive: false });
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchend', handleEnd);
+      
+      container.addEventListener('scroll', updateThumb);
+      updateThumb();
+
+      return () => {
+        thumb.removeEventListener('mousedown', handleStart);
+        thumb.removeEventListener('touchstart', handleStart);
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchend', handleEnd);
+        container.removeEventListener('scroll', updateThumb);
+        scrollbar.remove();
+      };
+    };
+
+    const cleanupVertical = createScrollbar(true);
+    const cleanupHorizontal = createScrollbar(false);
+
+    return () => {
+      cleanupVertical();
+      cleanupHorizontal();
+    };
+  }, []);
+
 
   return (
     <div className="canvas">
