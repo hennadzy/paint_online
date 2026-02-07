@@ -44,9 +44,9 @@ const RestoreDialog = observer(({ show, timestamp, onRestore, onDiscard }) => {
   }
   
   return (
-    <div className="room-interface-overlay" data-nosnippet>
-      <div className="room-interface">
-        <div className="room-card">
+    <div className="room-interface-overlay input-dialog-overlay" data-nosnippet>
+      <div className="room-interface input-dialog">
+        <div className="room-card username-form">
           <div className="room-card-header">
             <h2>Восстановить работу?</h2>
             <p>Найдена несохранённая работа от {formattedTime}</p>

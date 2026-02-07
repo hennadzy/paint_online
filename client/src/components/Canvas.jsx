@@ -181,21 +181,24 @@ const Canvas = observer(() => {
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           
-          // Пересчитываем центр жеста в реальном времени
-          const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
+          // Увеличение относительно центра жеста
+          const zoomChange = newZoom / canvasState.zoom;
           const containerRect = container.getBoundingClientRect();
-          const currentCenterX = currentCenter.x - containerRect.left + container.scrollLeft;
-          const currentCenterY = currentCenter.y - containerRect.top + container.scrollTop;
           
-          const zoomRatio = newZoom / initialZoom;
-          const newScrollLeft = currentCenterX * zoomRatio - (currentCenter.x - containerRect.left);
-          const newScrollTop = currentCenterY * zoomRatio - (currentCenter.y - containerRect.top);
+          // Центр жеста относительно viewport
+          const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
+          const viewportX = currentCenter.x - containerRect.left;
+          const viewportY = currentCenter.y - containerRect.top;
+          
+          // Точка на холсте, которую нужно сохранить под пальцами
+          const canvasPointX = (container.scrollLeft + viewportX) / canvasState.zoom;
+          const canvasPointY = (container.scrollTop + viewportY) / canvasState.zoom;
           
           canvasState.setZoom(newZoom);
           
           requestAnimationFrame(() => {
-            container.scrollLeft = Math.max(0, newScrollLeft);
-            container.scrollTop = Math.max(0, newScrollTop);
+            container.scrollLeft = canvasPointX * newZoom - viewportX;
+            container.scrollTop = canvasPointY * newZoom - viewportY;
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -372,14 +375,14 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    const isModalOpen = canvasState.showAboutModal || canvasState.showRoomInterface || canvasState.modalOpen;
+    const isModalOpen = canvasState.showAboutModal || canvasState.showRoomInterface || canvasState.modalOpen || canvasState.showRestoreDialog;
     if (isModalOpen) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
     }
     return () => document.body.classList.remove('modal-open');
-  }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen]);
+  }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
 
   return (
