@@ -68,7 +68,7 @@ const Canvas = observer(() => {
     return () => clearTimeout(timer);
   }, []);
 
-  // На мобильном: скроллируемая область не меньше холста, чтобы при зуме можно было пролистать весь холст. Скроллбары по-прежнему показываются только при overflow (hasScroll).
+  // На мобильном: при зуме (холст больше контейнера) задаём скроллируемой области размер холста, иначе сбрасываем — скроллбары только при overflow, без ResizeObserver чтобы не мешать жесту перемещения.
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const container = containerRef.current;
@@ -77,17 +77,25 @@ const Canvas = observer(() => {
     const inner = container.querySelector('.canvas-container-inner');
     if (!inner) return;
     const syncScrollSize = () => {
-      const w = Math.max(container.clientWidth, canvas.offsetWidth);
-      const h = Math.max(container.clientHeight, canvas.offsetHeight);
-      inner.style.minWidth = `${w}px`;
-      inner.style.minHeight = `${h}px`;
-      inner.style.width = `${w}px`;
-      inner.style.height = `${h}px`;
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+      const canvasW = canvas.offsetWidth;
+      const canvasH = canvas.offsetHeight;
+      if (canvasW > cw || canvasH > ch) {
+        inner.style.minWidth = `${canvasW}px`;
+        inner.style.minHeight = `${canvasH}px`;
+        inner.style.width = `${canvasW}px`;
+        inner.style.height = `${canvasH}px`;
+      } else {
+        inner.style.minWidth = '';
+        inner.style.minHeight = '';
+        inner.style.width = '';
+        inner.style.height = '';
+      }
     };
     syncScrollSize();
-    const ro = new ResizeObserver(syncScrollSize);
-    ro.observe(canvas);
-    return () => ro.disconnect();
+    const raf = requestAnimationFrame(syncScrollSize);
+    return () => cancelAnimationFrame(raf);
   }, [canvasState.zoom]);
 
   useEffect(() => {
