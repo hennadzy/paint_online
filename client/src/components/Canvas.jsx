@@ -493,8 +493,7 @@ const Canvas = observer(() => {
 
           scrollbar.style.left = `${rect.left}px`;
           scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
-          const isLocal = !canvasState.isConnected;
-          scrollbar.style.top = isLocal ? `${window.innerHeight - 20}px` : `${Math.min(rect.bottom - 20, window.innerHeight - 20)}px`;
+          scrollbar.style.top = `${Math.min(rect.bottom - 20, window.innerHeight - 20)}px`;
           scrollbar.style.height = '20px';
 
           if (hasScroll) {
