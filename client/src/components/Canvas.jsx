@@ -443,7 +443,7 @@ const Canvas = observer(() => {
 
     const TRACK_VERTICAL_INSET = 20; // место под горизонтальный скроллбар
     const TRACK_HORIZONTAL_INSET = 20; // место под вертикальный скроллбар
-    const MIN_THUMB_SIZE = 40; // минимальный размер ползунка для удобного тапа
+    const MIN_THUMB_SIZE = 24; // минимум ползунка; при росте холста ползунок уменьшается пропорционально
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -453,13 +453,14 @@ const Canvas = observer(() => {
       thumb.className = 'custom-scrollbar-thumb';
       scrollbar.appendChild(thumb);
 
-      container.appendChild(scrollbar);
+      document.body.appendChild(scrollbar);
 
       let isDragging = false;
       let startPos = 0;
       let startScroll = 0;
 
       const updateThumb = () => {
+        const rect = container.getBoundingClientRect();
         if (isVertical) {
           const scrollHeight = container.scrollHeight;
           const clientHeight = container.clientHeight;
@@ -467,11 +468,14 @@ const Canvas = observer(() => {
           const hasScroll = scrollableRange > 0;
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
+          scrollbar.style.top = `${rect.top}px`;
+          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET}px`;
+
           if (hasScroll) {
-            const trackHeight = clientHeight - TRACK_VERTICAL_INSET;
+            const trackHeight = rect.height - TRACK_VERTICAL_INSET;
             const thumbHeight = Math.max(
               MIN_THUMB_SIZE,
-              Math.min(trackHeight, (clientHeight / scrollHeight) * trackHeight)
+              (clientHeight / scrollHeight) * trackHeight
             );
             const thumbTravel = Math.max(0, trackHeight - thumbHeight);
             const scrollRatio = scrollableRange > 0 ? container.scrollTop / scrollableRange : 0;
@@ -487,11 +491,15 @@ const Canvas = observer(() => {
           const hasScroll = scrollableRange > 0;
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
+          scrollbar.style.left = `${rect.left}px`;
+          scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
+          scrollbar.style.bottom = '0';
+
           if (hasScroll) {
-            const trackWidth = clientWidth - TRACK_HORIZONTAL_INSET;
+            const trackWidth = rect.width - TRACK_HORIZONTAL_INSET;
             const thumbWidth = Math.max(
               MIN_THUMB_SIZE,
-              Math.min(trackWidth, (clientWidth / scrollWidth) * trackWidth)
+              (clientWidth / scrollWidth) * trackWidth
             );
             const thumbTravel = Math.max(0, trackWidth - thumbWidth);
             const scrollRatio = scrollableRange > 0 ? container.scrollLeft / scrollableRange : 0;

@@ -373,24 +373,21 @@ button:active {
     flex-shrink: 0;
   }
 
-  /* Справа/снизу: трек и ползунок, как у нативного скроллбара; клик по треку — прокрутка на страницу */
+  /* Полоса прокрутки жёстко у края экрана (position: fixed в JS); трек = видимая область, ползунок уменьшается при росте холста */
   .custom-scrollbar {
-    position: absolute;
+    position: fixed;
     background: rgba(103, 103, 103, 0.6);
     border-radius: 10px;
-    z-index: 100;
+    z-index: 1100;
     pointer-events: auto;
+    /* top/height и left/width задаются в JS по getBoundingClientRect() контейнера */
     
     &.vertical {
-      right: 0; /* у правого края; перекрывает край холста (базовый отступ 5px сохранён) */
-      top: 0;
-      bottom: 20px;
+      right: 0;
       width: 20px;
     }
     
     &.horizontal {
-      left: 0;
-      right: 20px; /* не заходить под вертикальный скроллбар */
       bottom: 0;
       height: 20px;
     }
