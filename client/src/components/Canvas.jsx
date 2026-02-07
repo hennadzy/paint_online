@@ -181,9 +181,15 @@ const Canvas = observer(() => {
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           
+          // Пересчитываем центр жеста в реальном времени
+          const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
+          const containerRect = container.getBoundingClientRect();
+          const currentCenterX = currentCenter.x - containerRect.left + container.scrollLeft;
+          const currentCenterY = currentCenter.y - containerRect.top + container.scrollTop;
+          
           const zoomRatio = newZoom / initialZoom;
-          const newScrollLeft = pinchCenterX * zoomRatio - (pinchCenterX - initialScrollLeft);
-          const newScrollTop = pinchCenterY * zoomRatio - (pinchCenterY - initialScrollTop);
+          const newScrollLeft = currentCenterX * zoomRatio - (currentCenter.x - containerRect.left);
+          const newScrollTop = currentCenterY * zoomRatio - (currentCenter.y - containerRect.top);
           
           canvasState.setZoom(newZoom);
           

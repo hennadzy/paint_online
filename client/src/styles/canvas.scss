@@ -302,37 +302,42 @@ button:active {
     justify-content: center;
     align-items: center;
     scrollbar-width: auto;
-    scrollbar-color: rgba(255, 204, 0, 0.95) rgba(103, 103, 103, 0.3);
+    scrollbar-color: rgba(255, 204, 0, 0.98) rgba(103, 103, 103, 0.5);
     
     &::-webkit-scrollbar {
-      width: 14px !important;
-      height: 14px !important;
+      width: 18px !important;
+      height: 18px !important;
       display: block !important;
     }
     
     &::-webkit-scrollbar-track {
-      background: rgba(103, 103, 103, 0.3);
-      border-radius: 7px;
+      background: rgba(103, 103, 103, 0.5);
+      border-radius: 9px;
+      margin: 3px;
     }
     
     &::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, rgba(255, 204, 0, 0.95), rgba(255, 102, 153, 0.95));
-      border-radius: 7px;
-      border: 2px solid rgba(103, 103, 103, 0.3);
-      min-height: 60px;
-      min-width: 60px;
+      background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
+      border-radius: 9px;
+      border: 3px solid rgba(103, 103, 103, 0.5);
+      min-height: 80px;
+      min-width: 80px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       
       &:hover {
-        background: linear-gradient(135deg, rgba(255, 204, 0, 1), rgba(255, 102, 153, 1));
+        background: linear-gradient(135deg, #ffd700 0%, #ff8ab8 100%);
+        box-shadow: 0 4px 12px rgba(255, 102, 153, 0.5);
       }
       
       &:active {
-        background: linear-gradient(135deg, rgba(255, 102, 153, 1), rgba(255, 204, 0, 1));
+        background: linear-gradient(135deg, #ff6699 0%, #ffcc00 100%);
+        box-shadow: 0 2px 6px rgba(255, 204, 0, 0.6);
       }
     }
     
     &::-webkit-scrollbar-corner {
-      background: rgba(103, 103, 103, 0.3);
+      background: rgba(103, 103, 103, 0.5);
+      border-radius: 9px;
     }
   }
   
