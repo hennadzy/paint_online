@@ -401,20 +401,18 @@ const Canvas = observer(() => {
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
-  // При выходе из комнаты: сброс скролла и повторное выравнивание по ширине (без полос прокрутки)
+  // При смене режима (локальный ↔ совместный): на мобильном всегда исходное положение и размер холста
   useEffect(() => {
-    if (!canvasState.isConnected && window.innerWidth <= 768) {
-      const container = containerRef.current;
-      if (container) {
-        container.scrollTop = 0;
-        container.scrollLeft = 0;
-      }
-      const canvas = canvasRef.current;
-      if (canvas && containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 40; // 20px left + 20px right
-        const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
-        canvasState.setZoom(fitZoom);
-      }
+    if (window.innerWidth > 768) return;
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+      container.scrollLeft = 0;
+    }
+    if (containerRef.current) {
+      const availableW = containerRef.current.clientWidth - 40;
+      const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
+      canvasState.setZoom(fitZoom);
     }
   }, [canvasState.isConnected]);
 
