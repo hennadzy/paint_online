@@ -19,13 +19,17 @@ const Toolbar = observer(() => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest(".toolbar")) {
+      const isToolbar = event.target.closest(".toolbar");
+      const isCanvas = event.target.closest(".main-canvas") || event.target.closest(".cursor-overlay");
+      if (!isToolbar || isCanvas) {
         setActiveGroup(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
 
