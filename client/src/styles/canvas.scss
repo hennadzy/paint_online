@@ -274,7 +274,7 @@ button:active {
 
   .canvas {
     position: absolute;
-    top: calc(150px + env(safe-area-inset-top, 0px));
+    top: calc(100px + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     bottom: 0;
@@ -326,62 +326,27 @@ button:active {
   .canvas-container {
     width: 100%;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    overflow: auto;
+    display: block;
+    text-align: center;
+    overflow: scroll;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thick;
-    scrollbar-color: #ff8533 rgba(103, 103, 103, 0.6);
-    
-    &::-webkit-scrollbar {
-      width: 24px !important;
-      height: 24px !important;
-      display: block !important;
-      -webkit-appearance: none;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: rgba(103, 103, 103, 0.7);
-      border-radius: 12px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #ff8533;
-      border-radius: 12px;
-      border: 5px solid rgba(103, 103, 103, 0.7);
-      min-height: 120px;
-      min-width: 120px;
-      box-shadow: 0 4px 12px rgba(255, 133, 51, 0.6);
-      
-      &:hover {
-        background: #ffaa00;
-      }
-      
-      &:active {
-        background: #ff6699;
-      }
-    }
-    
-    &::-webkit-scrollbar-corner {
-      background: rgba(103, 103, 103, 0.7);
-    }
+    padding: 10px;
   }
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - 150px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+    max-height: calc(100vh - 100px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
   }
   
   .canvas-layout.has-chat .canvas-container {
     flex: 1;
     min-height: 0;
+    padding-bottom: 0;
   }
 
   .canvas-wrapper {
     display: inline-block;
     position: relative;
-    flex-shrink: 0;
   }
 
   .canvas-side-panel {
