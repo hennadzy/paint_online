@@ -368,6 +368,15 @@ const Canvas = observer(() => {
 
   return (
     <div className="canvas">
+      {!canvasState.isConnected && !params.id && (
+        <button 
+          className="about-btn-mobile"
+          onClick={() => canvasState.setShowAboutModal(true)}
+        >
+          О программе
+        </button>
+      )}
+
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : ''}`}>
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-wrapper">
@@ -381,34 +390,25 @@ const Canvas = observer(() => {
               className="cursor-overlay"
             />
           </div>
-          
-          {(canvasState.modalOpen || canvasState.showRoomInterface) && (
-            <RoomInterface roomId={params.id} />
-          )}
-          
-          <AboutModal />
         </div>
-
-        {!canvasState.isConnected && !params.id && (
-          <button 
-            className="about-btn-mobile"
-            onClick={() => canvasState.setShowAboutModal(true)}
-          >
-            О программе
-          </button>
-        )}
 
         <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
           {canvasState.isConnected && <Chat />}
         </div>
-
-        <RestoreDialog 
-          show={canvasState.showRestoreDialog}
-          timestamp={canvasState.restoreTimestamp}
-          onRestore={() => canvasState.restoreAutoSave()}
-          onDiscard={() => canvasState.discardAutoSave()}
-        />
       </div>
+
+      {(canvasState.modalOpen || canvasState.showRoomInterface) && (
+        <RoomInterface roomId={params.id} />
+      )}
+      
+      <AboutModal />
+
+      <RestoreDialog 
+        show={canvasState.showRestoreDialog}
+        timestamp={canvasState.restoreTimestamp}
+        onRestore={() => canvasState.restoreAutoSave()}
+        onDiscard={() => canvasState.discardAutoSave()}
+      />
     </div>
   );
 });

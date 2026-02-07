@@ -19,10 +19,20 @@ html, body {
 
 .canvas {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
   position: relative;
   width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 769px) {
+  .canvas {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
 }
 
 .canvas-container {
@@ -240,6 +250,8 @@ button:active {
     flex-direction: column;
     overflow: hidden;
     padding: 0;
+    justify-content: flex-start;
+    align-items: stretch;
   }
 
   .canvas-layout {
@@ -282,6 +294,9 @@ button:active {
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
     
     &::-webkit-scrollbar {
       width: 12px;
@@ -316,6 +331,7 @@ button:active {
     height: fit-content;
     min-width: 100%;
     min-height: 100%;
+    margin: 0 auto;
   }
 
   .canvas-side-panel {
@@ -419,7 +435,7 @@ button:active {
   @media (max-width: 768px) {
     display: block;
     width: calc(100% - 20px);
-    margin: 10px 10px 10px 10px;
+    margin: 10px;
     white-space: nowrap;
     font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
     background: linear-gradient(135deg, #ffcc00, rgb(255, 102, 153));
@@ -428,10 +444,12 @@ button:active {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     color: white;
     font-size: 16px;
-    padding: 10px 15px;
+    padding: 12px 15px;
     cursor: pointer;
     transition: all 0.3s ease;
     flex-shrink: 0;
+    z-index: 100;
+    position: relative;
   }
 }
 
