@@ -245,8 +245,8 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height-local: 188px;   /* локальный: запас под сетингбар, холст не залазит при возврате из совместного */
-  $mobile-menu-height-chat: 218px;    /* совместный: холст выше, при этом не под меню */
+  $mobile-menu-height-local: 198px;   /* локальный: запас под сетингбар, холст не залазит при возврате из совместного */
+  $mobile-menu-height-chat: 208px;    /* совместный: холст выше, при этом не под меню */
 
   html {
     height: 100%;
@@ -275,7 +275,7 @@ button:active {
     position: relative;
   }
 
-  /* Локальный режим: холст ниже меню (188px) */
+  /* Локальный режим: холст ниже меню (198px) */
   .canvas {
     position: absolute !important;
     top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
@@ -294,7 +294,7 @@ button:active {
     margin: 0 !important;
   }
 
-  /* Совместный режим: холст выше (218px), не залазит под меню */
+  /* Совместный режим: холст выше (208px), не залазит под меню */
   .canvas.canvas--has-chat {
     top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
     max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
