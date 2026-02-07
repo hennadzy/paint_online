@@ -324,52 +324,35 @@ button:active {
   }
 
   .canvas-container {
-    flex-shrink: 0;
     width: 100%;
-    max-height: none;
-    overflow: visible;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-  }
-  
-  .canvas-layout.has-chat .canvas-container {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .canvas-wrapper {
-    display: inline-block;
-    position: relative;
-    flex-shrink: 0;
     overflow: auto;
-    max-width: 100vw;
-    max-height: calc(100vh - 150px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 70px);
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thick;
     scrollbar-color: #ff8533 rgba(103, 103, 103, 0.6);
     
     &::-webkit-scrollbar {
-      width: 20px !important;
-      height: 20px !important;
+      width: 24px !important;
+      height: 24px !important;
       display: block !important;
       -webkit-appearance: none;
     }
     
     &::-webkit-scrollbar-track {
-      background: rgba(103, 103, 103, 0.6);
-      border-radius: 10px;
+      background: rgba(103, 103, 103, 0.7);
+      border-radius: 12px;
     }
     
     &::-webkit-scrollbar-thumb {
       background: #ff8533;
-      border-radius: 10px;
-      border: 4px solid rgba(103, 103, 103, 0.6);
-      min-height: 100px;
-      min-width: 100px;
-      box-shadow: 0 3px 10px rgba(255, 133, 51, 0.5);
+      border-radius: 12px;
+      border: 5px solid rgba(103, 103, 103, 0.7);
+      min-height: 120px;
+      min-width: 120px;
+      box-shadow: 0 4px 12px rgba(255, 133, 51, 0.6);
       
       &:hover {
         background: #ffaa00;
@@ -381,13 +364,24 @@ button:active {
     }
     
     &::-webkit-scrollbar-corner {
-      background: rgba(103, 103, 103, 0.6);
+      background: rgba(103, 103, 103, 0.7);
     }
   }
   
-  .canvas-layout.has-chat .canvas-wrapper {
-    max-height: none;
-    overflow: hidden;
+  .canvas-layout:not(.has-chat) .canvas-container {
+    flex-shrink: 0;
+    max-height: calc(100vh - 150px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+  }
+  
+  .canvas-layout.has-chat .canvas-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .canvas-wrapper {
+    display: inline-block;
+    position: relative;
+    flex-shrink: 0;
   }
 
   .canvas-side-panel {
