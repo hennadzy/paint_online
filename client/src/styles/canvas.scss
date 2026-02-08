@@ -476,6 +476,11 @@ button:active {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  .canvas-layout.has-chat .canvas-side-panel {
+    flex: 1;
+    max-height: none;
+  }
+
   .chat {
     flex: 1;
     min-height: 0;

@@ -466,6 +466,8 @@ useEffect(() => {
     verticalScrollbar.style.display = hasScroll ? 'block' : 'none';
     verticalScrollbar.style.top = `${rect.top}px`;
     verticalScrollbar.style.height = `${trackHeight}px`;
+    verticalScrollbar.style.left = `${rect.right - 20}px`;
+    verticalScrollbar.style.right = 'auto';
 
     if (hasScroll) {
       const thumbHeight = Math.max(
@@ -488,7 +490,7 @@ useEffect(() => {
     horizontalScrollbar.style.display = hasHorizontalScroll ? 'block' : 'none';
     horizontalScrollbar.style.left = `${rect.left}px`;
     horizontalScrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
-    horizontalScrollbar.style.top = `${Math.min(rect.bottom - 20, window.innerHeight - 20)}px`;
+    horizontalScrollbar.style.top = `${Math.min(rect.bottom, window.innerHeight - 20)}px`;
     horizontalScrollbar.style.height = '20px';
 
     if (hasHorizontalScroll) {
