@@ -44,7 +44,12 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
     canvasState.rebuildBuffer();
     canvasState.redrawCanvas();
-    canvasState.setZoom(canvasState.zoom);
+    if (window.innerWidth < 768) {
+      const fitZoom = Math.min(1, Math.max(0.5, (window.innerWidth - 20) / window.innerWidth));
+      canvasState.setZoom(fitZoom);
+    } else {
+      canvasState.setZoom(canvasState.zoom);
+    }
   };
 
   useEffect(() => {
@@ -217,21 +222,28 @@ const Canvas = observer(() => {
           const pannedScrollTop = initialScrollTop - translationY;
 
           const scale = currentDistance / initialDistance;
-          const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           const viewportX = currentCenter.x - containerRect.left;
           const viewportY = currentCenter.y - containerRect.top;
           const currentZoom = canvasState.zoom;
-          const canvasPointX = (pannedScrollLeft + viewportX) / currentZoom;
-          const canvasPointY = (pannedScrollTop + viewportY) / currentZoom;
-
-          const zoomEpsilon = 0.001;
-          if (Math.abs(newZoom - currentZoom) > zoomEpsilon) {
+          const scaleDeadZone = 0.08;
+          const isPinch = Math.abs(scale - 1) > scaleDeadZone;
+          const newZoom = isPinch
+            ? Math.max(0.5, Math.min(5, initialZoom * scale))
+            : initialZoom;
+          if (isPinch) {
             canvasState.setZoom(newZoom);
           }
 
           requestAnimationFrame(() => {
-            container.scrollLeft = canvasPointX * newZoom - viewportX;
-            container.scrollTop = canvasPointY * newZoom - viewportY;
+            if (isPinch) {
+              const canvasPointX = (pannedScrollLeft + viewportX) / currentZoom;
+              const canvasPointY = (pannedScrollTop + viewportY) / currentZoom;
+              container.scrollLeft = canvasPointX * newZoom - viewportX;
+              container.scrollTop = canvasPointY * newZoom - viewportY;
+            } else {
+              container.scrollLeft = pannedScrollLeft;
+              container.scrollTop = pannedScrollTop;
+            }
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
