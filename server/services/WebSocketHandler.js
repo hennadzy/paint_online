@@ -101,13 +101,19 @@ class WebSocketHandler {
     const { roomId, username } = userInfo;
     if (msg.figure) {
       if (msg.figure.type === "undo") {
-        RoomManager.removeStroke(roomId, msg.figure.strokeId);
+        if (!RoomManager.removeStrokeIfOwned(roomId, msg.figure.strokeId, username)) {
+          return;
+        }
         this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } }, ws);
         RoomManager.updateUserActivity(ws);
         return;
       } else if (msg.figure.type === "redo") {
-        RoomManager.addStroke(roomId, msg.figure.stroke);
-        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: msg.figure.stroke } }, ws);
+        const stroke = msg.figure.stroke;
+        if (!stroke || (stroke.username && stroke.username !== username)) {
+          return;
+        }
+        RoomManager.addStroke(roomId, stroke);
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke } }, ws);
         RoomManager.updateUserActivity(ws);
         return;
       } else {

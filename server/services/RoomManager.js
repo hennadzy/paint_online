@@ -110,6 +110,18 @@ class RoomManager {
     return false;
   }
 
+  removeStrokeIfOwned(roomId, strokeId, username) {
+    const room = this.rooms.get(roomId);
+    if (!room) return false;
+    const stroke = room.strokes.find(s => s.id === strokeId);
+    if (!stroke || (stroke.username && stroke.username !== username)) {
+      return false;
+    }
+    room.strokes = room.strokes.filter(s => s.id !== strokeId);
+    DataStore.saveRoomStrokes(roomId, room.strokes);
+    return true;
+  }
+
   removeLastStroke(roomId) {
     const room = this.rooms.get(roomId);
     if (room && room.strokes.length) {

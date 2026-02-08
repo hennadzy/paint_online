@@ -65,10 +65,10 @@ class CanvasState {
       if (username === this.username) return;
       switch (figure.type) {
         case "undo":
-          this.undoRemote(figure.strokeId);
+          this.undoRemote(figure.strokeId, username);
           break;
         case "redo":
-          this.redoRemote(figure.stroke);
+          this.redoRemote(figure.stroke, username);
           break;
         default:
           this.pushStroke(figure);
@@ -197,11 +197,14 @@ class CanvasState {
     }
   }
 
-  undoRemote(strokeId) {
-    HistoryService.undoById(strokeId);
+  undoRemote(strokeId, fromUsername) {
+    HistoryService.undoById(strokeId, fromUsername);
   }
 
-  redoRemote(stroke) {
+  redoRemote(stroke, fromUsername) {
+    if (fromUsername && stroke.username && stroke.username !== fromUsername) {
+      return;
+    }
     const added = HistoryService.redoStroke(stroke);
     if (added) {
       CanvasService.drawStroke(CanvasService.bufferCtx, stroke);

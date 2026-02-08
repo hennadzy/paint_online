@@ -69,10 +69,15 @@ class HistoryService {
     return restored;
   }
 
-  undoById(strokeId) {
+  undoById(strokeId, fromUsername) {
     const index = this.strokes.findIndex(s => s.id === strokeId);
     
     if (index === -1) {
+      return null;
+    }
+    
+    const stroke = this.strokes[index];
+    if (fromUsername && stroke.username && stroke.username !== fromUsername) {
       return null;
     }
     
