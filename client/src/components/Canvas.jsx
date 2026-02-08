@@ -458,7 +458,7 @@ const Canvas = observer(() => {
     const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const MIN_THUMB_SIZE = 24;
-    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 10);
+    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 5);
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -630,16 +630,16 @@ const Canvas = observer(() => {
         innerRO.observe(inner);
       }
       updateThumb();
-      let deferredUpdateTimer = null;
-      let deferredUpdateRaf = null;
+      let deferredRaf = null;
+      const deferredTimeouts = [];
       if (isVertical) {
-        deferredUpdateTimer = setTimeout(updateThumb, 50);
-        deferredUpdateRaf = requestAnimationFrame(updateThumb);
+        deferredRaf = requestAnimationFrame(updateThumb);
+        [0, 80, 200, 450].forEach((ms) => deferredTimeouts.push(setTimeout(updateThumb, ms)));
       }
 
       return () => {
-        if (deferredUpdateTimer) clearTimeout(deferredUpdateTimer);
-        if (deferredUpdateRaf) cancelAnimationFrame(deferredUpdateRaf);
+        if (deferredRaf != null) cancelAnimationFrame(deferredRaf);
+        deferredTimeouts.forEach(clearTimeout);
         thumb.removeEventListener('mousedown', handleThumbStart);
         thumb.removeEventListener('touchstart', handleThumbStart);
         scrollbar.removeEventListener('mousedown', handleTrackClick);
