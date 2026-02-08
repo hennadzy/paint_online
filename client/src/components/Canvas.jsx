@@ -25,7 +25,6 @@ const Canvas = observer(() => {
   const navigate = useNavigate();
   const isPinching = useRef(false);
   const initialMobileZoomDone = useRef(false);
-  const prevIsConnectedRef = useRef(undefined);
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
@@ -44,12 +43,7 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, logicalWidth, logicalHeight);
     canvasState.rebuildBuffer();
     canvasState.redrawCanvas();
-    if (window.innerWidth < 768) {
-      const fitZoom = Math.min(1, Math.max(0.5, (window.innerWidth - 20) / window.innerWidth));
-      canvasState.setZoom(fitZoom);
-    } else {
-      canvasState.setZoom(canvasState.zoom);
-    }
+    canvasState.setZoom(canvasState.zoom);
   };
 
   useEffect(() => {
@@ -222,28 +216,17 @@ const Canvas = observer(() => {
           const pannedScrollTop = initialScrollTop - translationY;
 
           const scale = currentDistance / initialDistance;
+          const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           const viewportX = currentCenter.x - containerRect.left;
           const viewportY = currentCenter.y - containerRect.top;
-          const currentZoom = canvasState.zoom;
-          const scaleDeadZone = 0.08;
-          const isPinch = Math.abs(scale - 1) > scaleDeadZone;
-          const newZoom = isPinch
-            ? Math.max(0.5, Math.min(5, initialZoom * scale))
-            : initialZoom;
-          if (isPinch) {
-            canvasState.setZoom(newZoom);
-          }
+          const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
+          const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
+
+          canvasState.setZoom(newZoom);
 
           requestAnimationFrame(() => {
-            if (isPinch) {
-              const canvasPointX = (pannedScrollLeft + viewportX) / currentZoom;
-              const canvasPointY = (pannedScrollTop + viewportY) / currentZoom;
-              container.scrollLeft = canvasPointX * newZoom - viewportX;
-              container.scrollTop = canvasPointY * newZoom - viewportY;
-            } else {
-              container.scrollLeft = pannedScrollLeft;
-              container.scrollTop = pannedScrollTop;
-            }
+            container.scrollLeft = canvasPointX * newZoom - viewportX;
+            container.scrollTop = canvasPointY * newZoom - viewportY;
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -432,9 +415,6 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     if (window.innerWidth > 768) return;
-    const isConnected = canvasState.isConnected;
-    const wasConnected = prevIsConnectedRef.current;
-    prevIsConnectedRef.current = isConnected;
     const apply = () => {
       const container = containerRef.current;
       if (container) {
@@ -447,79 +427,16 @@ const Canvas = observer(() => {
         canvasState.setZoom(fitZoom);
       }
     };
-    if (isConnected) {
-      apply();
-    } else if (wasConnected === true) {
+    if (!canvasState.isConnected) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         apply();
         setTimeout(apply, 150);
         setTimeout(apply, 300);
       }));
+    } else {
+      apply();
     }
   }, [canvasState.isConnected]);
-
-  useEffect(() => {
-    if (window.innerWidth > 768) return;
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    const inner = container?.querySelector('.canvas-container-inner');
-    if (!container || !canvas || !inner) return;
-    const syncInnerToCanvas = () => {
-      const aspectRatio = 720 / 480;
-      const baseWidth = window.innerWidth;
-      const baseHeight = baseWidth / aspectRatio;
-      const zoom = canvasState.zoom;
-      const widthPx = Math.ceil(baseWidth * zoom);
-      const heightPx = Math.ceil(baseHeight * zoom);
-      const rect = canvas.getBoundingClientRect();
-      let innerW = Math.max(widthPx, rect.width > 0 ? Math.ceil(rect.width) : 0);
-      let innerH = Math.max(heightPx, rect.height > 0 ? Math.ceil(rect.height) : 0);
-      if (!initialMobileZoomDone.current) {
-        const cw = container.clientWidth;
-        const ch = container.clientHeight;
-        if (cw > 0 && ch > 0) {
-          innerW = Math.min(innerW, cw);
-          innerH = Math.min(innerH, ch);
-        }
-      }
-      if (innerW > 0 && innerH > 0) {
-        inner.style.minWidth = '0';
-        inner.style.minHeight = '0';
-        inner.style.width = `${innerW}px`;
-        inner.style.height = `${innerH}px`;
-      }
-    };
-    syncInnerToCanvas();
-    const raf = requestAnimationFrame(() => requestAnimationFrame(syncInnerToCanvas));
-    const t1 = setTimeout(syncInnerToCanvas, 0);
-    const t2 = setTimeout(syncInnerToCanvas, 100);
-    const t3 = setTimeout(syncInnerToCanvas, 250);
-    const t4 = setTimeout(syncInnerToCanvas, 500);
-    const t5 = setTimeout(syncInnerToCanvas, 800);
-    const onResize = () => {
-      if (window.innerWidth > 768) {
-        inner.style.width = '';
-        inner.style.height = '';
-        inner.style.minWidth = '';
-        inner.style.minHeight = '';
-        return;
-      }
-      requestAnimationFrame(syncInnerToCanvas);
-    };
-    window.addEventListener('resize', onResize);
-    const ro = new ResizeObserver(() => syncInnerToCanvas());
-    ro.observe(canvas);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
-      window.removeEventListener('resize', onResize);
-      ro.disconnect();
-    };
-  }, [canvasState.zoom]);
 
   useEffect(() => {
     const container = containerRef.current;

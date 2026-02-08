@@ -245,8 +245,8 @@ button:active {
 }
 
 @media only screen and (max-width: 768px) {
-  $mobile-menu-height-local: 198px;   /* локальный: запас под сетингбар, холст не залазит при возврате из совместного */
-  $mobile-menu-height-chat: 208px;    /* совместный: холст выше, при этом не под меню */
+  $mobile-menu-height-local: 198px;
+  $mobile-menu-height-chat: 208px;
 
   html {
     height: 100%;
@@ -275,7 +275,6 @@ button:active {
     position: relative;
   }
 
-  /* Локальный режим: холст ниже меню (198px) */
   .canvas {
     position: absolute !important;
     top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
@@ -294,13 +293,13 @@ button:active {
     margin: 0 !important;
   }
 
-  /* Совместный режим: холст выше (208px), не залазит под меню */
   .canvas.canvas--has-chat {
     top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
     max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  .canvas-container {
+  .canvas-container,
+  .canvas-wrapper {
     max-height: 100% !important;
   }
 
@@ -352,7 +351,6 @@ button:active {
     align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    /* Базовые отступы 5px слева и справа от края экрана; скроллбар справа — поверх зоны холста; снизу 20px */
     padding: 5px 5px 20px 5px;
     
     scrollbar-width: none;
@@ -362,7 +360,6 @@ button:active {
     }
   }
 
-  /* Внутренняя обёртка: центрирует холст, при маленьком холсте — по центру, при большом — скролл */
   .canvas-container-inner {
     min-width: 100%;
     min-height: 100%;
@@ -372,15 +369,13 @@ button:active {
     flex-shrink: 0;
   }
 
-  /* Полоса прокрутки жёстко у края экрана (position: fixed в JS); приглушённые, ровные концы трека */
   .custom-scrollbar {
     position: fixed;
     background: rgba(80, 80, 80, 0.35);
     border-radius: 0;
     z-index: 1100;
     pointer-events: auto;
-    /* top/height и left/width задаются в JS по getBoundingClientRect() контейнера */
-    
+
     &.vertical {
       right: 0;
       width: 20px;

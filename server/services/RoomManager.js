@@ -110,7 +110,6 @@ class RoomManager {
     return false;
   }
 
-  // Новый метод — удалить последний штрих глобально, вернуть его
   removeLastStroke(roomId) {
     const room = this.rooms.get(roomId);
     if (room && room.strokes.length) {

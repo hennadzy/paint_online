@@ -235,7 +235,6 @@ const RoomInterface = observer(({ roomId }) => {
         setError('');
         
         if (roomId) {
-          // Уже на странице комнаты, просто закрываем диалог пароля
         } else {
           navigate('/' + roomIdToJoin);
         }

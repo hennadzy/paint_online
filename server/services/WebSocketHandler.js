@@ -107,7 +107,6 @@ class WebSocketHandler {
         return;
       } else if (msg.figure.type === "redo") {
         RoomManager.addStroke(roomId, msg.figure.stroke);
-        // Важно — send to ALL, не исключаем инициатора!
         this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: msg.figure.stroke } });
         RoomManager.updateUserActivity(ws);
         return;
