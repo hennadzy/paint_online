@@ -355,8 +355,10 @@ button:active {
     display: block;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 5px 5px 20px 5px;
-    
+    padding: 10px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+
     scrollbar-width: none;
     -ms-overflow-style: none;
     &::-webkit-scrollbar {
@@ -365,7 +367,9 @@ button:active {
   }
 
   .canvas-container-inner {
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: max-content;
     min-width: 100%;
     height: max-content;
