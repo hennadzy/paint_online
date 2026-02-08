@@ -449,16 +449,6 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected]);
 
   // ╨Я╤А╨╕ ╤Б╨╝╨╡╨╜╨╡ ╤А╨╡╨╢╨╕╨╝╨░ ╤А╨╕╤Б╨╛╨▓╨░╨╜╨╕╤П (╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨░) ╨╜╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ тАФ ╨╜╨░╤З╨░╨╗╤М╨╜╨╛╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╕ ╤А╨░╨╖╨╝╨╡╤А ╤Е╨╛╨╗╤Б╤В╨░
-  useEffect(() => {
-    if (window.innerWidth > 768) return;
-    const container = containerRef.current;
-    if (!container) return;
-    container.scrollTop = 0;
-    container.scrollLeft = 0;
-    const availableW = container.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
-    const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
-    canvasState.setZoom(fitZoom);
-  }, [toolState.toolName]);
 
   // ╨Ъ╨░╤Б╤В╨╛╨╝╨╜╤Л╨╡ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А╤Л ╨┤╨╗╤П ╨╝╨╛╨▒╨╕╨╗╤М╨╜╤Л╤Е: ╨┐╨╛╨▓╨╡╨┤╨╡╨╜╨╕╨╡ ╨║╨░╨║ ╤Г ╨╜╨░╤В╨╕╨▓╨╜╤Л╤Е (╤В╤А╨╡╨║ + ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║, ╨║╨╗╨╕╨║ ╨┐╨╛ ╤В╤А╨╡╨║╤Г = ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨░ ╨╜╨░ ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г)
   useEffect(() => {
@@ -468,7 +458,8 @@ const Canvas = observer(() => {
     const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const MIN_THUMB_SIZE = 24;
-    const SCROLLBAR_CORNER_GAP = 20; // квадратик на пересечении — оба скроллбара не заходят; ╨┐╤А╨╕ ╤А╨╛╤Б╤В╨╡ ╤Е╨╛╨╗╤Б╤В╨░ ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║ ╤Г╨╝╨╡╨╜╤М╤И╨░╨╡╤В╤Б╤П ╨┐╤А╨╛╨┐╨╛╤А╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨╛
+    // Только в локальном режиме: вертикальная полоса не заходит в угол
+    const SCROLLBAR_CORNER_GAP = canvasState.isConnected ? 0 : 20;
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -517,12 +508,12 @@ const Canvas = observer(() => {
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
           scrollbar.style.left = `${rect.left}px`;
-          scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP}px`;
+          scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
           scrollbar.style.top = `${Math.min(rect.bottom - 20, window.innerHeight - 20)}px`;
           scrollbar.style.height = '20px';
 
           if (hasScroll) {
-            const trackWidth = rect.width - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP;
+            const trackWidth = rect.width - TRACK_HORIZONTAL_INSET;
             const thumbWidth = Math.max(
               MIN_THUMB_SIZE,
               (clientWidth / scrollWidth) * trackWidth
@@ -564,7 +555,7 @@ const Canvas = observer(() => {
             container.scrollTop = next;
           }
         } else {
-          const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP;
+          const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET;
           const thumbWidth = parseFloat(thumb.style.width) || MIN_THUMB_SIZE;
           const thumbTravel = Math.max(0, trackWidth - thumbWidth);
           const scrollableRange = container.scrollWidth - container.clientWidth;
