@@ -25,6 +25,7 @@ const Canvas = observer(() => {
   const navigate = useNavigate();
   const isPinching = useRef(false);
   const initialMobileZoomDone = useRef(false);
+  const prevIsConnectedRef = useRef(undefined);
 
   const adjustCanvasSize = () => {
     const canvas = canvasRef.current;
@@ -419,6 +420,9 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     if (window.innerWidth > 768) return;
+    const isConnected = canvasState.isConnected;
+    const wasConnected = prevIsConnectedRef.current;
+    prevIsConnectedRef.current = isConnected;
     const apply = () => {
       const container = containerRef.current;
       if (container) {
@@ -431,14 +435,14 @@ const Canvas = observer(() => {
         canvasState.setZoom(fitZoom);
       }
     };
-    if (!canvasState.isConnected) {
+    if (isConnected) {
+      apply();
+    } else if (wasConnected === true) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         apply();
         setTimeout(apply, 150);
         setTimeout(apply, 300);
       }));
-    } else {
-      apply();
     }
   }, [canvasState.isConnected]);
 
@@ -449,6 +453,15 @@ const Canvas = observer(() => {
     const inner = container?.querySelector('.canvas-container-inner');
     if (!container || !canvas || !inner) return;
     const syncInnerToCanvas = () => {
+      const w = canvas.style.width;
+      const h = canvas.style.height;
+      if (w && h) {
+        inner.style.minWidth = '0';
+        inner.style.minHeight = '0';
+        inner.style.width = w;
+        inner.style.height = h;
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         inner.style.minWidth = '0';
