@@ -300,8 +300,7 @@ button:active {
     max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  .canvas-container,
-  .canvas-wrapper {
+  .canvas-container {
     max-height: 100% !important;
   }
 
