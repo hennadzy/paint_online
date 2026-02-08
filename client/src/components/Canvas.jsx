@@ -453,34 +453,20 @@ const Canvas = observer(() => {
     const inner = container?.querySelector('.canvas-container-inner');
     if (!container || !canvas || !inner) return;
     const syncInnerToCanvas = () => {
-      const w = canvas.style.width;
-      const h = canvas.style.height;
-      if (w && h) {
-        inner.style.minWidth = '0';
-        inner.style.minHeight = '0';
-        inner.style.width = w;
-        inner.style.height = h;
-        return;
-      }
-      const zoom = canvasState.zoom;
       const aspectRatio = 720 / 480;
       const baseWidth = window.innerWidth;
       const baseHeight = baseWidth / aspectRatio;
-      const widthPx = baseWidth * zoom;
-      const heightPx = baseHeight * zoom;
-      if (widthPx > 0 && heightPx > 0) {
-        inner.style.minWidth = '0';
-        inner.style.minHeight = '0';
-        inner.style.width = `${widthPx}px`;
-        inner.style.height = `${heightPx}px`;
-        return;
-      }
+      const zoom = canvasState.zoom;
+      const widthPx = Math.ceil(baseWidth * zoom);
+      const heightPx = Math.ceil(baseHeight * zoom);
       const rect = canvas.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
+      const innerW = Math.max(widthPx, rect.width > 0 ? Math.ceil(rect.width) : 0);
+      const innerH = Math.max(heightPx, rect.height > 0 ? Math.ceil(rect.height) : 0);
+      if (innerW > 0 && innerH > 0) {
         inner.style.minWidth = '0';
         inner.style.minHeight = '0';
-        inner.style.width = `${rect.width}px`;
-        inner.style.height = `${rect.height}px`;
+        inner.style.width = `${innerW}px`;
+        inner.style.height = `${innerH}px`;
       }
     };
     syncInnerToCanvas();
@@ -489,6 +475,7 @@ const Canvas = observer(() => {
     const t2 = setTimeout(syncInnerToCanvas, 100);
     const t3 = setTimeout(syncInnerToCanvas, 250);
     const t4 = setTimeout(syncInnerToCanvas, 500);
+    const t5 = setTimeout(syncInnerToCanvas, 800);
     const onResize = () => {
       if (window.innerWidth > 768) {
         inner.style.width = '';
@@ -508,6 +495,7 @@ const Canvas = observer(() => {
       clearTimeout(t2);
       clearTimeout(t3);
       clearTimeout(t4);
+      clearTimeout(t5);
       window.removeEventListener('resize', onResize);
       ro.disconnect();
     };
