@@ -445,7 +445,7 @@ const Canvas = observer(() => {
     const TRACK_VERTICAL_INSET = 20;
     const TRACK_HORIZONTAL_INSET = 20;
     const MIN_THUMB_SIZE = 24;
-    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 2);
+    const getVerticalCornerGap = () => 0;
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -465,6 +465,11 @@ const Canvas = observer(() => {
         const rect = container.getBoundingClientRect();
         if (isVertical) {
           const cornerGap = getVerticalCornerGap();
+          const maxTrackBottom = window.innerHeight - TRACK_VERTICAL_INSET;
+          const trackHeight = Math.min(
+            rect.height - TRACK_VERTICAL_INSET - cornerGap,
+            Math.max(0, maxTrackBottom - rect.top)
+          );
           const scrollHeight = container.scrollHeight;
           const clientHeight = container.clientHeight;
           const scrollableRange = Math.max(0, scrollHeight - clientHeight);
@@ -472,10 +477,9 @@ const Canvas = observer(() => {
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
           scrollbar.style.top = `${rect.top}px`;
-          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET - cornerGap}px`;
+          scrollbar.style.height = `${trackHeight}px`;
 
           if (hasScroll) {
-            const trackHeight = rect.height - TRACK_VERTICAL_INSET - cornerGap;
             const thumbHeight = Math.max(
               MIN_THUMB_SIZE,
               (clientHeight / scrollHeight) * trackHeight
