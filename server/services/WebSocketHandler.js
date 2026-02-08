@@ -113,9 +113,10 @@ class WebSocketHandler {
         if (stroke.username && String(stroke.username).trim() !== String(username).trim()) {
           return;
         }
-        if (!stroke.username) stroke.username = username;
-        RoomManager.addStroke(roomId, stroke);
-        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke } }, ws);
+        const strokeToAdd = { ...stroke, username: stroke.username || username };
+        RoomManager.addStroke(roomId, strokeToAdd);
+        const strokeToBroadcast = JSON.parse(JSON.stringify(strokeToAdd));
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: strokeToBroadcast } }, ws);
         RoomManager.updateUserActivity(ws);
         return;
       } else {
