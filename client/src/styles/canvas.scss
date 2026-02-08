@@ -337,6 +337,8 @@ button:active {
     align-items: stretch;
     padding-top: 0;
     gap: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .canvas-layout .toolbar {
@@ -447,9 +449,14 @@ button:active {
   }
   
   .canvas-layout.has-chat .canvas-container {
-    flex: 1;
+    flex: none;
+    height: auto;
+    padding-bottom: 10px;
+  }
+
+  .canvas-layout.has-chat .canvas-container-inner {
+    min-width: 0;
     min-height: 0;
-    padding-bottom: 0;
   }
 
   .canvas-wrapper {
