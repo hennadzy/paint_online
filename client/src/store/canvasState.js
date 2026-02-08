@@ -202,8 +202,12 @@ class CanvasState {
   }
 
   redoRemote(stroke, fromUsername) {
-    if (fromUsername && stroke.username && stroke.username !== fromUsername) {
+    if (!stroke) return;
+    if (fromUsername && stroke.username && String(stroke.username).trim() !== String(fromUsername).trim()) {
       return;
+    }
+    if (!stroke.username && fromUsername) {
+      stroke.username = fromUsername;
     }
     const added = HistoryService.redoStroke(stroke);
     if (added) {

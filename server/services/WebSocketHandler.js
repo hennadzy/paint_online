@@ -109,9 +109,11 @@ class WebSocketHandler {
         return;
       } else if (msg.figure.type === "redo") {
         const stroke = msg.figure.stroke;
-        if (!stroke || (stroke.username && stroke.username !== username)) {
+        if (!stroke) return;
+        if (stroke.username && String(stroke.username).trim() !== String(username).trim()) {
           return;
         }
+        if (!stroke.username) stroke.username = username;
         RoomManager.addStroke(roomId, stroke);
         this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke } }, ws);
         RoomManager.updateUserActivity(ws);
