@@ -447,7 +447,6 @@ useEffect(() => {
   const TRACK_HORIZONTAL_INSET = 20;
   const MIN_THUMB_SIZE = 24;
   const getVerticalCornerGap = () => 0;
-  const hasChat = canvasState.isConnected;
 
   const updateScrollbars = () => {
     if (!verticalScrollbar || !horizontalScrollbar || !container) return;
@@ -491,8 +490,7 @@ useEffect(() => {
     horizontalScrollbar.style.display = hasHorizontalScroll ? 'block' : 'none';
     horizontalScrollbar.style.left = `${rect.left}px`;
     horizontalScrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
-    const HORIZONTAL_GAP = hasChat ? 2 : 0;
-    const horizTop = hasChat ? rect.bottom + HORIZONTAL_GAP : rect.bottom - 20;
+    const horizTop = rect.bottom - 20;
     horizontalScrollbar.style.top = `${Math.min(horizTop, window.innerHeight - 20)}px`;
     horizontalScrollbar.style.height = '20px';
 

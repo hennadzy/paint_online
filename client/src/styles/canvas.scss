@@ -295,7 +295,7 @@ button:active {
 
   .canvas.canvas--has-chat {
     top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
-    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 24px)) !important;
   }
 
   .canvas-container {
@@ -473,7 +473,7 @@ button:active {
     overflow: hidden;
     min-height: 0;
     max-height: 250px;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 24px);
   }
 
   .canvas-layout.has-chat .canvas-side-panel {
