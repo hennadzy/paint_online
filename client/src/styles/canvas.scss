@@ -375,15 +375,23 @@ button:active {
     border-radius: 0;
     z-index: 1100;
     pointer-events: auto;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+
+    &:hover {
+      opacity: 1;
+    }
 
     &.vertical {
       right: 0;
       width: 20px;
+      pointer-events: auto;
     }
     
     &.horizontal {
       bottom: 0;
       height: 20px;
+      pointer-events: auto;
     }
   }
 
@@ -395,18 +403,21 @@ button:active {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     pointer-events: auto;
     cursor: grab;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     touch-action: none;
+    opacity: 0.9;
     
     &:hover {
       background: linear-gradient(to right, rgba(255, 102, 153, 0.85), rgba(255, 204, 0, 0.85));
       box-shadow: 0 2px 6px rgba(255, 204, 0, 0.4);
+      opacity: 1;
     }
     
     &.active {
-      background: linear-gradient(to right, rgba(255, 102, 153, 0.9), rgba(255, 204, 0, 0.9));
+      background: linear-gradient(to right, rgba(255, 102, 153, 0.95), rgba(255, 204, 0, 0.95));
       box-shadow: 0 2px 8px rgba(255, 204, 0, 0.5);
       cursor: grabbing;
+      opacity: 1;
     }
     
     .vertical & {
