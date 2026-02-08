@@ -448,14 +448,10 @@ useEffect(() => {
   const MIN_THUMB_SIZE = 24;
   const getVerticalCornerGap = () => 0;
 
-  // Функция обновления скроллбаров
   const updateScrollbars = () => {
     if (!verticalScrollbar || !horizontalScrollbar || !container) return;
     
-    // Обновляем вертикальный скроллбар
     const rect = container.getBoundingClientRect();
-    
-    // Вертикальный скроллбар
     const cornerGap = getVerticalCornerGap();
     const maxTrackBottom = window.innerHeight - TRACK_VERTICAL_INSET;
     const trackHeight = Math.min(
@@ -484,7 +480,6 @@ useEffect(() => {
       verticalThumb.style.top = `${thumbTop}px`;
     }
 
-    // Горизонтальный скроллбар
     const scrollWidth = container.scrollWidth;
     const clientWidth = container.clientWidth;
     const horizontalScrollableRange = Math.max(0, scrollWidth - clientWidth);
@@ -511,7 +506,6 @@ useEffect(() => {
     }
   };
 
-  // Создаем скроллбары
   const verticalScrollbar = document.createElement('div');
   verticalScrollbar.className = 'custom-scrollbar vertical';
   const verticalThumb = document.createElement('div');
@@ -533,7 +527,6 @@ useEffect(() => {
   let horizontalStartPos = 0;
   let horizontalStartScroll = 0;
 
-  // Обработчики для вертикального скроллбара
   const handleVerticalThumbStart = (e) => {
     isVerticalDragging = true;
     const touch = e.touches?.[0];
@@ -593,7 +586,6 @@ useEffect(() => {
     updateScrollbars();
   };
 
-  // Обработчики для горизонтального скроллбара
   const handleHorizontalThumbStart = (e) => {
     isHorizontalDragging = true;
     const touch = e.touches?.[0];
@@ -653,7 +645,6 @@ useEffect(() => {
     updateScrollbars();
   };
 
-  // Навешиваем обработчики
   verticalThumb.addEventListener('mousedown', handleVerticalThumbStart);
   verticalThumb.addEventListener('touchstart', handleVerticalThumbStart, { passive: false });
   verticalScrollbar.addEventListener('mousedown', handleVerticalTrackClick);
@@ -684,7 +675,6 @@ useEffect(() => {
     handleHorizontalEnd();
   });
 
-  // Обновляем скроллбары при изменениях
   const resizeObserver = new ResizeObserver(() => {
     requestAnimationFrame(updateScrollbars);
   });
@@ -695,13 +685,11 @@ useEffect(() => {
     resizeObserver.observe(inner);
   }
 
-  // Обновляем при скролле
   const handleScroll = () => {
     requestAnimationFrame(updateScrollbars);
   };
   container.addEventListener('scroll', handleScroll);
 
-  // Обновляем при изменении зума
   const updateOnZoom = () => {
     requestAnimationFrame(() => {
       setTimeout(updateScrollbars, 50);
@@ -709,7 +697,6 @@ useEffect(() => {
     });
   };
   
-  // Подписываемся на изменения зума
   const canvasService = canvasState;
   const originalSetZoom = canvasService.setZoom;
   canvasService.setZoom = function(zoom) {
@@ -718,13 +705,9 @@ useEffect(() => {
     return result;
   };
 
-  // Инициализация
   updateScrollbars();
-  
-  // Периодическое обновление для надежности
   const intervalId = setInterval(updateScrollbars, 1000);
 
-  // Очистка
   return () => {
     clearInterval(intervalId);
     
@@ -753,7 +736,6 @@ useEffect(() => {
     verticalScrollbar.remove();
     horizontalScrollbar.remove();
     
-    // Восстанавливаем оригинальный метод
     if (canvasService.setZoom === canvasService.setZoom) {
       canvasService.setZoom = originalSetZoom;
     }

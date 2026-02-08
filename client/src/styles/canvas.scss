@@ -302,7 +302,6 @@ button:active {
     max-height: 100% !important;
   }
 
-  /* Allow wrapper to grow with zoomed canvas; block layout so scroll area matches content */
   .canvas-wrapper {
     max-height: none !important;
     max-width: none !important;
