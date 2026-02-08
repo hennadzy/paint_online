@@ -439,6 +439,47 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected]);
 
   useEffect(() => {
+    if (window.innerWidth > 768) return;
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    const inner = container?.querySelector('.canvas-container-inner');
+    if (!container || !canvas || !inner) return;
+    const syncInnerToCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        inner.style.minWidth = '0';
+        inner.style.minHeight = '0';
+        inner.style.width = `${rect.width}px`;
+        inner.style.height = `${rect.height}px`;
+      }
+    };
+    syncInnerToCanvas();
+    const raf = requestAnimationFrame(() => requestAnimationFrame(syncInnerToCanvas));
+    const t1 = setTimeout(syncInnerToCanvas, 0);
+    const t2 = setTimeout(syncInnerToCanvas, 100);
+    const onResize = () => {
+      if (window.innerWidth > 768) {
+        inner.style.width = '';
+        inner.style.height = '';
+        inner.style.minWidth = '';
+        inner.style.minHeight = '';
+        return;
+      }
+      requestAnimationFrame(syncInnerToCanvas);
+    };
+    window.addEventListener('resize', onResize);
+    const ro = new ResizeObserver(() => syncInnerToCanvas());
+    ro.observe(canvas);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', onResize);
+      ro.disconnect();
+    };
+  }, [canvasState.zoom]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container || window.innerWidth > 768) return;
 
