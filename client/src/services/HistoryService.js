@@ -6,7 +6,10 @@ class HistoryService {
   }
 
   addStroke(stroke, username = 'local') {
-    if (stroke.id && this.strokes.some(s => s.id === stroke.id)) {
+    if (!stroke.id) {
+      stroke.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+    if (this.strokes.some(s => s.id === stroke.id)) {
       return false;
     }
     
