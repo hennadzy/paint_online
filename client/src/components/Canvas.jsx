@@ -458,7 +458,7 @@ const Canvas = observer(() => {
     const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const MIN_THUMB_SIZE = 24;
-    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 5);
+    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 2);
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -634,7 +634,7 @@ const Canvas = observer(() => {
       const deferredTimeouts = [];
       if (isVertical) {
         deferredRaf = requestAnimationFrame(updateThumb);
-        [0, 80, 200, 450].forEach((ms) => deferredTimeouts.push(setTimeout(updateThumb, ms)));
+        [0, 80, 200, 450, 1000, 2000, 3500].forEach((ms) => deferredTimeouts.push(setTimeout(updateThumb, ms)));
       }
 
       return () => {
