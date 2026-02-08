@@ -302,10 +302,10 @@ button:active {
     max-height: 100% !important;
   }
 
-  /* Wrapper must not be limited by inner height so zoomed canvas can define scroll area */
+  /* Allow wrapper to grow with zoomed canvas so scroll area is full size (no max-height cycle with inner) */
   .canvas-wrapper {
-    max-height: none;
-    max-width: none;
+    max-height: none !important;
+    max-width: none !important;
   }
 
   .canvas-container {
@@ -368,8 +368,6 @@ button:active {
   .canvas-container-inner {
     min-width: 100%;
     min-height: 100%;
-    width: max-content;
-    height: max-content;
     align-self: flex-start;
     display: flex;
     justify-content: center;

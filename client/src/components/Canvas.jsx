@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import canvasState from "../store/canvasState";
 import toolState from "../store/toolState";
-import CanvasService from "../services/CanvasService";
 import Brush from "../tools/Brush";
 import Chat from "./Chat";
 import RoomInterface from "./RoomInterface";
@@ -228,18 +227,6 @@ const Canvas = observer(() => {
           requestAnimationFrame(() => {
             container.scrollLeft = canvasPointX * newZoom - viewportX;
             container.scrollTop = canvasPointY * newZoom - viewportY;
-            if (window.innerWidth < 768) {
-              const inner = container.querySelector('.canvas-container-inner');
-              if (inner) {
-                const aspectRatio = 720 / 480;
-                const baseWidth = window.innerWidth;
-                const baseHeight = baseWidth / aspectRatio;
-                const contentW = baseWidth * newZoom;
-                const contentH = baseHeight * newZoom;
-                inner.style.width = `${Math.max(container.clientWidth, contentW)}px`;
-                inner.style.height = `${Math.max(container.clientHeight, contentH)}px`;
-              }
-            }
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -425,37 +412,6 @@ const Canvas = observer(() => {
     }
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
-
-  // On mobile: keep scroll area size in sync with zoomed canvas so full canvas is reachable
-  const syncMobileScrollArea = () => {
-    if (window.innerWidth > 768) return;
-    const container = containerRef.current;
-    const inner = container?.querySelector('.canvas-container-inner');
-    if (!container || !inner) return;
-
-    const aspectRatio = 720 / 480;
-    const baseWidth = window.innerWidth;
-    const baseHeight = baseWidth / aspectRatio;
-    const zoom = canvasState.zoom;
-    const contentW = baseWidth * zoom;
-    const contentH = baseHeight * zoom;
-
-    const innerW = Math.max(container.clientWidth, contentW);
-    const innerH = Math.max(container.clientHeight, contentH);
-    inner.style.width = `${innerW}px`;
-    inner.style.height = `${innerH}px`;
-  };
-
-  useEffect(() => {
-    syncMobileScrollArea();
-    window.addEventListener('resize', syncMobileScrollArea);
-    const onZoomChanged = () => requestAnimationFrame(syncMobileScrollArea);
-    CanvasService.on('zoomChanged', onZoomChanged);
-    return () => {
-      window.removeEventListener('resize', syncMobileScrollArea);
-      CanvasService.off('zoomChanged', onZoomChanged);
-    };
-  }, [canvasState.zoom]);
 
   useEffect(() => {
     if (window.innerWidth > 768) return;
