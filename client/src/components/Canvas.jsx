@@ -165,11 +165,24 @@ const Canvas = observer(() => {
       }
     };
 
+    // Отмена текущего штриха без сохранения — жесты не оставляют следов на холсте
+    const cancelDrawing = () => {
+      if (toolState.tool && toolState.tool.mouseDown) {
+        const tool = toolState.tool;
+        tool.mouseDown = false;
+        canvasState.isDrawing = false;
+        if (tool.points) tool.points.length = 0;
+        if (tool.startX !== undefined) tool.startX = undefined;
+        if (tool.startY !== undefined) tool.startY = undefined;
+        canvasState.redrawCanvas();
+      }
+    };
+
     const handleTouchStart = (e) => {
       activeTouches = e.touches.length;
       if (e.touches.length === 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
@@ -183,7 +196,7 @@ const Canvas = observer(() => {
         initialScrollTop = container.scrollTop;
       } else if (e.touches.length > 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
       }
     };
@@ -193,7 +206,7 @@ const Canvas = observer(() => {
       
       if (touchCount >= 2) {
         e.preventDefault();
-        stopDrawing();
+        cancelDrawing();
         isPinching.current = true;
         
         if (touchCount === 2 && initialDistance > 0) {
