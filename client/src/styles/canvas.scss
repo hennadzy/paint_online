@@ -302,10 +302,12 @@ button:active {
     max-height: 100% !important;
   }
 
-  /* Allow wrapper to grow with zoomed canvas so scroll area is full size (no max-height cycle with inner) */
+  /* Allow wrapper to grow with zoomed canvas; block layout so scroll area matches content */
   .canvas-wrapper {
     max-height: none !important;
     max-width: none !important;
+    display: block !important;
+    margin: 0 auto;
   }
 
   .canvas-container {
@@ -351,9 +353,7 @@ button:active {
   .canvas-container {
     width: 100%;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     padding: 5px 5px 20px 5px;
@@ -366,15 +366,12 @@ button:active {
   }
 
   .canvas-container-inner {
+    display: block;
+    width: max-content;
     min-width: 100%;
+    height: max-content;
     min-height: 100%;
-    min-width: max(100%, min-content);
-    min-height: max(100%, min-content);
-    align-self: flex-start;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
+    margin: 0 auto;
   }
 
   .custom-scrollbar {
