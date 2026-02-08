@@ -52,7 +52,6 @@ const Canvas = observer(() => {
     return () => window.removeEventListener("resize", adjustCanvasSize);
   }, []);
 
-  // ╨Э╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ ╨┐╤А╨╕ ╤Б╤В╨░╤А╤В╨╡: ╤Е╨╛╨╗╤Б╤В ╨┐╨╛ ╤И╨╕╤А╨╕╨╜╨╡ ╤Н╨║╤А╨░╨╜╨░, ╨▒╨╡╨╖ ╨┐╨╛╨╗╨╛╤Б ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨╕ (╨┐╨╛╨╗╨╛╤Б╤Л ╤В╨╛╨╗╤М╨║╨╛ ╨┐╤А╨╕ ╤Г╨▓╨╡╨╗╨╕╤З╨╡╨╜╨╕╨╕)
   useEffect(() => {
     if (window.innerWidth > 768) return;
     if (initialMobileZoomDone.current) return;
@@ -61,7 +60,7 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А (╨▒╨░╨╖╨╛╨▓╤Л╨╡ 5px ╤Б╨╗╨╡╨▓╨░/╤Б╨┐╤А╨░╨▓╨░ тАФ ╨▓ padding)
+      const availableW = container.clientWidth - 20;
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
@@ -164,8 +163,6 @@ const Canvas = observer(() => {
         }
       }
     };
-
-    // Отмена текущего штриха без сохранения — жесты не оставляют следов на холсте
     const cancelDrawing = () => {
       if (toolState.tool && toolState.tool.mouseDown) {
         const tool = toolState.tool;
@@ -213,9 +210,6 @@ const Canvas = observer(() => {
           const currentDistance = getDistance(e.touches[0], e.touches[1]);
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
-
-          // ╨б╨┤╨▓╨╕╨│ ╨┤╨▓╤Г╨╝╤П ╨┐╨░╨╗╤М╤Ж╨░╨╝╨╕: ╨┤╨╡╨╗╤М╤В╨░ ╤Ж╨╡╨╜╤В╤А╨░ ╨╢╨╡╤Б╤В╨░ ╨▓ ╤Н╨║╤А╨░╨╜╨╜╤Л╤Е ╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╨░╤Е
-          // Инвертированное направление: палец вправо — холст вправо (как перетаскивание листа)
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
           const pannedScrollLeft = initialScrollLeft - translationX;
@@ -223,11 +217,8 @@ const Canvas = observer(() => {
 
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
-
-          // Viewport-╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╤Л ╤Ж╨╡╨╜╤В╤А╨░ ╨╢╨╡╤Б╤В╨░
           const viewportX = currentCenter.x - containerRect.left;
           const viewportY = currentCenter.y - containerRect.top;
-          // ╨в╨╛╤З╨║╨░ ╨╜╨░ ╤Е╨╛╨╗╤Б╤В╨╡ ╨┐╨╛╨┤ ╤Ж╨╡╨╜╤В╤А╨╛╨╝ ╨╢╨╡╤Б╤В╨░ (╤Б ╤Г╤З╤С╤В╨╛╨╝ ╤Г╨╢╨╡ ╨┐╤А╨╕╨╝╨╡╨╜╤С╨╜╨╜╨╛╨│╨╛ ╤Б╨┤╨▓╨╕╨│╨░)
           const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
           const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
 
@@ -422,7 +413,6 @@ const Canvas = observer(() => {
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
-  // ╨Я╤А╨╕ ╤Б╨╝╨╡╨╜╨╡ ╤А╨╡╨╢╨╕╨╝╨░ (╨╗╨╛╨║╨░╨╗╤М╨╜╤Л╨╣ тЖФ ╤Б╨╛╨▓╨╝╨╡╤Б╤В╨╜╤Л╨╣): ╨╜╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ ╨▓╤Б╨╡╨│╨┤╨░ ╨╕╤Б╤Е╨╛╨┤╨╜╨╛╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╕ ╤А╨░╨╖╨╝╨╡╤А ╤Е╨╛╨╗╤Б╤В╨░
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const apply = () => {
@@ -432,7 +422,7 @@ const Canvas = observer(() => {
         container.scrollLeft = 0;
       }
       if (containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
+        const availableW = containerRef.current.clientWidth - 20;
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
@@ -448,15 +438,12 @@ const Canvas = observer(() => {
     }
   }, [canvasState.isConnected]);
 
-  // ╨Я╤А╨╕ ╤Б╨╝╨╡╨╜╨╡ ╤А╨╡╨╢╨╕╨╝╨░ ╤А╨╕╤Б╨╛╨▓╨░╨╜╨╕╤П (╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨░) ╨╜╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ тАФ ╨╜╨░╤З╨░╨╗╤М╨╜╨╛╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╕ ╤А╨░╨╖╨╝╨╡╤А ╤Е╨╛╨╗╤Б╤В╨░
-
-  // ╨Ъ╨░╤Б╤В╨╛╨╝╨╜╤Л╨╡ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А╤Л ╨┤╨╗╤П ╨╝╨╛╨▒╨╕╨╗╤М╨╜╤Л╤Е: ╨┐╨╛╨▓╨╡╨┤╨╡╨╜╨╕╨╡ ╨║╨░╨║ ╤Г ╨╜╨░╤В╨╕╨▓╨╜╤Л╤Е (╤В╤А╨╡╨║ + ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║, ╨║╨╗╨╕╨║ ╨┐╨╛ ╤В╤А╨╡╨║╤Г = ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨░ ╨╜╨░ ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г)
   useEffect(() => {
     const container = containerRef.current;
     if (!container || window.innerWidth > 768) return;
 
-    const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
-    const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
+    const TRACK_VERTICAL_INSET = 20;
+    const TRACK_HORIZONTAL_INSET = 20;
     const MIN_THUMB_SIZE = 24;
     const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 2);
 
@@ -573,8 +560,6 @@ const Canvas = observer(() => {
         isDragging = false;
         thumb.classList.remove('active');
       };
-
-      // ╨Ъ╨╗╨╕╨║ ╨┐╨╛ ╤В╤А╨╡╨║╤Г (╨╜╨╡ ╨┐╨╛ ╨┐╨╛╨╗╨╖╤Г╨╜╨║╤Г): ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨░ ╨╜╨░ ╨╛╨┤╨╜╤Г ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г ╨▓╨▓╨╡╤А╤Е/╨▓╨╜╨╕╨╖ ╨╕╨╗╨╕ ╨▓╨╗╨╡╨▓╨╛/╨▓╨┐╤А╨░╨▓╨╛
       const handleTrackClick = (e) => {
         if (e.target !== scrollbar) return;
         e.preventDefault();
