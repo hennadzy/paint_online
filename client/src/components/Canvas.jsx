@@ -460,8 +460,16 @@ const Canvas = observer(() => {
       const widthPx = Math.ceil(baseWidth * zoom);
       const heightPx = Math.ceil(baseHeight * zoom);
       const rect = canvas.getBoundingClientRect();
-      const innerW = Math.max(widthPx, rect.width > 0 ? Math.ceil(rect.width) : 0);
-      const innerH = Math.max(heightPx, rect.height > 0 ? Math.ceil(rect.height) : 0);
+      let innerW = Math.max(widthPx, rect.width > 0 ? Math.ceil(rect.width) : 0);
+      let innerH = Math.max(heightPx, rect.height > 0 ? Math.ceil(rect.height) : 0);
+      if (!initialMobileZoomDone.current) {
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        if (cw > 0 && ch > 0) {
+          innerW = Math.min(innerW, cw);
+          innerH = Math.min(innerH, ch);
+        }
+      }
       if (innerW > 0 && innerH > 0) {
         inner.style.minWidth = '0';
         inner.style.minHeight = '0';
