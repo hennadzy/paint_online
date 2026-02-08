@@ -368,6 +368,8 @@ button:active {
   .canvas-container-inner {
     min-width: 100%;
     min-height: 100%;
+    min-width: max(100%, min-content);
+    min-height: max(100%, min-content);
     align-self: flex-start;
     display: flex;
     justify-content: center;
