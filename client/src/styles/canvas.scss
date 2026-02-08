@@ -298,9 +298,14 @@ button:active {
     max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  .canvas-container,
-  .canvas-wrapper {
+  .canvas-container {
     max-height: 100% !important;
+  }
+
+  /* Wrapper must not be limited by inner height so zoomed canvas can define scroll area */
+  .canvas-wrapper {
+    max-height: none;
+    max-width: none;
   }
 
   .canvas-container {
@@ -363,6 +368,9 @@ button:active {
   .canvas-container-inner {
     min-width: 100%;
     min-height: 100%;
+    width: max-content;
+    height: max-content;
+    align-self: flex-start;
     display: flex;
     justify-content: center;
     align-items: center;
