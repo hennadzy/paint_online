@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -675,7 +675,7 @@ const Canvas = observer(() => {
             className="about-btn-mobile"
             onClick={() => canvasState.setShowAboutModal(true)}
           >
-            ╨Ю ╨┐╤А╨╛╨│╤А╨░╨╝╨╝╨╡
+            О программе
           </button>
         )}
 
