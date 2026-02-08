@@ -458,8 +458,7 @@ const Canvas = observer(() => {
     const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const MIN_THUMB_SIZE = 24;
-    // Только в локальном режиме: вертикальная полоса не заходит в угол
-    const SCROLLBAR_CORNER_GAP = canvasState.isConnected ? 0 : 20;
+    const getVerticalCornerGap = () => (canvasState.isConnected ? 0 : 10);
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -478,6 +477,7 @@ const Canvas = observer(() => {
       const updateThumb = () => {
         const rect = container.getBoundingClientRect();
         if (isVertical) {
+          const cornerGap = getVerticalCornerGap();
           const scrollHeight = container.scrollHeight;
           const clientHeight = container.clientHeight;
           const scrollableRange = Math.max(0, scrollHeight - clientHeight);
@@ -485,10 +485,10 @@ const Canvas = observer(() => {
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
           scrollbar.style.top = `${rect.top}px`;
-          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP}px`;
+          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET - cornerGap}px`;
 
           if (hasScroll) {
-            const trackHeight = rect.height - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP;
+            const trackHeight = rect.height - TRACK_VERTICAL_INSET - cornerGap;
             const thumbHeight = Math.max(
               MIN_THUMB_SIZE,
               (clientHeight / scrollHeight) * trackHeight
@@ -545,7 +545,7 @@ const Canvas = observer(() => {
         const delta = currentPos - startPos;
 
         if (isVertical) {
-          const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP;
+          const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET - getVerticalCornerGap();
           const thumbHeight = parseFloat(thumb.style.height) || MIN_THUMB_SIZE;
           const thumbTravel = Math.max(0, trackHeight - thumbHeight);
           const scrollableRange = container.scrollHeight - container.clientHeight;
@@ -630,8 +630,16 @@ const Canvas = observer(() => {
         innerRO.observe(inner);
       }
       updateThumb();
+      let deferredUpdateTimer = null;
+      let deferredUpdateRaf = null;
+      if (isVertical) {
+        deferredUpdateTimer = setTimeout(updateThumb, 50);
+        deferredUpdateRaf = requestAnimationFrame(updateThumb);
+      }
 
       return () => {
+        if (deferredUpdateTimer) clearTimeout(deferredUpdateTimer);
+        if (deferredUpdateRaf) cancelAnimationFrame(deferredUpdateRaf);
         thumb.removeEventListener('mousedown', handleThumbStart);
         thumb.removeEventListener('touchstart', handleThumbStart);
         scrollbar.removeEventListener('mousedown', handleTrackClick);
