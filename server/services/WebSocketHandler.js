@@ -104,7 +104,7 @@ class WebSocketHandler {
         if (!RoomManager.removeStrokeIfOwned(roomId, msg.figure.strokeId, username)) {
           return;
         }
-        this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } }, ws);
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } });
         RoomManager.updateUserActivity(ws);
         return;
       } else if (msg.figure.type === "redo") {
@@ -116,7 +116,7 @@ class WebSocketHandler {
         const strokeToAdd = { ...stroke, username: stroke.username || username };
         RoomManager.addStroke(roomId, strokeToAdd);
         const strokeToBroadcast = JSON.parse(JSON.stringify(strokeToAdd));
-        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: strokeToBroadcast } }, ws);
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: strokeToBroadcast } });
         RoomManager.updateUserActivity(ws);
         return;
       } else {

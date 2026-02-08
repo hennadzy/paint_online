@@ -63,6 +63,7 @@ class CanvasState {
     });
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
+      if (!figure) return;
       switch (figure.type) {
         case "undo":
           this.undoRemote(figure.strokeId, username);
