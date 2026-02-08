@@ -490,7 +490,7 @@ useEffect(() => {
     horizontalScrollbar.style.display = hasHorizontalScroll ? 'block' : 'none';
     horizontalScrollbar.style.left = `${rect.left}px`;
     horizontalScrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
-    horizontalScrollbar.style.top = `${Math.min(rect.bottom, window.innerHeight - 20)}px`;
+    horizontalScrollbar.style.top = `${rect.bottom - 20}px`;
     horizontalScrollbar.style.height = '20px';
 
     if (hasHorizontalScroll) {
