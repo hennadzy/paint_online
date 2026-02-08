@@ -1,4 +1,6 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
@@ -40,6 +42,40 @@ const tokenRequestLimiter = rateLimit({
   message: 'Too many token requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+const imageSaveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: 'Too many image saves, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/image', imageSaveLimiter, (req, res) => {
+  try {
+    const id = sanitizeInput(String(req.query.id || ''), 50).replace(/[^a-zA-Z0-9_-]/g, '') || 'image';
+    const img = req.body?.img;
+    if (!img || typeof img !== 'string') {
+      return res.status(400).json({ error: 'Invalid image data' });
+    }
+    const match = img.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!match) {
+      return res.status(400).json({ error: 'Invalid image format' });
+    }
+    const ext = match[1] === 'png' ? 'png' : 'jpg';
+    const base64 = match[2];
+    const filesDir = path.join(__dirname, '../files');
+    if (!fs.existsSync(filesDir)) {
+      fs.mkdirSync(filesDir, { recursive: true });
+    }
+    const filename = `${id}.${ext}`;
+    const filepath = path.join(filesDir, filename);
+    fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
+    res.json({ ok: true });
+  } catch (_) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 router.post('/rooms', createRoomLimiter, async (req, res) => {
