@@ -462,6 +462,19 @@ const Canvas = observer(() => {
         inner.style.height = h;
         return;
       }
+      const zoom = canvasState.zoom;
+      const aspectRatio = 720 / 480;
+      const baseWidth = window.innerWidth;
+      const baseHeight = baseWidth / aspectRatio;
+      const widthPx = baseWidth * zoom;
+      const heightPx = baseHeight * zoom;
+      if (widthPx > 0 && heightPx > 0) {
+        inner.style.minWidth = '0';
+        inner.style.minHeight = '0';
+        inner.style.width = `${widthPx}px`;
+        inner.style.height = `${heightPx}px`;
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         inner.style.minWidth = '0';
@@ -474,6 +487,8 @@ const Canvas = observer(() => {
     const raf = requestAnimationFrame(() => requestAnimationFrame(syncInnerToCanvas));
     const t1 = setTimeout(syncInnerToCanvas, 0);
     const t2 = setTimeout(syncInnerToCanvas, 100);
+    const t3 = setTimeout(syncInnerToCanvas, 250);
+    const t4 = setTimeout(syncInnerToCanvas, 500);
     const onResize = () => {
       if (window.innerWidth > 768) {
         inner.style.width = '';
@@ -491,6 +506,8 @@ const Canvas = observer(() => {
       cancelAnimationFrame(raf);
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
       window.removeEventListener('resize', onResize);
       ro.disconnect();
     };
