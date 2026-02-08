@@ -281,7 +281,7 @@ button:active {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 24px)) !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -329,7 +329,7 @@ button:active {
     justify-content: flex-start;
     align-items: center;
     padding-top: 10px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 24px));
   }
 
   .canvas-layout.has-chat {
@@ -445,7 +445,7 @@ button:active {
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 80px);
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 24px) - 80px);
   }
   
   .canvas-layout.has-chat .canvas-container {

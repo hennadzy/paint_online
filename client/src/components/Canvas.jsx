@@ -447,13 +447,16 @@ useEffect(() => {
   const TRACK_HORIZONTAL_INSET = 20;
   const MIN_THUMB_SIZE = 24;
   const getVerticalCornerGap = () => 0;
+  const hasChat = canvasState.isConnected;
 
   const updateScrollbars = () => {
     if (!verticalScrollbar || !horizontalScrollbar || !container) return;
     
     const rect = container.getBoundingClientRect();
     const cornerGap = getVerticalCornerGap();
-    const maxTrackBottom = window.innerHeight - TRACK_VERTICAL_INSET;
+    const vv = window.visualViewport;
+    const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+    const maxTrackBottom = viewportBottom - TRACK_VERTICAL_INSET;
     const trackHeight = Math.min(
       rect.height - TRACK_VERTICAL_INSET - cornerGap,
       Math.max(0, maxTrackBottom - rect.top)
@@ -490,8 +493,8 @@ useEffect(() => {
     horizontalScrollbar.style.display = hasHorizontalScroll ? 'block' : 'none';
     horizontalScrollbar.style.left = `${rect.left}px`;
     horizontalScrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
-    const horizTop = rect.bottom - 20;
-    horizontalScrollbar.style.top = `${Math.min(horizTop, window.innerHeight - 20)}px`;
+    const horizTop = hasChat ? rect.bottom + 4 : rect.bottom - 20;
+    horizontalScrollbar.style.top = `${Math.min(horizTop, viewportBottom - 20)}px`;
     horizontalScrollbar.style.height = '20px';
 
     if (hasHorizontalScroll) {
@@ -693,6 +696,12 @@ useEffect(() => {
   };
   container.addEventListener('scroll', handleScroll);
 
+  const handleViewportChange = () => {
+    requestAnimationFrame(updateScrollbars);
+  };
+  window.visualViewport?.addEventListener('resize', handleViewportChange);
+  window.visualViewport?.addEventListener('scroll', handleViewportChange);
+
   const updateOnZoom = () => {
     requestAnimationFrame(() => {
       setTimeout(updateScrollbars, 50);
@@ -734,6 +743,8 @@ useEffect(() => {
     document.removeEventListener('touchend', handleHorizontalEnd);
     
     container.removeEventListener('scroll', handleScroll);
+    window.visualViewport?.removeEventListener('resize', handleViewportChange);
+    window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     resizeObserver.disconnect();
     
     verticalScrollbar.remove();
