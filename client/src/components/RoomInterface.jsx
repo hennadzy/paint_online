@@ -59,6 +59,8 @@ const RoomInterface = observer(({ roomId }) => {
   const [passwordPrompt, setPasswordPrompt] = useState(null);
   const [roomPassword, setRoomPassword] = useState('');
   const [roomInfo, setRoomInfo] = useState(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
   const usernameInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -103,8 +105,6 @@ const RoomInterface = observer(({ roomId }) => {
       setError('Ошибка загрузки комнат');
     }
   };
-
-  const [error, setError] = useState('');
 
   const handleJoinRoom = async () => {
     const validation = validateUsername(username);
@@ -193,8 +193,6 @@ const RoomInterface = observer(({ roomId }) => {
     }
   };
 
-  const [copied, setCopied] = useState(false);
-
   const copyLink = () => {
     navigator.clipboard.writeText(createdRoom.link);
     setCopied(true);
@@ -233,9 +231,7 @@ const RoomInterface = observer(({ roomId }) => {
         setPasswordPrompt(null);
         setRoomPassword('');
         setError('');
-        
-        if (roomId) {
-        } else {
+        if (!roomId) {
           navigate('/' + roomIdToJoin);
         }
       } else {

@@ -67,7 +67,7 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
     });
     
     res.json({ roomId });
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -76,7 +76,7 @@ router.get('/rooms/public', apiLimiter, (req, res) => {
   try {
     const publicRooms = DataStore.getPublicRooms();
     res.json(publicRooms);
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -95,7 +95,7 @@ router.get('/rooms/:id/exists', apiLimiter, (req, res) => {
       hasPassword: room.hasPassword || false,
       name: room.name
     });
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -116,7 +116,7 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
     
     const isValid = await bcrypt.compare(password, room.passwordHash);
     res.json({ valid: isValid });
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -148,7 +148,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
     
     const token = generateToken(roomId, username, true);
     res.json({ token });
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -188,7 +188,7 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     
     const token = generateToken(roomId, username, false);
     res.json({ token });
-  } catch (error) {
+  } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
 });

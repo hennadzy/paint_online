@@ -63,7 +63,7 @@ const TopMenu = observer(() => {
     const dataUrl = canvasState.canvas.toDataURL();
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = canvasState.sessionid + ".jpg";
+    a.download = (canvasState.sessionId || 'drawing') + '.jpg';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

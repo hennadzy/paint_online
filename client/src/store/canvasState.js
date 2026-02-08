@@ -150,11 +150,9 @@ class CanvasState {
   get socket() {
     return WebSocketService.socket;
   }
-  get sessionid() {
+  get sessionId() {
     return WebSocketService.sessionId;
   }
-  setSocket() {}
-  setSessionId() {}
 
   get strokeList() {
     return HistoryService.getStrokes();
@@ -257,13 +255,9 @@ class CanvasState {
   }
 
   async connectToRoom(roomId, username, token) {
-    try {
-      await WebSocketService.connect(WS_URL, roomId, username, token);
-      this.setCurrentRoomId(roomId);
-      this.setUsername(username);
-    } catch (error) {
-      throw error;
-    }
+    await WebSocketService.connect(WS_URL, roomId, username, token);
+    this.setCurrentRoomId(roomId);
+    this.setUsername(username);
   }
 
   disconnect() {
@@ -287,9 +281,6 @@ class CanvasState {
   }
   setModalOpen(val) {
     this.modalOpen = val;
-  }
-  setModal(val) {
-    this.setModalOpen(val);
   }
   setShowRoomInterface(val) {
     this.showRoomInterface = val;

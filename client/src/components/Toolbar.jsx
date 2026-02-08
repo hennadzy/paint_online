@@ -34,10 +34,10 @@ const Toolbar = observer(() => {
   }, []);
 
   const changeTool = (ToolClass, toolName) => {
-    const { canvas, socket, sessionid, username } = canvasState;
+    const { canvas, socket, sessionId, username } = canvasState;
     if (!canvas) return;
     const safeUsername = username || "local";
-    const tool = new ToolClass(canvas, socket, sessionid, safeUsername);
+    const tool = new ToolClass(canvas, socket, sessionId, safeUsername);
     toolState.setTool(tool, toolName);
     canvas.style.pointerEvents = "auto";
     setActiveGroup(null);

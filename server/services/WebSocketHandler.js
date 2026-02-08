@@ -1,11 +1,8 @@
 const WebSocket = require('ws');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
-const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, validateUsername, checkSpam } = require('../utils/security');
+const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam } = require('../utils/security');
 const { verifyToken } = require('../utils/jwt');
-
-const MAX_USERNAME_LENGTH = 30;
-const MAX_MESSAGE_LENGTH = 1000;
 
 class WebSocketHandler {
   constructor() {

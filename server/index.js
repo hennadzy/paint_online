@@ -7,7 +7,7 @@ const WebSocketHandler = require('./services/WebSocketHandler');
 const apiRouter = require('./routes/api');
 
 const app = express();
-const WSServer = require('express-ws')(app);
+require('express-ws')(app);
 const PORT = process.env.PORT || 5000;
 
 const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
@@ -45,7 +45,7 @@ app.use(cors({
     
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else if (process.env.NODE_ENV === 'production' && origin.endsWith('.onrender.com')) {
       callback(null, true);
@@ -76,15 +76,11 @@ app.get('*', (req, res) => {
 setInterval(() => {
   try {
     DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
-  } catch (error) {}
+  } catch (_) {}
 }, ROOM_CLEANUP_INTERVAL);
 
-process.on('SIGTERM', () => {
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  process.exit(0);
+['SIGTERM', 'SIGINT'].forEach((sig) => {
+  process.on(sig, () => process.exit(0));
 });
 
 app.listen(PORT, () => {});

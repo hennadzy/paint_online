@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production');
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
 const JWT_EXPIRATION = '1h';
 

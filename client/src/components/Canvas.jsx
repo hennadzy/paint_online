@@ -101,7 +101,7 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     if (canvasState.isConnected && params.id) {
-      toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionId), "brush");
+      toolState.setTool(new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionId), 'brush');
     }
   }, [canvasState.isConnected, params.id]);
 
@@ -353,7 +353,7 @@ const Canvas = observer(() => {
         return;
       }
 
-      const { canvas, socket, sessionid, username } = canvasState;
+      const { canvas, socket, sessionId, username } = canvasState;
       if (!canvas) return;
       const safeUsername = username || "local";
 
@@ -393,7 +393,7 @@ const Canvas = observer(() => {
 
       const tool = toolMap[e.key.toLowerCase()];
       if (tool) {
-        toolState.setTool(new tool[0](canvas, socket, sessionid, safeUsername), tool[1]);
+        toolState.setTool(new tool[0](canvas, socket, sessionId, safeUsername), tool[1]);
       } else if (e.key.toLowerCase() === 'g') {
         canvasState.toggleGrid();
       }
@@ -420,9 +420,7 @@ const Canvas = observer(() => {
       if (container) {
         container.scrollTop = 0;
         container.scrollLeft = 0;
-      }
-      if (containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 20;
+        const availableW = container.clientWidth - 20;
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
@@ -439,11 +437,11 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected]);
 
 
-useEffect(() => {
-  const container = containerRef.current;
-  if (!container || window.innerWidth > 768) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || window.innerWidth > 768) return;
 
-  const TRACK_VERTICAL_INSET = 20;
+    const TRACK_VERTICAL_INSET = 20;
   const TRACK_HORIZONTAL_INSET = 20;
   const MIN_THUMB_SIZE = 24;
   const getVerticalCornerGap = () => 0;
@@ -660,25 +658,23 @@ useEffect(() => {
   horizontalScrollbar.addEventListener('mousedown', handleHorizontalTrackClick);
   horizontalScrollbar.addEventListener('touchstart', handleHorizontalTrackClick, { passive: false });
 
-  document.addEventListener('mousemove', (e) => {
+  const handleDocMouseMove = (e) => {
     if (isVerticalDragging) handleVerticalMove(e);
     if (isHorizontalDragging) handleHorizontalMove(e);
-  });
-  
-  document.addEventListener('touchmove', (e) => {
+  };
+  const handleDocTouchMove = (e) => {
     if (isVerticalDragging) handleVerticalMove(e);
     if (isHorizontalDragging) handleHorizontalMove(e);
-  }, { passive: false });
+  };
+  const handleDocPointerEnd = () => {
+    handleVerticalEnd();
+    handleHorizontalEnd();
+  };
 
-  document.addEventListener('mouseup', () => {
-    handleVerticalEnd();
-    handleHorizontalEnd();
-  });
-  
-  document.addEventListener('touchend', () => {
-    handleVerticalEnd();
-    handleHorizontalEnd();
-  });
+  document.addEventListener('mousemove', handleDocMouseMove);
+  document.addEventListener('touchmove', handleDocTouchMove, { passive: false });
+  document.addEventListener('mouseup', handleDocPointerEnd);
+  document.addEventListener('touchend', handleDocPointerEnd);
 
   const resizeObserver = new ResizeObserver(() => {
     requestAnimationFrame(updateScrollbars);
@@ -732,14 +728,10 @@ useEffect(() => {
     horizontalScrollbar.removeEventListener('mousedown', handleHorizontalTrackClick);
     horizontalScrollbar.removeEventListener('touchstart', handleHorizontalTrackClick);
     
-    document.removeEventListener('mousemove', handleVerticalMove);
-    document.removeEventListener('touchmove', handleVerticalMove);
-    document.removeEventListener('mousemove', handleHorizontalMove);
-    document.removeEventListener('touchmove', handleHorizontalMove);
-    document.removeEventListener('mouseup', handleVerticalEnd);
-    document.removeEventListener('touchend', handleVerticalEnd);
-    document.removeEventListener('mouseup', handleHorizontalEnd);
-    document.removeEventListener('touchend', handleHorizontalEnd);
+    document.removeEventListener('mousemove', handleDocMouseMove);
+    document.removeEventListener('touchmove', handleDocTouchMove);
+    document.removeEventListener('mouseup', handleDocPointerEnd);
+    document.removeEventListener('touchend', handleDocPointerEnd);
     
     container.removeEventListener('scroll', handleScroll);
     window.visualViewport?.removeEventListener('resize', handleViewportChange);
@@ -748,10 +740,7 @@ useEffect(() => {
     
     verticalScrollbar.remove();
     horizontalScrollbar.remove();
-    
-    if (canvasService.setZoom === canvasService.setZoom) {
-      canvasService.setZoom = originalSetZoom;
-    }
+    canvasService.setZoom = originalSetZoom;
   };
 }, [canvasState.isConnected]);
 

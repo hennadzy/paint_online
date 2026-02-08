@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const validator = require('validator');
 const createDOMPurify = require('dompurify');
 const { JSDOM } = require('jsdom');
@@ -202,6 +203,9 @@ const sanitizeUsername = (username) => {
 };
 
 const generateId = () => {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 9);
+  }
   return Math.random().toString(36).substring(2, 11);
 };
 

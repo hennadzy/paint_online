@@ -1,4 +1,5 @@
 import toolState from "../store/toolState";
+import { API_URL } from "../store/canvasState";
 import axios from "axios";
 
 export default class Tool {
@@ -87,7 +88,7 @@ export default class Tool {
 
   saveImage() {
     if (this.id) {
-      axios.post(`https://paint-online-back.onrender.com/image?id=${this.id}`, { img: this.canvas.toDataURL() });
+      axios.post(`${API_URL}/image?id=${this.id}`, { img: this.canvas.toDataURL() });
     }
   }
 }
