@@ -215,10 +215,11 @@ const Canvas = observer(() => {
           const containerRect = container.getBoundingClientRect();
 
           // ╨б╨┤╨▓╨╕╨│ ╨┤╨▓╤Г╨╝╤П ╨┐╨░╨╗╤М╤Ж╨░╨╝╨╕: ╨┤╨╡╨╗╤М╤В╨░ ╤Ж╨╡╨╜╤В╤А╨░ ╨╢╨╡╤Б╤В╨░ ╨▓ ╤Н╨║╤А╨░╨╜╨╜╤Л╤Е ╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╨░╤Е
+          // Инвертированное направление: палец вправо — холст вправо (как перетаскивание листа)
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
-          const pannedScrollLeft = initialScrollLeft + translationX;
-          const pannedScrollTop = initialScrollTop + translationY;
+          const pannedScrollLeft = initialScrollLeft - translationX;
+          const pannedScrollTop = initialScrollTop - translationY;
 
           const scale = currentDistance / initialDistance;
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
@@ -466,7 +467,8 @@ const Canvas = observer(() => {
 
     const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
-    const MIN_THUMB_SIZE = 24; // ╨╝╨╕╨╜╨╕╨╝╤Г╨╝ ╨┐╨╛╨╗╨╖╤Г╨╜╨║╨░; ╨┐╤А╨╕ ╤А╨╛╤Б╤В╨╡ ╤Е╨╛╨╗╤Б╤В╨░ ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║ ╤Г╨╝╨╡╨╜╤М╤И╨░╨╡╤В╤Б╤П ╨┐╤А╨╛╨┐╨╛╤А╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨╛
+    const MIN_THUMB_SIZE = 24;
+    const SCROLLBAR_CORNER_GAP = 20; // квадратик на пересечении — оба скроллбара не заходят; ╨┐╤А╨╕ ╤А╨╛╤Б╤В╨╡ ╤Е╨╛╨╗╤Б╤В╨░ ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║ ╤Г╨╝╨╡╨╜╤М╤И╨░╨╡╤В╤Б╤П ╨┐╤А╨╛╨┐╨╛╤А╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨╛
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -492,10 +494,10 @@ const Canvas = observer(() => {
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
           scrollbar.style.top = `${rect.top}px`;
-          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET}px`;
+          scrollbar.style.height = `${rect.height - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP}px`;
 
           if (hasScroll) {
-            const trackHeight = rect.height - TRACK_VERTICAL_INSET;
+            const trackHeight = rect.height - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP;
             const thumbHeight = Math.max(
               MIN_THUMB_SIZE,
               (clientHeight / scrollHeight) * trackHeight
@@ -515,12 +517,12 @@ const Canvas = observer(() => {
           scrollbar.style.display = hasScroll ? 'block' : 'none';
 
           scrollbar.style.left = `${rect.left}px`;
-          scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
+          scrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP}px`;
           scrollbar.style.top = `${Math.min(rect.bottom - 20, window.innerHeight - 20)}px`;
           scrollbar.style.height = '20px';
 
           if (hasScroll) {
-            const trackWidth = rect.width - TRACK_HORIZONTAL_INSET;
+            const trackWidth = rect.width - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP;
             const thumbWidth = Math.max(
               MIN_THUMB_SIZE,
               (clientWidth / scrollWidth) * trackWidth
@@ -552,7 +554,7 @@ const Canvas = observer(() => {
         const delta = currentPos - startPos;
 
         if (isVertical) {
-          const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET;
+          const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET - SCROLLBAR_CORNER_GAP;
           const thumbHeight = parseFloat(thumb.style.height) || MIN_THUMB_SIZE;
           const thumbTravel = Math.max(0, trackHeight - thumbHeight);
           const scrollableRange = container.scrollHeight - container.clientHeight;
@@ -562,7 +564,7 @@ const Canvas = observer(() => {
             container.scrollTop = next;
           }
         } else {
-          const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET;
+          const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET - SCROLLBAR_CORNER_GAP;
           const thumbWidth = parseFloat(thumb.style.width) || MIN_THUMB_SIZE;
           const thumbTravel = Math.max(0, trackWidth - thumbWidth);
           const scrollableRange = container.scrollWidth - container.clientWidth;
