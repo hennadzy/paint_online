@@ -107,7 +107,7 @@ class WebSocketHandler {
         return;
       } else if (msg.figure.type === "redo") {
         RoomManager.addStroke(roomId, msg.figure.stroke);
-        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: msg.figure.stroke } });
+        this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: msg.figure.stroke } }, ws);
         RoomManager.updateUserActivity(ws);
         return;
       } else {

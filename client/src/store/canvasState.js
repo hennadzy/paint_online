@@ -202,9 +202,11 @@ class CanvasState {
   }
 
   redoRemote(stroke) {
-    HistoryService.redoStroke(stroke);
-    CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
-    CanvasService.redraw();
+    const added = HistoryService.redoStroke(stroke);
+    if (added) {
+      CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+      CanvasService.redraw();
+    }
   }
 
   clearCanvas() {
