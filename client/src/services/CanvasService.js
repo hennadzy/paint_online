@@ -192,6 +192,18 @@ class CanvasService {
         cursorOverlay.style.width = `${newWidth}px`;
         cursorOverlay.style.height = `${newHeight}px`;
       }
+
+      // Mobile: set scroll area size so full zoomed canvas is reachable (CSS min-content can fall short)
+      if (window.innerWidth < 768) {
+        const container = document.querySelector('.canvas-container');
+        const inner = container?.querySelector('.canvas-container-inner');
+        if (container && inner) {
+          const w = Math.max(container.clientWidth, newWidth);
+          const h = Math.max(container.clientHeight, newHeight);
+          inner.style.width = `${w}px`;
+          inner.style.height = `${h}px`;
+        }
+      }
     }
     
     this.emit('zoomChanged', { zoom: this.zoom });
