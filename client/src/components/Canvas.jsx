@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+﻿import React, { useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -52,7 +52,7 @@ const Canvas = observer(() => {
     return () => window.removeEventListener("resize", adjustCanvasSize);
   }, []);
 
-  // На мобильном при старте: холст по ширине экрана, без полос прокрутки (полосы только при увеличении)
+  // ╨Э╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ ╨┐╤А╨╕ ╤Б╤В╨░╤А╤В╨╡: ╤Е╨╛╨╗╤Б╤В ╨┐╨╛ ╤И╨╕╤А╨╕╨╜╨╡ ╤Н╨║╤А╨░╨╜╨░, ╨▒╨╡╨╖ ╨┐╨╛╨╗╨╛╤Б ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨╕ (╨┐╨╛╨╗╨╛╤Б╤Л ╤В╨╛╨╗╤М╨║╨╛ ╨┐╤А╨╕ ╤Г╨▓╨╡╨╗╨╕╤З╨╡╨╜╨╕╨╕)
   useEffect(() => {
     if (window.innerWidth > 768) return;
     if (initialMobileZoomDone.current) return;
@@ -61,50 +61,12 @@ const Canvas = observer(() => {
       const canvas = canvasRef.current;
       if (!container || !canvas) return;
       initialMobileZoomDone.current = true;
-      const availableW = container.clientWidth - 20; // 20px под вертикальный скроллбар (базовые 5px слева/справа — в padding)
+      const availableW = container.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А (╨▒╨░╨╖╨╛╨▓╤Л╨╡ 5px ╤Б╨╗╨╡╨▓╨░/╤Б╨┐╤А╨░╨▓╨░ тАФ ╨▓ padding)
       const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
       canvasState.setZoom(fitZoom);
     }, 150);
     return () => clearTimeout(timer);
   }, []);
-
-  // На мобильном: скроллируемая область = размер холста при зуме, чтобы пролистывать от угла до угла. ResizeObserver только когда не в жесте.
-  useEffect(() => {
-    if (window.innerWidth > 768) return;
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
-    const inner = container.querySelector('.canvas-container-inner');
-    if (!inner) return;
-    const syncScrollSize = () => {
-      if (isPinching.current) return;
-      const cw = container.clientWidth;
-      const ch = container.clientHeight;
-      const canvasW = canvas.offsetWidth;
-      const canvasH = canvas.offsetHeight;
-      if (canvasW > cw || canvasH > ch) {
-        inner.style.minWidth = `${canvasW}px`;
-        inner.style.minHeight = `${canvasH}px`;
-        inner.style.width = `${canvasW}px`;
-        inner.style.height = `${canvasH}px`;
-      } else {
-        inner.style.minWidth = '';
-        inner.style.minHeight = '';
-        inner.style.width = '';
-        inner.style.height = '';
-      }
-    };
-    syncScrollSize();
-    const raf = requestAnimationFrame(syncScrollSize);
-    const t = setTimeout(syncScrollSize, 120);
-    const ro = new ResizeObserver(() => syncScrollSize());
-    ro.observe(canvas);
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(t);
-      ro.disconnect();
-    };
-  }, [canvasState.zoom]);
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);
@@ -203,24 +165,11 @@ const Canvas = observer(() => {
       }
     };
 
-    // Отмена текущего штриха без сохранения на холст (для жестов — не оставлять отметок)
-    const cancelDrawing = () => {
-      if (toolState.tool && toolState.tool.mouseDown) {
-        const tool = toolState.tool;
-        tool.mouseDown = false;
-        canvasState.isDrawing = false;
-        if (tool.points) tool.points.length = 0;
-        if (tool.startX !== undefined) tool.startX = undefined;
-        if (tool.startY !== undefined) tool.startY = undefined;
-        canvasState.redrawCanvas();
-      }
-    };
-
     const handleTouchStart = (e) => {
       activeTouches = e.touches.length;
       if (e.touches.length === 2) {
         e.preventDefault();
-        cancelDrawing();
+        stopDrawing();
         isPinching.current = true;
         initialDistance = getDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
@@ -234,7 +183,7 @@ const Canvas = observer(() => {
         initialScrollTop = container.scrollTop;
       } else if (e.touches.length > 2) {
         e.preventDefault();
-        cancelDrawing();
+        stopDrawing();
         isPinching.current = true;
       }
     };
@@ -244,7 +193,7 @@ const Canvas = observer(() => {
       
       if (touchCount >= 2) {
         e.preventDefault();
-        cancelDrawing();
+        stopDrawing();
         isPinching.current = true;
         
         if (touchCount === 2 && initialDistance > 0) {
@@ -252,33 +201,27 @@ const Canvas = observer(() => {
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
 
-          // Инвертированное перемещение: палец вправо — холст вправо (как перетаскивание листа)
+          // ╨б╨┤╨▓╨╕╨│ ╨┤╨▓╤Г╨╝╤П ╨┐╨░╨╗╤М╤Ж╨░╨╝╨╕: ╨┤╨╡╨╗╤М╤В╨░ ╤Ж╨╡╨╜╤В╤А╨░ ╨╢╨╡╤Б╤В╨░ ╨▓ ╤Н╨║╤А╨░╨╜╨╜╤Л╤Е ╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╨░╤Е
           const translationX = currentCenter.x - initialCenterX;
           const translationY = currentCenter.y - initialCenterY;
           const pannedScrollLeft = initialScrollLeft + translationX;
           const pannedScrollTop = initialScrollTop + translationY;
 
           const scale = currentDistance / initialDistance;
-          const zoomThreshold = 0.04;
-          const isPinch = Math.abs(scale - 1) >= zoomThreshold;
+          const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
+
+          // Viewport-╨║╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╤Л ╤Ж╨╡╨╜╤В╤А╨░ ╨╢╨╡╤Б╤В╨░
+          const viewportX = currentCenter.x - containerRect.left;
+          const viewportY = currentCenter.y - containerRect.top;
+          // ╨в╨╛╤З╨║╨░ ╨╜╨░ ╤Е╨╛╨╗╤Б╤В╨╡ ╨┐╨╛╨┤ ╤Ж╨╡╨╜╤В╤А╨╛╨╝ ╨╢╨╡╤Б╤В╨░ (╤Б ╤Г╤З╤С╤В╨╛╨╝ ╤Г╨╢╨╡ ╨┐╤А╨╕╨╝╨╡╨╜╤С╨╜╨╜╨╛╨│╨╛ ╤Б╨┤╨▓╨╕╨│╨░)
+          const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
+          const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
+
+          canvasState.setZoom(newZoom);
 
           requestAnimationFrame(() => {
-            const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
-            const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-
-            if (isPinch) {
-              const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
-              const viewportX = currentCenter.x - containerRect.left;
-              const viewportY = currentCenter.y - containerRect.top;
-              const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
-              const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
-              canvasState.setZoom(newZoom);
-              container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, canvasPointX * newZoom - viewportX));
-              container.scrollTop = Math.max(0, Math.min(maxScrollTop, canvasPointY * newZoom - viewportY));
-            } else {
-              container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, pannedScrollLeft));
-              container.scrollTop = Math.max(0, Math.min(maxScrollTop, pannedScrollTop));
-            }
+            container.scrollLeft = canvasPointX * newZoom - viewportX;
+            container.scrollTop = canvasPointY * newZoom - viewportY;
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -309,18 +252,16 @@ const Canvas = observer(() => {
       }
     };
 
-    const canvas = container.querySelector('.main-canvas');
-    const target = canvas || container;
-    target.addEventListener('touchstart', handleTouchStart, { passive: false });
-    target.addEventListener('touchmove', handleTouchMove, { passive: false });
-    target.addEventListener('touchend', handleTouchEnd);
-    target.addEventListener('touchcancel', handleTouchEnd);
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
 
     return () => {
-      target.removeEventListener('touchstart', handleTouchStart);
-      target.removeEventListener('touchmove', handleTouchMove);
-      target.removeEventListener('touchend', handleTouchEnd);
-      target.removeEventListener('touchcancel', handleTouchEnd);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 
@@ -467,7 +408,7 @@ const Canvas = observer(() => {
     return () => document.body.classList.remove('modal-open');
   }, [canvasState.showAboutModal, canvasState.showRoomInterface, canvasState.modalOpen, canvasState.showRestoreDialog]);
 
-  // При смене режима (локальный ↔ совместный): на мобильном всегда исходное положение и размер холста
+  // ╨Я╤А╨╕ ╤Б╨╝╨╡╨╜╨╡ ╤А╨╡╨╢╨╕╨╝╨░ (╨╗╨╛╨║╨░╨╗╤М╨╜╤Л╨╣ тЖФ ╤Б╨╛╨▓╨╝╨╡╤Б╤В╨╜╤Л╨╣): ╨╜╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ ╨▓╤Б╨╡╨│╨┤╨░ ╨╕╤Б╤Е╨╛╨┤╨╜╨╛╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╕ ╤А╨░╨╖╨╝╨╡╤А ╤Е╨╛╨╗╤Б╤В╨░
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const apply = () => {
@@ -477,7 +418,7 @@ const Canvas = observer(() => {
         container.scrollLeft = 0;
       }
       if (containerRef.current) {
-        const availableW = containerRef.current.clientWidth - 20; // 20px под вертикальный скроллбар
+        const availableW = containerRef.current.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
       }
@@ -493,26 +434,26 @@ const Canvas = observer(() => {
     }
   }, [canvasState.isConnected]);
 
-  // При смене режима рисования (инструмента) на мобильном — начальное положение и размер холста
+  // ╨Я╤А╨╕ ╤Б╨╝╨╡╨╜╨╡ ╤А╨╡╨╢╨╕╨╝╨░ ╤А╨╕╤Б╨╛╨▓╨░╨╜╨╕╤П (╨╕╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨░) ╨╜╨░ ╨╝╨╛╨▒╨╕╨╗╤М╨╜╨╛╨╝ тАФ ╨╜╨░╤З╨░╨╗╤М╨╜╨╛╨╡ ╨┐╨╛╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╕ ╤А╨░╨╖╨╝╨╡╤А ╤Е╨╛╨╗╤Б╤В╨░
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const container = containerRef.current;
     if (!container) return;
     container.scrollTop = 0;
     container.scrollLeft = 0;
-    const availableW = container.clientWidth - 20; // 20px под вертикальный скроллбар
+    const availableW = container.clientWidth - 20; // 20px ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
     const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
     canvasState.setZoom(fitZoom);
   }, [toolState.toolName]);
 
-  // Кастомные скроллбары для мобильных: поведение как у нативных (трек + ползунок, клик по треку = прокрутка на страницу)
+  // ╨Ъ╨░╤Б╤В╨╛╨╝╨╜╤Л╨╡ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А╤Л ╨┤╨╗╤П ╨╝╨╛╨▒╨╕╨╗╤М╨╜╤Л╤Е: ╨┐╨╛╨▓╨╡╨┤╨╡╨╜╨╕╨╡ ╨║╨░╨║ ╤Г ╨╜╨░╤В╨╕╨▓╨╜╤Л╤Е (╤В╤А╨╡╨║ + ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║, ╨║╨╗╨╕╨║ ╨┐╨╛ ╤В╤А╨╡╨║╤Г = ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨░ ╨╜╨░ ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г)
   useEffect(() => {
     const container = containerRef.current;
     if (!container || window.innerWidth > 768) return;
 
-    const TRACK_VERTICAL_INSET = 20; // место под горизонтальный скроллбар
-    const TRACK_HORIZONTAL_INSET = 20; // место под вертикальный скроллбар
-    const MIN_THUMB_SIZE = 24; // минимум ползунка; при росте холста ползунок уменьшается пропорционально
+    const TRACK_VERTICAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨│╨╛╤А╨╕╨╖╨╛╨╜╤В╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
+    const TRACK_HORIZONTAL_INSET = 20; // ╨╝╨╡╤Б╤В╨╛ ╨┐╨╛╨┤ ╨▓╨╡╤А╤В╨╕╨║╨░╨╗╤М╨╜╤Л╨╣ ╤Б╨║╤А╨╛╨╗╨╗╨▒╨░╤А
+    const MIN_THUMB_SIZE = 24; // ╨╝╨╕╨╜╨╕╨╝╤Г╨╝ ╨┐╨╛╨╗╨╖╤Г╨╜╨║╨░; ╨┐╤А╨╕ ╤А╨╛╤Б╤В╨╡ ╤Е╨╛╨╗╤Б╤В╨░ ╨┐╨╛╨╗╨╖╤Г╨╜╨╛╨║ ╤Г╨╝╨╡╨╜╤М╤И╨░╨╡╤В╤Б╤П ╨┐╤А╨╛╨┐╨╛╤А╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨╛
 
     const createScrollbar = (isVertical) => {
       const scrollbar = document.createElement('div');
@@ -627,7 +568,7 @@ const Canvas = observer(() => {
         thumb.classList.remove('active');
       };
 
-      // Клик по треку (не по ползунку): прокрутка на одну страницу вверх/вниз или влево/вправо
+      // ╨Ъ╨╗╨╕╨║ ╨┐╨╛ ╤В╤А╨╡╨║╤Г (╨╜╨╡ ╨┐╨╛ ╨┐╨╛╨╗╨╖╤Г╨╜╨║╤Г): ╨┐╤А╨╛╨║╤А╤Г╤В╨║╨░ ╨╜╨░ ╨╛╨┤╨╜╤Г ╤Б╤В╤А╨░╨╜╨╕╤Ж╤Г ╨▓╨▓╨╡╤А╤Е/╨▓╨╜╨╕╨╖ ╨╕╨╗╨╕ ╨▓╨╗╨╡╨▓╨╛/╨▓╨┐╤А╨░╨▓╨╛
       const handleTrackClick = (e) => {
         if (e.target !== scrollbar) return;
         e.preventDefault();
@@ -734,7 +675,7 @@ const Canvas = observer(() => {
             className="about-btn-mobile"
             onClick={() => canvasState.setShowAboutModal(true)}
           >
-            О программе
+            ╨Ю ╨┐╤А╨╛╨│╤А╨░╨╝╨╝╨╡
           </button>
         )}
 
