@@ -219,10 +219,14 @@ const Canvas = observer(() => {
           const newZoom = Math.max(0.5, Math.min(5, initialZoom * scale));
           const viewportX = currentCenter.x - containerRect.left;
           const viewportY = currentCenter.y - containerRect.top;
-          const canvasPointX = (pannedScrollLeft + viewportX) / canvasState.zoom;
-          const canvasPointY = (pannedScrollTop + viewportY) / canvasState.zoom;
+          const currentZoom = canvasState.zoom;
+          const canvasPointX = (pannedScrollLeft + viewportX) / currentZoom;
+          const canvasPointY = (pannedScrollTop + viewportY) / currentZoom;
 
-          canvasState.setZoom(newZoom);
+          const zoomEpsilon = 0.001;
+          if (Math.abs(newZoom - currentZoom) > zoomEpsilon) {
+            canvasState.setZoom(newZoom);
+          }
 
           requestAnimationFrame(() => {
             container.scrollLeft = canvasPointX * newZoom - viewportX;
