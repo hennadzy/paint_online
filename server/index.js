@@ -70,7 +70,23 @@ app.ws('/', (ws, req) => {
 app.use('/', apiRouter);
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  const segments = req.path.split('/').filter(Boolean);
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let is404 = false;
+  if (segments.length > 1) {
+    is404 = true;
+  } else if (segments.length === 1) {
+    const roomId = segments[0];
+    const roomExists = !!DataStore.getRoomInfo(roomId);
+    if (!roomExists) {
+      is404 = true;
+    }
+  }
+  if (is404) {
+    res.status(404).sendFile(indexPath);
+  } else {
+    res.sendFile(indexPath);
+  }
 });
 
 setInterval(() => {

@@ -1,22 +1,46 @@
 @import "./variables";
 
-.not-found {
+.not-found-overlay {
+  position: fixed;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  margin: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  width: 100%;
   padding: 20px;
   box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 999999 !important;
+  overflow-y: auto;
+  animation: notFoundOverlayFadeIn 0.3s ease;
+}
+
+@keyframes notFoundOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .not-found__card {
+  position: relative;
   text-align: center;
   background: rgba(103, 103, 103, 0.9);
   border-radius: 16px;
   padding: 40px 32px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   max-width: 400px;
+  margin-top: env(safe-area-inset-top, 0px);
+  margin-bottom: env(safe-area-inset-bottom, 0px);
   animation: notFoundFadeIn 0.4s ease;
 }
 

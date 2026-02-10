@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/not-found.scss';
 
-const NotFoundPage = () => (
-  <div className="not-found">
+const NotFoundPage = () => {
+  useEffect(() => {
+    document.title = '404 — Страница не найдена | Рисование онлайн';
+  }, []);
+
+  return (
+  <div className="not-found-overlay">
     <div className="not-found__card">
       <div className="not-found__code">404</div>
       <h1 className="not-found__title">Страница не найдена</h1>
@@ -15,6 +20,7 @@ const NotFoundPage = () => (
       </Link>
     </div>
   </div>
-);
+  );
+};
 
 export default NotFoundPage;
