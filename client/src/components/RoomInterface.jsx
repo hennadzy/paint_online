@@ -90,10 +90,10 @@ const RoomInterface = observer(({ roomId }) => {
               setPasswordPrompt({ id: roomId, name: response.data.name });
             }
           } else {
-            navigate('/');
+            navigate('/404', { replace: true });
           }
         })
-        .catch(() => navigate('/'));
+        .catch(() => navigate('/404', { replace: true }));
     }
   }, [roomId, canvasState.isConnected, navigate]);
 

@@ -39,31 +39,26 @@ export function useCustomScrollbars(containerRef, isConnected) {
       if (!verticalScrollbar || !horizontalScrollbar || !container) return;
 
       const rect = container.getBoundingClientRect();
-      const inner = container.querySelector('.canvas-container-inner');
       const cornerGap = getVerticalCornerGap();
       const vv = window.visualViewport;
       const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const maxTrackBottom = viewportBottom - TRACK_VERTICAL_INSET;
+      const trackHeight = Math.min(
+        rect.height - TRACK_VERTICAL_INSET - cornerGap,
+        Math.max(0, maxTrackBottom - rect.top)
+      );
       const scrollHeight = container.scrollHeight;
       const clientHeight = container.clientHeight;
       const scrollableRange = Math.max(0, scrollHeight - clientHeight);
       const hasScroll = scrollableRange > 0;
 
-      const innerRect = inner ? inner.getBoundingClientRect() : rect;
-      const verticalTrackTop = innerRect.top;
-      const verticalTrackHeight = Math.min(
-        innerRect.height,
-        rect.height - TRACK_VERTICAL_INSET - cornerGap,
-        Math.max(0, viewportBottom - TRACK_VERTICAL_INSET - innerRect.top)
-      );
-
       verticalScrollbar.style.display = hasScroll ? 'block' : 'none';
-      verticalScrollbar.style.top = `${verticalTrackTop}px`;
-      verticalScrollbar.style.height = `${Math.max(0, verticalTrackHeight)}px`;
+      verticalScrollbar.style.top = `${rect.top}px`;
+      verticalScrollbar.style.height = `${trackHeight}px`;
       verticalScrollbar.style.left = `${rect.right - 20}px`;
       verticalScrollbar.style.right = 'auto';
 
       if (hasScroll) {
-        const trackHeight = Math.max(0, verticalTrackHeight);
         const thumbHeight = Math.max(
           MIN_THUMB_SIZE,
           (clientHeight / scrollHeight) * trackHeight
@@ -119,7 +114,7 @@ export function useCustomScrollbars(containerRef, isConnected) {
       const currentPos = touch?.clientY ?? e.clientY;
       const delta = currentPos - verticalStartPos;
 
-      const trackHeight = verticalScrollbar.offsetHeight || (container.clientHeight - TRACK_VERTICAL_INSET - getVerticalCornerGap());
+      const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET - getVerticalCornerGap();
       const thumbHeight = parseFloat(verticalThumb.style.height) || MIN_THUMB_SIZE;
       const thumbTravel = Math.max(0, trackHeight - thumbHeight);
       const scrollableRange = container.scrollHeight - container.clientHeight;
@@ -178,7 +173,7 @@ export function useCustomScrollbars(containerRef, isConnected) {
       const currentPos = touch?.clientX ?? e.clientX;
       const delta = currentPos - horizontalStartPos;
 
-      const trackWidth = horizontalScrollbar.offsetWidth || (container.clientWidth - TRACK_HORIZONTAL_INSET);
+      const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET;
       const thumbWidth = parseFloat(horizontalThumb.style.width) || MIN_THUMB_SIZE;
       const thumbTravel = Math.max(0, trackWidth - thumbWidth);
       const scrollableRange = container.scrollWidth - container.clientWidth;
@@ -253,11 +248,6 @@ export function useCustomScrollbars(containerRef, isConnected) {
       requestAnimationFrame(updateScrollbars);
     });
     resizeObserver.observe(container);
-
-    const inner = container.querySelector('.canvas-container-inner');
-    if (inner) {
-      resizeObserver.observe(inner);
-    }
 
     const handleScroll = () => {
       requestAnimationFrame(updateScrollbars);

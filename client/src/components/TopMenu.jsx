@@ -17,10 +17,10 @@ const TopMenu = observer(() => {
             if (response.data.exists) {
               canvasState.setModalOpen(true);
             } else {
-              navigate('/');
+              navigate('/404', { replace: true });
             }
           })
-          .catch(() => navigate('/'));
+          .catch(() => navigate('/404', { replace: true }));
       }, 100);
       
       return () => clearTimeout(timer);
