@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/not-found.scss';
 
-// Критические стили с !important, чтобы 404 всегда был поверх всего (оверлей как у диалогов)
 const CRITICAL_404_STYLE = `
   .not-found-overlay-critical {
     position: fixed !important;
