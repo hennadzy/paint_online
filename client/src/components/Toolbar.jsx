@@ -20,7 +20,11 @@ const Toolbar = observer(() => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       const isToolbar = event.target.closest(".toolbar");
-      const isCanvas = event.target.closest(".main-canvas") || event.target.closest(".cursor-overlay");
+      const isCanvas =
+        event.target.closest(".main-canvas") ||
+        event.target.closest(".cursor-overlay") ||
+        event.target.closest(".canvas-wrapper") ||
+        event.target.closest(".canvas-container");
       if (!isToolbar || isCanvas) {
         setActiveGroup(null);
       }
@@ -62,8 +66,9 @@ const Toolbar = observer(() => {
 
   const handleGroupClick = (group) => {
     if (activeGroup === group) {
+      toggleGroup(group);
       return;
-    } 
+    }
     const toolName = toolState.getLastInGroup(group);
     const ToolClass = toolClassMap[toolName];
     changeTool(ToolClass, toolName);

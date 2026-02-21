@@ -73,7 +73,7 @@ app.get('*', (req, res) => {
   const segments = req.path.split('/').filter(Boolean);
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let is404 = false;
-  if (segments.length > 1) {
+  if (segments[0] === '404' || segments.length > 1) {
     is404 = true;
   } else if (segments.length === 1) {
     const roomId = segments[0];
