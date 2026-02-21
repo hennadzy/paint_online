@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const helmet = require('helmet');
 const DataStore = require('./services/DataStore');
 const WebSocketHandler = require('./services/WebSocketHandler');
@@ -69,8 +70,21 @@ app.ws('/', (ws, req) => {
 
 app.use('/', apiRouter);
 
+function send404Page(res) {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  const fallback = '<div id="server-404-fallback" style="text-align:center;padding:2rem 1rem;font-family:sans-serif;max-width:400px;margin:0 auto;"><p style="margin:0 0 1rem;">Страница не найдена.</p><a href="/" style="color:#0066cc;">На главную</a></div>';
+  let html;
+  try {
+    html = fs.readFileSync(indexPath, 'utf8');
+    html = html.replace(/<body>\s*/i, '<body>\n    ' + fallback + '\n    ');
+  } catch (_) {
+    html = '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>404 — Страница не найдена</title></head><body>' + fallback + '</body></html>';
+  }
+  res.status(404).setHeader('Content-Type', 'text/html').send(html);
+}
+
 app.get('/404', (req, res) => {
-  res.status(404).sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  send404Page(res);
 });
 
 app.get('*', (req, res) => {
@@ -87,7 +101,7 @@ app.get('*', (req, res) => {
     }
   }
   if (is404) {
-    res.status(404).sendFile(indexPath);
+    send404Page(res);
   } else {
     res.sendFile(indexPath);
   }

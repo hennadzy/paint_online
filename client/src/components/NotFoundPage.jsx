@@ -5,6 +5,11 @@ import '../styles/not-found.scss';
 const NotFoundPage = () => {
   useEffect(() => {
     document.title = '404 — Страница не найдена | Рисование онлайн';
+    const fallback = document.getElementById('server-404-fallback');
+    if (fallback) fallback.hidden = true;
+    return () => {
+      if (fallback) fallback.hidden = false;
+    };
   }, []);
 
   return (
