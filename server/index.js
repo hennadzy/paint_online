@@ -69,11 +69,15 @@ app.ws('/', (ws, req) => {
 
 app.use('/', apiRouter);
 
+app.get('/404', (req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
+
 app.get('*', (req, res) => {
   const segments = req.path.split('/').filter(Boolean);
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let is404 = false;
-  if (segments[0] === '404' || segments.length > 1) {
+  if (segments.length > 1) {
     is404 = true;
   } else if (segments.length === 1) {
     const roomId = segments[0];

@@ -29,11 +29,14 @@ const Toolbar = observer(() => {
         setActiveGroup(null);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
+    const useCapture = true;
+    document.addEventListener("mousedown", handleClickOutside, useCapture);
+    document.addEventListener("pointerdown", handleClickOutside, useCapture);
+    document.addEventListener("touchstart", handleClickOutside, useCapture);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside, useCapture);
+      document.removeEventListener("pointerdown", handleClickOutside, useCapture);
+      document.removeEventListener("touchstart", handleClickOutside, useCapture);
     };
   }, []);
 
