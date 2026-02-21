@@ -2,6 +2,28 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/not-found.scss';
 
+// Критические стили с !important, чтобы 404 всегда был поверх всего (оверлей как у диалогов)
+const CRITICAL_404_STYLE = `
+  .not-found-overlay-critical {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    background: rgba(0, 0, 0, 0.95) !important;
+    z-index: 2147483647 !important;
+    overflow-y: auto !important;
+  }
+`;
+
 const overlayStyle = {
   position: 'fixed',
   top: 0,
@@ -17,7 +39,7 @@ const overlayStyle = {
   padding: 20,
   boxSizing: 'border-box',
   background: 'rgba(0, 0, 0, 0.95)',
-  zIndex: 999999,
+  zIndex: 2147483647,
   overflowY: 'auto',
 };
 
@@ -48,8 +70,10 @@ const NotFoundPage = () => {
   }, []);
 
   return (
-    <div className="not-found-overlay" style={overlayStyle}>
-      <div className="not-found__card" style={cardStyle}>
+    <>
+      <style>{CRITICAL_404_STYLE}</style>
+      <div className="not-found-overlay not-found-overlay-critical" style={overlayStyle}>
+        <div className="not-found__card" style={cardStyle}>
         <div className="not-found__code">404</div>
         <h1 className="not-found__title" style={titleStyle}>Страница не найдена</h1>
         <p className="not-found__text" style={textStyle}>
@@ -58,8 +82,9 @@ const NotFoundPage = () => {
         <Link to="/" className="not-found__btn" style={btnStyle}>
           На главную
         </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
