@@ -62,13 +62,6 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-app.ws('/', (ws, req) => {
-  WebSocketHandler.setupConnection(ws);
-});
-
-app.use('/', apiRouter);
 
 function send404Page(res) {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
@@ -83,9 +76,18 @@ function send404Page(res) {
   res.status(404).setHeader('Content-Type', 'text/html').send(html);
 }
 
+// Маршрут /404 до статики — чтобы всегда отдавать 404, а не 200
 app.get('/404', (req, res) => {
   send404Page(res);
 });
+
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+app.ws('/', (ws, req) => {
+  WebSocketHandler.setupConnection(ws);
+});
+
+app.use('/', apiRouter);
 
 app.get('*', (req, res) => {
   const segments = req.path.split('/').filter(Boolean);
