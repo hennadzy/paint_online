@@ -13,7 +13,10 @@ import canvasState from "./store/canvasState";
 
 const App = observer(() => {
     const location = useLocation();
-    const is404 = location.pathname === '/404';
+
+    if (location.pathname === '/404') {
+        return <NotFoundPage />;
+    }
 
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
@@ -23,12 +26,10 @@ const App = observer(() => {
             <div className="main-content">
                 <Routes>
                     <Route path='/' element={<Canvas />} />
-                    <Route path='/404' element={null} />
                     <Route path='/:id' element={<Canvas />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>
             </div>
-            {is404 && <NotFoundPage />}
         </div>
     );
 });

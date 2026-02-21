@@ -31,6 +31,10 @@ const cardStyle = {
   maxWidth: 400,
 };
 
+const titleStyle = { fontFamily: 'sans-serif', fontSize: 22, color: '#fff', margin: '0 0 12px' };
+const textStyle = { fontFamily: 'sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.9)', margin: '0 0 24px', lineHeight: 1.5 };
+const btnStyle = { display: 'inline-block', padding: '12px 28px', borderRadius: 10, background: 'linear-gradient(135deg, #ffcc00, #ff6699)', color: '#333', fontWeight: 600, fontSize: 16, textDecoration: 'none' };
+
 const NotFoundPage = () => {
   useEffect(() => {
     document.title = '404 — Страница не найдена | Рисование онлайн';
@@ -47,11 +51,11 @@ const NotFoundPage = () => {
     <div className="not-found-overlay" style={overlayStyle}>
       <div className="not-found__card" style={cardStyle}>
         <div className="not-found__code">404</div>
-        <h1 className="not-found__title">Страница не найдена</h1>
-        <p className="not-found__text">
+        <h1 className="not-found__title" style={titleStyle}>Страница не найдена</h1>
+        <p className="not-found__text" style={textStyle}>
           Запрашиваемая страница не существует или была перемещена.
         </p>
-        <Link to="/" className="not-found__btn">
+        <Link to="/" className="not-found__btn" style={btnStyle}>
           На главную
         </Link>
       </div>
