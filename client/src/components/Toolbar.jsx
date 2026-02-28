@@ -135,8 +135,8 @@ const Toolbar = observer(() => {
           </span>
         </button>
         <div className={`toolbar__submenu ${activeGroup === "color" ? "show" : ""}`}>
-          {renderButton("pipette", Pipette, "Пипетка")}
           {renderButton("fill", Fill, "Заливка")}
+          {renderButton("pipette", Pipette, "Пипетка")}
         </div>
       </div>
 

@@ -25,13 +25,13 @@ class ToolState {
   groups = {
     brush: ["brush", "line", "arrow"],
     shapes: ["circle", "rect", "polygon"],
-    color: ["pipette", "fill"]
+    color: ["fill", "pipette"]
   };
 
   lastSelected = {
     brush: "brush",
     shapes: "circle",
-    color: "pipette"
+    color: "fill"
   };
 
   constructor() {

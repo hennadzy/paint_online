@@ -330,6 +330,7 @@ button:active {
     align-items: center;
     padding-top: 10px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 24px));
+    overflow-y: auto;
   }
 
   .canvas-layout.has-chat {
@@ -445,7 +446,7 @@ button:active {
   
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 24px) - 80px);
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 24px));
   }
   
   .canvas-layout.has-chat .canvas-container {
@@ -566,8 +567,6 @@ button:active {
 
 .about-btns-mobile {
   display: none;
-  // flex-shrink: 0;
-  // order: -1;
 
   @media (max-width: 768px) {
     display: flex;
@@ -576,7 +575,6 @@ button:active {
     gap: 10px;
     width: 100%;
     padding: 10px;
-    order: -1;
   }
 }
 
