@@ -268,8 +268,11 @@ class CanvasState {
   }
 
   saveThumbnail() {
-    if (!this.canvas || !this.currentRoomId) return;
+    if (!this.currentRoomId) return;
     const roomId = this.currentRoomId;
+    // Используем буферный канвас вместо основного - там хранятся все штрихи
+    const sourceCanvas = this.bufferCanvas || this.canvas;
+    if (!sourceCanvas) return;
     try {
       const thumbCanvas = document.createElement('canvas');
       thumbCanvas.width = 240;
@@ -277,8 +280,9 @@ class CanvasState {
       const thumbCtx = thumbCanvas.getContext('2d');
       thumbCtx.fillStyle = 'white';
       thumbCtx.fillRect(0, 0, 240, 160);
-      thumbCtx.drawImage(this.canvas, 0, 0, 240, 160);
-      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.75);
+      // Рисуваем буферный канвас на превью
+      thumbCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, 240, 160);
+      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
       fetch(`${API_URL}/image?id=${roomId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
