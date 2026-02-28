@@ -566,6 +566,8 @@ button:active {
 
 .about-btns-mobile {
   display: none;
+  flex-shrink: 0;
+  order: -1;
 
   @media (max-width: 768px) {
     display: flex;
@@ -573,7 +575,8 @@ button:active {
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 0 10px;
+    padding: 10px;
+    order: -1;
   }
 }
 
