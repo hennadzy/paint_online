@@ -70,7 +70,7 @@ body.modal-open {
   }
 }
 
-.top-menu__actions .create-room-btn,
+/* "О программе" / "Обратная связь" never shrink; "Совместное рисование" may shrink on mobile */
 .top-menu__actions .about-btn {
   flex-shrink: 0;
 }
@@ -79,6 +79,7 @@ body.modal-open {
   position: relative;
   width: 32px;
   height: 32px;
+  flex: 0 0 32px; /* never shrink icon buttons */
   border: none;
   outline: none;
   cursor: pointer;
@@ -146,7 +147,8 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
+  flex-shrink: 1;   /* allowed to shrink, but not icon buttons */
+  min-width: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
   &::before {
@@ -250,13 +252,14 @@ body.modal-open {
   .main-content {
     padding-top: 50px;
   }
-}
 
-/* ── Upload image button ─────────────────────────────────────── */
-.upload-img-btn {
-  svg {
-    display: block;
-    flex-shrink: 0;
+  /* On mobile the text buttons can be a bit narrower so icon buttons keep their 32px */
+  .create-room-btn {
+    font-size: 9px;
+    padding: 0 4px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

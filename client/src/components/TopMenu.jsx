@@ -169,20 +169,11 @@ const TopMenu = observer(() => {
 
           {/* Upload image button */}
           <button
-            className="toolbar__btn upload-img-btn"
+            className="toolbar__btn"
             onClick={() => fileInputRef.current && fileInputRef.current.click()}
             title="Загрузить картинку"
           >
-            <svg
-              width="20" height="20" viewBox="0 0 24 24"
-              fill="none" stroke="white" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-              <polyline points="14 3 14 8 19 8"/>
-            </svg>
+            <span className="icon load"></span>
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
