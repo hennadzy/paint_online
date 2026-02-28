@@ -54,7 +54,7 @@
 .room-close-btn {
   position: absolute;
   top: calc(2px + env(safe-area-inset-top, 0px));
-  right: 28px;
+  right: 35px;
   width: 32px;
   height: 32px;
   border: none;
@@ -84,7 +84,7 @@
 .room-close-btn-inline {
   position: absolute;
   top: 0px;
-  right: 20px;
+    right: 28px;
   width: 26px;
   height: 26px;
   border: none;
