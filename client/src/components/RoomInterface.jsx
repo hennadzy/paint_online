@@ -70,6 +70,8 @@ const RoomInterface = observer(({ roomId }) => {
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
       fetchPublicRooms();
+      const interval = setInterval(fetchPublicRooms, 15000);
+      return () => clearInterval(interval);
     }
   }, [activeTab, roomId]);
 
@@ -475,13 +477,21 @@ const RoomInterface = observer(({ roomId }) => {
                             <div className="room-item-icon">
                               {room.thumbnailUrl ? (
                                 <img
-                                  src={`${API_URL}${room.thumbnailUrl}`}
+                                  src={`${API_URL}${room.thumbnailUrl}?t=${Date.now()}`}
                                   alt={room.name}
                                   className="room-thumbnail"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+                                  }}
                                 />
-                              ) : (
-                                <span>{room.hasPassword ? '🔒' : '🎨'}</span>
-                              )}
+                              ) : null}
+                              <span
+                                style={{ display: room.thumbnailUrl ? 'none' : 'flex' }}
+                                className="room-item-icon-fallback"
+                              >
+                                {room.hasPassword ? '🔒' : '🎨'}
+                              </span>
                             </div>
                             <div className="room-item-details">
                               <h3>{room.name}</h3>
@@ -489,11 +499,9 @@ const RoomInterface = observer(({ roomId }) => {
                                 <span className="room-item-status">
                                   {room.isPublic ? 'Публичная' : 'Приватная'}
                                 </span>
-                                {room.onlineCount > 0 && (
-                                  <span className="room-item-online">
-                                    🟢 {room.onlineCount} онлайн
-                                  </span>
-                                )}
+                                <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
+                                  {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн
+                                </span>
                               </div>
                             </div>
                           </div>

@@ -175,6 +175,7 @@ class CanvasState {
       CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
       AutoSaveService.markChanged();
+      this.scheduleThumbnailSave();
     }
   }
 
@@ -263,6 +264,7 @@ class CanvasState {
     await WebSocketService.connect(WS_URL, roomId, username, token);
     this.setCurrentRoomId(roomId);
     this.setUsername(username);
+    this.setupThumbnailInterval();
   }
 
   saveThumbnail() {
@@ -285,9 +287,44 @@ class CanvasState {
     } catch (_) {}
   }
 
+  // Debounced thumbnail save — fires 5 s after the last stroke
+  scheduleThumbnailSave() {
+    if (this._thumbnailDebounceTimer) {
+      clearTimeout(this._thumbnailDebounceTimer);
+    }
+    this._thumbnailDebounceTimer = setTimeout(() => {
+      this._thumbnailDebounceTimer = null;
+      if (this.isConnected) {
+        this.saveThumbnail();
+      }
+    }, 5000);
+  }
+
+  // Periodic thumbnail save every 30 s while connected
+  setupThumbnailInterval() {
+    if (this._thumbnailInterval) return;
+    this._thumbnailInterval = setInterval(() => {
+      if (this.isConnected && this.currentRoomId) {
+        this.saveThumbnail();
+      }
+    }, 30000);
+  }
+
+  stopThumbnailInterval() {
+    if (this._thumbnailInterval) {
+      clearInterval(this._thumbnailInterval);
+      this._thumbnailInterval = null;
+    }
+    if (this._thumbnailDebounceTimer) {
+      clearTimeout(this._thumbnailDebounceTimer);
+      this._thumbnailDebounceTimer = null;
+    }
+  }
+
   disconnect() {
     // Сохраняем превью до очистки холста
     this.saveThumbnail();
+    this.stopThumbnailInterval();
     WebSocketService.disconnect();
     this.isConnected = false;
     const wasInRoom = this.currentRoomId !== null;

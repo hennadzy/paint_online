@@ -106,6 +106,7 @@ class DataStore {
 
   getPublicRooms() {
     return Object.entries(this.roomInfo)
+      .filter(([, info]) => info.isPublic === true)
       .map(([id, info]) => ({
         id,
         name: info.name,
