@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { observer } from "mobx-react-lite";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
@@ -9,6 +9,7 @@ const TopMenu = observer(() => {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const fileInputRef = useRef(null);
+  const fileInputKey = useRef(0);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState('drawing');
@@ -64,7 +65,7 @@ const TopMenu = observer(() => {
     }
   }, [canvasState.usernameReady, canvasState.isConnected, canvasState.currentRoomId]);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = useCallback((e) => {
     const file = e.target.files[0];
     if (!file || !canvasState.canvas) return;
 
@@ -101,14 +102,18 @@ const TopMenu = observer(() => {
     reader.readAsDataURL(file);
     // Reset so the same file can be re-uploaded
     e.target.value = '';
-  };
+  }, []);
 
-  const openExportModal = () => {
+  const handleUploadButtonClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const openExportModal = useCallback(() => {
     const defaultName = canvasState.sessionId || 'drawing';
     setExportFilename(defaultName);
     setExportFormat('png');
     setShowExportModal(true);
-  };
+  }, []);
 
   const performExport = () => {
     const canvas = canvasState.canvas;
@@ -170,15 +175,16 @@ const TopMenu = observer(() => {
           {/* Upload image button */}
           <button
             className="toolbar__btn"
-            onClick={() => fileInputRef.current && fileInputRef.current.click()}
+            onClick={handleUploadButtonClick}
             title="Загрузить картинку"
           >
             <span className="icon load"></span>
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          {/* Hidden file input */}
+          {/* Hidden file input - use key to force re-mount */}
           <input
+            key={fileInputKey.current}
             ref={fileInputRef}
             type="file"
             accept="image/*"
@@ -207,14 +213,14 @@ const TopMenu = observer(() => {
                 Обратная связь
               </button>
             </>
-          ) : canvasState.isConnected && (
+          ) : canvasState.isConnected ? (
             <button
               className="create-room-btn disconnect-room-btn"
               onClick={() => { canvasState.disconnect(); navigate('/'); }}
             >
               Выйти из комнаты
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

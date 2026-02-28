@@ -174,6 +174,11 @@ class CanvasState {
       CanvasService.redraw();
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
+      
+      // Send stroke to other users in the room via WebSocket
+      if (WebSocketService.isConnected) {
+        WebSocketService.sendDraw(stroke);
+      }
     }
   }
 

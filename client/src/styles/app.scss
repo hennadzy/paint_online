@@ -253,13 +253,16 @@ body.modal-open {
     padding-top: 50px;
   }
 
-  /* On mobile the text buttons can be a bit narrower so icon buttons keep their 32px */
-  .create-room-btn {
+  /* On mobile: "Совместное рисование" fills remaining space, icon buttons stay 32px */
+  .top-menu__actions .create-room-btn {
+    flex: 1;
     font-size: 9px;
     padding: 0 4px;
-    max-width: 90px;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    justify-content: flex-start;
+    padding-left: 8px;
   }
 }
 
