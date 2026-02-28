@@ -252,6 +252,175 @@ body.modal-open {
   }
 }
 
+/* ── Upload image button ─────────────────────────────────────── */
+.upload-img-btn {
+  svg {
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Export modal ────────────────────────────────────────────── */
+.export-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(3px);
+}
+
+.export-modal {
+  background: #2a2a2a;
+  border-radius: 14px;
+  padding: 28px 32px;
+  min-width: 320px;
+  max-width: 420px;
+  width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #fff;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #444;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: #ffd700;
+    }
+
+    &::placeholder {
+      color: #666;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+}
+
+.export-format-options {
+  display: flex;
+  gap: 10px;
+}
+
+.export-format-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 2px solid #444;
+  background: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  &.active {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.12);
+  }
+
+  &:hover:not(.active) {
+    border-color: #666;
+    background: #222;
+  }
+}
+
+.export-format-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.export-format-desc {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.export-btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+
+  &:hover {
+    transform: scale(1.04);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &-primary {
+    background: linear-gradient(135deg, #ffd700, #ff9500);
+    color: #1a1a1a;
+    box-shadow: 0 4px 14px rgba(255, 215, 0, 0.35);
+
+    &:hover {
+      box-shadow: 0 6px 18px rgba(255, 215, 0, 0.5);
+    }
+  }
+
+  &-secondary {
+    background: #3a3a3a;
+    color: #ccc;
+
+    &:hover {
+      background: #444;
+      color: #fff;
+    }
+  }
+}
+
 @keyframes buttonPress {
   0% {
     transform: scale(1);
