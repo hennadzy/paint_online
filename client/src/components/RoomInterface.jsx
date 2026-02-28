@@ -252,9 +252,9 @@ const RoomInterface = observer(({ roomId }) => {
     return (
       <div className="room-interface-overlay input-dialog-overlay" data-nosnippet>
         <div className="room-interface input-dialog">
-          <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
           <div className="room-card password-form">
             <div className="room-card-header">
+              <button className="room-close-btn-inline" onClick={() => navigate('/')}>×</button>
               <h2>Вход в комнату "{passwordPrompt.name}"</h2>
               <p>Эта комната защищена паролем</p>
             </div>
@@ -286,9 +286,9 @@ const RoomInterface = observer(({ roomId }) => {
     return (
       <div className="room-interface-overlay input-dialog-overlay" data-nosnippet>
         <div className="room-interface input-dialog">
-          <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
           <div className="room-card username-form">
             <div className="room-card-header">
+              <button className="room-close-btn-inline" onClick={() => navigate('/')}>×</button>
               <h2>Добро пожаловать!</h2>
               <p>Введите ваше имя для входа в комнату</p>
             </div>

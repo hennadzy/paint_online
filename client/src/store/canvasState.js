@@ -62,9 +62,7 @@ class CanvasState {
       CanvasService.rebuildBuffer(strokes);
       CanvasService.redraw();
       // Сохраняем превью после получения начального состояния холста
-      if (strokes.length > 0) {
-        setTimeout(() => this.saveThumbnail(), 500);
-      }
+      setTimeout(() => this.saveThumbnail(), 800);
     });
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
@@ -265,6 +263,8 @@ class CanvasState {
     this.setCurrentRoomId(roomId);
     this.setUsername(username);
     this.setupThumbnailInterval();
+    // Сохраняем превью сразу после подключения (даже если холст пустой)
+    setTimeout(() => this.saveThumbnail(), 1500);
   }
 
   saveThumbnail() {

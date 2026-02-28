@@ -53,29 +53,60 @@
 
 .room-close-btn {
   position: absolute;
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  right: 10px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 14px;
+  width: 32px;
+  height: 32px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 24px;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 26px;
   line-height: 1;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
   z-index: 9999999 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  padding: 0;
 
   &:hover {
-    background: linear-gradient(135deg, rgba(255, 204, 0, 0.3) 0%, rgba(255, 102, 153, 0.3) 100%);
     color: #fff;
-    transform: rotate(90deg) scale(1.1);
-    box-shadow: 0 4px 15px rgba(255, 102, 153, 0.4);
+    transform: scale(1.25);
+  }
+
+  &:active {
+    transform: scale(1.0);
+  }
+}
+
+// Close button placed inside .room-card-header (for input dialogs)
+.room-close-btn-inline {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 1;
+
+  &:hover {
+    color: #fff;
+    transform: scale(1.25);
+  }
+
+  &:active {
+    transform: scale(1.0);
   }
 }
 
@@ -155,6 +186,7 @@
 }
 
 .room-card-header {
+  position: relative;
   text-align: center;
   margin-bottom: 25px;
 
