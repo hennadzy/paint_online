@@ -81,6 +81,7 @@ app.get('/404', (req, res) => {
   send404Page(res);
 });
 
+app.use('/files', express.static(path.join(__dirname, 'files')));
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 app.ws('/', (ws, req) => {

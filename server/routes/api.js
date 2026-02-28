@@ -4,6 +4,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
+const RoomManager = require('../services/RoomManager');
 const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
 
@@ -111,7 +112,28 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
 router.get('/rooms/public', apiLimiter, (req, res) => {
   try {
     const publicRooms = DataStore.getPublicRooms();
-    res.json(publicRooms);
+    const filesDir = path.join(__dirname, '../files');
+    const result = publicRooms.map(room => {
+      const onlineCount = RoomManager.getRoomUsers(room.id).length;
+      // Показываем превью только для публичных комнат
+      let thumbnailUrl = null;
+      if (room.isPublic) {
+        const thumbPath = path.join(filesDir, `${room.id}.jpg`);
+        if (fs.existsSync(thumbPath)) {
+          thumbnailUrl = `/files/${room.id}.jpg`;
+        }
+      }
+      return {
+        id: room.id,
+        name: room.name,
+        isPublic: room.isPublic,
+        hasPassword: room.hasPassword,
+        lastActivity: room.lastActivity,
+        onlineCount,
+        thumbnailUrl
+      };
+    });
+    res.json(result);
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }

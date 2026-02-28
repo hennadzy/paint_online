@@ -110,8 +110,10 @@ class DataStore {
         id,
         name: info.name,
         isPublic: info.isPublic,
-        hasPassword: info.hasPassword || false
-      }));
+        hasPassword: info.hasPassword || false,
+        lastActivity: info.lastActivity || info.createdAt || 0
+      }))
+      .sort((a, b) => b.lastActivity - a.lastActivity);
   }
 
   cleanupExpiredRooms(expirationTime) {

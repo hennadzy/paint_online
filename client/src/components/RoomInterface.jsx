@@ -472,12 +472,29 @@ const RoomInterface = observer(({ roomId }) => {
                       {publicRooms.map(room => (
                         <div key={room.id} className="room-item">
                           <div className="room-item-info">
-                            <span className="room-item-icon">{room.hasPassword ? '🔒' : '🎨'}</span>
+                            <div className="room-item-icon">
+                              {room.thumbnailUrl ? (
+                                <img
+                                  src={`${API_URL}${room.thumbnailUrl}`}
+                                  alt={room.name}
+                                  className="room-thumbnail"
+                                />
+                              ) : (
+                                <span>{room.hasPassword ? '🔒' : '🎨'}</span>
+                              )}
+                            </div>
                             <div className="room-item-details">
                               <h3>{room.name}</h3>
-                              <span className="room-item-status">
-                                {room.isPublic ? 'Публичная' : 'Приватная'}
-                              </span>
+                              <div className="room-item-meta">
+                                <span className="room-item-status">
+                                  {room.isPublic ? 'Публичная' : 'Приватная'}
+                                </span>
+                                {room.onlineCount > 0 && (
+                                  <span className="room-item-online">
+                                    🟢 {room.onlineCount} онлайн
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <button

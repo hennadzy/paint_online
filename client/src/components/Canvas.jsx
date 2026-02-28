@@ -92,6 +92,15 @@ const Canvas = observer(() => {
     }
   }, [canvasState.chatMessages.length]);
 
+  // Периодическое сохранение превью комнаты (каждые 60 сек)
+  useEffect(() => {
+    if (!canvasState.isConnected) return;
+    const interval = setInterval(() => {
+      canvasState.saveThumbnail();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [canvasState.isConnected]);
+
   useEffect(() => {
     if (window.innerWidth > 768) return;
     const apply = () => {

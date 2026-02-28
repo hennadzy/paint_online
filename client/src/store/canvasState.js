@@ -61,6 +61,10 @@ class CanvasState {
       HistoryService.setStrokes(strokes);
       CanvasService.rebuildBuffer(strokes);
       CanvasService.redraw();
+      // Сохраняем превью после получения начального состояния холста
+      if (strokes.length > 0) {
+        setTimeout(() => this.saveThumbnail(), 500);
+      }
     });
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
@@ -261,7 +265,29 @@ class CanvasState {
     this.setUsername(username);
   }
 
+  saveThumbnail() {
+    if (!this.canvas || !this.currentRoomId) return;
+    const roomId = this.currentRoomId;
+    try {
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = 240;
+      thumbCanvas.height = 160;
+      const thumbCtx = thumbCanvas.getContext('2d');
+      thumbCtx.fillStyle = 'white';
+      thumbCtx.fillRect(0, 0, 240, 160);
+      thumbCtx.drawImage(this.canvas, 0, 0, 240, 160);
+      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.75);
+      fetch(`${API_URL}/image?id=${roomId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ img: dataUrl })
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
   disconnect() {
+    // Сохраняем превью до очистки холста
+    this.saveThumbnail();
     WebSocketService.disconnect();
     this.isConnected = false;
     const wasInRoom = this.currentRoomId !== null;
