@@ -95,6 +95,12 @@ const TopMenu = observer(() => {
             >
               О программе
             </button>
+            <button
+              className="create-room-btn about-btn"
+              onClick={() => canvasState.setShowFeedbackModal(true)}
+            >
+              Обратная связь
+            </button>
           </>
         ) : canvasState.isConnected && (
           <button

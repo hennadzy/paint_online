@@ -7,6 +7,7 @@ import Brush from '../tools/Brush';
 import Chat from './Chat';
 import RoomInterface from './RoomInterface';
 import AboutModal from './AboutModal';
+import FeedbackModal from './FeedbackModal';
 import RestoreDialog from './RestoreDialog';
 import {
   useCanvasResize,
@@ -125,12 +126,20 @@ const Canvas = observer(() => {
         </div>
 
         {!canvasState.isConnected && !canvasState.currentRoomId && (
-          <button
-            className="about-btn-mobile"
-            onClick={() => canvasState.setShowAboutModal(true)}
-          >
-            О программе
-          </button>
+          <div className="about-btns-mobile">
+            <button
+              className="about-btn-mobile"
+              onClick={() => canvasState.setShowAboutModal(true)}
+            >
+              О программе
+            </button>
+            <button
+              className="about-btn-mobile"
+              onClick={() => canvasState.setShowFeedbackModal(true)}
+            >
+              Обратная связь
+            </button>
+          </div>
         )}
 
         <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
@@ -143,6 +152,7 @@ const Canvas = observer(() => {
       )}
 
       <AboutModal />
+      <FeedbackModal />
 
       <RestoreDialog
         show={canvasState.showRestoreDialog}
