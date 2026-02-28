@@ -566,8 +566,8 @@ button:active {
 
 .about-btns-mobile {
   display: none;
-  flex-shrink: 0;
-  order: -1;
+  // flex-shrink: 0;
+  // order: -1;
 
   @media (max-width: 768px) {
     display: flex;

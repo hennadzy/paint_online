@@ -118,6 +118,15 @@ const Canvas = observer(() => {
   return (
     <div className={`canvas ${canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
+       
+        <div className="canvas-container" ref={containerRef}>
+          <div className="canvas-container-inner">
+            <div className="canvas-wrapper">
+              <canvas ref={canvasRef} tabIndex={0} className="main-canvas" />
+              <canvas ref={cursorRef} className="cursor-overlay" />
+            </div>
+          </div>
+        </div>
         {isHome && !canvasState.isConnected && !canvasState.currentRoomId && (
           <div className="about-btns-mobile">
             <button
@@ -134,15 +143,6 @@ const Canvas = observer(() => {
             </button>
           </div>
         )}
-        <div className="canvas-container" ref={containerRef}>
-          <div className="canvas-container-inner">
-            <div className="canvas-wrapper">
-              <canvas ref={canvasRef} tabIndex={0} className="main-canvas" />
-              <canvas ref={cursorRef} className="cursor-overlay" />
-            </div>
-          </div>
-        </div>
-
         <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
           {canvasState.isConnected && <Chat />}
         </div>
