@@ -55,13 +55,24 @@ body.modal-open {
 
 .top-menu__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-start;
   padding: 10px 5px;
   gap: 5px;
   height: 100%;
   align-items: center;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.top-menu__actions .create-room-btn,
+.top-menu__actions .about-btn {
+  flex-shrink: 0;
 }
 
 .top-menu__actions .toolbar__btn {

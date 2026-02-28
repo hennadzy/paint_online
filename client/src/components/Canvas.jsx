@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
 import Brush from '../tools/Brush';
@@ -25,6 +25,8 @@ const Canvas = observer(() => {
   const containerRef = useRef();
   const layoutRef = useRef();
   const params = useParams();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   useCanvasResize(canvasRef, cursorRef, containerRef);
   usePinchZoom(containerRef);
@@ -116,7 +118,7 @@ const Canvas = observer(() => {
   return (
     <div className={`canvas ${canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
-        {!canvasState.isConnected && !canvasState.currentRoomId && (
+        {isHome && !canvasState.isConnected && !canvasState.currentRoomId && (
           <div className="about-btns-mobile">
             <button
               className="about-btn-mobile"

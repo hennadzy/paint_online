@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { observer } from "mobx-react-lite";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
 import canvasState, { API_URL, WS_URL } from '../store/canvasState';
 import toolState from '../store/toolState';
@@ -8,6 +8,8 @@ import Brush from '../tools/Brush';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   useEffect(() => {
     if (canvasState.currentRoomId && !canvasState.isConnected && !canvasState.modalOpen) {
@@ -81,7 +83,7 @@ const TopMenu = observer(() => {
         <button className="toolbar__btn" onClick={download}>
           <span className="icon save"></span>
         </button>
-        {!canvasState.isConnected && !canvasState.currentRoomId ? (
+        {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) ? (
           <>
             <button
               className="create-room-btn"
