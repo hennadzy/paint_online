@@ -134,9 +134,9 @@ body.modal-open {
   position: relative;
   width: auto;
   height: 32px;
-  padding: 0 5px;
+  padding: 0 12px;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 14px;
   color: #fff;
   border: none;
   outline: none;
@@ -256,13 +256,13 @@ body.modal-open {
   /* On mobile: "Совместное рисование" fills remaining space, icon buttons stay 32px */
   .top-menu__actions .create-room-btn {
     flex: 1;
-    font-size: 9px;
-    padding: 0 4px;
+    font-size: 12px;
+    padding: 0 8px;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     justify-content: flex-start;
-    padding-left: 8px;
+    padding-left: 10px;
   }
 }
 
