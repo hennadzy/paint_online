@@ -53,8 +53,8 @@
 
 .room-close-btn {
   position: absolute;
-  top: calc(8px + env(safe-area-inset-top, 0px));
-  right: 20px;
+  top: calc(2px + env(safe-area-inset-top, 0px));
+  right: 28px;
   width: 32px;
   height: 32px;
   border: none;
@@ -83,8 +83,8 @@
 // Close button placed inside .room-card-header (for input dialogs)
 .room-close-btn-inline {
   position: absolute;
-  top: 4px;
-  right: 14px;
+  top: 0px;
+  right: 20px;
   width: 26px;
   height: 26px;
   border: none;
