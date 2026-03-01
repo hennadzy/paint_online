@@ -43,11 +43,11 @@ class CanvasService {
   switch (stroke.type) {
     case "image_placeholder":
     case "fill_image":
-      // Для изображений используем асинхронную загрузку
+
       return this.drawImagePlaceholder(ctx, stroke);
     case "brush":
     case "eraser":
-      // Для кисти и ластика используем renderBrushStroke
+
       this.renderBrushStroke(ctx, stroke, stroke.type === "eraser");
       break;
     case "rect":
@@ -82,13 +82,13 @@ drawImagePlaceholder(ctx, stroke) {
   
   if (!imageData) return Promise.resolve();
   
-  // Check if imageData is a data URL (new format) or old raw pixel format
+
   if (typeof imageData === 'string' && imageData.startsWith('data:')) {
-    // New format: data URL - use async loading with cached image
+
     return this.loadImageForStroke(stroke, ctx);
   }
   
-  // Old format: raw pixel data (for backward compatibility)
+  
   if (imageData && imageData.data) {
     const data = imageData.data instanceof Uint8ClampedArray 
       ? imageData.data 
@@ -107,46 +107,45 @@ drawImagePlaceholder(ctx, stroke) {
   return Promise.resolve();
 }
 
-// Cache for loaded images to avoid reloading
 imageCache = new Map();
 
 loadImageForStroke(stroke, ctx) {
   const { x, y, width, height, imageData } = stroke;
   const dataUrl = imageData;
-  
-  // Check cache first
+
   if (this.imageCache.has(dataUrl)) {
     const img = this.imageCache.get(dataUrl);
     if (img.complete && img.naturalWidth !== 0) {
       ctx.drawImage(img, x, y, width, height);
-      return Promise.resolve(); // Image already loaded
+      this.redraw(); 
+      return Promise.resolve();
     } else {
-      // Image in cache but still loading - wait for it
       return new Promise((resolve) => {
         img.onload = () => {
           ctx.drawImage(img, x, y, width, height);
+          this.redraw(); 
           resolve();
         };
-        img.onerror = () => resolve(); // Resolve anyway to continue
+        img.onerror = () => resolve();
       });
     }
   }
-  
-  // Load image asynchronously
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       this.imageCache.set(dataUrl, img);
       ctx.drawImage(img, x, y, width, height);
+      this.redraw(); 
       resolve();
     };
     img.onerror = () => {
-      // If image fails to load, draw a placeholder rectangle
       ctx.fillStyle = '#cccccc';
       ctx.fillRect(x, y, width, height);
       ctx.strokeStyle = '#999999';
       ctx.strokeRect(x, y, width, height);
-      resolve(); // Resolve anyway to continue
+      this.redraw(); 
+      resolve();
     };
     img.src = dataUrl;
   });
@@ -482,7 +481,6 @@ clearImageCache() {
     this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
     this.bufferCtx.globalCompositeOperation = "source-over";
     
-    // Separate image strokes from other strokes
     const imageStrokes = [];
     const otherStrokes = [];
     
@@ -499,17 +497,14 @@ clearImageCache() {
       }
     }
     
-    // Draw all non-image strokes synchronously
     otherStrokes.forEach(stroke => this.drawStroke(this.bufferCtx, stroke));
     
-    // If no image strokes, we're done
     if (imageStrokes.length === 0) {
       this.redraw();
       if (callback) callback();
       return;
     }
     
-    // Load images and draw when ready
     let loadedCount = 0;
     const totalImages = imageStrokes.length;
     
@@ -525,7 +520,6 @@ clearImageCache() {
       const { x, y, width, height, imageData } = stroke;
       const dataUrl = imageData;
       
-      // Check cache first
       if (this.imageCache.has(dataUrl)) {
         const img = this.imageCache.get(dataUrl);
         if (img.complete) {
