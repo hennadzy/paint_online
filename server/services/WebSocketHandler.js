@@ -96,6 +96,7 @@ class WebSocketHandler {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
+    
     if (msg.figure) {
       if (msg.figure.type === "undo") {
         if (!RoomManager.removeStrokeIfOwned(roomId, msg.figure.strokeId, username)) {
@@ -104,22 +105,29 @@ class WebSocketHandler {
         this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } });
         RoomManager.updateUserActivity(ws);
         return;
-      } else if (msg.figure.type === "redo") {
+      } 
+      else if (msg.figure.type === "redo") {
         const stroke = msg.figure.stroke;
         if (!stroke) return;
         if (stroke.username && String(stroke.username).trim() !== String(username).trim()) {
           return;
         }
         const strokeToAdd = { ...stroke, username: stroke.username || username };
+        
+        // !!! ВАЖНО: Сохраняем в RoomManager
         RoomManager.addStroke(roomId, strokeToAdd);
+        
         const strokeToBroadcast = JSON.parse(JSON.stringify(strokeToAdd));
         this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: strokeToBroadcast } });
         RoomManager.updateUserActivity(ws);
         return;
-      } else {
+      } 
+      else {
+        // !!! ВАЖНО: Сохраняем обычные штрихи (включая image_placeholder)
         RoomManager.addStroke(roomId, msg.figure);
       }
     }
+    
     this.broadcast(roomId, { ...msg, username }, ws);
     RoomManager.updateUserActivity(ws);
   }
