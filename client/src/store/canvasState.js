@@ -4,11 +4,11 @@ import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
 
-export const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000' 
+export const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
   : 'https://paint-online-back.onrender.com';
-export const WS_URL = window.location.hostname === 'localhost' 
-  ? 'ws://localhost:5000' 
+export const WS_URL = window.location.hostname === 'localhost'
+  ? 'ws://localhost:5000'
   : 'wss://paint-online-back.onrender.com';
 
 class CanvasState {
@@ -178,7 +178,7 @@ class CanvasState {
       CanvasService.redraw();
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
-      
+
       // Send stroke to other users in the room via WebSocket
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw(stroke);
@@ -296,15 +296,15 @@ class CanvasState {
       const thumbCtx = thumbCanvas.getContext('2d');
       thumbCtx.fillStyle = 'white';
       thumbCtx.fillRect(0, 0, 240, 160);
-      // Рисуваем буферный канвас на превью
+      // Рисуем буферный канвас на превью
       thumbCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, 240, 160);
-      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
+      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7); // Сохраняем как JPEG
       fetch(`${API_URL}/image?id=${roomId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ img: dataUrl })
-      }).catch(() => {});
-    } catch (_) {}
+      }).catch(() => { });
+    } catch (_) { }
   }
 
   // Debounced thumbnail save — fires 5 s after the last stroke
@@ -420,13 +420,13 @@ class CanvasState {
   checkForAutoSave() {
     try {
       const savedData = AutoSaveService.restore(this.currentRoomId);
-      
+
       if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
         this.restoreTimestamp = savedData.timestamp;
         this.showRestoreDialog = true;
         return savedData;
       }
-      
+
       this.showRestoreDialog = false;
       this.restoreTimestamp = null;
       return null;
@@ -440,12 +440,12 @@ class CanvasState {
 
   restoreAutoSave() {
     const savedData = AutoSaveService.restore(this.currentRoomId);
-    
+
     if (savedData) {
       HistoryService.setStrokes(savedData.strokes);
       CanvasService.rebuildBuffer(savedData.strokes);
       CanvasService.redraw();
-      
+
       if (savedData.canvasState) {
         if (savedData.canvasState.zoom) {
           CanvasService.setZoom(savedData.canvasState.zoom);
@@ -455,7 +455,7 @@ class CanvasState {
         }
       }
     }
-    
+
     this.showRestoreDialog = false;
     this.restoreTimestamp = null;
   }

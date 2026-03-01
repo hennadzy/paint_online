@@ -90,19 +90,19 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
     }
 
     const roomId = generateId();
-    
+
     let hashedPassword = null;
     if (!isPublic && password) {
       hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     }
-    
+
     DataStore.createRoom(roomId, {
       name,
       isPublic,
       hasPassword: !isPublic && !!password,
       passwordHash: hashedPassword
     });
-    
+
     res.json({ roomId });
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
@@ -146,12 +146,12 @@ router.get('/rooms/:id/exists', apiLimiter, (req, res) => {
   try {
     const id = sanitizeInput(req.params.id, 20);
     const room = DataStore.getRoomInfo(id);
-    
+
     if (!room) {
       return res.json({ exists: false });
     }
-    
-    res.json({ 
+
+    res.json({
       exists: true,
       hasPassword: room.hasPassword || false,
       name: room.name
@@ -166,15 +166,15 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
     const id = sanitizeInput(req.params.id, 20);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
     const room = DataStore.getRoomInfo(id);
-    
+
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    
+
     if (!room.hasPassword || !room.passwordHash) {
       return res.json({ valid: true });
     }
-    
+
     const isValid = await bcrypt.compare(password, room.passwordHash);
     res.json({ valid: isValid });
   } catch (_) {
@@ -185,28 +185,28 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
 router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
-    
+
     if (!roomId) {
       return res.status(400).json({ error: 'ID комнаты не указан' });
     }
-    
+
     const validation = validateUsername(req.body.username);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.error });
     }
-    
+
     const username = sanitizeUsername(validation.username);
-    
+
     const room = DataStore.getRoomInfo(roomId);
-    
+
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    
+
     if (!room.isPublic) {
       return res.status(403).json({ error: 'Room is private' });
     }
-    
+
     const token = generateToken(roomId, username, true);
     res.json({ token });
   } catch (_) {
@@ -218,35 +218,35 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
   try {
     const roomId = sanitizeInput(req.params.id, 20);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
-    
+
     if (!roomId) {
       return res.status(400).json({ error: 'ID комнаты не указан' });
     }
-    
+
     const validation = validateUsername(req.body.username);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.error });
     }
-    
+
     const username = sanitizeUsername(validation.username);
-    
+
     const room = DataStore.getRoomInfo(roomId);
-    
+
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    
+
     if (room.isPublic) {
       return res.status(400).json({ error: 'Use join-public for public rooms' });
     }
-    
+
     if (room.hasPassword && room.passwordHash) {
       const isValid = await bcrypt.compare(password, room.passwordHash);
       if (!isValid) {
         return res.status(401).json({ error: 'Invalid password' });
       }
     }
-    
+
     const token = generateToken(roomId, username, false);
     res.json({ token });
   } catch (_) {

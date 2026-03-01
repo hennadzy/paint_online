@@ -9,42 +9,42 @@ const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
   }
-  
+
   const trimmed = username.trim();
-  
+
   if (trimmed.length === 0) {
     return { valid: false, error: 'Введите ваше имя' };
   }
-  
+
   if (trimmed.length < 2) {
     return { valid: false, error: 'Имя должно содержать минимум 2 символа' };
   }
-  
+
   if (trimmed.length > 30) {
     return { valid: false, error: 'Имя не должно превышать 30 символов' };
   }
-  
+
   const invalidChars = trimmed.match(/[^a-zA-Zа-яА-ЯёЁ0-9\s]/g);
   if (invalidChars) {
     const uniqueChars = [...new Set(invalidChars)].join(', ');
-    return { 
-      valid: false, 
-      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы` 
+    return {
+      valid: false,
+      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы`
     };
   }
-  
+
   const dangerousWords = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
   const lowerUsername = trimmed.toLowerCase();
-  
+
   for (const word of dangerousWords) {
     if (lowerUsername.includes(word)) {
-      return { 
-        valid: false, 
-        error: `Слово "${word}" запрещено в имени` 
+      return {
+        valid: false,
+        error: `Слово "${word}" запрещено в имени`
       };
     }
   }
-  
+
   return { valid: true, username: trimmed };
 };
 
@@ -115,25 +115,25 @@ const RoomInterface = observer(({ roomId }) => {
       return;
     }
     setError('');
-    
+
     try {
       const roomInfo = await axios.get(`${API_URL}/rooms/${roomId}/exists`);
-      
+
       if (!roomInfo.data.exists) {
         setError('Комната не найдена');
         return;
       }
-      
+
       const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
-      
+
       if (roomInfo.data.hasPassword && !passwordVerified) {
         setPasswordPrompt({ id: roomId, name: roomInfo.data.name });
         return;
       }
-      
+
       const endpoint = roomInfo.data.hasPassword ? 'join-private' : 'join-public';
       const payload = { username: username.trim() };
-      
+
       if (roomInfo.data.hasPassword) {
         const tempPassword = localStorage.getItem(`temp_room_password_${roomId}`);
         if (tempPassword) {
@@ -141,13 +141,13 @@ const RoomInterface = observer(({ roomId }) => {
           localStorage.removeItem(`temp_room_password_${roomId}`);
         }
       }
-      
+
       const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
-      
+
       const token = tokenResponse.data.token;
       localStorage.setItem(`room_token_${roomId}`, token);
       localStorage.removeItem(`room_password_verified_${roomId}`);
-      
+
       canvasState.setUsername(username);
       canvasState.setModalOpen(false);
       canvasState.setShowRoomInterface(false);
@@ -183,12 +183,12 @@ const RoomInterface = observer(({ roomId }) => {
       });
       const { roomId } = response.data;
       const roomLink = window.location.origin + '/' + roomId;
-      setCreatedRoom({ 
-        id: roomId, 
-        link: roomLink, 
-        name: roomName, 
-        isPublic, 
-        password: !isPublic ? password : null 
+      setCreatedRoom({
+        id: roomId,
+        link: roomLink,
+        name: roomName,
+        isPublic,
+        password: !isPublic ? password : null
       });
     } catch (error) {
       setError('Ошибка создания комнаты');
@@ -219,14 +219,14 @@ const RoomInterface = observer(({ roomId }) => {
       setError('Введите пароль');
       return;
     }
-    
+
     try {
       const roomIdToJoin = passwordPrompt.id;
-      
+
       const response = await axios.post(`${API_URL}/rooms/${roomIdToJoin}/verify-password`, {
         password: roomPassword
       });
-      
+
       if (response.data.valid) {
         localStorage.setItem(`temp_room_password_${roomIdToJoin}`, roomPassword);
         localStorage.setItem(`room_password_verified_${roomIdToJoin}`, 'true');
@@ -265,7 +265,7 @@ const RoomInterface = observer(({ roomId }) => {
                 className="room-input"
                 placeholder="Введите пароль"
                 value={roomPassword}
-                onChange={(e) => {setRoomPassword(e.target.value); setError('');}}
+                onChange={(e) => { setRoomPassword(e.target.value); setError(''); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') verifyPasswordAndJoin();
                 }}
@@ -300,7 +300,7 @@ const RoomInterface = observer(({ roomId }) => {
                 className="room-input"
                 placeholder="Ваше имя"
                 value={username}
-                onChange={(e) => {setUsername(e.target.value); setError('');}}
+                onChange={(e) => { setUsername(e.target.value); setError(''); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleJoinRoom();
                 }}
@@ -327,199 +327,203 @@ const RoomInterface = observer(({ roomId }) => {
             <p>Создайте комнату или присоединитесь к существующей</p>
           </div>
 
-        {createdRoom ? (
-          <div className="room-card created-room fullscreen">
-            <div className="room-card-header">
-              <h2>Комната "{createdRoom.name}" создана!</h2>
-              <p>Поделитесь ссылкой с друзьями</p>
-            </div>
-            <div className="room-card-body">
-              <div className="link-container">
-                <input
-                  type="text"
-                  className="room-input link-input"
-                  value={createdRoom.link}
-                  readOnly
-                  onClick={(e) => e.target.select()}
-                />
-                <button className="room-btn room-btn-secondary" onClick={copyLink}>
-                  {copied ? 'Скопировано!' : 'Копировать'}
-                </button>
+          {createdRoom ? (
+            <div className="room-card created-room fullscreen">
+              <div className="room-card-header">
+                <h2>Комната "{createdRoom.name}" создана!</h2>
+                <p>Поделитесь ссылкой с друзьями</p>
               </div>
-              <button className="room-btn room-btn-primary" onClick={enterCreatedRoom}>
-                Войти в комнату
-              </button>
-              <button 
-                className="room-btn room-btn-ghost" 
-                onClick={() => setCreatedRoom(null)}
-              >
-                Создать другую комнату
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="room-tabs">
-              <button
-                className={`room-tab ${activeTab === 'create' ? 'active' : ''}`}
-                onClick={() => setActiveTab('create')}
-              >
-                Создать комнату
-              </button>
-              <button
-                className={`room-tab ${activeTab === 'join' ? 'active' : ''}`}
-                onClick={() => setActiveTab('join')}
-              >
-                Присоединиться
-              </button>
-            </div>
-
-            {activeTab === 'create' ? (
-              <div className="room-card">
-                <div className="room-card-body">
-                  {error && <div className="room-error">{error}</div>}
+              <div className="room-card-body">
+                <div className="link-container">
                   <input
                     type="text"
-                    className="room-input"
-                    placeholder="Название комнаты"
-                    value={roomName}
-                    onChange={(e) => {setRoomName(e.target.value); setError('');}}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreateRoom();
-                    }}
+                    className="room-input link-input"
+                    value={createdRoom.link}
+                    readOnly
+                    onClick={(e) => e.target.select()}
                   />
-                  {!isPublic && (
+                  <button className="room-btn room-btn-secondary" onClick={copyLink}>
+                    {copied ? 'Скопировано!' : 'Копировать'}
+                  </button>
+                </div>
+                <button className="room-btn room-btn-primary" onClick={enterCreatedRoom}>
+                  Войти в комнату
+                </button>
+                <button
+                  className="room-btn room-btn-ghost"
+                  onClick={() => setCreatedRoom(null)}
+                >
+                  Создать другую комнату
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="room-tabs">
+                <button
+                  className={`room-tab ${activeTab === 'create' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('create')}
+                >
+                  Создать комнату
+                </button>
+                <button
+                  className={`room-tab ${activeTab === 'join' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('join')}
+                >
+                  Присоединиться
+                </button>
+              </div>
+
+              {activeTab === 'create' ? (
+                <div className="room-card">
+                  <div className="room-card-body">
+                    {error && <div className="room-error">{error}</div>}
                     <input
-                      type="password"
+                      type="text"
                       className="room-input"
-                      placeholder="Пароль для входа"
-                      value={password}
-                      onChange={(e) => {setPassword(e.target.value); setError('');}}
+                      placeholder="Название комнаты"
+                      value={roomName}
+                      onChange={(e) => { setRoomName(e.target.value); setError(''); }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleCreateRoom();
                       }}
                     />
-                  )}
-                  <div className="privacy-options">
-                    <label className={`privacy-option ${isPublic ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="privacy"
-                        checked={isPublic}
-                        onChange={() => setIsPublic(true)}
-                      />
-                      <span className="privacy-icon">🌍</span>
-                      <span className="privacy-label">Публичная</span>
-                      <span className="privacy-desc">Свободный вход</span>
-                    </label>
-                    <label className={`privacy-option ${!isPublic ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="privacy"
-                        checked={!isPublic}
-                        onChange={() => setIsPublic(false)}
-                      />
-                      <span className="privacy-icon">🔒</span>
-                      <span className="privacy-label">Приватная</span>
-                      <span className="privacy-desc">Вход по паролю</span>
-                    </label>
-                  </div>
-                  <button className="room-btn room-btn-primary" onClick={handleCreateRoom}>
-                    Создать комнату
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="room-card">
-                <div className="room-card-body">
-                  {passwordPrompt ? (
-                    <div className="password-prompt">
-                      <h3>Вход в комнату "{passwordPrompt.name}"</h3>
-                      <p>Эта комната защищена паролем</p>
-                      {error && <div className="room-error">{error}</div>}
+                    {!isPublic && (
                       <input
                         type="password"
                         className="room-input"
-                        placeholder="Введите пароль"
-                        value={roomPassword}
-                        onChange={(e) => {setRoomPassword(e.target.value); setError('');}}
+                        placeholder="Пароль для входа"
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setError(''); }}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') verifyPasswordAndJoin();
+                          if (e.key === 'Enter') handleCreateRoom();
                         }}
-                        autoFocus
                       />
-                      <div style={{display: 'flex', gap: '10px'}}>
-                        <button
-                          className="room-btn room-btn-primary"
-                          onClick={verifyPasswordAndJoin}
-                        >
-                          Войти
-                        </button>
-                        <button
-                          className="room-btn room-btn-ghost"
-                          onClick={() => {setPasswordPrompt(null); setRoomPassword(''); setError('');}}
-                        >
-                          Отмена
-                        </button>
-                      </div>
+                    )}
+                    <div className="privacy-options">
+                      <label className={`privacy-option ${isPublic ? 'active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="privacy"
+                          checked={isPublic}
+                          onChange={() => setIsPublic(true)}
+                        />
+                        <span className="privacy-icon">🌍</span>
+                        <span className="privacy-label">Публичная</span>
+                        <span className="privacy-desc">Свободный вход</span>
+                      </label>
+                      <label className={`privacy-option ${!isPublic ? 'active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="privacy"
+                          checked={!isPublic}
+                          onChange={() => setIsPublic(false)}
+                        />
+                        <span className="privacy-icon">🔒</span>
+                        <span className="privacy-label">Приватная</span>
+                        <span className="privacy-desc">Вход по паролю</span>
+                      </label>
                     </div>
-                  ) : publicRooms.length === 0 ? (
-                    <div className="empty-state">
-                      <span className="empty-icon">🎨</span>
-                      <p>Нет доступных комнат</p>
-                      <p className="empty-hint">Создайте первую комнату!</p>
-                    </div>
-                  ) : (
-                    <div className="rooms-list fullscreen">
-                      {publicRooms.map(room => (
-                        <div key={room.id} className="room-item">
-                          <div className="room-item-info">
-                            <div className="room-item-icon">
-                              {room.thumbnailUrl ? (
-                                <img
-                                  src={`${API_URL}${room.thumbnailUrl}?t=${Date.now()}`}
-                                  alt={room.name}
-                                  className="room-thumbnail"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
-                                  }}
-                                />
-                              ) : null}
-                              <span
-                                style={{ display: room.thumbnailUrl ? 'none' : 'flex' }}
-                                className="room-item-icon-fallback"
-                              >
-                                {room.hasPassword ? '🔒' : '🎨'}
-                              </span>
-                            </div>
-                            <div className="room-item-details">
-                              <h3>{room.name}</h3>
-                              <div className="room-item-meta">
-                                <span className="room-item-status">
-                                  {room.isPublic ? 'Публичная' : 'Приватная'}
-                                </span>
-                                <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
-                                  {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                    <button className="room-btn room-btn-primary" onClick={handleCreateRoom}>
+                      Создать комнату
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="room-card">
+                  <div className="room-card-body">
+                    {passwordPrompt ? (
+                      <div className="password-prompt">
+                        <h3>Вход в комнату "{passwordPrompt.name}"</h3>
+                        <p>Эта комната защищена паролем</p>
+                        {error && <div className="room-error">{error}</div>}
+                        <input
+                          type="password"
+                          className="room-input"
+                          placeholder="Введите пароль"
+                          value={roomPassword}
+                          onChange={(e) => { setRoomPassword(e.target.value); setError(''); }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') verifyPasswordAndJoin();
+                          }}
+                          autoFocus
+                        />
+                        <div style={{ display: 'flex', gap: '10px' }}>
                           <button
-                            className="room-btn room-btn-join"
-                            onClick={() => joinPublicRoom(room)}
+                            className="room-btn room-btn-primary"
+                            onClick={verifyPasswordAndJoin}
                           >
                             Войти
                           </button>
+                          <button
+                            className="room-btn room-btn-ghost"
+                            onClick={() => { setPasswordPrompt(null); setRoomPassword(''); setError(''); }}
+                          >
+                            Отмена
+                          </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ) : publicRooms.length === 0 ? (
+                      <div className="empty-state">
+                        <span className="empty-icon">🎨</span>
+                        <p>Нет доступных комнат</p>
+                        <p className="empty-hint">Создайте первую комнату!</p>
+                      </div>
+                    ) : (
+                      <div className="rooms-list fullscreen">
+                        {publicRooms.map(room => (
+                          <div key={room.id} className="room-item">
+                            <div className="room-item-info">
+                              <div className="room-item-icon">
+                                {room.thumbnailUrl ? (
+                                  <img
+                                    src={`${API_URL}${room.thumbnailUrl}?t=${Date.now()}`}
+                                    alt={room.name}
+                                    className="room-thumbnail"
+                                    onError={(e) => {
+                                      console.log('Image load error for:', room.thumbnailUrl);
+                                      e.target.style.display = 'none';
+                                      if (e.target.nextSibling) {
+                                        e.target.nextSibling.style.display = 'flex';
+                                      }
+                                    }}
+                                    onLoad={() => console.log('Image loaded:', room.thumbnailUrl)}
+                                  />
+                                ) : null}
+                                <span
+                                  style={{ display: room.thumbnailUrl ? 'none' : 'flex' }}
+                                  className="room-item-icon-fallback"
+                                >
+                                  {room.hasPassword ? '🔒' : '🎨'}
+                                </span>
+                              </div>
+                              <div className="room-item-details">
+                                <h3>{room.name}</h3>
+                                <div className="room-item-meta">
+                                  <span className="room-item-status">
+                                    {room.isPublic ? 'Публичная' : 'Приватная'}
+                                  </span>
+                                  <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
+                                    {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              className="room-btn room-btn-join"
+                              onClick={() => joinPublicRoom(room)}
+                            >
+                              Войти
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
         </div>
       </div>
     );
