@@ -1,4 +1,5 @@
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 
 class DataStore {
@@ -27,9 +28,9 @@ class DataStore {
     }
   }
 
-  saveRoomInfo() {
+  async saveRoomInfo() {
     try {
-      fs.writeFileSync(this.roomInfoFile, JSON.stringify(this.roomInfo, null, 2));
+      await fsPromises.writeFile(this.roomInfoFile, JSON.stringify(this.roomInfo, null, 2));
       return true;
     } catch (error) {
       return false;
@@ -44,64 +45,65 @@ class DataStore {
     return { ...this.roomInfo };
   }
 
-  createRoom(roomId, data) {
+  async createRoom(roomId, data) {
     this.roomInfo[roomId] = {
       ...data,
       createdAt: Date.now(),
       lastActivity: Date.now()
     };
-    this.saveRoomInfo();
+    await this.saveRoomInfo();
     return this.roomInfo[roomId];
   }
 
-  updateRoomActivity(roomId) {
+  async updateRoomActivity(roomId) {
     if (this.roomInfo[roomId]) {
       this.roomInfo[roomId].lastActivity = Date.now();
-      this.saveRoomInfo();
+      await this.saveRoomInfo();
       return true;
     }
     return false;
   }
 
-  deleteRoom(roomId) {
+  async deleteRoom(roomId) {
     if (this.roomInfo[roomId]) {
       delete this.roomInfo[roomId];
-      this.deleteRoomStrokes(roomId);
-      this.saveRoomInfo();
+      await this.deleteRoomStrokes(roomId);
+      await this.saveRoomInfo();
       return true;
     }
     return false;
   }
 
-  saveRoomStrokes(roomId, strokes) {
+  async saveRoomStrokes(roomId, strokes) {
     const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
     try {
-      fs.writeFileSync(strokesFile, JSON.stringify(strokes));
+      await fsPromises.writeFile(strokesFile, JSON.stringify(strokes));
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  loadRoomStrokes(roomId) {
+  async loadRoomStrokes(roomId) {
     const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
     try {
-      if (fs.existsSync(strokesFile)) {
-        return JSON.parse(fs.readFileSync(strokesFile, 'utf8'));
+      const exists = await fsPromises.access(strokesFile).then(() => true).catch(() => false);
+      if (exists) {
+        const data = await fsPromises.readFile(strokesFile, 'utf8');
+        return JSON.parse(data);
       }
     } catch (error) {}
     return [];
   }
 
-  deleteRoomStrokes(roomId) {
+  async deleteRoomStrokes(roomId) {
     const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
     try {
-      if (fs.existsSync(strokesFile)) {
-        fs.unlinkSync(strokesFile);
-        return true;
-      }
-    } catch (error) {}
-    return false;
+      await fsPromises.unlink(strokesFile);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   getPublicRooms() {
@@ -129,17 +131,23 @@ class DataStore {
       .sort((a, b) => b.lastActivity - a.lastActivity);
   }
 
-  cleanupExpiredRooms(expirationTime) {
+  async cleanupExpiredRooms(expirationTime) {
     const now = Date.now();
     let changed = false;
+    
+    const roomsToDelete = [];
     
     Object.entries(this.roomInfo).forEach(([roomId, info]) => {
       const lastActivity = info.lastActivity || info.createdAt;
       if (now - lastActivity > expirationTime) {
-        this.deleteRoom(roomId);
-        changed = true;
+        roomsToDelete.push(roomId);
       }
     });
+    
+    for (const roomId of roomsToDelete) {
+      await this.deleteRoom(roomId);
+      changed = true;
+    }
     
     return changed;
   }

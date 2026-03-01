@@ -133,9 +133,9 @@ app.get('*', (req, res) => {
   }
 });
 
-setInterval(() => {
+setInterval(async () => {
   try {
-    DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
+    await DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
   } catch (_) { }
 }, ROOM_CLEANUP_INTERVAL);
 

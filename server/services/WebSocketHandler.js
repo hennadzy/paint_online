@@ -36,7 +36,7 @@ class WebSocketHandler {
     });
   }
 
-  handleConnection(ws, msg) {
+  async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
     let username = sanitizeUsername(msg.username);
@@ -77,7 +77,7 @@ class WebSocketHandler {
     }
     
     try {
-      const room = RoomManager.addUser(roomId, username, ws);
+      const room = await RoomManager.addUser(roomId, username, ws);
       ws.send(JSON.stringify({ 
         method: "draws", 
         strokes: room.strokes 
@@ -92,18 +92,18 @@ class WebSocketHandler {
     }
   }
 
-  handleDraw(ws, msg) {
+  async handleDraw(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
     
     if (msg.figure) {
       if (msg.figure.type === "undo") {
-        if (!RoomManager.removeStrokeIfOwned(roomId, msg.figure.strokeId, username)) {
+        if (!await RoomManager.removeStrokeIfOwned(roomId, msg.figure.strokeId, username)) {
           return;
         }
         this.broadcast(roomId, { method: "draw", username, figure: { type: "undo", strokeId: msg.figure.strokeId } });
-        RoomManager.updateUserActivity(ws);
+        await RoomManager.updateUserActivity(ws);
         return;
       } 
       else if (msg.figure.type === "redo") {
@@ -118,7 +118,7 @@ class WebSocketHandler {
         
         const strokeToBroadcast = JSON.parse(JSON.stringify(strokeToAdd));
         this.broadcast(roomId, { method: "draw", username, figure: { type: "redo", stroke: strokeToBroadcast } });
-        RoomManager.updateUserActivity(ws);
+        await RoomManager.updateUserActivity(ws);
         return;
       } 
       else {
@@ -127,19 +127,19 @@ class WebSocketHandler {
     }
     
     this.broadcast(roomId, { ...msg, username }, ws);
-    RoomManager.updateUserActivity(ws);
+    await RoomManager.updateUserActivity(ws);
   }
 
-  handleClear(ws, msg) {
+  async handleClear(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
-    RoomManager.clearStrokes(roomId);
+    await RoomManager.clearStrokes(roomId);
     this.broadcast(roomId, { method: "clear", username }, ws);
-    RoomManager.updateUserActivity(ws);
+    await RoomManager.updateUserActivity(ws);
   }
 
-  handleChat(ws, msg) {
+  async handleChat(ws, msg) {
     const userInfo = RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
@@ -180,7 +180,7 @@ class WebSocketHandler {
     }
     
     this.broadcast(roomId, { method: "chat", username, message }, ws);
-    RoomManager.updateUserActivity(ws);
+    await RoomManager.updateUserActivity(ws);
   }
 
   handleMessage(ws, msgStr) {
@@ -207,9 +207,9 @@ class WebSocketHandler {
     } catch (error) {}
   }
 
-  handleClose(ws) {
+  async handleClose(ws) {
     this.wsMessageLimits.delete(ws);
-    const userInfo = RoomManager.removeUser(ws);
+    const userInfo = await RoomManager.removeUser(ws);
     if (userInfo) {
       const { roomId, username } = userInfo;
       this.broadcast(roomId, { method: 'disconnection', username });

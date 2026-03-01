@@ -96,7 +96,7 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
       hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     }
 
-    DataStore.createRoom(roomId, {
+    await DataStore.createRoom(roomId, {
       name,
       isPublic,
       hasPassword: !isPublic && !!password,

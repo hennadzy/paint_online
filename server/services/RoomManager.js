@@ -10,9 +10,9 @@ class RoomManager {
     this.startCleanupTimer();
   }
 
-  getOrCreateRoom(roomId) {
+  async getOrCreateRoom(roomId) {
     if (!this.rooms.has(roomId)) {
-      const savedStrokes = DataStore.loadRoomStrokes(roomId);
+      const savedStrokes = await DataStore.loadRoomStrokes(roomId);
       this.rooms.set(roomId, {
         users: new Map(),
         strokes: savedStrokes
@@ -29,24 +29,35 @@ class RoomManager {
     return this.rooms.has(roomId);
   }
 
-  addUser(roomId, username, ws) {
-    const room = this.getOrCreateRoom(roomId);
+  async addUser(roomId, username, ws) {
+    const room = await this.getOrCreateRoom(roomId);
     if (room.users.size >= MAX_USERS_PER_ROOM) {
       throw new Error('Room is full');
     }
+
     if (room.users.has(username)) {
-      throw new Error('Username taken');
+      const existing = room.users.get(username);
+      if (existing.ws.readyState !== 1) { 
+        room.users.delete(username);
+        this.wsToUserInfo.delete(existing.ws);
+        if (existing.ws.readyState === 0 || existing.ws.readyState === 1) {
+          existing.ws.close();
+        }
+      } else {
+        throw new Error('Username taken');
+      }
     }
+
     room.users.set(username, {
       ws,
       lastActivity: Date.now()
     });
     this.wsToUserInfo.set(ws, { roomId, username });
-    DataStore.updateRoomActivity(roomId);
+    await DataStore.updateRoomActivity(roomId);
     return room;
   }
 
-  removeUser(ws) {
+  async removeUser(ws) {
     const userInfo = this.wsToUserInfo.get(ws);
     if (!userInfo) return null;
     const { roomId, username } = userInfo;
@@ -55,7 +66,7 @@ class RoomManager {
       room.users.delete(username);
       this.wsToUserInfo.delete(ws);
       if (room.users.size === 0) {
-        DataStore.saveRoomStrokes(roomId, room.strokes);
+        await DataStore.saveRoomStrokes(roomId, room.strokes);
         this.rooms.delete(roomId);
       }
       return { roomId, username };
@@ -67,14 +78,14 @@ class RoomManager {
     return this.wsToUserInfo.get(ws);
   }
 
-  updateUserActivity(ws) {
+  async updateUserActivity(ws) {
     const userInfo = this.wsToUserInfo.get(ws);
     if (!userInfo) return false;
     const { roomId, username } = userInfo;
     const room = this.rooms.get(roomId);
     if (room && room.users.has(username)) {
       room.users.get(username).lastActivity = Date.now();
-      DataStore.updateRoomActivity(roomId);
+      await DataStore.updateRoomActivity(roomId);
       return true;
     }
     return false;
@@ -95,28 +106,24 @@ class RoomManager {
     if (room) {
       room.strokes.push(stroke);
       
-      try {
-        DataStore.saveRoomStrokes(roomId, room.strokes);
-      } catch (error) {
-        console.error('Error saving strokes:', error);
-      }
+      DataStore.saveRoomStrokes(roomId, room.strokes).catch(err => console.error('Save error:', err));
       
       return true;
     }
     return false;
   }
 
-  removeStroke(roomId, strokeId) {
+  async removeStroke(roomId, strokeId) {
     const room = this.rooms.get(roomId);
     if (room) {
       room.strokes = room.strokes.filter(s => s.id !== strokeId);
-      DataStore.saveRoomStrokes(roomId, room.strokes);
+      await DataStore.saveRoomStrokes(roomId, room.strokes);
       return true;
     }
     return false;
   }
 
-  removeStrokeIfOwned(roomId, strokeId, username) {
+  async removeStrokeIfOwned(roomId, strokeId, username) {
     const room = this.rooms.get(roomId);
     if (!room) return false;
     const stroke = room.strokes.find(s => s.id === strokeId);
@@ -124,25 +131,25 @@ class RoomManager {
       return false;
     }
     room.strokes = room.strokes.filter(s => s.id !== strokeId);
-    DataStore.saveRoomStrokes(roomId, room.strokes);
+    await DataStore.saveRoomStrokes(roomId, room.strokes);
     return true;
   }
 
-  removeLastStroke(roomId) {
+  async removeLastStroke(roomId) {
     const room = this.rooms.get(roomId);
     if (room && room.strokes.length) {
       const stroke = room.strokes.pop();
-      DataStore.saveRoomStrokes(roomId, room.strokes);
+      await DataStore.saveRoomStrokes(roomId, room.strokes);
       return stroke;
     }
     return null;
   }
 
-  clearStrokes(roomId) {
+  async clearStrokes(roomId) {
     const room = this.rooms.get(roomId);
     if (room) {
       room.strokes = [];
-      DataStore.saveRoomStrokes(roomId, room.strokes);
+      await DataStore.saveRoomStrokes(roomId, room.strokes);
       return true;
     }
     return false;
