@@ -60,7 +60,6 @@ class CanvasState {
     WebSocketService.on('drawsReceived', ({ strokes }) => {
       HistoryService.setStrokes(strokes);
       CanvasService.rebuildBuffer(strokes, () => {
-        // Сохраняем превью после полной загрузки изображений
         setTimeout(() => this.saveThumbnail(), 500);
       });
     });

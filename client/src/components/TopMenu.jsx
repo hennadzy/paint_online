@@ -66,57 +66,56 @@ const TopMenu = observer(() => {
   }, [canvasState.usernameReady, canvasState.isConnected, canvasState.currentRoomId]);
 
   const handleImageUpload = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file || !canvasState.canvas) return;
+  const file = e.target.files[0];
+  if (!file || !canvasState.canvas) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = canvasState.canvas;
-        const bufferCtx = canvasState.bufferCtx;
-        if (!bufferCtx) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = canvasState.canvas;
+      const bufferCtx = canvasState.bufferCtx;
+      if (!bufferCtx) return;
 
-        const canvasW = canvas.width;
-        const canvasH = canvas.height;
+      const canvasW = canvas.width;
+      const canvasH = canvas.height;
+      const scale = Math.min(canvasW / img.width, canvasH / img.height);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const x = (canvasW - drawW) / 2;
+      const y = (canvasH - drawH) / 2;
 
-        // Scale to fit within canvas (object-fit: contain), centered — no distortion
-        const scale = Math.min(canvasW / img.width, canvasH / img.height);
-        const drawW = img.width * scale;
-        const drawH = img.height * scale;
-        const x = (canvasW - drawW) / 2;
-        const y = (canvasH - drawH) / 2;
-
-        bufferCtx.drawImage(img, x, y, drawW, drawH);
-
-        // Capture only the image area instead of full canvas for efficiency
-        const imageAreaData = bufferCtx.getImageData(Math.floor(x), Math.floor(y), Math.ceil(drawW), Math.ceil(drawH));
-        
-        // Create temporary canvas for the image area
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = imageAreaData.width;
-        tempCanvas.height = imageAreaData.height;
-        tempCanvas.getContext('2d').putImageData(imageAreaData, 0, 0);
-        
-        // Compress as JPEG data URL (much smaller than raw pixel data)
-        const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
-        
-        canvasState.pushStroke({
-          type: 'image_placeholder',
-          x: Math.floor(x),
-          y: Math.floor(y),
-          width: Math.ceil(drawW),
-          height: Math.ceil(drawH),
-          imageData: compressedDataUrl,
-          username: canvasState.username || 'local'
-        });
+      bufferCtx.drawImage(img, x, y, drawW, drawH);
+      const imageAreaData = bufferCtx.getImageData(Math.floor(x), Math.floor(y), Math.ceil(drawW), Math.ceil(drawH));
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = imageAreaData.width;
+      tempCanvas.height = imageAreaData.height;
+      tempCanvas.getContext('2d').putImageData(imageAreaData, 0, 0);
+      const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+      const stroke = {
+        type: 'image_placeholder',
+        x: Math.floor(x),
+        y: Math.floor(y),
+        width: Math.ceil(drawW),
+        height: Math.ceil(drawH),
+        imageData: compressedDataUrl,
+        username: canvasState.username || 'local'
       };
-      img.src = event.target.result;
+      canvasState.pushStroke(stroke);
+      if (canvasState.socket && canvasState.socket.readyState === WebSocket.OPEN) {
+        canvasState.socket.send(JSON.stringify({
+          method: "draw",
+          id: canvasState.sessionId,
+          username: canvasState.username,
+          figure: stroke
+        }));
+      }
     };
-    reader.readAsDataURL(file);
-    // Reset so the same file can be re-uploaded
-    e.target.value = '';
-  }, []);
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}, []);
 
   const handleUploadButtonClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -196,7 +195,6 @@ const TopMenu = observer(() => {
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          {/* Hidden file input - use key to force re-mount */}
           <input
             key={fileInputKey.current}
             ref={fileInputRef}
