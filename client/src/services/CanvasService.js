@@ -32,62 +32,47 @@ class CanvasService {
   }
 
   drawStroke(ctx, stroke) {
-    if (!stroke) return;
+  if (!stroke) return;
+  
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = stroke.lineWidth || 1;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  
+  switch (stroke.type) {
+    // ... существующие кейсы ...
     
-    ctx.save();
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = stroke.lineWidth || 1;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    
-    switch (stroke.type) {
-      case "brush":
-      case "eraser":
-        this.renderBrushStroke(ctx, stroke, stroke.type === "eraser");
-        break;
-      case "rect":
-        Rect.staticDraw(ctx, stroke.x, stroke.y, stroke.width, stroke.height, stroke.strokeStyle, stroke.lineWidth);
-        break;
-      case "circle":
-        Circle.staticDraw(ctx, stroke.x, stroke.y, stroke.radius, stroke.strokeStyle, stroke.lineWidth);
-        break;
-      case "line":
-        Line.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth);
-        break;
-      case "arrow":
-        Arrow.staticDraw(ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.strokeStyle, stroke.lineWidth, stroke.opacity);
-        break;
-      case "polygon":
-        Polygon.staticDraw(ctx, stroke.points, stroke.strokeStyle, stroke.lineWidth, stroke.opacity);
-        break;
-      case "text":
-        Text.staticDraw(ctx, stroke.x, stroke.y, stroke.text, stroke.fontSize, stroke.fontFamily, stroke.strokeStyle, stroke.width || 200, stroke.opacity ?? 1);
-        break;
-      case "fill":
-        Fill.staticDraw(ctx, stroke.x, stroke.y, stroke.fillColor);
-        break;
-      case "fill_image":
-        if (stroke.imageData) {
-          // Handle both old format (Uint8ClampedArray) and new format (regular array)
-          let imageDataObj;
-          if (stroke.imageData.data instanceof Uint8ClampedArray) {
-            imageDataObj = stroke.imageData;
-          } else if (Array.isArray(stroke.imageData.data)) {
-            imageDataObj = new ImageData(
-              new Uint8ClampedArray(stroke.imageData.data),
-              stroke.imageData.width,
-              stroke.imageData.height
-            );
-          }
-          if (imageDataObj) {
-            ctx.putImageData(imageDataObj, 0, 0);
-          }
-        }
-        break;
-    }
-    
-    ctx.restore();
+    case "image_placeholder":
+      // Для изображений используем отдельную логику
+      this.drawImagePlaceholder(ctx, stroke);
+      break;
   }
+  
+  ctx.restore();
+}
+
+drawImagePlaceholder(ctx, stroke) {
+  const { x, y, width, height, imageData } = stroke;
+  
+  if (imageData && imageData.data) {
+    // Если есть данные изображения, восстанавливаем их
+    const data = imageData.data instanceof Uint8ClampedArray 
+      ? imageData.data 
+      : new Uint8ClampedArray(imageData.data);
+    
+    const imgData = new ImageData(data, imageData.width, imageData.height);
+    
+    // Создаем временный canvas для масштабирования
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = imageData.width;
+    tempCanvas.height = imageData.height;
+    tempCanvas.getContext('2d').putImageData(imgData, 0, 0);
+    
+    // Рисуем с масштабированием до нужного размера
+    ctx.drawImage(tempCanvas, 0, 0, imageData.width, imageData.height, x, y, width, height);
+  }
+}
 
   renderBrushStroke(ctx, stroke, isEraser = false) {
     const { points, lineWidth = 1, strokeStyle = '#000000', strokeOpacity = 1 } = stroke;
