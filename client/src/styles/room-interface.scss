@@ -84,7 +84,7 @@
 .room-close-btn-inline {
   position: absolute;
   top: 8px;
-    right: 16px;
+  right: 16px;
   width: 26px;
   height: 26px;
   border: none;
@@ -110,6 +110,14 @@
   &:active {
     transform: scale(1.0);
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  @media (max-width: 480px) {
+    top: 4px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
   }
 }
 

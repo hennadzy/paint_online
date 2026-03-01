@@ -67,7 +67,22 @@ class CanvasService {
         Fill.staticDraw(ctx, stroke.x, stroke.y, stroke.fillColor);
         break;
       case "fill_image":
-        ctx.putImageData(stroke.imageData, 0, 0);
+        if (stroke.imageData) {
+          // Handle both old format (Uint8ClampedArray) and new format (regular array)
+          let imageDataObj;
+          if (stroke.imageData.data instanceof Uint8ClampedArray) {
+            imageDataObj = stroke.imageData;
+          } else if (Array.isArray(stroke.imageData.data)) {
+            imageDataObj = new ImageData(
+              new Uint8ClampedArray(stroke.imageData.data),
+              stroke.imageData.width,
+              stroke.imageData.height
+            );
+          }
+          if (imageDataObj) {
+            ctx.putImageData(imageDataObj, 0, 0);
+          }
+        }
         break;
     }
     

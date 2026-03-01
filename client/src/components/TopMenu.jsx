@@ -91,9 +91,17 @@ const TopMenu = observer(() => {
 
         // Capture full buffer state and push as fill_image stroke (integrates with undo history)
         const imageData = bufferCtx.getImageData(0, 0, canvasW, canvasH);
+        
+        // Convert Uint8ClampedArray to regular array for JSON serialization
+        const imageDataForTransfer = {
+          width: imageData.width,
+          height: imageData.height,
+          data: Array.from(imageData.data)
+        };
+        
         canvasState.pushStroke({
           type: 'fill_image',
-          imageData,
+          imageData: imageDataForTransfer,
           username: canvasState.username || 'local'
         });
       };
