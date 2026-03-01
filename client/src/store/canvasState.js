@@ -101,8 +101,8 @@ class CanvasState {
       CanvasService.redraw();
       this.scheduleThumbnailSave();
     });
-    HistoryService.on('strokeRedone', ({ stroke }) => {
-      CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+    HistoryService.on('strokeRedone', async ({ stroke }) => {
+      await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
       this.scheduleThumbnailSave();
     });
@@ -171,10 +171,10 @@ class CanvasState {
     return HistoryService.redoStacks;
   }
 
-  pushStroke(stroke) {
+  async pushStroke(stroke) {
     const added = HistoryService.addStroke(stroke, this.username);
     if (added) {
-      CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+      await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
@@ -197,13 +197,13 @@ class CanvasState {
     }
   }
 
-  redo() {
+  async redo() {
     const restored = HistoryService.redo(this.username);
     if (restored) {
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw({ type: "redo", stroke: restored });
       } else {
-        CanvasService.drawStroke(CanvasService.bufferCtx, restored);
+        await CanvasService.drawStroke(CanvasService.bufferCtx, restored);
         CanvasService.redraw();
       }
       AutoSaveService.markChanged();

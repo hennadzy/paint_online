@@ -32,7 +32,7 @@ class CanvasService {
   }
 
   drawStroke(ctx, stroke) {
-  if (!stroke) return;
+  if (!stroke) return Promise.resolve();
   
   ctx.save();
   ctx.globalAlpha = 1;
@@ -41,28 +41,25 @@ class CanvasService {
   ctx.lineJoin = "round";
   
   switch (stroke.type) {
-    // ... существующие кейсы ...
-    
     case "image_placeholder":
     case "fill_image":
-      // Для изображений используем отдельную логику
-      this.drawImagePlaceholder(ctx, stroke);
-      break;
+      // Для изображений используем асинхронную загрузку
+      return this.drawImagePlaceholder(ctx, stroke);
   }
   
   ctx.restore();
+  return Promise.resolve();
 }
 
 drawImagePlaceholder(ctx, stroke) {
   const { x, y, width, height, imageData } = stroke;
   
-  if (!imageData) return;
+  if (!imageData) return Promise.resolve();
   
   // Check if imageData is a data URL (new format) or old raw pixel format
   if (typeof imageData === 'string' && imageData.startsWith('data:')) {
     // New format: data URL - use async loading with cached image
-    this.loadImageForStroke(stroke, ctx);
-    return;
+    return this.loadImageForStroke(stroke, ctx);
   }
   
   // Old format: raw pixel data (for backward compatibility)
@@ -80,6 +77,8 @@ drawImagePlaceholder(ctx, stroke) {
     
     ctx.drawImage(tempCanvas, 0, 0, imageData.width, imageData.height, x, y, width, height);
   }
+  
+  return Promise.resolve();
 }
 
 // Cache for loaded images to avoid reloading
@@ -92,28 +91,39 @@ loadImageForStroke(stroke, ctx) {
   // Check cache first
   if (this.imageCache.has(dataUrl)) {
     const img = this.imageCache.get(dataUrl);
-    if (img.complete) {
+    if (img.complete && img.naturalWidth !== 0) {
       ctx.drawImage(img, x, y, width, height);
+      return Promise.resolve(); // Image already loaded
     } else {
-      img.onload = () => ctx.drawImage(img, x, y, width, height);
+      // Image in cache but still loading - wait for it
+      return new Promise((resolve) => {
+        img.onload = () => {
+          ctx.drawImage(img, x, y, width, height);
+          resolve();
+        };
+        img.onerror = () => resolve(); // Resolve anyway to continue
+      });
     }
-    return;
   }
   
   // Load image asynchronously
-  const img = new Image();
-  img.onload = () => {
-    this.imageCache.set(dataUrl, img);
-    ctx.drawImage(img, x, y, width, height);
-  };
-  img.onerror = () => {
-    // If image fails to load, draw a placeholder rectangle
-    ctx.fillStyle = '#cccccc';
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeStyle = '#999999';
-    ctx.strokeRect(x, y, width, height);
-  };
-  img.src = dataUrl;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      this.imageCache.set(dataUrl, img);
+      ctx.drawImage(img, x, y, width, height);
+      resolve();
+    };
+    img.onerror = () => {
+      // If image fails to load, draw a placeholder rectangle
+      ctx.fillStyle = '#cccccc';
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeStyle = '#999999';
+      ctx.strokeRect(x, y, width, height);
+      resolve(); // Resolve anyway to continue
+    };
+    img.src = dataUrl;
+  });
 }
 
 clearImageCache() {
