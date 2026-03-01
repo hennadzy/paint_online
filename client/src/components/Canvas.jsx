@@ -80,9 +80,17 @@ const Canvas = observer(() => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const preventScroll = (e) => e.preventDefault();
-      canvas.addEventListener('wheel', preventScroll, { passive: false });
-      return () => canvas.removeEventListener('wheel', preventScroll);
+      const handleWheel = (e) => {
+        // Only enable wheel zoom on PC (not mobile/tablet)
+        if (window.innerWidth > 768) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          const newZoom = Math.max(0.5, Math.min(3, canvasState.zoom + delta));
+          canvasState.setZoom(newZoom);
+        }
+      };
+      canvas.addEventListener('wheel', handleWheel, { passive: false });
+      return () => canvas.removeEventListener('wheel', handleWheel);
     }
   }, []);
 
