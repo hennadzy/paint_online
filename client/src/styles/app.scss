@@ -134,7 +134,7 @@ body.modal-open {
   position: relative;
   width: auto;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 14px;
   white-space: nowrap;
   font-size: 16px;
   color: #fff;
@@ -257,12 +257,12 @@ body.modal-open {
   .top-menu__actions .create-room-btn {
     flex: 1;
     font-size: 16px;
-    padding: 0 12px;
+    padding: 0 14px;
     min-width: 0;
     overflow: hidden;
     /* text-overflow: ellipsis; */
     justify-content: flex-start;
-    padding-left: 12px;
+    padding-left: 14px;
   }
 }
 
