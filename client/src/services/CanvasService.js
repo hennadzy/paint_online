@@ -475,15 +475,10 @@ clearImageCache() {
 
   rebuildBuffer(strokes, callback) {
     if (!this.bufferCtx) return;
-    
-    this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
-    this.bufferCtx.fillStyle = "white";
-    this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
-    this.bufferCtx.globalCompositeOperation = "source-over";
-    
+
+    // Разделяем штрихи на изображения и остальные
     const imageStrokes = [];
     const otherStrokes = [];
-    
     for (const stroke of strokes) {
       if (stroke.type === 'image_placeholder' || stroke.type === 'fill_image') {
         const isDataUrl = stroke.imageData && typeof stroke.imageData === 'string' && stroke.imageData.startsWith('data:');
@@ -496,62 +491,72 @@ clearImageCache() {
         otherStrokes.push(stroke);
       }
     }
-    
-    otherStrokes.forEach(stroke => this.drawStroke(this.bufferCtx, stroke));
-    
-    if (imageStrokes.length === 0) {
-      this.redraw();
-      if (callback) callback();
-      return;
-    }
-    
-    let loadedCount = 0;
-    const totalImages = imageStrokes.length;
-    
-    const checkComplete = () => {
-      loadedCount++;
-      if (loadedCount === totalImages) {
-        this.redraw();
-        if (callback) callback();
-      }
-    };
-    
-    for (const stroke of imageStrokes) {
-      const { x, y, width, height, imageData } = stroke;
-      const dataUrl = imageData;
-      
+
+    // Функция предзагрузки изображения в кэш (без рисования)
+    const preloadImage = (dataUrl) => {
       if (this.imageCache.has(dataUrl)) {
         const img = this.imageCache.get(dataUrl);
-        if (img.complete) {
-          this.bufferCtx.drawImage(img, x, y, width, height);
-          checkComplete();
-        } else {
-          img.onload = () => {
-            this.bufferCtx.drawImage(img, x, y, width, height);
-            checkComplete();
-          };
-          img.onerror = checkComplete;
-        }
-        continue;
+        if (img.complete) return Promise.resolve();
+        // Если в кэше, но ещё не загружено – ждём
+        return new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        });
       }
-      
-      // Load image
-      const img = new Image();
-      img.onload = () => {
-        this.imageCache.set(dataUrl, img);
-        this.bufferCtx.drawImage(img, x, y, width, height);
-        checkComplete();
-      };
-      img.onerror = () => {
-        // Draw placeholder on error
-        this.bufferCtx.fillStyle = '#cccccc';
-        this.bufferCtx.fillRect(x, y, width, height);
-        this.bufferCtx.strokeStyle = '#999999';
-        this.bufferCtx.strokeRect(x, y, width, height);
-        checkComplete();
-      };
-      img.src = dataUrl;
-    }
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          this.imageCache.set(dataUrl, img);
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = dataUrl;
+      });
+    };
+
+    // Загружаем все изображения параллельно
+    const preloadPromises = imageStrokes.map(stroke => preloadImage(stroke.imageData));
+
+    Promise.all(preloadPromises).then(() => {
+      // Очищаем буфер и заливаем белым
+      this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+      this.bufferCtx.fillStyle = "white";
+      this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+      this.bufferCtx.globalCompositeOperation = "source-over";
+
+      // Рисуем изображения (теперь все они в кэше)
+      for (const stroke of imageStrokes) {
+        const { x, y, width, height, imageData } = stroke;
+        const img = this.imageCache.get(imageData);
+        if (img && img.complete) {
+          this.bufferCtx.drawImage(img, x, y, width, height);
+        } else {
+          // Заглушка на случай ошибки
+          this.bufferCtx.fillStyle = '#cccccc';
+          this.bufferCtx.fillRect(x, y, width, height);
+          this.bufferCtx.strokeStyle = '#999999';
+          this.bufferCtx.strokeRect(x, y, width, height);
+        }
+      }
+
+      // Рисуем остальные штрихи поверх
+      for (const stroke of otherStrokes) {
+        this.drawStroke(this.bufferCtx, stroke);
+      }
+
+      this.redraw();
+      if (callback) callback();
+    }).catch(() => {
+      // В случае ошибки загрузки рисуем хотя бы остальные штрихи
+      this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+      this.bufferCtx.fillStyle = "white";
+      this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
+      for (const stroke of otherStrokes) {
+        this.drawStroke(this.bufferCtx, stroke);
+      }
+      this.redraw();
+      if (callback) callback();
+    });
   }
 
   redraw() {
