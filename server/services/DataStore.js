@@ -117,6 +117,18 @@ class DataStore {
       .sort((a, b) => b.lastActivity - a.lastActivity);
   }
 
+  getAllRooms() {
+    return Object.entries(this.roomInfo)
+      .map(([id, info]) => ({
+        id,
+        name: info.name,
+        isPublic: info.isPublic,
+        hasPassword: info.hasPassword || false,
+        lastActivity: info.lastActivity || info.createdAt || 0
+      }))
+      .sort((a, b) => b.lastActivity - a.lastActivity);
+  }
+
   cleanupExpiredRooms(expirationTime) {
     const now = Date.now();
     let changed = false;

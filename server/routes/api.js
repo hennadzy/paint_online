@@ -111,11 +111,10 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
 
 router.get('/rooms/public', apiLimiter, (req, res) => {
   try {
-    const publicRooms = DataStore.getPublicRooms();
+    const allRooms = DataStore.getAllRooms();
     const filesDir = path.join(__dirname, '../files');
-    const result = publicRooms.map(room => {
+    const result = allRooms.map(room => {
       const onlineCount = RoomManager.getRoomUsers(room.id).length;
-      // Показываем превью только для публичных комнат
       let thumbnailUrl = null;
       if (room.isPublic) {
         const jpgPath = path.join(filesDir, `${room.id}.jpg`);
