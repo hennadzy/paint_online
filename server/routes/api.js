@@ -118,9 +118,12 @@ router.get('/rooms/public', apiLimiter, (req, res) => {
       // Показываем превью только для публичных комнат
       let thumbnailUrl = null;
       if (room.isPublic) {
-        const thumbPath = path.join(filesDir, `${room.id}.jpg`);
-        if (fs.existsSync(thumbPath)) {
+        const jpgPath = path.join(filesDir, `${room.id}.jpg`);
+        const pngPath = path.join(filesDir, `${room.id}.png`);
+        if (fs.existsSync(jpgPath)) {
           thumbnailUrl = `/files/${room.id}.jpg`;
+        } else if (fs.existsSync(pngPath)) {
+          thumbnailUrl = `/files/${room.id}.png`;
         }
       }
       return {
