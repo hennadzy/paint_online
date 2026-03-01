@@ -89,19 +89,25 @@ const TopMenu = observer(() => {
 
         bufferCtx.drawImage(img, x, y, drawW, drawH);
 
-        // Capture full buffer state and push as fill_image stroke (integrates with undo history)
-        const imageData = bufferCtx.getImageData(0, 0, canvasW, canvasH);
+        // Capture only the image area instead of full canvas for efficiency
+        const imageAreaData = bufferCtx.getImageData(Math.floor(x), Math.floor(y), Math.ceil(drawW), Math.ceil(drawH));
         
-        // Convert Uint8ClampedArray to regular array for JSON serialization
-        const imageDataForTransfer = {
-          width: imageData.width,
-          height: imageData.height,
-          data: Array.from(imageData.data)
-        };
+        // Create temporary canvas for the image area
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = imageAreaData.width;
+        tempCanvas.height = imageAreaData.height;
+        tempCanvas.getContext('2d').putImageData(imageAreaData, 0, 0);
+        
+        // Compress as JPEG data URL (much smaller than raw pixel data)
+        const compressedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
         
         canvasState.pushStroke({
-          type: 'fill_image',
-          imageData: imageDataForTransfer,
+          type: 'image_placeholder',
+          x: Math.floor(x),
+          y: Math.floor(y),
+          width: Math.ceil(drawW),
+          height: Math.ceil(drawH),
+          imageData: compressedDataUrl,
           username: canvasState.username || 'local'
         });
       };

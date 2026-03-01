@@ -44,6 +44,7 @@ class CanvasService {
     // ... существующие кейсы ...
     
     case "image_placeholder":
+    case "fill_image":
       // Для изображений используем отдельную логику
       this.drawImagePlaceholder(ctx, stroke);
       break;
@@ -55,23 +56,68 @@ class CanvasService {
 drawImagePlaceholder(ctx, stroke) {
   const { x, y, width, height, imageData } = stroke;
   
+  if (!imageData) return;
+  
+  // Check if imageData is a data URL (new format) or old raw pixel format
+  if (typeof imageData === 'string' && imageData.startsWith('data:')) {
+    // New format: data URL - use async loading with cached image
+    this.loadImageForStroke(stroke, ctx);
+    return;
+  }
+  
+  // Old format: raw pixel data (for backward compatibility)
   if (imageData && imageData.data) {
-    // Если есть данные изображения, восстанавливаем их
     const data = imageData.data instanceof Uint8ClampedArray 
       ? imageData.data 
       : new Uint8ClampedArray(imageData.data);
     
     const imgData = new ImageData(data, imageData.width, imageData.height);
     
-    // Создаем временный canvas для масштабирования
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = imageData.width;
     tempCanvas.height = imageData.height;
     tempCanvas.getContext('2d').putImageData(imgData, 0, 0);
     
-    // Рисуем с масштабированием до нужного размера
     ctx.drawImage(tempCanvas, 0, 0, imageData.width, imageData.height, x, y, width, height);
   }
+}
+
+// Cache for loaded images to avoid reloading
+imageCache = new Map();
+
+loadImageForStroke(stroke, ctx) {
+  const { x, y, width, height, imageData } = stroke;
+  const dataUrl = imageData;
+  
+  // Check cache first
+  if (this.imageCache.has(dataUrl)) {
+    const img = this.imageCache.get(dataUrl);
+    if (img.complete) {
+      ctx.drawImage(img, x, y, width, height);
+    } else {
+      img.onload = () => ctx.drawImage(img, x, y, width, height);
+    }
+    return;
+  }
+  
+  // Load image asynchronously
+  const img = new Image();
+  img.onload = () => {
+    this.imageCache.set(dataUrl, img);
+    ctx.drawImage(img, x, y, width, height);
+  };
+  img.onerror = () => {
+    // If image fails to load, draw a placeholder rectangle
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = '#999999';
+    ctx.strokeRect(x, y, width, height);
+  };
+  img.src = dataUrl;
+}
+
+clearImageCache() {
+  this.imageCache.clear();
 }
 
   renderBrushStroke(ctx, stroke, isEraser = false) {
@@ -110,7 +156,7 @@ drawImagePlaceholder(ctx, stroke) {
     ctx.restore();
   }
 
-  rebuildBuffer(strokes) {
+  rebuildBuffer(strokes, callback) {
     if (!this.bufferCtx) return;
     
     this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
@@ -118,7 +164,82 @@ drawImagePlaceholder(ctx, stroke) {
     this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
     this.bufferCtx.globalCompositeOperation = "source-over";
     
-    strokes.forEach(stroke => this.drawStroke(this.bufferCtx, stroke));
+    // Separate image strokes from other strokes
+    const imageStrokes = [];
+    const otherStrokes = [];
+    
+    for (const stroke of strokes) {
+      if (stroke.type === 'image_placeholder' || stroke.type === 'fill_image') {
+        const isDataUrl = stroke.imageData && typeof stroke.imageData === 'string' && stroke.imageData.startsWith('data:');
+        if (isDataUrl) {
+          imageStrokes.push(stroke);
+        } else {
+          otherStrokes.push(stroke);
+        }
+      } else {
+        otherStrokes.push(stroke);
+      }
+    }
+    
+    // Draw all non-image strokes synchronously
+    otherStrokes.forEach(stroke => this.drawStroke(this.bufferCtx, stroke));
+    
+    // If no image strokes, we're done
+    if (imageStrokes.length === 0) {
+      this.redraw();
+      if (callback) callback();
+      return;
+    }
+    
+    // Load images and draw when ready
+    let loadedCount = 0;
+    const totalImages = imageStrokes.length;
+    
+    const checkComplete = () => {
+      loadedCount++;
+      if (loadedCount === totalImages) {
+        this.redraw();
+        if (callback) callback();
+      }
+    };
+    
+    for (const stroke of imageStrokes) {
+      const { x, y, width, height, imageData } = stroke;
+      const dataUrl = imageData;
+      
+      // Check cache first
+      if (this.imageCache.has(dataUrl)) {
+        const img = this.imageCache.get(dataUrl);
+        if (img.complete) {
+          this.bufferCtx.drawImage(img, x, y, width, height);
+          checkComplete();
+        } else {
+          img.onload = () => {
+            this.bufferCtx.drawImage(img, x, y, width, height);
+            checkComplete();
+          };
+          img.onerror = checkComplete;
+        }
+        continue;
+      }
+      
+      // Load image
+      const img = new Image();
+      img.onload = () => {
+        this.imageCache.set(dataUrl, img);
+        this.bufferCtx.drawImage(img, x, y, width, height);
+        checkComplete();
+      };
+      img.onerror = () => {
+        // Draw placeholder on error
+        this.bufferCtx.fillStyle = '#cccccc';
+        this.bufferCtx.fillRect(x, y, width, height);
+        this.bufferCtx.strokeStyle = '#999999';
+        this.bufferCtx.strokeRect(x, y, width, height);
+        checkComplete();
+      };
+      img.src = dataUrl;
+    }
   }
 
   redraw() {

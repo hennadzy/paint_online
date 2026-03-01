@@ -59,10 +59,10 @@ class CanvasState {
     });
     WebSocketService.on('drawsReceived', ({ strokes }) => {
       HistoryService.setStrokes(strokes);
-      CanvasService.rebuildBuffer(strokes);
-      CanvasService.redraw();
-      // Сохраняем превью после получения начального состояния холста
-      setTimeout(() => this.saveThumbnail(), 800);
+      CanvasService.rebuildBuffer(strokes, () => {
+        // Сохраняем превью после полной загрузки изображений
+        setTimeout(() => this.saveThumbnail(), 500);
+      });
     });
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
@@ -357,6 +357,7 @@ class CanvasState {
     this.setModalOpen(false);
     this.showRestoreDialog = false;
     this.restoreTimestamp = null;
+    CanvasService.clearImageCache();
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
     if (wasInRoom) {
