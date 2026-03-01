@@ -178,7 +178,6 @@ class CanvasState {
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
 
-      // Send stroke to other users in the room via WebSocket
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw(stroke);
       }
@@ -278,14 +277,12 @@ class CanvasState {
     this.setCurrentRoomId(roomId);
     this.setUsername(username);
     this.setupThumbnailInterval();
-    // Сохраняем превью сразу после подключения (даже если холст пустой)
     setTimeout(() => this.saveThumbnail(), 1500);
   }
 
   saveThumbnail() {
     if (!this.currentRoomId) return;
     const roomId = this.currentRoomId;
-    // Используем буферный канвас вместо основного - там хранятся все штрихи
     const sourceCanvas = this.bufferCanvas || this.canvas;
     if (!sourceCanvas) return;
     try {
@@ -295,9 +292,8 @@ class CanvasState {
       const thumbCtx = thumbCanvas.getContext('2d');
       thumbCtx.fillStyle = 'white';
       thumbCtx.fillRect(0, 0, 240, 160);
-      // Рисуем буферный канвас на превью
       thumbCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, 240, 160);
-      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7); // Сохраняем как JPEG
+      const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
       fetch(`${API_URL}/image?id=${roomId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -306,7 +302,6 @@ class CanvasState {
     } catch (_) { }
   }
 
-  // Debounced thumbnail save — fires 5 s after the last stroke
   scheduleThumbnailSave() {
     if (this._thumbnailDebounceTimer) {
       clearTimeout(this._thumbnailDebounceTimer);
@@ -319,7 +314,6 @@ class CanvasState {
     }, 5000);
   }
 
-  // Periodic thumbnail save every 30 s while connected
   setupThumbnailInterval() {
     if (this._thumbnailInterval) return;
     this._thumbnailInterval = setInterval(() => {
@@ -341,7 +335,6 @@ class CanvasState {
   }
 
   disconnect() {
-    // Сохраняем превью до очистки холста
     this.saveThumbnail();
     this.stopThumbnailInterval();
     WebSocketService.disconnect();

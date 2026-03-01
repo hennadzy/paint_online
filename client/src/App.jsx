@@ -11,7 +11,6 @@ import NotFoundPage from "./components/NotFoundPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 
-// ID комнаты на бэкенде — 9 символов (alphanumeric). Иначе сразу 404.
 const isValidRoomId = (id) => /^[a-zA-Z0-9]{9}$/.test(id);
 
 const RoomRoute = () => {
@@ -26,7 +25,6 @@ const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Сразу при загрузке: скрыть серверный fallback и при неверном пути — редирект на /404
     useEffect(() => {
         const fallback = document.getElementById('server-404-fallback');
         if (fallback) fallback.hidden = true;

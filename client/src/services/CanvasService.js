@@ -476,7 +476,6 @@ clearImageCache() {
   rebuildBuffer(strokes, callback) {
     if (!this.bufferCtx) return;
 
-    // Разделяем штрихи на изображения и остальные
     const imageStrokes = [];
     const otherStrokes = [];
     for (const stroke of strokes) {
@@ -492,12 +491,10 @@ clearImageCache() {
       }
     }
 
-    // Функция предзагрузки изображения в кэш (без рисования)
     const preloadImage = (dataUrl) => {
       if (this.imageCache.has(dataUrl)) {
         const img = this.imageCache.get(dataUrl);
         if (img.complete) return Promise.resolve();
-        // Если в кэше, но ещё не загружено – ждём
         return new Promise((resolve) => {
           img.onload = () => resolve();
           img.onerror = () => resolve();
@@ -514,24 +511,20 @@ clearImageCache() {
       });
     };
 
-    // Загружаем все изображения параллельно
     const preloadPromises = imageStrokes.map(stroke => preloadImage(stroke.imageData));
 
     Promise.all(preloadPromises).then(() => {
-      // Очищаем буфер и заливаем белым
       this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
       this.bufferCtx.fillStyle = "white";
       this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
       this.bufferCtx.globalCompositeOperation = "source-over";
 
-      // Рисуем изображения (теперь все они в кэше)
       for (const stroke of imageStrokes) {
         const { x, y, width, height, imageData } = stroke;
         const img = this.imageCache.get(imageData);
         if (img && img.complete) {
           this.bufferCtx.drawImage(img, x, y, width, height);
         } else {
-          // Заглушка на случай ошибки
           this.bufferCtx.fillStyle = '#cccccc';
           this.bufferCtx.fillRect(x, y, width, height);
           this.bufferCtx.strokeStyle = '#999999';
@@ -539,7 +532,6 @@ clearImageCache() {
         }
       }
 
-      // Рисуем остальные штрихи поверх
       for (const stroke of otherStrokes) {
         this.drawStroke(this.bufferCtx, stroke);
       }
@@ -547,7 +539,6 @@ clearImageCache() {
       this.redraw();
       if (callback) callback();
     }).catch(() => {
-      // В случае ошибки загрузки рисуем хотя бы остальные штрихи
       this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
       this.bufferCtx.fillStyle = "white";
       this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);

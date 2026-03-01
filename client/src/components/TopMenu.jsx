@@ -179,13 +179,11 @@ const TopMenu = observer(() => {
             <span className="icon redo"></span>
           </button>
 
-          {/* Save / Export button */}
           <button className="toolbar__btn" onClick={openExportModal} title="Сохранить">
             <span className="icon save"></span>
             <span className="tooltip">Сохранить</span>
           </button>
 
-          {/* Upload image button */}
           <button
             className="toolbar__btn"
             onClick={handleUploadButtonClick}
@@ -236,7 +234,6 @@ const TopMenu = observer(() => {
         </div>
       </div>
 
-      {/* Export modal */}
       {showExportModal && (
         <div className="export-modal-overlay" onClick={() => setShowExportModal(false)}>
           <div className="export-modal" onClick={(e) => e.stopPropagation()}>

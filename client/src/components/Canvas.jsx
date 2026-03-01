@@ -81,7 +81,6 @@ const Canvas = observer(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       const handleWheel = (e) => {
-        // Only enable wheel zoom on PC (not mobile/tablet)
         if (window.innerWidth > 768) {
           e.preventDefault();
           const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -100,7 +99,6 @@ const Canvas = observer(() => {
     }
   }, [canvasState.chatMessages.length]);
 
-  // Периодическое сохранение превью комнаты (каждые 60 сек)
   useEffect(() => {
     if (!canvasState.isConnected) return;
     const interval = setInterval(() => {

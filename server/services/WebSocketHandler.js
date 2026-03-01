@@ -114,7 +114,6 @@ class WebSocketHandler {
         }
         const strokeToAdd = { ...stroke, username: stroke.username || username };
         
-        // !!! ВАЖНО: Сохраняем в RoomManager
         RoomManager.addStroke(roomId, strokeToAdd);
         
         const strokeToBroadcast = JSON.parse(JSON.stringify(strokeToAdd));
@@ -123,7 +122,6 @@ class WebSocketHandler {
         return;
       } 
       else {
-        // !!! ВАЖНО: Сохраняем обычные штрихи (включая image_placeholder)
         RoomManager.addStroke(roomId, msg.figure);
       }
     }

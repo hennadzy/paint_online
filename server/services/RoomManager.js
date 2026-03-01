@@ -93,10 +93,8 @@ class RoomManager {
   addStroke(roomId, stroke) {
     const room = this.rooms.get(roomId);
     if (room) {
-      // Добавляем штрих в память
       room.strokes.push(stroke);
       
-      // Сохраняем на диск
       try {
         DataStore.saveRoomStrokes(roomId, room.strokes);
       } catch (error) {

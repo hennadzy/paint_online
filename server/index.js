@@ -39,7 +39,6 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Разрешаем все источники в production для файлов
     if (process.env.NODE_ENV === 'production') {
       return callback(null, true);
     }
@@ -80,21 +79,17 @@ function send404Page(res) {
   res.status(404).setHeader('Content-Type', 'text/html').send(html);
 }
 
-// Маршрут /404 до статики — чтобы всегда отдавать 404, а не 200
 app.get('/404', (req, res) => {
   send404Page(res);
 });
 
-// Статические файлы с правильными заголовками CORS
 app.use('/files', (req, res, next) => {
-  // Устанавливаем правильные CORS заголовки для файлов
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
-  // Для опционального запроса OPTIONS
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -105,7 +100,6 @@ app.use('/files', (req, res, next) => {
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    // Дополнительные заголовки для каждого файла
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     res.header('Cache-Control', 'public, max-age=86400');
