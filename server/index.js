@@ -39,24 +39,28 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Разрешаем все источники в production для файлов
+    if (process.env.NODE_ENV === 'production') {
+      return callback(null, true);
+    }
+
     const allowedOrigins = [
       'https://risovanie.online',
-      'http://localhost:3000'
+      'http://localhost:3000',
+      'https://paint-online-back.onrender.com'
     ];
-    
+
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (process.env.NODE_ENV === 'production' && origin.endsWith('.onrender.com')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Length', 'X-Requested-With'],
   maxAge: 86400
 }));
@@ -81,7 +85,32 @@ app.get('/404', (req, res) => {
   send404Page(res);
 });
 
-app.use('/files', express.static(path.join(__dirname, 'files')));
+// Статические файлы с правильными заголовками CORS
+app.use('/files', (req, res, next) => {
+  // Устанавливаем правильные CORS заголовки для файлов
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+
+  // Для опционального запроса OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+}, express.static(path.join(__dirname, 'files'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // Дополнительные заголовки для каждого файла
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.header('Cache-Control', 'public, max-age=86400');
+  }
+}));
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 app.ws('/', (ws, req) => {
@@ -113,13 +142,13 @@ app.get('*', (req, res) => {
 setInterval(() => {
   try {
     DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
-  } catch (_) {}
+  } catch (_) { }
 }, ROOM_CLEANUP_INTERVAL);
 
 ['SIGTERM', 'SIGINT'].forEach((sig) => {
   process.on(sig, () => process.exit(0));
 });
 
-app.listen(PORT, () => {});
+app.listen(PORT, () => { });
 
 module.exports = app;
