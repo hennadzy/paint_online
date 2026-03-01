@@ -85,6 +85,7 @@ class CanvasState {
         CanvasService.rebuildBuffer([]);
         CanvasService.redraw();
         this.addChatMessage({ type: "system", username, message: `очистил холст` });
+        this.scheduleThumbnailSave();
       }
     });
     WebSocketService.on('chatReceived', ({ username, message }) => {
@@ -98,14 +99,17 @@ class CanvasState {
     HistoryService.on('strokeUndone', () => {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
+      this.scheduleThumbnailSave();
     });
     HistoryService.on('strokeRedone', ({ stroke }) => {
       CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
+      this.scheduleThumbnailSave();
     });
     HistoryService.on('strokesCleared', () => {
       CanvasService.rebuildBuffer([]);
       CanvasService.redraw();
+      this.scheduleThumbnailSave();
     });
   }
 
@@ -189,6 +193,7 @@ class CanvasState {
     }
     if (removed) {
       AutoSaveService.markChanged();
+      this.scheduleThumbnailSave();
     }
   }
 
@@ -202,11 +207,13 @@ class CanvasState {
         CanvasService.redraw();
       }
       AutoSaveService.markChanged();
+      this.scheduleThumbnailSave();
     }
   }
 
   undoRemote(strokeId, fromUsername) {
     HistoryService.undoById(strokeId, fromUsername);
+    this.scheduleThumbnailSave();
   }
 
   redoRemote(stroke, fromUsername) {
@@ -221,6 +228,7 @@ class CanvasState {
     if (added) {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
+      this.scheduleThumbnailSave();
     }
   }
 
@@ -229,10 +237,13 @@ class CanvasState {
       return;
     }
     HistoryService.clearStrokes();
+    CanvasService.rebuildBuffer([]);
+    CanvasService.redraw();
     if (WebSocketService.isConnected) {
       WebSocketService.sendClear();
     }
     AutoSaveService.clear(this.currentRoomId);
+    this.scheduleThumbnailSave();
   }
 
   setUsername(username) {
