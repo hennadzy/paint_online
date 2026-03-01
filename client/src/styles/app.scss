@@ -256,13 +256,13 @@ body.modal-open {
   /* On mobile: "Совместное рисование" fills remaining space, icon buttons stay 32px */
   .top-menu__actions .create-room-btn {
     flex: 1;
-    font-size: 14px;
-    padding: 0 8px;
+    font-size: 16px;
+    padding: 0 12px;
     min-width: 0;
     overflow: hidden;
     /* text-overflow: ellipsis; */
     justify-content: flex-start;
-    padding-left: 10px;
+    padding-left: 12px;
   }
 }
 
