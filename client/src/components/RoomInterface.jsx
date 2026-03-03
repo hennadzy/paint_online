@@ -67,6 +67,17 @@ const RoomInterface = observer(({ roomId }) => {
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
   const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
 
+  // При изменении showRoomsList переключаем на вкладку списка комнат
+  useEffect(() => {
+    if (canvasState.showRoomsList) {
+      setActiveTab('join');
+      // Сбрасываем флаг после переключения вкладки
+      setTimeout(() => {
+        canvasState.setShowRoomsList(false);
+      }, 0);
+    }
+  }, [canvasState.showRoomsList]);
+
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
       fetchPublicRooms();

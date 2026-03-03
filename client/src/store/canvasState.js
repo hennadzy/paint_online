@@ -25,6 +25,7 @@ class CanvasState {
   showFeedbackModal = false;
   roomModalOpen = false;
   roomMode = 'create';
+  showRoomsList = false;
   publicRooms = [];
   createdRoomId = null;
   createdRoomLink = '';
@@ -367,12 +368,18 @@ class CanvasState {
   }
   setShowRoomInterface(val) {
     this.showRoomInterface = val;
+    if (val) {
+      this.showRoomsList = false;
+    }
   }
   setShowAboutModal(val) {
     this.showAboutModal = val;
   }
   setShowFeedbackModal(val) {
     this.showFeedbackModal = val;
+  }
+  setShowRoomsList(val) {
+    this.showRoomsList = val;
   }
   handleMessage(msg) {
     WebSocketService.handleMessage(msg);
