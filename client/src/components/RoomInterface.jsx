@@ -67,18 +67,15 @@ const RoomInterface = observer(({ roomId }) => {
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
   const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
 
-  // При изменении showRoomsList переключаем на вкладку списка комнат
   useEffect(() => {
     if (canvasState.showRoomsList) {
       setActiveTab('join');
-      // Сбрасываем флаг после переключения вкладки
       setTimeout(() => {
         canvasState.setShowRoomsList(false);
       }, 0);
     }
   }, [canvasState.showRoomsList]);
 
-  // Также следим за изменением roomId - если перешли с комнаты на главную, показываем список
   useEffect(() => {
     if (!roomId && canvasState.showRoomInterface && canvasState.showRoomsList) {
       setActiveTab('join');
@@ -122,7 +119,6 @@ const RoomInterface = observer(({ roomId }) => {
       const response = await axios.get(`${API_URL}/rooms/public`);
       const rooms = response.data || [];
       setPublicRooms(rooms);
-      // Если комнат нет - переключаем на вкладку создания
       if (rooms.length === 0) {
         setActiveTab('create');
       }

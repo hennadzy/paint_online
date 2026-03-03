@@ -45,7 +45,6 @@ const Canvas = observer(() => {
 
     canvasState.setShowAboutModal(false);
     
-    // При выходе из комнаты показываем интерфейс комнат
     if (canvasState.showRoomsList) {
       canvasState.setShowRoomInterface(true);
     } else {
@@ -58,7 +57,6 @@ const Canvas = observer(() => {
       canvasState.setModalOpen(false);
       toolState.setTool(new Brush(canvas, null, null, 'local'), 'brush');
       
-      // Если возвращаемся из комнаты - автоматически восстанавливаем рисунок без показа диалога
       if (canvasState.returningFromRoom) {
         canvasState.restoreAutoSave();
         canvasState.returningFromRoom = false;
