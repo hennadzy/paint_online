@@ -44,7 +44,6 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     canvasState.setShowAboutModal(false);
-    canvasState.setShowRoomInterface(false);
 
     if (!params.id) {
       canvasState.setCurrentRoomId(null);
