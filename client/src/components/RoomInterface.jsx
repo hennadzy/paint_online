@@ -49,7 +49,7 @@ const validateUsername = (username) => {
 };
 
 const RoomInterface = observer(({ roomId }) => {
-  const [activeTab, setActiveTab] = useState(canvasState.showRoomsList ? 'join' : 'create');
+  const [activeTab, setActiveTab] = useState('create');
   const [username, setUsername] = useState('');
   const [roomName, setRoomName] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -120,7 +120,13 @@ const RoomInterface = observer(({ roomId }) => {
   const fetchPublicRooms = async () => {
     try {
       const response = await axios.get(`${API_URL}/rooms/public`);
-      setPublicRooms(response.data);
+      const rooms = response.data || [];
+      setPublicRooms(rooms);
+      // Если комнат нет И мы пришли из комнаты - переключаем на вкладку создания
+      if (rooms.length === 0 && canvasState.showRoomsList) {
+        setActiveTab('create');
+        canvasState.setShowRoomsList(false);
+      }
     } catch (error) {
       setError('Ошибка загрузки комнат');
     }
