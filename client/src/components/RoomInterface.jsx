@@ -80,10 +80,10 @@ const RoomInterface = observer(({ roomId }) => {
 
   // Также следим за изменением roomId - если перешли с комнаты на главную, показываем список
   useEffect(() => {
-    if (!roomId && canvasState.showRoomInterface) {
+    if (!roomId && canvasState.showRoomInterface && canvasState.showRoomsList) {
       setActiveTab('join');
     }
-  }, [roomId, canvasState.showRoomInterface]);
+  }, [roomId, canvasState.showRoomInterface, canvasState.showRoomsList]);
 
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
@@ -122,10 +122,9 @@ const RoomInterface = observer(({ roomId }) => {
       const response = await axios.get(`${API_URL}/rooms/public`);
       const rooms = response.data || [];
       setPublicRooms(rooms);
-      // Если комнат нет И мы пришли из комнаты - переключаем на вкладку создания
-      if (rooms.length === 0 && canvasState.showRoomsList) {
+      // Если комнат нет - переключаем на вкладку создания
+      if (rooms.length === 0) {
         setActiveTab('create');
-        canvasState.setShowRoomsList(false);
       }
     } catch (error) {
       setError('Ошибка загрузки комнат');
