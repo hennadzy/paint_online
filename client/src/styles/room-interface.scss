@@ -202,13 +202,27 @@
   margin: 0 auto;
   padding: 25px;              /* такие же отступы, как у шапки */
   box-sizing: border-box;
+
+  /* Глобальные правила для одинаковой ширины всех элементов */
+  .link-container {
+    flex-direction: column;   /* всегда вертикально (кнопка под полем) */
+    width: 100%;
+  }
+
+  .room-input.link-input {
+    width: 100%;              /* поле на всю ширину */
+  }
+
+  .room-btn {
+    width: 100%;              /* все кнопки на всю ширину */
+  }
 }
 
 /* Портретный режим */
 @media (max-width: 768px) and (orientation: portrait) {
   .room-card.created-room {
     padding: 20px;
-    max-width: 90%;
+    width: 100%;
   }
 }
 
@@ -216,7 +230,7 @@
 @media (max-width: 768px) and (orientation: landscape) {
   .room-card.created-room {
     padding: 15px;
-    max-width: 450px;         /* как шапка в ландшафте */
+    width: 100%;
   }
 }
 
