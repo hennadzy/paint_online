@@ -93,9 +93,9 @@ const Canvas = observer(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       const handleWheel = (e) => {
-        // Only apply zoom on PC or mobile landscape (not mobile portrait)
-        const isPCOrLandscape = window.innerWidth > 768 || (window.innerWidth <= 768 && window.innerHeight <= window.innerWidth);
-        if (isPCOrLandscape) {
+        // Only apply zoom on PC or mobile landscape
+        const isMobileLandscape = window.innerWidth <= 768 && window.innerHeight <= window.innerWidth;
+        if (window.innerWidth > 768 || isMobileLandscape) {
           e.preventDefault();
           const delta = e.deltaY > 0 ? -0.1 : 0.1;
           const newZoom = Math.max(0.5, Math.min(3, canvasState.zoom + delta));

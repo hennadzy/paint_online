@@ -33,7 +33,7 @@ html, body {
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    padding-top: 100px; // Account for top-menu (50px) + toolbar (50px)
+    padding-top: 50px; // Account for top-menu (50px) + toolbar (50px)
     box-sizing: border-box;
   }
 }
@@ -246,7 +246,7 @@ button:active {
   }
 }
 
-@media only screen and (max-width: 768px) and (orientation: portrait) {
+@media screen and (max-width: 768px) and (orientation: portrait) {
   $mobile-menu-height-local: 198px;
   $mobile-menu-height-chat: 228px;
 
@@ -747,7 +747,7 @@ button:active {
 }
 
 // Mobile landscape - use PC layout
-@media only screen and (max-width: 768px) and (orientation: landscape) {
+@media screen and (max-width: 768px) and (orientation: landscape), screen and (max-height: 500px) and (orientation: landscape) {
   html {
     height: 100%;
     height: -webkit-fill-available;
