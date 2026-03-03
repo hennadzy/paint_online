@@ -457,6 +457,29 @@ body.modal-open {
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
+  /* Показываем скрытые ранее кнопки в ландшафтном режиме */
+  .about-btn {
+    display: flex !important;
+  }
+
+  /* Уменьшаем общую высоту верхнего меню и отступы */
+  .top-menu {
+    height: 40px;
+  }
+
+  .top-menu__actions {
+    padding: 5px;
+    gap: 4px;
+  }
+
+  /* Делаем кнопки более компактными, чтобы поместились в ряд */
+  .create-room-btn {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 13px;
+    flex-shrink: 0; /* Запрещаем сжатие */
+  }
+
   .main-content {
     padding-top: 100px;        
     padding-left: 60px;        

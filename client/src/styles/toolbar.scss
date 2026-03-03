@@ -457,45 +457,69 @@ canvas.eraser-cursor {
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
+  /* Вертикальная панель инструментов */
   .toolbar {
-    width: 48px;                  /* было 60px */
+    width: 48px;                     /* уже было */
+    top: 40px;                       /* начинается сразу под top-menu */
+    height: calc(100vh - 40px);       /* занимает оставшуюся высоту */
     padding: 5px 0;
   }
 
   .toolbar__btn {
-    width: 24px;                   /* было 32px */
-    height: 24px;                  /* было 32px */
+    width: 24px;
+    height: 24px;
     margin: 4px auto;
 
     .icon {
-      width: 18px;                 /* было 24px */
-      height: 18px;                /* было 24px */
+      width: 18px;
+      height: 18px;
     }
 
     .zoom-text {
-      font-size: 18px;             /* было 24px */
+      font-size: 18px;
     }
   }
 
+  /* Горизонтальная панель настроек */
   .setting-bar {
-    left: 48px;                    /* совпадает с шириной toolbar */
-    padding: 6px 10px;             /* уменьшенные отступы */
-    font-size: 12px;               /* был 14px */
-    gap: 6px;
+    position: fixed;
+    top: 40px;                        /* сразу под top-menu */
+    left: 48px;                        /* рядом с toolbar */
+    right: 0;
+    width: auto;
+    height: auto;                      /* сбрасываем фиксированную высоту */
+    min-height: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
+    background-color: #67676759;
+    box-shadow: 0 4px 5px gray;
+    z-index: 1002;
+
+    .setting-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
 
     input[type="range"] {
-      width: 140px;                /* было 200px */
+      width: 140px;                    /* чуть уже */
     }
 
     .line-width-label,
     .opacity-label {
-      font-size: 11px;             /* был 12px */
-      width: 45px;                 /* подогнано */
+      font-size: 11px;
+      width: 45px;
     }
 
     input[type="color"] {
-      width: 32px;                 /* было 40px */
-      height: 20px;                /* было 24px */
+      width: 32px;
+      height: 20px;
     }
   }
 }
