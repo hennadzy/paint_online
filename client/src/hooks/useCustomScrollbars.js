@@ -12,7 +12,7 @@ function getVerticalCornerGap() {
 export function useCustomScrollbars(containerRef, isConnected) {
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || window.innerWidth > 768) return;
+    if (!container || window.innerWidth > 768 || window.innerHeight < window.innerWidth) return;
 
     const verticalScrollbar = document.createElement('div');
     verticalScrollbar.className = 'custom-scrollbar vertical';
