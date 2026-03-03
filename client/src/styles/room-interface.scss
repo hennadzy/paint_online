@@ -220,6 +220,29 @@
   }
 }
 
+/* На мобильных устройствах (ширина ≤ 768px) - кнопки на всю ширину */
+@media (max-width: 768px) {
+  .room-card.created-room {
+    .link-container {
+      flex-direction: column;   /* инпут и кнопка «Копировать» друг под другом */
+      gap: 10px;
+      
+      .room-input {
+        width: 100%;            /* поле ссылки на всю ширину */
+      }
+      
+      .room-btn {
+        width: 100%;            /* кнопка «Копировать» на всю ширину */
+        margin: 0;
+      }
+    }
+    
+    .room-btn-primary {          /* кнопка «Войти в комнату» */
+      width: 100%;
+    }
+  }
+}
+
 /* Длинная ссылка должна переноситься */
 .link-input {
   word-break: break-all;

@@ -546,6 +546,7 @@ body.modal-open {
   .main-content {
     margin-left: 180px; /* 60 (toolbar) + 120 (setting-bar) */
     margin-top: 0;
+    padding-top: 10px;          /* небольшой отступ сверху */
     width: calc(100% - 180px);
     height: calc(100vh - 50px);
     display: flex;
