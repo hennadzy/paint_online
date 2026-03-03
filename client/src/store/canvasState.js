@@ -334,9 +334,15 @@ class CanvasState {
     }
   }
 
-  disconnect() {
-    this.saveThumbnail();
+  disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
+    
+    // Сохраняем текущий рисунок перед выходом, если были штрихи
+    if (keepLocalSave && HistoryService.getStrokes().length > 0) {
+      this.performAutoSave();
+    }
+    
+    this.saveThumbnail();
     WebSocketService.disconnect();
     this.isConnected = false;
     const wasInRoom = this.currentRoomId !== null;
@@ -352,7 +358,7 @@ class CanvasState {
     CanvasService.clearImageCache();
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
-    if (wasInRoom) {
+    if (wasInRoom && !keepLocalSave) {
       AutoSaveService.clear(null);
     }
   }

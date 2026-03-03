@@ -61,7 +61,7 @@ const Canvas = observer(() => {
 
     return () => {
       if (params.id) {
-        canvasState.disconnect();
+        canvasState.disconnect(true);
       }
       canvasState.strokeList = [];
       canvasState.redoStacks.clear();

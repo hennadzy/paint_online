@@ -226,7 +226,7 @@ const TopMenu = observer(() => {
           ) : canvasState.isConnected ? (
             <button
               className="create-room-btn disconnect-room-btn"
-              onClick={() => { canvasState.disconnect(); navigate('/'); }}
+              onClick={() => { canvasState.disconnect(true); canvasState.setShowRoomInterface(true); navigate('/'); }}
             >
               Выйти из комнаты
             </button>
