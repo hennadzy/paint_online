@@ -1026,3 +1026,119 @@
     }
   }
 }
+
+/* Ландшафтный режим на мобильных устройствах - уменьшенные диалоговые окна */
+@media (max-width: 768px) and (orientation: landscape) {
+  .room-interface-overlay {
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .room-interface {
+    width: 90%;
+    max-width: 450px;   /* примерно в два раза меньше от стандартных 800px */
+    margin: 0 auto;
+    animation: slideUp 0.3s ease;
+  }
+
+  .room-welcome {
+    padding: 15px;
+    margin-bottom: 20px;
+
+    h1 {
+      font-size: 18px;   /* примерно 0.5 от стандартного 28px */
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .room-tabs {
+    margin-bottom: 15px;
+  }
+
+  .room-tab {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .room-card {
+    padding: 20px;
+  }
+
+  .room-card-header {
+    h2 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .room-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .room-input {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+
+  .privacy-option {
+    padding: 12px 10px;
+
+    .privacy-icon {
+      font-size: 24px;
+    }
+
+    .privacy-label {
+      font-size: 14px;
+    }
+
+    .privacy-desc {
+      font-size: 11px;
+    }
+  }
+
+  .rooms-list {
+    max-height: 250px;
+  }
+
+  .room-item {
+    padding: 10px;
+  }
+
+  .room-item-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+  }
+
+  .room-item-details h3 {
+    font-size: 14px;
+  }
+
+  .room-item-status,
+  .room-item-online {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .about-section {
+    h2 {
+      font-size: 18px;
+    }
+
+    h3 {
+      font-size: 15px;
+    }
+
+    p, ul, ol {
+      font-size: 12px;
+    }
+  }
+}
