@@ -459,7 +459,7 @@ canvas.eraser-cursor {
 @media screen and (max-width: 768px) and (orientation: landscape) {
   .toolbar {
     position: fixed;
-    top: 50px;
+    top: 50px; /* ниже топ-меню */
     left: 0;
     width: 60px;
     height: calc(100vh - 50px);
@@ -469,9 +469,8 @@ canvas.eraser-cursor {
     box-shadow: 4px 0 5px gray;
     z-index: 1003;
     padding: 10px 0;
-    overflow-y: auto;
+    overflow-y: auto;    /* включаем прокрутку */
     overflow-x: hidden;
-    overflow: visible !important;
 
     &__btn {
       margin: 5px auto;
@@ -479,7 +478,7 @@ canvas.eraser-cursor {
 
     &__group {
       position: relative;
-      overflow: visible;
+      overflow: visible; /* для отображения подменю */
     }
 
     &__submenu {
