@@ -248,7 +248,7 @@ const TopMenu = observer(() => {
 
           {/* НОВАЯ КНОПКА — Поделиться рисунком */}
           <button className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
-            <span style={{ fontSize: '20px' }}>📤</span>
+            <span className="icon share"></span>
             <span className="tooltip">Поделиться</span>
           </button>
 

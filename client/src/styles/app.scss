@@ -255,13 +255,21 @@ body.modal-open {
   .top-menu__actions .create-room-btn {
     flex-shrink: 0;
     width: auto;
-    max-width: 180px;
-    font-size: 13px;
-    padding: 0 10px;
+    max-width: none;
+    font-size: 12px;
+    padding: 0 8px;
+    height: 30px;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .top-menu__actions .create-room-btn {
+    font-size: 11px;
+    padding: 0 5px;
   }
 }
 
