@@ -45,6 +45,11 @@ const Canvas = observer(() => {
 
     canvasState.setShowAboutModal(false);
 
+    // Не сбрасываем showRoomInterface если мы пришли из комнаты (showRoomsList = true)
+    if (!canvasState.showRoomInterface || !canvasState.showRoomsList) {
+      canvasState.setShowRoomInterface(false);
+    }
+
     if (!params.id) {
       canvasState.setCurrentRoomId(null);
       canvasState.setUsername('local');
