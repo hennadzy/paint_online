@@ -535,12 +535,13 @@ button:active {
     justify-content: center;
     align-items: center;
     overflow: auto;
+    margin-top: 10px;
   }
 
   .canvas-wrapper {
     display: inline-block;
     margin: 0;
-    margin-top: 10px;
+    margin-top: 15px;
   }
 
   /* Боковая панель (чат) – справа */
