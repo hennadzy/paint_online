@@ -515,7 +515,7 @@ canvas.eraser-cursor {
     position: fixed;
     top: 50px;
     left: 60px; /* справа от тулбара */
-    width: 150px;
+    width: 120px; /* было 150px */
     height: calc(100vh - 50px);
     background-color: #67676759;
     box-shadow: 4px 0 5px gray;

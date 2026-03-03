@@ -196,6 +196,27 @@
   }
 }
 
+/* Базовые стили для карточки созданной комнаты */
+.room-card.created-room {
+  max-width: 600px; /* как у .room-welcome */
+  width: 90%;
+  margin: 0 auto;
+}
+
+/* Портретный режим на мобильных */
+@media (max-width: 768px) and (orientation: portrait) {
+  .room-card.created-room {
+    max-width: 90%; /* подстраиваем под .room-welcome в портрете */
+  }
+}
+
+/* Ландшафтный режим на мобильных */
+@media (max-width: 768px) and (orientation: landscape) {
+  .room-card.created-room {
+    max-width: 450px; /* соответствует уменьшенной шапке в ландшафте */
+  }
+}
+
 .room-card-header {
   position: relative;
   text-align: center;

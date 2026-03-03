@@ -544,9 +544,9 @@ body.modal-open {
 @media (max-width: 768px) and (orientation: landscape) {
   /* Основной контент (холст) сдвигаем вправо, освобождая место под панели */
   .main-content {
-    margin-left: 210px; /* 60 (toolbar) + 150 (setting-bar) */
-    margin-top: 50px;
-    width: calc(100% - 210px);
+    margin-left: 180px; /* 60 (toolbar) + 120 (setting-bar) */
+    margin-top: 0;
+    width: calc(100% - 180px);
     height: calc(100vh - 50px);
     display: flex;
     align-items: center;
