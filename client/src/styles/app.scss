@@ -540,3 +540,28 @@ body.modal-open {
     font-size: 14px;               /* было 16px */
   }
 }
+
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Основной контент (холст) сдвигаем вправо, освобождая место под панели */
+  .main-content {
+    margin-left: 210px; /* 60 (toolbar) + 150 (setting-bar) */
+    margin-top: 50px;
+    width: calc(100% - 210px);
+    height: calc(100vh - 50px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Заставляем холст занимать всю доступную область */
+  .main-content .canvas {
+    position: static !important;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Скрываем дублирующие кнопки "О программе" и "Обратная связь", которые появляются внизу на мобильных */
+  .about-btns-mobile {
+    display: none !important;
+  }
+}

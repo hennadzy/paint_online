@@ -749,13 +749,14 @@ button:active {
 // Mobile landscape - use PC layout
 @media screen and (max-width: 768px) and (orientation: landscape) {
   .canvas {
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
     height: 100% !important;
     max-height: 100% !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
