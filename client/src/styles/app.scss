@@ -454,12 +454,11 @@ body.modal-open {
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
-  /* Показываем скрытые ранее кнопки в ландшафтном режиме */
+
   .about-btn {
     display: flex !important;
   }
 
-  /* Уменьшаем общую высоту верхнего меню и отступы */
   .top-menu {
     height: 40px;
   }
@@ -469,7 +468,7 @@ body.modal-open {
     gap: 4px;
   }
 
-  /* Делаем кнопки более компактными, чтобы поместились в ряд */
+
   .create-room-btn {
     height: 30px;
     padding: 0 8px;
@@ -482,7 +481,6 @@ body.modal-open {
     padding-left: 60px;        
   }
 
-  /* Landscape orientation adjustments for top menu */
   .top-menu {
     height: 40px;
   }
@@ -501,7 +499,6 @@ body.modal-open {
     font-size: 14px;
   }
 
-  /* Экспортное модальное окно тоже можно уменьшить */
   .export-modal {
     padding: 20px 24px;
     min-width: 280px;
@@ -532,7 +529,6 @@ body.modal-open {
 }
 
 @media (max-width: 768px) and (orientation: landscape) {
-  /* Основной контент (холст) сдвигаем вправо, освобождая место под панели */
   .main-content {
     margin-left: 180px;
     margin-top: 0;
@@ -546,7 +542,6 @@ body.modal-open {
     padding: 0;
   }
 
-  /* Заставляем холст занимать всю доступную область */
   .main-content .canvas {
     position: static !important;
     width: 100%;
@@ -555,12 +550,10 @@ body.modal-open {
     padding: 0;
   }
 
-  /* Скрываем дублирующие кнопки "О программе" и "Обратная связь", которые появляются внизу на мобильных */
   .about-btns-mobile {
     display: none !important;
   }
 
-  /* Экспортное модальное окно - уменьшаем и центрируем */
   .export-modal-overlay {
     padding: 0;
     align-items: center;

@@ -217,7 +217,7 @@ button:active {
   flex-direction: column;
   align-items: center;
   gap: 15px;
-  margin-top: 30px;
+  margin-top: 10px;
   width: 100%;
   padding: 0 10px;
 }
@@ -346,6 +346,13 @@ button:active {
 
   .canvas-layout .toolbar {
     display: none;
+  }
+}
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .canvas-layout {
+    align-items: flex-start;
+    padding-top: 10px;
   }
 
   .main-canvas,
@@ -493,9 +500,9 @@ button:active {
   }
 }
 
-/* Ландшафтный режим на мобильных устройствах */
+
 @media screen and (max-width: 768px) and (orientation: landscape) {
-  /* Сбрасываем фиксированные позиционирования, заданные в портретном режиме */
+
   .canvas {
     position: static !important;
     top: auto !important;
@@ -514,7 +521,6 @@ button:active {
     height: 100%;
   }
 
-  /* Контейнер холста занимает всю доступную область между панелями */
   .canvas-layout {
     display: flex;
     flex-direction: row;
@@ -534,7 +540,7 @@ button:active {
     justify-content: center;
     align-items: center;
     overflow: auto;
-    margin-top: 30px;
+    margin-top: 10px;
   }
 
   .canvas-wrapper {
@@ -543,7 +549,7 @@ button:active {
     margin-top: 10px;
   }
 
-  /* Боковая панель (чат) – справа */
+
   .canvas-side-panel {
     display: flex;
     flex-direction: column;
@@ -563,7 +569,6 @@ button:active {
     flex: none;
   }
 
-  /* Скрываем ненужные мобильные кнопки */
   .about-btns-mobile {
     display: none;
   }
@@ -821,7 +826,6 @@ button:active {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
-// Mobile landscape - use PC layout
 @media screen and (max-width: 768px) and (orientation: landscape) {
   .canvas {
     position: static !important;
@@ -903,7 +907,6 @@ button:active {
     }
   }
 
-  // Hide extra mobile buttons
   .about-btns-mobile {
     display: none;
   }
