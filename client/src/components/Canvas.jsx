@@ -58,10 +58,11 @@ const Canvas = observer(() => {
       canvasState.setModalOpen(false);
       toolState.setTool(new Brush(canvas, null, null, 'local'), 'brush');
       
-      // Если возвращаемся из комнаты - автоматически восстанавливаем рисунок
+      // Если возвращаемся из комнаты - автоматически восстанавливаем рисунок без показа диалога
       if (canvasState.returningFromRoom) {
         canvasState.restoreAutoSave();
         canvasState.returningFromRoom = false;
+        canvasState.showRestoreDialog = false;
       } else {
         canvasState.checkForAutoSave();
       }
