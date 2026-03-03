@@ -93,7 +93,6 @@ const Canvas = observer(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       const handleWheel = (e) => {
-        // Only apply zoom on PC or mobile landscape
         const isMobileLandscape = window.innerWidth <= 768 && window.innerHeight <= window.innerWidth;
         if (window.innerWidth > 768 || isMobileLandscape) {
           e.preventDefault();
@@ -108,7 +107,6 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    // Only scroll to bottom on mobile portrait when chat has messages
     const isMobilePortrait = window.innerWidth < 768 && window.innerHeight > window.innerWidth;
     if (canvasState.isConnected && params.id && isMobilePortrait) {
       setTimeout(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }), 100);
@@ -124,7 +122,6 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected]);
 
   useEffect(() => {
-    // Only apply mobile zoom logic on narrow screens in portrait orientation
     const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
     if (!isMobilePortrait) return;
     

@@ -339,7 +339,6 @@ class CanvasState {
   disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
     
-    // Сохраняем текущий рисунок перед выходом, если были штрихи
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
       this.performAutoSave();
       this.returningFromRoom = true;

@@ -80,7 +80,6 @@
   }
 }
 
-// Close button placed inside .room-card-header (for input dialogs)
 .room-close-btn-inline {
   position: absolute;
   top: 8px;
@@ -197,24 +196,24 @@
 
 /* Общие стили для карточки созданной комнаты */
 .room-card.created-room {
-  max-width: 600px;           /* как у .room-welcome */
+  max-width: 600px;
   width: 100%;
   margin: 0 auto;
-  padding: 25px;              /* такие же отступы, как у шапки */
+  padding: 25px;
   box-sizing: border-box;
 
   /* Глобальные правила для одинаковой ширины всех элементов */
   .link-container {
-    flex-direction: column;   /* всегда вертикально (кнопка под полем) */
+    flex-direction: column;
     width: 100%;
   }
 
   .room-input.link-input {
-    width: 100%;              /* поле на всю ширину */
+    width: 100%;
   }
 
   .room-btn {
-    width: 100%;              /* все кнопки на всю ширину */
+    width: 100%;
   }
 }
 
@@ -238,20 +237,20 @@
 @media (max-width: 768px) {
   .room-card.created-room {
     .link-container {
-      flex-direction: column;   /* инпут и кнопка «Копировать» друг под другом */
+      flex-direction: column;
       gap: 10px;
       
       .room-input {
-        width: 100%;            /* поле ссылки на всю ширину */
+        width: 100%;
       }
       
       .room-btn {
-        width: 100%;            /* кнопка «Копировать» на всю ширину */
+        width: 100%;
         margin: 0;
       }
     }
     
-    .room-btn-primary {          /* кнопка «Войти в комнату» */
+    .room-btn-primary {
       width: 100%;
     }
   }
@@ -360,7 +359,7 @@
 
 .link-container {
   display: flex;
-  flex-wrap: wrap;            /* если не хватает места, кнопка уходит на новую строку */
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
@@ -996,7 +995,7 @@
 /* Landscape orientation on mobile devices */
 @media (max-width: 768px) and (orientation: landscape) {
   .room-interface {
-    max-width: 70%;                /* уже, чем в портрете */
+    max-width: 70%;
   }
 
   .room-welcome {

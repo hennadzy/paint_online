@@ -70,7 +70,6 @@ body.modal-open {
   }
 }
 
-/* "О программе" / "Обратная связь" never shrink; "Совместное рисование" may shrink on mobile */
 .top-menu__actions .about-btn {
   flex-shrink: 0;
 }
@@ -79,7 +78,7 @@ body.modal-open {
   position: relative;
   width: 32px;
   height: 32px;
-  flex: 0 0 32px; /* never shrink icon buttons */
+  flex: 0 0 32px;
   border: none;
   outline: none;
   cursor: pointer;
@@ -147,7 +146,7 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 1;   /* allowed to shrink, but not icon buttons */
+  flex-shrink: 1;
   min-width: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
@@ -253,7 +252,6 @@ body.modal-open {
     padding-top: 50px;
   }
 
-  /* On mobile: "Совместное рисование" button styling */
   .top-menu__actions .create-room-btn {
     flex-shrink: 0;
     width: auto;
@@ -267,7 +265,6 @@ body.modal-open {
   }
 }
 
-/* ── Export modal ────────────────────────────────────────────── */
 .export-modal-overlay {
   position: fixed;
   inset: 0;
@@ -477,7 +474,7 @@ body.modal-open {
     height: 30px;
     padding: 0 8px;
     font-size: 13px;
-    flex-shrink: 0; /* Запрещаем сжатие */
+    flex-shrink: 0;
   }
 
   .main-content {
@@ -487,70 +484,63 @@ body.modal-open {
 
   /* Landscape orientation adjustments for top menu */
   .top-menu {
-    height: 40px;                  /* было 50px */
+    height: 40px;
   }
 
   .top-menu__actions {
-    padding: 5px;                  /* было 10px 5px */
+    padding: 5px;
   }
 
   .top-menu__actions .toolbar__btn {
-    width: 24px;                   /* было 32px */
-    height: 24px;                  /* было 32px */
-    flex: 0 0 24px;                /* было 32px */
-
-    .icon {
-      width: 18px;                /* было 24px */
-      height: 18px;               /* было 24px */
-    }
+    width: 24px;
   }
 
   .create-room-btn {
-    height: 26px;                  /* было 32px */
-    padding: 0 10px;               /* было 0 14px */
-    font-size: 14px;               /* было 16px */
+    height: 26px;
+    padding: 0 10px;
+    font-size: 14px;
   }
 
   /* Экспортное модальное окно тоже можно уменьшить */
   .export-modal {
-    padding: 20px 24px;            /* было 28px 32px */
-    min-width: 280px;              /* было 320px */
-    gap: 15px;                      /* было 20px */
+    padding: 20px 24px;
+    min-width: 280px;
+    gap: 15px;
 
     &__title {
-      font-size: 16px;             /* было 18px */
+      font-size: 16px;
     }
 
     &__input {
-      padding: 8px 12px;           /* было 10px 14px */
-      font-size: 14px;              /* было 15px */
+      padding: 8px 12px;
+      font-size: 14px;
     }
 
     .export-format-name {
-      font-size: 14px;             /* было 15px */
+      font-size: 14px;
     }
 
     .export-format-desc {
-      font-size: 10px;             /* было 11px */
+      font-size: 10px;
     }
   }
 
   .export-btn {
-    padding: 8px 18px;             /* было 10px 22px */
-    font-size: 14px;               /* было 16px */
+    padding: 8px 18px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 768px) and (orientation: landscape) {
   /* Основной контент (холст) сдвигаем вправо, освобождая место под панели */
   .main-content {
-    margin-left: 180px; /* 60 (toolbar) + 120 (setting-bar) */
+    margin-left: 180px;
     margin-top: 0;
-    padding-top: 10px;          /* небольшой отступ сверху */
+    padding-top: 10px;
     width: calc(100% - 180px);
     height: calc(100vh - 50px);
     display: flex;
-    align-items: flex-start;   /* вместо center – прижимаем содержимое к верху */
+    align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
     padding: 0;
