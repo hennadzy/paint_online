@@ -44,9 +44,11 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     canvasState.setShowAboutModal(false);
-
-    // Не сбрасываем showRoomInterface если мы пришли из комнаты (showRoomsList = true)
-    if (!canvasState.showRoomInterface || !canvasState.showRoomsList) {
+    
+    // При выходе из комнаты показываем интерфейс комнат
+    if (canvasState.showRoomsList) {
+      canvasState.setShowRoomInterface(true);
+    } else {
       canvasState.setShowRoomInterface(false);
     }
 
