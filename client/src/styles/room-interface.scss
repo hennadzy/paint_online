@@ -189,32 +189,41 @@
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 
-  &.username-form,
-  &.created-room {
+  &.username-form {
     max-width: 500px;
     margin: 0 auto;
   }
 }
 
-/* Базовые стили для карточки созданной комнаты */
+/* Общие стили для карточки созданной комнаты */
 .room-card.created-room {
-  max-width: 600px; /* как у .room-welcome */
-  width: 90%;
+  max-width: 600px;           /* как у .room-welcome */
+  width: 100%;
   margin: 0 auto;
+  padding: 25px;              /* такие же отступы, как у шапки */
+  box-sizing: border-box;
 }
 
-/* Портретный режим на мобильных */
+/* Портретный режим */
 @media (max-width: 768px) and (orientation: portrait) {
   .room-card.created-room {
-    max-width: 90%; /* подстраиваем под .room-welcome в портрете */
+    padding: 20px;
+    max-width: 90%;
   }
 }
 
-/* Ландшафтный режим на мобильных */
+/* Ландшафтный режим */
 @media (max-width: 768px) and (orientation: landscape) {
   .room-card.created-room {
-    max-width: 450px; /* соответствует уменьшенной шапке в ландшафте */
+    padding: 15px;
+    max-width: 450px;         /* как шапка в ландшафте */
   }
+}
+
+/* Длинная ссылка должна переноситься */
+.link-input {
+  word-break: break-all;
+  white-space: normal;
 }
 
 .room-card-header {
@@ -314,7 +323,9 @@
 
 .link-container {
   display: flex;
+  flex-wrap: wrap;            /* если не хватает места, кнопка уходит на новую строку */
   gap: 10px;
+  align-items: center;
 }
 
 .privacy-options {
