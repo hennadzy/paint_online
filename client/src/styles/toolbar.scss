@@ -481,7 +481,13 @@ canvas.eraser-cursor {
       top: 50%;
       transform: translateY(-50%);
       flex-direction: row;
+      background-color: transparent;
       padding-left: 10px;
+      display: none;
+
+      &.show {
+        display: flex;
+      }
     }
   }
 

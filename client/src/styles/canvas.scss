@@ -747,66 +747,38 @@ button:active {
 }
 
 // Mobile landscape - use PC layout
-@media screen and (max-width: 768px) and (orientation: landscape), screen and (max-height: 500px) and (orientation: landscape) {
-  html {
-    height: 100%;
-    height: -webkit-fill-available;
-  }
-
-  body {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    overflow: hidden;
-    height: 100%;
-    height: -webkit-fill-available;
-    margin: 0;
-    padding: 0;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .app {
-    overflow: hidden;
-    height: 100vh;
-    height: -webkit-fill-available;
-    display: flex;
-    flex-direction: row;
-    position: relative;
-  }
-
+@media screen and (max-width: 768px) and (orientation: landscape) {
   .canvas {
     position: relative !important;
-    top: 100px !important;
+    top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    height: calc(100vh - 100px) !important;
-    max-height: calc(100vh - 100px - env(safe-area-inset-bottom, 0px)) !important;
-    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
     display: flex !important;
     flex-direction: row !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-    justify-content: center !important;
     align-items: center !important;
-    z-index: 0 !important;
+    justify-content: center !important;
+    padding: 0 !important;
     margin: 0 !important;
+    z-index: 0 !important;
   }
 
   .canvas-layout {
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 30px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
     height: 100%;
     width: 100%;
-    padding: 0 10px;
+    padding: 0 20px;
   }
 
   .canvas-container {
     flex: 1;
-    max-height: 100% !important;
+    max-height: calc(100vh - 120px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -814,9 +786,7 @@ button:active {
   }
 
   .canvas-wrapper {
-    max-height: none !important;
-    max-width: none !important;
-    display: inline-block !important;
+    display: inline-block;
     margin: 0;
   }
 
@@ -826,23 +796,21 @@ button:active {
     align-items: center;
     gap: 15px;
     margin-top: 0;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 120px);
     width: auto;
-    padding: 0;
-    max-width: 200px;
+    max-width: 250px;
     overflow: hidden;
   }
 
   .chat {
-    flex: 1;
-    min-height: 0;
-    max-height: none;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    width: 300px;
+    max-width: 250px;
+    height: 100%;
+    flex: none;
   }
 
-  .canvas-layout .toolbar {
+  // Hide extra mobile buttons
+  .about-btns-mobile {
     display: none;
   }
 }
