@@ -51,7 +51,14 @@ const Canvas = observer(() => {
       canvasState.setUsername('local');
       canvasState.setModalOpen(false);
       toolState.setTool(new Brush(canvas, null, null, 'local'), 'brush');
-      canvasState.checkForAutoSave();
+      
+      // Если возвращаемся из комнаты - автоматически восстанавливаем рисунок
+      if (canvasState.returningFromRoom) {
+        canvasState.restoreAutoSave();
+        canvasState.returningFromRoom = false;
+      } else {
+        canvasState.checkForAutoSave();
+      }
     } else {
       canvasState.setShowRestoreDialog(false);
       canvasState.setCurrentRoomId(params.id);

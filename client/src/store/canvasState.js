@@ -31,6 +31,7 @@ class CanvasState {
   createdRoomLink = '';
   showRestoreDialog = false;
   restoreTimestamp = null;
+  returningFromRoom = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -341,6 +342,7 @@ class CanvasState {
     // Сохраняем текущий рисунок перед выходом, если были штрихи
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
       this.performAutoSave();
+      this.returningFromRoom = true;
     }
     
     this.saveThumbnail();
