@@ -370,9 +370,6 @@ class CanvasState {
   }
   setShowRoomInterface(val) {
     this.showRoomInterface = val;
-    if (val) {
-      this.showRoomsList = false;
-    }
   }
   setShowAboutModal(val) {
     this.showAboutModal = val;
