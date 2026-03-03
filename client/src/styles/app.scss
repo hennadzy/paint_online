@@ -549,7 +549,7 @@ body.modal-open {
     width: calc(100% - 180px);
     height: calc(100vh - 50px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;   /* вместо center – прижимаем содержимое к верху */
     justify-content: center;
     box-sizing: border-box;
     padding: 0;

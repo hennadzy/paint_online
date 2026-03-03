@@ -506,7 +506,7 @@ button:active {
     max-height: none !important;
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
+    align-items: flex-start !important;   /* прижимаем к верху */
     justify-content: center !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -519,7 +519,7 @@ button:active {
   .canvas-layout {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;   /* прижимаем к верху */
     justify-content: center;
     gap: 30px;
     width: 100%;
