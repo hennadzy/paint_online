@@ -49,7 +49,7 @@ const validateUsername = (username) => {
 };
 
 const RoomInterface = observer(({ roomId }) => {
-  const [activeTab, setActiveTab] = useState('create');
+  const [activeTab, setActiveTab] = useState(canvasState.showRoomsList ? 'join' : 'create');
   const [username, setUsername] = useState('');
   const [roomName, setRoomName] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -77,6 +77,13 @@ const RoomInterface = observer(({ roomId }) => {
       }, 0);
     }
   }, [canvasState.showRoomsList]);
+
+  // Также следим за изменением roomId - если перешли с комнаты на главную, показываем список
+  useEffect(() => {
+    if (!roomId && canvasState.showRoomInterface) {
+      setActiveTab('join');
+    }
+  }, [roomId, canvasState.showRoomInterface]);
 
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
