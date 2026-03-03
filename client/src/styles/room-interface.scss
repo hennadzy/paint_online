@@ -194,7 +194,6 @@
   }
 }
 
-/* Общие стили для карточки созданной комнаты */
 .room-card.created-room {
   max-width: 600px;
   width: 100%;
@@ -202,7 +201,6 @@
   padding: 25px;
   box-sizing: border-box;
 
-  /* Глобальные правила для одинаковой ширины всех элементов */
   .link-container {
     flex-direction: column;
     width: 100%;
@@ -217,7 +215,6 @@
   }
 }
 
-/* Портретный режим */
 @media (max-width: 768px) and (orientation: portrait) {
   .room-card.created-room {
     padding: 20px;
@@ -225,7 +222,6 @@
   }
 }
 
-/* Ландшафтный режим */
 @media (max-width: 768px) and (orientation: landscape) {
   .room-card.created-room {
     padding: 15px;
@@ -233,7 +229,6 @@
   }
 }
 
-/* На мобильных устройствах (ширина ≤ 768px) - кнопки на всю ширину */
 @media (max-width: 768px) {
   .room-card.created-room {
     .link-container {
@@ -256,7 +251,6 @@
   }
 }
 
-/* Длинная ссылка должна переноситься */
 .link-input {
   word-break: break-all;
   white-space: normal;
@@ -992,110 +986,108 @@
   }
 }
 
-/* Landscape orientation on mobile devices */
 @media (max-width: 768px) and (orientation: landscape) {
   .room-interface {
     max-width: 70%;
   }
 
   .room-welcome {
-    padding: 15px 20px;            /* было 25px */
+    padding: 15px 20px;
     margin-bottom: 20px;
 
     h1 {
-      font-size: 22px;             /* было 28px */
+      font-size: 22px;
     }
 
     p {
-      font-size: 13px;             /* было 15px */
+      font-size: 13px;
     }
   }
 
   .room-tab {
-    padding: 10px;                  /* было 15px */
-    font-size: 14px;               /* было 16px */
+    padding: 10px;
+    font-size: 14px;
   }
 
   .room-card {
-    padding: 20px;                 /* было 30px */
+    padding: 20px;
   }
 
   .room-card-header {
     h2 {
-      font-size: 20px;             /* было 24px */
+      font-size: 20px;
     }
 
     p {
-      font-size: 13px;             /* было 14px */
+      font-size: 13px;
     }
   }
 
   .room-btn {
-    padding: 10px 20px;            /* было 15px 30px */
-    font-size: 14px;               /* было 16px */
+    padding: 10px 20px;
+    font-size: 14px;
   }
 
   .room-input {
-    padding: 10px 15px;            /* было 15px 20px */
-    font-size: 14px;               /* было 16px */
+    padding: 10px 15px;
+    font-size: 14px;
   }
 
   .privacy-option {
-    padding: 12px 10px;            /* было 20px 15px */
+    padding: 12px 10px;
 
     .privacy-icon {
-      font-size: 24px;             /* было 32px */
+      font-size: 24px;
     }
 
     .privacy-label {
-      font-size: 14px;             /* было 16px */
+      font-size: 14px;
     }
 
     .privacy-desc {
-      font-size: 11px;             /* было 12px */
+      font-size: 11px;
     }
   }
 
   .rooms-list {
-    max-height: 300px;             /* было 400px */
+    max-height: 300px;
   }
 
   .room-item {
-    padding: 10px;                 /* было 15px */
+    padding: 10px;
   }
 
   .room-item-icon {
-    width: 50px;                   /* было 60px */
-    height: 50px;                  /* было 60px */
-    font-size: 24px;               /* было 32px */
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
   }
 
   .room-item-details h3 {
-    font-size: 15px;               /* было 18px */
+    font-size: 15px;
   }
 
   .room-item-status,
   .room-item-online {
-    font-size: 11px;               /* было 12px */
-    padding: 3px 8px;              /* было 4px 10px */
+    font-size: 11px;
+    padding: 3px 8px;
   }
 
   .about-section {
     h2 {
-      font-size: 20px;             /* было 22px */
+      font-size: 20px;
     }
 
     h3 {
-      font-size: 16px;            /* было 18px */
+      font-size: 16px;
     }
 
     p, ul, ol {
-      font-size: 13px;            /* было 14px/15px */
+      font-size: 13px;
     }
   }
 }
 
-/* Ландшафтный режим на мобильных устройствах - уменьшенные диалоговые окна */
 @media (max-width: 768px) and (orientation: landscape) {
   .room-interface-overlay {
     padding: 0;
@@ -1105,7 +1097,7 @@
 
   .room-interface {
     width: 90%;
-    max-width: 450px;   /* примерно в два раза меньше от стандартных 800px */
+    max-width: 450px;
     margin: 0 auto;
     animation: slideUp 0.3s ease;
   }
@@ -1115,7 +1107,7 @@
     margin-bottom: 20px;
 
     h1 {
-      font-size: 18px;   /* примерно 0.5 от стандартного 28px */
+      font-size: 18px;
     }
 
     p {

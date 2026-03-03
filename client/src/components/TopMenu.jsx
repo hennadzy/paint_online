@@ -128,19 +128,16 @@ const TopMenu = observer(() => {
     setShowExportModal(true);
   }, []);
 
-  // Обработчик для кнопки «Поделиться рисунком»
   const handleShareImage = useCallback(async () => {
     const canvas = canvasState.canvas;
     if (!canvas) return;
 
     try {
-      // Получаем blob изображения
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       if (!blob) return;
 
       const file = new File([blob], 'drawing.png', { type: 'image/png' });
 
-      // Проверяем поддержку Web Share для файлов
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -148,7 +145,6 @@ const TopMenu = observer(() => {
           text: 'Посмотрите, что я нарисовал(а) в редакторе Рисование онлайн'
         });
       } else {
-        // Fallback – скачивание файла
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -160,18 +156,16 @@ const TopMenu = observer(() => {
         alert('Скачайте рисунок, чтобы поделиться');
       }
     } catch (error) {
-      // Игнорируем отмену пользователем
       if (error.name !== 'AbortError') {
         console.log('Share failed', error);
       }
     }
   }, []);
 
-  // Обработчик для кнопки «Пригласить»
   const handleInvite = useCallback(() => {
     const url = window.location.href;
     if (navigator.share) {
-      navigator.share({ url }).catch(() => {}); // Игнорируем отмену
+      navigator.share({ url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(url).then(() => {
         alert('Ссылка скопирована в буфер обмена');
@@ -246,7 +240,6 @@ const TopMenu = observer(() => {
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          {/* НОВАЯ КНОПКА — Поделиться рисунком */}
           <button className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
             <span className="icon share"></span>
             <span className="tooltip">Поделиться</span>
@@ -284,7 +277,6 @@ const TopMenu = observer(() => {
             </>
           ) : canvasState.isConnected ? (
             <>
-              {/* НОВАЯ КНОПКА — Пригласить */}
               <button className="create-room-btn" onClick={handleInvite}>
                 Пригласить
               </button>
