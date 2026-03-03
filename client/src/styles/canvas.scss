@@ -798,15 +798,37 @@ button:active {
     margin-top: 0;
     height: calc(100vh - 120px);
     width: auto;
-    max-width: 250px;
+    max-width: 200px;              /* было 250px */
     overflow: hidden;
   }
 
   .chat {
-    width: 300px;
-    max-width: 250px;
-    height: 100%;
-    flex: none;
+    width: 200px;                  /* было 250px */
+    max-width: 200px;              /* было 250px */
+    padding: 8px 10px;             /* уменьшено с 12px 16px */
+    font-size: 12px;              /* было 14px */
+
+    h4 {
+      font-size: 14px;             /* было 16px */
+    }
+
+    .chat-user {
+      font-size: 12px;
+    }
+
+    .chat-message {
+      font-size: 12px;
+    }
+
+    .chat-input {
+      padding: 6px 8px;            /* было 8px 10px */
+      font-size: 12px;
+    }
+
+    .chat-send-btn {
+      padding: 6px 10px;          /* было 8px 12px */
+      font-size: 12px;            /* было 13px */
+    }
   }
 
   // Hide extra mobile buttons

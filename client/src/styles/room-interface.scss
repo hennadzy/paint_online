@@ -923,3 +923,106 @@
     }
   }
 }
+
+/* Landscape orientation on mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+  .room-interface {
+    max-width: 70%;                /* уже, чем в портрете */
+  }
+
+  .room-welcome {
+    padding: 15px 20px;            /* было 25px */
+    margin-bottom: 20px;
+
+    h1 {
+      font-size: 22px;             /* было 28px */
+    }
+
+    p {
+      font-size: 13px;             /* было 15px */
+    }
+  }
+
+  .room-tab {
+    padding: 10px;                  /* было 15px */
+    font-size: 14px;               /* было 16px */
+  }
+
+  .room-card {
+    padding: 20px;                 /* было 30px */
+  }
+
+  .room-card-header {
+    h2 {
+      font-size: 20px;             /* было 24px */
+    }
+
+    p {
+      font-size: 13px;             /* было 14px */
+    }
+  }
+
+  .room-btn {
+    padding: 10px 20px;            /* было 15px 30px */
+    font-size: 14px;               /* было 16px */
+  }
+
+  .room-input {
+    padding: 10px 15px;            /* было 15px 20px */
+    font-size: 14px;               /* было 16px */
+  }
+
+  .privacy-option {
+    padding: 12px 10px;            /* было 20px 15px */
+
+    .privacy-icon {
+      font-size: 24px;             /* было 32px */
+    }
+
+    .privacy-label {
+      font-size: 14px;             /* было 16px */
+    }
+
+    .privacy-desc {
+      font-size: 11px;             /* было 12px */
+    }
+  }
+
+  .rooms-list {
+    max-height: 300px;             /* было 400px */
+  }
+
+  .room-item {
+    padding: 10px;                 /* было 15px */
+  }
+
+  .room-item-icon {
+    width: 50px;                   /* было 60px */
+    height: 50px;                  /* было 60px */
+    font-size: 24px;               /* было 32px */
+  }
+
+  .room-item-details h3 {
+    font-size: 15px;               /* было 18px */
+  }
+
+  .room-item-status,
+  .room-item-online {
+    font-size: 11px;               /* было 12px */
+    padding: 3px 8px;              /* было 4px 10px */
+  }
+
+  .about-section {
+    h2 {
+      font-size: 20px;             /* было 22px */
+    }
+
+    h3 {
+      font-size: 16px;            /* было 18px */
+    }
+
+    p, ul, ol {
+      font-size: 13px;            /* было 14px/15px */
+    }
+  }
+}

@@ -461,4 +461,59 @@ body.modal-open {
     padding-top: 100px;        
     padding-left: 60px;        
   }
+
+  /* Landscape orientation adjustments for top menu */
+  .top-menu {
+    height: 40px;                  /* было 50px */
+  }
+
+  .top-menu__actions {
+    padding: 5px;                  /* было 10px 5px */
+  }
+
+  .top-menu__actions .toolbar__btn {
+    width: 24px;                   /* было 32px */
+    height: 24px;                  /* было 32px */
+    flex: 0 0 24px;                /* было 32px */
+
+    .icon {
+      width: 18px;                /* было 24px */
+      height: 18px;               /* было 24px */
+    }
+  }
+
+  .create-room-btn {
+    height: 26px;                  /* было 32px */
+    padding: 0 10px;               /* было 0 14px */
+    font-size: 14px;               /* было 16px */
+  }
+
+  /* Экспортное модальное окно тоже можно уменьшить */
+  .export-modal {
+    padding: 20px 24px;            /* было 28px 32px */
+    min-width: 280px;              /* было 320px */
+    gap: 15px;                      /* было 20px */
+
+    &__title {
+      font-size: 16px;             /* было 18px */
+    }
+
+    &__input {
+      padding: 8px 12px;           /* было 10px 14px */
+      font-size: 14px;              /* было 15px */
+    }
+
+    .export-format-name {
+      font-size: 14px;             /* было 15px */
+    }
+
+    .export-format-desc {
+      font-size: 10px;             /* было 11px */
+    }
+  }
+
+  .export-btn {
+    padding: 8px 18px;             /* было 10px 22px */
+    font-size: 14px;               /* было 16px */
+  }
 }
