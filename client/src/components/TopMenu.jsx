@@ -128,6 +128,59 @@ const TopMenu = observer(() => {
     setShowExportModal(true);
   }, []);
 
+  // Обработчик для кнопки «Поделиться рисунком»
+  const handleShareImage = useCallback(async () => {
+    const canvas = canvasState.canvas;
+    if (!canvas) return;
+
+    try {
+      // Получаем blob изображения
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) return;
+
+      const file = new File([blob], 'drawing.png', { type: 'image/png' });
+
+      // Проверяем поддержку Web Share для файлов
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Мой рисунок',
+          text: 'Посмотрите, что я нарисовал(а) в редакторе Рисование онлайн'
+        });
+      } else {
+        // Fallback – скачивание файла
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'drawing.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert('Скачайте рисунок, чтобы поделиться');
+      }
+    } catch (error) {
+      // Игнорируем отмену пользователем
+      if (error.name !== 'AbortError') {
+        console.log('Share failed', error);
+      }
+    }
+  }, []);
+
+  // Обработчик для кнопки «Пригласить»
+  const handleInvite = useCallback(() => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ url }).catch(() => {}); // Игнорируем отмену
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Ссылка скопирована в буфер обмена');
+      }).catch(() => {
+        alert('Не удалось скопировать ссылку');
+      });
+    }
+  }, []);
+
   const performExport = () => {
     const canvas = canvasState.canvas;
     if (!canvas) return;
@@ -193,6 +246,12 @@ const TopMenu = observer(() => {
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
+          {/* НОВАЯ КНОПКА — Поделиться рисунком */}
+          <button className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
+            <span style={{ fontSize: '20px' }}>📤</span>
+            <span className="tooltip">Поделиться</span>
+          </button>
+
           <input
             key={fileInputKey.current}
             ref={fileInputRef}
@@ -224,12 +283,18 @@ const TopMenu = observer(() => {
               </button>
             </>
           ) : canvasState.isConnected ? (
-            <button
-              className="create-room-btn disconnect-room-btn"
-              onClick={() => { canvasState.setShowRoomInterface(true); canvasState.setShowRoomsList(true); canvasState.returningFromRoom = true; canvasState.disconnect(true); navigate('/'); }}
-            >
-              Выйти из комнаты
-            </button>
+            <>
+              {/* НОВАЯ КНОПКА — Пригласить */}
+              <button className="create-room-btn" onClick={handleInvite}>
+                Пригласить
+              </button>
+              <button
+                className="create-room-btn disconnect-room-btn"
+                onClick={() => { canvasState.setShowRoomInterface(true); canvasState.setShowRoomsList(true); canvasState.returningFromRoom = true; canvasState.disconnect(true); navigate('/'); }}
+              >
+                Выйти
+              </button>
+            </>
           ) : null}
         </div>
       </div>
