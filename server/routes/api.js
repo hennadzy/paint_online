@@ -10,7 +10,7 @@ const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
 
-const MAX_ROOM_NAME_LENGTH = 100;
+const MAX_ROOM_NAME_LENGTH = 20;
 const BCRYPT_ROUNDS = 10;
 
 const apiLimiter = rateLimit({

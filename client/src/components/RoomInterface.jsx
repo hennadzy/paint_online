@@ -189,6 +189,10 @@ const RoomInterface = observer(({ roomId }) => {
       setError('Введите название комнаты');
       return;
     }
+    if (roomName.length > 20) {
+      setError('Название комнаты не может превышать 20 символов');
+      return;
+    }
     if (!isPublic && !password.trim()) {
       setError('Введите пароль для приватной комнаты');
       return;
@@ -401,6 +405,7 @@ const RoomInterface = observer(({ roomId }) => {
                       type="text"
                       className="room-input"
                       placeholder="Название комнаты"
+                      maxLength={20}
                       value={roomName}
                       onChange={(e) => { setRoomName(e.target.value); setError(''); }}
                       onKeyDown={(e) => {

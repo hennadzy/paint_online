@@ -57,12 +57,10 @@
     }
 
     &:hover {
-      // Единый эффект при наведении - только glow от псевдоэлемента
       transform: scale(1.1);
       box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
     }
 
-    // Сброс фокуса для всех кнопок
     &:focus {
       outline: none;
       background-color: transparent;
@@ -74,7 +72,6 @@
     }
 
     &.active {
-      // Активное состояние - только glow от псевдоэлемента
       outline: 1px solid #333;
       outline-offset: 1px;
       box-shadow: none;
