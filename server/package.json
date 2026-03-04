@@ -20,8 +20,10 @@
     "express-rate-limit": "^7.1.5",
     "express-ws": "^4.0.0",
     "helmet": "^7.1.0",
+    "ioredis": "^5.10.0",
     "jsdom": "^28.0.0",
     "jsonwebtoken": "^9.0.3",
+    "pg": "^8.19.0",
     "validator": "^13.11.0",
     "xss": "^1.0.15"
   },
