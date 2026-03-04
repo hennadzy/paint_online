@@ -43,7 +43,7 @@
       border-radius: 10px;
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
-      animation: glowing 20s linear infinite;
+      animation: glowing 10s linear infinite;
       z-index: -1;
     }
 
@@ -232,7 +232,7 @@
       border-radius: 4px;
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
-      animation: glowing 20s linear infinite;
+      animation: glowing 10s linear infinite;
       z-index: -1;
     }
 
