@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const DataStore = require('./services/DataStore');
 const WebSocketHandler = require('./services/WebSocketHandler');
 const apiRouter = require('./routes/api');
+const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
 const { pgPool } = require('./config/db');
 
 const app = express();
@@ -113,6 +115,8 @@ app.ws('/', (ws, req) => {
 });
 
 app.use('/', apiRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 
 app.get('*', (req, res) => {
   const segments = req.path.split('/').filter(Boolean);
@@ -145,6 +149,16 @@ setInterval(async () => {
     await DataStore.cleanupExpiredRooms(ROOM_EXPIRATION_TIME);
   } catch (_) { }
 }, ROOM_CLEANUP_INTERVAL);
+
+// Очистка просроченных сессий каждые 6 часов
+setInterval(async () => {
+  try {
+    const Session = require('./models/Session');
+    await Session.cleanExpired();
+  } catch (error) {
+    console.error('Session cleanup error:', error);
+  }
+}, 6 * 60 * 60 * 1000);
 
 ['SIGTERM', 'SIGINT'].forEach((sig) => {
   process.on(sig, () => process.exit(0));
@@ -179,9 +193,46 @@ async function initDb() {
         created_at BIGINT NOT NULL
       );
 
+      -- НОВЫЕ ТАБЛИЦЫ
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(20) DEFAULT 'user',
+        avatar_url TEXT,
+        created_at BIGINT NOT NULL,
+        last_login BIGINT,
+        is_active BOOLEAN DEFAULT true,
+        email_verified BOOLEAN DEFAULT false,
+        settings JSONB DEFAULT '{}'
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        token VARCHAR(500) UNIQUE NOT NULL,
+        expires_at BIGINT NOT NULL,
+        created_at BIGINT NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT
+      );
+
       CREATE INDEX IF NOT EXISTS idx_strokes_room_id ON strokes(room_id);
       CREATE INDEX IF NOT EXISTS idx_cancelled_strokes_room_user ON cancelled_strokes(room_id, username);
       CREATE INDEX IF NOT EXISTS idx_rooms_last_activity ON rooms(last_activity);
+      -- Индексы для производительности
+      CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+      CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+      CREATE TABLE IF NOT EXISTS favorite_rooms (
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+        created_at BIGINT NOT NULL,
+        PRIMARY KEY (user_id, room_id)
+      );
     `);
     console.log('Database tables ready');
   } catch (err) {
