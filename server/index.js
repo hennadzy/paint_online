@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const DataStore = require('./services/DataStore');
 const WebSocketHandler = require('./services/WebSocketHandler');
 const apiRouter = require('./routes/api');
+const { pgPool } = require('./config/db');
 
 const app = express();
 require('express-ws')(app);
@@ -121,10 +122,17 @@ app.get('*', (req, res) => {
     is404 = true;
   } else if (segments.length === 1) {
     const roomId = segments[0];
-    const roomExists = !!DataStore.getRoomInfo(roomId);
-    if (!roomExists) {
-      is404 = true;
-    }
+    // Асинхронная проверка существования комнаты
+    DataStore.getRoomInfo(roomId).then(room => {
+      if (!room) {
+        send404Page(res);
+      } else {
+        res.sendFile(indexPath);
+      }
+    }).catch(() => {
+      send404Page(res);
+    });
+    return; // Важно: не отправляем ответ дважды
   }
   if (is404) {
     send404Page(res);
@@ -143,6 +151,44 @@ setInterval(async () => {
   process.on(sig, () => process.exit(0));
 });
 
-app.listen(PORT, () => { });
+async function initDb() {
+  try {
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id VARCHAR(20) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        is_public BOOLEAN NOT NULL DEFAULT true,
+        has_password BOOLEAN NOT NULL DEFAULT false,
+        password_hash VARCHAR(60),
+        created_at BIGINT NOT NULL,
+        last_activity BIGINT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS strokes (
+        id SERIAL PRIMARY KEY,
+        room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+        stroke_data JSONB NOT NULL,
+        username VARCHAR(30) NOT NULL,
+        created_at BIGINT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_strokes_room_id ON strokes(room_id);
+      CREATE INDEX IF NOT EXISTS idx_rooms_last_activity ON rooms(last_activity);
+    `);
+    console.log('Database tables ready');
+  } catch (err) {
+    console.error('Failed to initialize database tables:', err);
+    process.exit(1);
+  }
+}
+
+initDb().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Startup failed:', err);
+  process.exit(1);
+});
 
 module.exports = app;

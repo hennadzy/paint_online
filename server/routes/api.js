@@ -109,9 +109,9 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
   }
 });
 
-router.get('/rooms/public', apiLimiter, (req, res) => {
+router.get('/rooms/public', apiLimiter, async (req, res) => {
   try {
-    const allRooms = DataStore.getAllRooms();
+    const allRooms = await DataStore.getAllRooms();
     const filesDir = path.join(__dirname, '../files');
     const result = allRooms.map(room => {
       const onlineCount = RoomManager.getRoomUsers(room.id).length;
@@ -141,10 +141,10 @@ router.get('/rooms/public', apiLimiter, (req, res) => {
   }
 });
 
-router.get('/rooms/:id/exists', apiLimiter, (req, res) => {
+router.get('/rooms/:id/exists', apiLimiter, async (req, res) => {
   try {
     const id = sanitizeInput(req.params.id, 20);
-    const room = DataStore.getRoomInfo(id);
+    const room = await DataStore.getRoomInfo(id);
 
     if (!room) {
       return res.json({ exists: false });
@@ -164,7 +164,7 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
   try {
     const id = sanitizeInput(req.params.id, 20);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
-    const room = DataStore.getRoomInfo(id);
+    const room = await DataStore.getRoomInfo(id);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
@@ -181,7 +181,7 @@ router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res
   }
 });
 
-router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
+router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);
 
@@ -196,7 +196,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, (req, res) => {
 
     const username = sanitizeUsername(validation.username);
 
-    const room = DataStore.getRoomInfo(roomId);
+    const room = await DataStore.getRoomInfo(roomId);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
@@ -229,7 +229,7 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
 
     const username = sanitizeUsername(validation.username);
 
-    const room = DataStore.getRoomInfo(roomId);
+    const room = await DataStore.getRoomInfo(roomId);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });

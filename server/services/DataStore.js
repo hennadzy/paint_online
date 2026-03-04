@@ -1,155 +1,201 @@
-const fs = require('fs');
-const fsPromises = require('fs').promises;
-const path = require('path');
+// server/services/DataStore.js
+const { pgPool } = require('../config/db');
 
 class DataStore {
-  constructor() {
-    this.roomInfoFile = path.join(__dirname, '../roomInfo.json');
-    this.roomDataDir = path.join(__dirname, '../room_data');
-    this.roomInfo = {};
-    
-    this.initialize();
-  }
-
-  initialize() {
-    if (!fs.existsSync(this.roomDataDir)) {
-      fs.mkdirSync(this.roomDataDir, { recursive: true });
-    }
-
-    if (fs.existsSync(this.roomInfoFile)) {
-      try {
-        this.roomInfo = JSON.parse(fs.readFileSync(this.roomInfoFile, 'utf8'));
-      } catch (error) {
-        this.roomInfo = {};
-        this.saveRoomInfo();
-      }
-    } else {
-      this.saveRoomInfo();
-    }
-  }
-
-  async saveRoomInfo() {
+  /**
+   * Получить информацию о комнате по ID
+   * @param {string} roomId
+   * @returns {Promise<Object|null>}
+   */
+  async getRoomInfo(roomId) {
     try {
-      await fsPromises.writeFile(this.roomInfoFile, JSON.stringify(this.roomInfo, null, 2));
-      return true;
+      const res = await pgPool.query(
+        `SELECT 
+          id, 
+          name, 
+          is_public AS "isPublic", 
+          has_password AS "hasPassword", 
+          password_hash AS "passwordHash", 
+          created_at AS "createdAt", 
+          last_activity AS "lastActivity" 
+         FROM rooms 
+         WHERE id = $1`,
+        [roomId]
+      );
+      return res.rows[0] || null;
     } catch (error) {
-      return false;
+      console.error('getRoomInfo error:', error);
+      return null;
     }
   }
 
-  getRoomInfo(roomId) {
-    return this.roomInfo[roomId] || null;
-  }
-
-  getAllRoomInfo() {
-    return { ...this.roomInfo };
-  }
-
+  /**
+   * Создать новую комнату
+   * @param {string} roomId
+   * @param {Object} data - { name, isPublic, hasPassword, passwordHash }
+   */
   async createRoom(roomId, data) {
-    this.roomInfo[roomId] = {
-      ...data,
-      createdAt: Date.now(),
-      lastActivity: Date.now()
-    };
-    await this.saveRoomInfo();
-    return this.roomInfo[roomId];
-  }
-
-  async updateRoomActivity(roomId) {
-    if (this.roomInfo[roomId]) {
-      this.roomInfo[roomId].lastActivity = Date.now();
-      await this.saveRoomInfo();
-      return true;
-    }
-    return false;
-  }
-
-  async deleteRoom(roomId) {
-    if (this.roomInfo[roomId]) {
-      delete this.roomInfo[roomId];
-      await this.deleteRoomStrokes(roomId);
-      await this.saveRoomInfo();
-      return true;
-    }
-    return false;
-  }
-
-  async saveRoomStrokes(roomId, strokes) {
-    const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
-    try {
-      await fsPromises.writeFile(strokesFile, JSON.stringify(strokes));
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async loadRoomStrokes(roomId) {
-    const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
-    try {
-      const exists = await fsPromises.access(strokesFile).then(() => true).catch(() => false);
-      if (exists) {
-        const data = await fsPromises.readFile(strokesFile, 'utf8');
-        return JSON.parse(data);
-      }
-    } catch (error) {}
-    return [];
-  }
-
-  async deleteRoomStrokes(roomId) {
-    const strokesFile = path.join(this.roomDataDir, `${roomId}.json`);
-    try {
-      await fsPromises.unlink(strokesFile);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  getPublicRooms() {
-    return Object.entries(this.roomInfo)
-      .filter(([, info]) => info.isPublic === true)
-      .map(([id, info]) => ({
-        id,
-        name: info.name,
-        isPublic: info.isPublic,
-        hasPassword: info.hasPassword || false,
-        lastActivity: info.lastActivity || info.createdAt || 0
-      }))
-      .sort((a, b) => b.lastActivity - a.lastActivity);
-  }
-
-  getAllRooms() {
-    return Object.entries(this.roomInfo)
-      .map(([id, info]) => ({
-        id,
-        name: info.name,
-        isPublic: info.isPublic,
-        hasPassword: info.hasPassword || false,
-        lastActivity: info.lastActivity || info.createdAt || 0
-      }))
-      .sort((a, b) => b.lastActivity - a.lastActivity);
-  }
-
-  async cleanupExpiredRooms(expirationTime) {
+    const { name, isPublic, hasPassword, passwordHash } = data;
     const now = Date.now();
-    let changed = false;
-    
-    const roomsToDelete = [];
-    
-    Object.entries(this.roomInfo).forEach(([roomId, info]) => {
-      const lastActivity = info.lastActivity || info.createdAt;
-      if (now - lastActivity > expirationTime) {
-        roomsToDelete.push(roomId);
-      }
-    });
-    
-    for (const roomId of roomsToDelete) {
-      await this.deleteRoom(roomId);
-      changed = true;
+    try {
+      await pgPool.query(
+        `INSERT INTO rooms 
+         (id, name, is_public, has_password, password_hash, created_at, last_activity)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [roomId, name, isPublic, hasPassword, passwordHash, now, now]
+      );
+      return true;
+    } catch (error) {
+      console.error('createRoom error:', error);
+      return false;
     }
-    
-    return changed;
+  }
+
+  /**
+   * Обновить время последней активности комнаты
+   * @param {string} roomId
+   */
+  async updateRoomActivity(roomId) {
+    try {
+      await pgPool.query(
+        'UPDATE rooms SET last_activity = $1 WHERE id = $2',
+        [Date.now(), roomId]
+      );
+      return true;
+    } catch (error) {
+      console.error('updateRoomActivity error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Удалить комнату и все её штрихи (каскадно)
+   * @param {string} roomId
+   */
+  async deleteRoom(roomId) {
+    try {
+      await pgPool.query('DELETE FROM rooms WHERE id = $1', [roomId]);
+      return true;
+    } catch (error) {
+      console.error('deleteRoom error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Сохранить один штрих в БД
+   * @param {string} roomId
+   * @param {Object} stroke
+   */
+  async saveStroke(roomId, stroke) {
+    try {
+      await pgPool.query(
+        'INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ($1, $2, $3, $4)',
+        [roomId, stroke, stroke.username || 'unknown', Date.now()]
+      );
+      return true;
+    } catch (error) {
+      console.error('saveStroke error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Сохранить несколько штрихов (для пакетной вставки)
+   * @param {string} roomId
+   * @param {Array} strokes
+   */
+  async saveStrokes(roomId, strokes) {
+    if (!strokes.length) return true;
+    try {
+      const values = strokes.map(s => [
+        roomId,
+        s,
+        s.username || 'unknown',
+        Date.now()
+      ]);
+      // Используем параметризованный запрос для нескольких строк
+      const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+      const flatValues = values.flat();
+      await pgPool.query(
+        `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
+        flatValues
+      );
+      return true;
+    } catch (error) {
+      console.error('saveStrokes error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Загрузить все штрихи комнаты (упорядоченные по времени создания)
+   * @param {string} roomId
+   * @returns {Promise<Array>}
+   */
+  async loadStrokes(roomId) {
+    try {
+      const res = await pgPool.query(
+        'SELECT stroke_data FROM strokes WHERE room_id = $1 ORDER BY created_at',
+        [roomId]
+      );
+      return res.rows.map(row => row.stroke_data);
+    } catch (error) {
+      console.error('loadStrokes error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Удалить все штрихи комнаты
+   * @param {string} roomId
+   */
+  async deleteStrokes(roomId) {
+    try {
+      await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [roomId]);
+      return true;
+    } catch (error) {
+      console.error('deleteStrokes error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Получить список всех комнат (для списка публичных комнат)
+   * @returns {Promise<Array>}
+   */
+  async getAllRooms() {
+    try {
+      const res = await pgPool.query(
+        `SELECT 
+          id, 
+          name, 
+          is_public AS "isPublic", 
+          has_password AS "hasPassword", 
+          last_activity AS "lastActivity" 
+         FROM rooms 
+         ORDER BY last_activity DESC`
+      );
+      return res.rows;
+    } catch (error) {
+      console.error('getAllRooms error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Очистить старые неактивные комнаты
+   * @param {number} expirationTime - время в мс, после которого комната удаляется
+   */
+  async cleanupExpiredRooms(expirationTime) {
+    try {
+      const cutoff = Date.now() - expirationTime;
+      await pgPool.query('DELETE FROM rooms WHERE last_activity < $1', [cutoff]);
+      return true;
+    } catch (error) {
+      console.error('cleanupExpiredRooms error:', error);
+      return false;
+    }
   }
 }
 
