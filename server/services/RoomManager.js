@@ -119,7 +119,7 @@ class RoomManager {
     multi.srem(`room:${roomId}:users`, username);
     multi.del(`ws:${wsId}`);
     multi.del(`user:${username}:room`);
-    multi.del(`room:${roomId}:cancelled:${username}`);
+    // НЕ удаляем multi.del(`room:${roomId}:cancelled:${username}`);
     await multi.exec();
 
     const roomSockets = this.roomSockets.get(roomId);
@@ -138,6 +138,15 @@ class RoomManager {
         await DataStore.saveStrokes(roomId, strokesObjects);
       }
       await redis.del(`room:${roomId}:strokes`);
+
+      // Сохраняем все отменённые штрихи и удаляем их ключи
+      const allCancelled = await this.getAllCancelledStrokes(roomId);
+      for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
+        if (cancelledStrokes.length > 0) {
+          await DataStore.saveCancelledStrokes(roomId, cancelledUsername, cancelledStrokes);
+        }
+        await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
+      }
     }
 
     return { roomId, username };
@@ -191,12 +200,21 @@ class RoomManager {
   }
 
   async getAllCancelledStrokes(roomId) {
-    const users = await this.getRoomUsers(roomId);
+    const pattern = `room:${roomId}:cancelled:*`;
+    let cursor = '0';
+    const keys = [];
+    do {
+      const [nextCursor, scanKeys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      keys.push(...scanKeys);
+    } while (cursor !== '0');
+
     const allCancelled = {};
-    for (const username of users) {
-      const cancelled = await this.getCancelledStrokes(roomId, username);
+    for (const key of keys) {
+      const username = key.split(':').pop(); // извлекаем имя пользователя
+      const cancelled = await redis.lrange(key, 0, -1);
       if (cancelled.length > 0) {
-        allCancelled[username] = cancelled;
+        allCancelled[username] = cancelled.map(s => JSON.parse(s));
       }
     }
     return allCancelled;
