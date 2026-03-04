@@ -43,6 +43,20 @@ class RoomManager {
       throw new Error('Room is full');
     }
 
+    // Загружаем все отменённые штрихи для этой комнаты из БД в Redis
+    const allCancelledFromDb = await DataStore.loadAllCancelledStrokes(roomId);
+    for (const [cancelledUsername, strokes] of Object.entries(allCancelledFromDb)) {
+      // Очищаем старый список в Redis для этого пользователя (если есть)
+      await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
+      if (strokes.length > 0) {
+        const multi = redis.multi();
+        for (const stroke of strokes) {
+          multi.rpush(`room:${roomId}:cancelled:${cancelledUsername}`, JSON.stringify(stroke));
+        }
+        await multi.exec();
+      }
+    }
+
     const wsId = this._getWsId(ws);
 
     const multi = redis.multi();

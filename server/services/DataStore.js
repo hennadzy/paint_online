@@ -166,6 +166,25 @@ class DataStore {
     }
   }
 
+  async loadAllCancelledStrokes(roomId) {
+    try {
+      const res = await pgPool.query(
+        'SELECT username, stroke_data FROM cancelled_strokes WHERE room_id = $1 ORDER BY created_at',
+        [roomId]
+      );
+      // Группируем по username
+      const grouped = {};
+      for (const row of res.rows) {
+        if (!grouped[row.username]) grouped[row.username] = [];
+        grouped[row.username].push(row.stroke_data);
+      }
+      return grouped;
+    } catch (error) {
+      console.error('loadAllCancelledStrokes error:', error);
+      return {};
+    }
+  }
+
   async getAllRooms() {
     try {
       const res = await pgPool.query(
