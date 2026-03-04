@@ -82,8 +82,27 @@ class RoomManager {
     // Load user's cancelled strokes from DB to Redis
     await this.loadCancelledStrokesFromDb(roomId, username);
     
-    // Get ALL strokes for the room
-    const allStrokes = await this.getAllRoomStrokes(roomId);
+    // Сохраняем текущие активные штрихи из Redis в БД (если они есть)
+    const redisStrokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+    if (redisStrokes.length > 0) {
+      const strokesObjects = redisStrokes.map(s => JSON.parse(s));
+      await DataStore.saveStrokes(roomId, strokesObjects);
+      // Очищаем Redis, чтобы потом загрузить из БД
+      await redis.del(`room:${roomId}:strokes`);
+    }
+
+    // Загружаем все штрихи из БД (теперь они самые актуальные)
+    const dbStrokes = await DataStore.loadStrokes(roomId);
+    const allStrokes = dbStrokes; // это массив объектов штрихов
+
+    // Сохраняем их в Redis (чтобы следующие пользователи не ждали БД)
+    if (dbStrokes.length > 0) {
+      const multi = redis.multi();
+      for (const s of dbStrokes) {
+        multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
+      }
+      await multi.exec();
+    }
     
     // Get ALL cancelled strokes for ALL users
     const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);

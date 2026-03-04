@@ -437,6 +437,7 @@ class CanvasState {
       clearInterval(this.titleInterval);
       this.titleInterval = null;
       document.title = 'Рисование онлайн';
+      this.setFaviconBadge(false);
     }
     
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
@@ -483,10 +484,13 @@ class CanvasState {
   
   setPageVisible(visible) {
     this.pageVisible = visible;
-    if (visible && this.titleInterval) {
-      clearInterval(this.titleInterval);
-      this.titleInterval = null;
-      document.title = 'Рисование онлайн';
+    if (visible) {
+      if (this.titleInterval) {
+        clearInterval(this.titleInterval);
+        this.titleInterval = null;
+        document.title = 'Рисование онлайн';
+        this.setFaviconBadge(false); // убираем точку
+      }
     }
   }
 
@@ -527,10 +531,49 @@ class CanvasState {
     if (this.titleInterval) clearInterval(this.titleInterval);
     const original = document.title;
     let flag = false;
+    this.setFaviconBadge(true); // показываем точку
     this.titleInterval = setInterval(() => {
       document.title = flag ? `🔔 ${original}` : original;
       flag = !flag;
     }, 1000);
+  }
+
+  setFaviconBadge(show) {
+    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.type = 'image/x-icon';
+    link.rel = 'shortcut icon';
+    
+    if (!show) {
+      // Возвращаем обычный favicon
+      link.href = '/favicon.png'; // путь к вашему обычному favicon
+      document.head.appendChild(link);
+      return;
+    }
+
+    // Создаем canvas для рисования favicon с точкой
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+
+    // Загружаем изображение favicon
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/favicon.png'; // замените на путь к вашему favicon
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 32, 32);
+      // Рисуем красную точку в правом верхнем углу
+      ctx.fillStyle = '#ff0000';
+      ctx.beginPath();
+      ctx.arc(28, 4, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      link.href = canvas.toDataURL('image/png');
+      document.head.appendChild(link);
+    };
   }
   handleMessage(msg) {
     WebSocketService.handleMessage(msg);
