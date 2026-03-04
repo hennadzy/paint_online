@@ -22,7 +22,6 @@ class CanvasState {
   modalOpen = false;
   showRoomInterface = false;
   showAboutModal = false;
-  showFeedbackModal = false;
   roomModalOpen = false;
   roomMode = 'create';
   showRoomsList = false;
@@ -474,9 +473,6 @@ class CanvasState {
   }
   setShowAboutModal(val) {
     this.showAboutModal = val;
-  }
-  setShowFeedbackModal(val) {
-    this.showFeedbackModal = val;
   }
   setShowRoomsList(val) {
     this.showRoomsList = val;
