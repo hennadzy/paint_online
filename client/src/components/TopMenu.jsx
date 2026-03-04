@@ -265,14 +265,6 @@ const TopMenu = observer(() => {
 
           {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) ? (
             <>
-              {/* Справка (бывшая О программе) */}
-              <button
-                className="create-room-btn about-btn"
-                onClick={() => canvasState.setShowAboutModal(true)}
-              >
-                Справка
-              </button>
-              
               {/* Совместное рисование (перенесено на место кнопки О программе) */}
               <button
                 className="create-room-btn about-btn"
@@ -281,28 +273,60 @@ const TopMenu = observer(() => {
                 Совместное рисование
               </button>
               
+              {/* Справка (бывшая О программе) */}
+              <button
+                className="create-room-btn about-btn"
+                onClick={() => canvasState.setShowAboutModal(true)}
+              >
+                Справка
+              </button>
+              
               {/* Кнопка обратной связи удалена */}
               
               {userState.isAuthenticated ? (
                 <>
-                  <button className="create-room-btn" onClick={() => navigate('/profile')}>
-                    <span className="icon profile" />
-                    <span>Профиль</span>
+                  <button
+                    type="button"
+                    className="toolbar__btn"
+                    onClick={() => navigate('/profile')}
+                    onMouseDown={(e) => e.target.blur()}
+                    title="Профиль"
+                  >
+                    <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+                    <span className="tooltip">Профиль</span>
                   </button>
-                  <button className="create-room-btn" onClick={() => userState.logout()}>
-                    <span className="icon logout" />
-                    <span>Выйти</span>
+                  <button
+                    type="button"
+                    className="toolbar__btn"
+                    onClick={() => userState.logout()}
+                    onMouseDown={(e) => e.target.blur()}
+                    title="Выйти"
+                  >
+                    <span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
+                    <span className="tooltip">Выйти</span>
                   </button>
                 </>
               ) : (
                 <>
-                  <button className="create-room-btn" onClick={() => navigate('/login')}>
-                    <span className="icon login" />
-                    <span>Войти</span>
+                  <button
+                    type="button"
+                    className="toolbar__btn"
+                    onClick={() => navigate('/login')}
+                    onMouseDown={(e) => e.target.blur()}
+                    title="Войти"
+                  >
+                    <span className="icon" style={{ backgroundImage: `url(${loginIcon})` }} />
+                    <span className="tooltip">Войти</span>
                   </button>
-                  <button className="create-room-btn" onClick={() => navigate('/register')}>
-                    <span className="icon login" />
-                    <span>Регистрация</span>
+                  <button
+                    type="button"
+                    className="toolbar__btn"
+                    onClick={() => navigate('/register')}
+                    onMouseDown={(e) => e.target.blur()}
+                    title="Регистрация"
+                  >
+                    <span className="icon" style={{ backgroundImage: `url(${registerIcon})` }} />
+                    <span className="tooltip">Регистрация</span>
                   </button>
                 </>
               )}

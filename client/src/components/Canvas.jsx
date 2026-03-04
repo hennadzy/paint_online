@@ -167,15 +167,15 @@ const Canvas = observer(() => {
           <div className="about-btns-mobile">
             <button
               className="about-btn-mobile"
-              onClick={() => canvasState.setShowAboutModal(true)}
-            >
-              Справка
-            </button>
-            <button
-              className="about-btn-mobile"
               onClick={() => canvasState.setShowRoomInterface(true)}
             >
               Совместное рисование
+            </button>
+            <button
+              className="about-btn-mobile"
+              onClick={() => canvasState.setShowAboutModal(true)}
+            >
+              Справка
             </button>
           </div>
         )}
