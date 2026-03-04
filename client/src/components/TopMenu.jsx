@@ -219,16 +219,16 @@ const TopMenu = observer(() => {
     <>
       <div className="top-menu" data-nosnippet>
         <div className="top-menu__actions">
-          <button type="button" className="toolbar__btn" onClick={() => canvasState.undo()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.undo()} onMouseDown={(e) => e.target.blur()}>
             <span className="icon undo"></span>
             <span className="tooltip">Отменить</span>
           </button>
-          <button type="button" className="toolbar__btn" onClick={() => canvasState.redo()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.redo()} onMouseDown={(e) => e.target.blur()}>
             <span className="icon redo"></span>
             <span className="tooltip">Вернуть</span>
           </button>
 
-          <button type="button" className="toolbar__btn" onClick={openExportModal} title="Сохранить">
+          <button type="button" className="toolbar__btn" onClick={openExportModal} onMouseDown={(e) => e.target.blur()} title="Сохранить">
             <span className="icon save"></span>
             <span className="tooltip">Сохранить</span>
           </button>
@@ -237,13 +237,14 @@ const TopMenu = observer(() => {
             type="button"
             className="toolbar__btn"
             onClick={handleUploadButtonClick}
+            onMouseDown={(e) => e.target.blur()}
             title="Загрузить картинку"
           >
             <span className="icon load"></span>
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          <button type="button" className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
+          <button type="button" className="toolbar__btn" onClick={handleShareImage} onMouseDown={(e) => e.target.blur()} title="Поделиться рисунком">
             <span className="icon share"></span>
             <span className="tooltip">Поделиться</span>
           </button>

@@ -138,6 +138,28 @@ body.modal-open {
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
+    z-index: 1;
+  }
+
+  .tooltip {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10000;
+  }
+
+  &:hover .tooltip {
+    opacity: 1;
   }
 }
 

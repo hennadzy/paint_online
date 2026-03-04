@@ -83,6 +83,7 @@ const Toolbar = observer(() => {
       type="button"
       className={`toolbar__btn ${toolState.toolName === toolName ? "active" : ""}`}
       onClick={() => changeTool(ToolClass, toolName)}
+      onMouseDown={(e) => e.target.blur()}
     >
       <span className={`icon ${toolName}`} />
       <span className="tooltip">{label}</span>
@@ -96,6 +97,7 @@ const Toolbar = observer(() => {
           type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("brush")} ${toolState.isToolInGroup(toolState.toolName, "brush") ? "active" : ""}`}
           onClick={() => handleGroupClick("brush")}
+          onMouseDown={(e) => e.target.blur()}
         >
           <span className={`icon ${toolState.getLastInGroup("brush")}`} />
           <span className="tooltip">
@@ -114,6 +116,7 @@ const Toolbar = observer(() => {
           type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("shapes")} ${toolState.isToolInGroup(toolState.toolName, "shapes") ? "active" : ""}`}
           onClick={() => handleGroupClick("shapes")}
+          onMouseDown={(e) => e.target.blur()}
         >
           <span className={`icon ${toolState.getLastInGroup("shapes")}`} />
           <span className="tooltip">
@@ -132,6 +135,7 @@ const Toolbar = observer(() => {
           type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("color")} ${toolState.isToolInGroup(toolState.toolName, "color") ? "active" : ""}`}
           onClick={() => handleGroupClick("color")}
+          onMouseDown={(e) => e.target.blur()}
         >
           <span className={`icon ${toolState.getLastInGroup("color")}`} />
           <span className="tooltip">
@@ -151,6 +155,7 @@ const Toolbar = observer(() => {
         type="button"
         className="toolbar__btn"
         onClick={() => canvasState.toggleGrid()}
+        onMouseDown={(e) => e.target.blur()}
         title="Сетка"
       >
         <span className="icon grid" />
@@ -161,6 +166,7 @@ const Toolbar = observer(() => {
         type="button"
         className="toolbar__btn"
         onClick={() => canvasState.clearCanvas()}
+        onMouseDown={(e) => e.target.blur()}
         title="Очистить холст"
       >
         <span className="icon clear" />
@@ -171,6 +177,7 @@ const Toolbar = observer(() => {
         type="button"
         className="toolbar__btn zoom-btn"
         onClick={() => canvasState.zoomOut()}
+        onMouseDown={(e) => e.target.blur()}
         title="Уменьшить (Ctrl+-)"
       >
         <span className="zoom-text">−</span>
@@ -181,6 +188,7 @@ const Toolbar = observer(() => {
         type="button"
         className="toolbar__btn zoom-btn"
         onClick={() => canvasState.zoomIn()}
+        onMouseDown={(e) => e.target.blur()}
         title="Увеличить (Ctrl++)"
       >
         <span className="zoom-text">+</span>
