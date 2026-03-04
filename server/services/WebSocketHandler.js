@@ -107,7 +107,7 @@ class WebSocketHandler {
     if (msg.figure) {
       if (msg.figure.type === "undo") {
         // Get the stroke that was undone
-        const strokes = await RoomManager.getRoomStrokes(roomId);
+        const strokes = await RoomManager.getAllRoomStrokes(roomId);
         const undoneStroke = strokes.find(s => s.id === msg.figure.strokeId);
         
         if (undoneStroke) {
@@ -115,42 +115,58 @@ class WebSocketHandler {
           await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
           // Remove from active strokes
           await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
+          
+          // Get ALL cancelled IDs for sync
+          const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
+          const allCancelledIds = [];
+          Object.values(allCancelledStrokes).forEach(cancelledArray => {
+            cancelledArray.forEach(stroke => {
+              allCancelledIds.push(stroke.id);
+            });
+          });
+          
+          // Broadcast to all clients with updated cancelled IDs
+          this.broadcast(roomId, { 
+            method: "syncCancelled", 
+            cancelledStrokeIds: allCancelledIds 
+          }, null);
         }
         
-        // Broadcast to all clients including the stroke data so they can remove it
-        this.broadcast(roomId, { 
-          method: "draw", 
-          username, 
-          figure: { type: "undo", strokeId: msg.figure.strokeId, stroke: undoneStroke } 
-        });
         await RoomManager.updateUserActivity(ws);
         return;
       } 
       else if (msg.figure.type === "redo") {
         const stroke = msg.figure.stroke;
         if (!stroke) return;
-        if (stroke.username && String(stroke.username).trim() !== String(username).trim()) {
-          return;
-        }
         
         await RoomManager.addStroke(roomId, stroke);
-        // Remove from cancelled strokes if it was there
-        await RoomManager.removeCancelledStroke(roomId, username, stroke.id);
+        // Remove from cancelled strokes for ALL users
+        await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
         
-        this.broadcast(roomId, { 
-          method: "draw", 
-          username, 
-          figure: { type: "redo", stroke } 
+        // Get updated list of cancelled IDs
+        const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
+        const allCancelledIds = [];
+        Object.values(allCancelledStrokes).forEach(cancelledArray => {
+          cancelledArray.forEach(s => {
+            allCancelledIds.push(s.id);
+          });
         });
+        
+        // Broadcast to all clients with updated cancelled IDs
+        this.broadcast(roomId, { 
+          method: "syncCancelled", 
+          cancelledStrokeIds: allCancelledIds 
+        }, null);
+        
         await RoomManager.updateUserActivity(ws);
         return;
       } 
       else {
         await RoomManager.addStroke(roomId, msg.figure);
+        this.broadcast(roomId, { ...msg, username }, ws);
       }
     }
     
-    this.broadcast(roomId, { ...msg, username }, ws);
     await RoomManager.updateUserActivity(ws);
   }
 

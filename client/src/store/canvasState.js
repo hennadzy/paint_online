@@ -61,7 +61,9 @@ class CanvasState {
       this.users = users;
     });
     WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
-      // Сохраняем ID отмененных штрихов для текущего пользователя
+      console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
+      
+      // Save ALL cancelled stroke IDs from ALL users
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
       }
@@ -71,17 +73,55 @@ class CanvasState {
         setTimeout(() => this.saveThumbnail(), 500);
       });
     });
+    
+    // New handler for syncing cancelled strokes
+    WebSocketService.on('syncCancelled', ({ cancelledStrokeIds }) => {
+      if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
+        this.cancelledStrokeIds = cancelledStrokeIds;
+        
+        // Rebuild history considering new cancelled IDs
+        const currentStrokes = HistoryService.getStrokes();
+        const filteredStrokes = currentStrokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
+        
+        HistoryService.setStrokes(filteredStrokes);
+        CanvasService.rebuildBuffer(filteredStrokes);
+        CanvasService.redraw();
+      }
+    });
+    
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
       if (!figure) return;
       switch (figure.type) {
         case "undo":
-          this.undoRemote(figure.strokeId, username);
+          // When receiving undo from ANY user
+          if (figure.strokeId && this.cancelledStrokeIds.includes(figure.strokeId)) {
+            // Remove this stroke from history if it's there
+            HistoryService.undoById(figure.strokeId, username);
+            CanvasService.rebuildBuffer(HistoryService.getStrokes());
+            CanvasService.redraw();
+          }
           break;
         case "redo":
-          this.redoRemote(figure.stroke, username);
+          // When receiving redo from ANY user
+          if (figure.stroke && figure.stroke.id) {
+            // Remove ID from cancelled list
+            this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== figure.stroke.id);
+            
+            // Add stroke back if it's not there
+            const currentStrokes = HistoryService.getStrokes();
+            if (!currentStrokes.some(s => s.id === figure.stroke.id)) {
+              HistoryService.redoStroke(figure.stroke);
+              CanvasService.rebuildBuffer(HistoryService.getStrokes());
+              CanvasService.redraw();
+            }
+          }
           break;
         default:
+          // Don't add stroke if it's in global cancelled list
+          if (figure.id && this.cancelledStrokeIds.includes(figure.id)) {
+            return;
+          }
           this.pushStroke(figure);
           break;
       }
@@ -194,10 +234,16 @@ class CanvasState {
 
   undo() {
     const removed = HistoryService.undo(this.username);
-    if (removed && WebSocketService.isConnected) {
-      WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
-    }
     if (removed) {
+      // Add ID to global cancelled list
+      if (!this.cancelledStrokeIds.includes(removed.id)) {
+        this.cancelledStrokeIds.push(removed.id);
+      }
+      
+      if (WebSocketService.isConnected) {
+        WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
+      }
+      
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
     }
@@ -206,26 +252,32 @@ class CanvasState {
   async redo() {
     const restored = HistoryService.redo(this.username);
     if (restored) {
+      // Remove ID from global cancelled list
+      this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== restored.id);
+      
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw({ type: "redo", stroke: restored });
       } else {
         await CanvasService.drawStroke(CanvasService.bufferCtx, restored);
         CanvasService.redraw();
       }
+      
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
     }
   }
 
   undoRemote(strokeId, fromUsername) {
-    // Удаляем штрих из истории
-    HistoryService.undoById(strokeId, fromUsername);
-    
-    // Если это наш штрих, добавляем его ID в список отмененных
-    if (fromUsername === this.username) {
+    // When receiving undo from ANY user, add to cancelled list and remove stroke
+    if (strokeId) {
       if (!this.cancelledStrokeIds.includes(strokeId)) {
         this.cancelledStrokeIds.push(strokeId);
       }
+      
+      // Remove stroke from history
+      HistoryService.undoById(strokeId, fromUsername);
+      CanvasService.rebuildBuffer(HistoryService.getStrokes());
+      CanvasService.redraw();
     }
     
     this.scheduleThumbnailSave();
@@ -240,8 +292,8 @@ class CanvasState {
       stroke.username = fromUsername;
     }
     
-    // Если это наш штрих, удаляем его из списка отмененных
-    if (fromUsername === this.username && stroke.id) {
+    // Remove ID from global cancelled list
+    if (stroke.id) {
       this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== stroke.id);
     }
     

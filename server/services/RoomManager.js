@@ -6,6 +6,37 @@ class RoomManager {
     this.roomSockets = new Map();
   }
 
+  async getAllRoomStrokes(roomId) {
+    let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+    if (strokes.length > 0) {
+      return strokes.map(s => JSON.parse(s));
+    }
+    const dbStrokes = await DataStore.loadStrokes(roomId);
+    return dbStrokes;
+  }
+
+  async getAllCancelledStrokes(roomId) {
+    const users = await this.getRoomUsers(roomId);
+    const allCancelled = {};
+    
+    for (const username of users) {
+      const cancelled = await this.getCancelledStrokes(roomId, username);
+      if (cancelled.length > 0) {
+        allCancelled[username] = cancelled;
+      }
+    }
+    
+    return allCancelled;
+  }
+
+  async removeStrokeFromAllCancelled(roomId, strokeId) {
+    const users = await this.getRoomUsers(roomId);
+    
+    for (const username of users) {
+      await this.removeCancelledStroke(roomId, username, strokeId);
+    }
+  }
+
   async addUser(roomId, username, ws) {
     const userCount = await redis.scard(`room:${roomId}:users`);
     if (userCount >= 10) {
@@ -30,14 +61,27 @@ class RoomManager {
     // Load user's cancelled strokes from DB to Redis
     await this.loadCancelledStrokesFromDb(roomId, username);
     
-    // Get cancelled stroke IDs for this user
-    const cancelledStrokes = await this.getCancelledStrokes(roomId, username);
-    const cancelledStrokeIds = cancelledStrokes.map(s => s.id);
+    // Get ALL strokes for the room
+    const allStrokes = await this.getAllRoomStrokes(roomId);
     
-    // Get strokes, filtering out this user's cancelled ones
-    const strokes = await this.getRoomStrokes(roomId, username);
+    // Get ALL cancelled strokes for ALL users
+    const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);
+    const allCancelledStrokeIds = new Set();
     
-    return { strokes, cancelledStrokeIds };
+    // Collect IDs of all cancelled strokes from all users
+    Object.values(allCancelledStrokes).forEach(cancelledArray => {
+      cancelledArray.forEach(stroke => {
+        allCancelledStrokeIds.add(stroke.id);
+      });
+    });
+    
+    // Filter strokes - remove those cancelled by ANY user
+    const filteredStrokes = allStrokes.filter(s => !allCancelledStrokeIds.has(s.id));
+    
+    return { 
+      strokes: filteredStrokes,
+      cancelledStrokeIds: Array.from(allCancelledStrokeIds)
+    };
   }
 
   async removeUser(ws) {
