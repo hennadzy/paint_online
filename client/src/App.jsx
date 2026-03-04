@@ -8,6 +8,8 @@ import Toolbar from "./components/Toolbar";
 import TopMenu from "./components/TopMenu";
 import Canvas from "./components/Canvas";
 import NotFoundPage from "./components/NotFoundPage";
+import ProfilePage from "./components/ProfilePage";
+import AuthPage from "./components/AuthPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 
@@ -54,6 +56,9 @@ const App = observer(() => {
             <div className="main-content">
                 <Routes>
                     <Route path='/' element={<Canvas />} />
+                    <Route path='/login' element={<AuthPage />} />
+                    <Route path='/register' element={<AuthPage />} />
+                    <Route path='/profile' element={<ProfilePage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>

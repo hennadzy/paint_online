@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
 import canvasState, { API_URL } from '../store/canvasState';
+import userState from '../store/userState';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
@@ -278,6 +279,29 @@ const TopMenu = observer(() => {
               >
                 Обратная связь
               </button>
+              {userState.isAuthenticated ? (
+                <>
+                  <button className="create-room-btn" onClick={() => navigate('/profile')}>
+                    <span className="icon profile" />
+                    <span>Профиль</span>
+                  </button>
+                  <button className="create-room-btn" onClick={() => userState.logout()}>
+                    <span className="icon logout" />
+                    <span>Выйти</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="create-room-btn" onClick={() => navigate('/login')}>
+                    <span className="icon login" />
+                    <span>Войти</span>
+                  </button>
+                  <button className="create-room-btn" onClick={() => navigate('/register')}>
+                    <span className="icon login" />
+                    <span>Регистрация</span>
+                  </button>
+                </>
+              )}
             </>
           ) : canvasState.isConnected ? (
             <>
