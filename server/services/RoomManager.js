@@ -43,17 +43,24 @@ class RoomManager {
       throw new Error('Room is full');
     }
 
-    // Загружаем все отменённые штрихи для этой комнаты из БД в Redis
+    // Get the list of users already in the room (online)
+    const onlineUsers = await this.getRoomUsers(roomId);
+
+    // Load all cancelled strokes for this room from DB
     const allCancelledFromDb = await DataStore.loadAllCancelledStrokes(roomId);
+
+    // Restore in Redis only for those who are not online
     for (const [cancelledUsername, strokes] of Object.entries(allCancelledFromDb)) {
-      // Очищаем старый список в Redis для этого пользователя (если есть)
-      await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
-      if (strokes.length > 0) {
-        const multi = redis.multi();
-        for (const stroke of strokes) {
-          multi.rpush(`room:${roomId}:cancelled:${cancelledUsername}`, JSON.stringify(stroke));
+      if (!onlineUsers.includes(cancelledUsername)) {
+        // Clear old list in Redis (if any)
+        await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
+        if (strokes.length > 0) {
+          const multi = redis.multi();
+          for (const stroke of strokes) {
+            multi.rpush(`room:${roomId}:cancelled:${cancelledUsername}`, JSON.stringify(stroke));
+          }
+          await multi.exec();
         }
-        await multi.exec();
       }
     }
 
