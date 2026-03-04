@@ -499,6 +499,117 @@ body.modal-open {
   }
 }
 
+// Auth Page Styles
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 150px);
+  padding: 20px;
+
+  .auth-container {
+    background: rgba(103, 103, 103, 0.9);
+    border-radius: 16px;
+    padding: 40px 30px;
+    max-width: 400px;
+    width: 100%;
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #ffcc00, #ff6699);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .error-message {
+      background: rgba(255, 82, 82, 0.2);
+      border: 1px solid rgba(255, 82, 82, 0.5);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #ff5252;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #ffcc00;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #555;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 16px;
+        transition: border-color 0.3s;
+
+        &:focus {
+          outline: none;
+          border-color: #ffcc00;
+        }
+
+        &::placeholder {
+          color: #aaa;
+        }
+      }
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ffcc00, #ff6699);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 102, 153, 0.4);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .switch-link {
+      text-align: center;
+      margin-top: 20px;
+      color: #ccc;
+
+      .link-button {
+        background: none;
+        border: none;
+        color: #ffcc00;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: inherit;
+        margin-left: 5px;
+
+        &:hover {
+          color: #ff6699;
+        }
+      }
+    }
+  }
+}
+
 @media screen and (max-width: 768px) and (orientation: landscape) {
 
   .about-btn {
