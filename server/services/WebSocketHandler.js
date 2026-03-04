@@ -78,11 +78,12 @@ class WebSocketHandler {
     }
     
     try {
-      const { strokes } = await RoomManager.addUser(roomId, username, ws);
+      const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws);
       
       ws.send(JSON.stringify({ 
         method: "draws", 
-        strokes 
+        strokes,
+        cancelledStrokeIds
       }));
       
       this.broadcast(roomId, { method: 'connection', username });

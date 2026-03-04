@@ -30,9 +30,14 @@ class RoomManager {
     // Load user's cancelled strokes from DB to Redis
     await this.loadCancelledStrokesFromDb(roomId, username);
     
+    // Get cancelled stroke IDs for this user
+    const cancelledStrokes = await this.getCancelledStrokes(roomId, username);
+    const cancelledStrokeIds = cancelledStrokes.map(s => s.id);
+    
     // Get strokes, filtering out this user's cancelled ones
     const strokes = await this.getRoomStrokes(roomId, username);
-    return { strokes };
+    
+    return { strokes, cancelledStrokeIds };
   }
 
   async removeUser(ws) {

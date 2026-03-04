@@ -32,6 +32,7 @@ class CanvasState {
   showRestoreDialog = false;
   restoreTimestamp = null;
   returningFromRoom = false;
+  cancelledStrokeIds = [];
 
   constructor() {
     makeAutoObservable(this);
@@ -59,7 +60,12 @@ class CanvasState {
     WebSocketService.on('usersList', ({ users }) => {
       this.users = users;
     });
-    WebSocketService.on('drawsReceived', ({ strokes }) => {
+    WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
+      // Сохраняем ID отмененных штрихов для текущего пользователя
+      if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
+        this.cancelledStrokeIds = cancelledStrokeIds;
+      }
+      
       HistoryService.setStrokes(strokes);
       CanvasService.rebuildBuffer(strokes, () => {
         setTimeout(() => this.saveThumbnail(), 500);
@@ -212,7 +218,16 @@ class CanvasState {
   }
 
   undoRemote(strokeId, fromUsername) {
+    // Удаляем штрих из истории
     HistoryService.undoById(strokeId, fromUsername);
+    
+    // Если это наш штрих, добавляем его ID в список отмененных
+    if (fromUsername === this.username) {
+      if (!this.cancelledStrokeIds.includes(strokeId)) {
+        this.cancelledStrokeIds.push(strokeId);
+      }
+    }
+    
     this.scheduleThumbnailSave();
   }
 
@@ -224,6 +239,12 @@ class CanvasState {
     if (!stroke.username && fromUsername) {
       stroke.username = fromUsername;
     }
+    
+    // Если это наш штрих, удаляем его из списка отмененных
+    if (fromUsername === this.username && stroke.id) {
+      this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== stroke.id);
+    }
+    
     const added = HistoryService.redoStroke(stroke);
     if (added) {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
@@ -354,6 +375,7 @@ class CanvasState {
     HistoryService.clearStrokes();
     this.users = [];
     this.chatMessages = [];
+    this.cancelledStrokeIds = [];
     this.setModalOpen(false);
     this.showRestoreDialog = false;
     this.restoreTimestamp = null;
