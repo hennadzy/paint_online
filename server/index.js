@@ -118,30 +118,38 @@ app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 
+// Добавляем массив клиентских маршрутов (можно дополнить при необходимости)
+const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404'];
+
 app.get('*', (req, res) => {
-  const segments = req.path.split('/').filter(Boolean);
+  const pathname = req.path;
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  let is404 = false;
-  if (segments.length > 1) {
-    is404 = true;
-  } else if (segments.length === 1) {
-    const roomId = segments[0];
-    DataStore.getRoomInfo(roomId).then(room => {
+
+  // 1. Если путь точно клиентский – отдаём index.html
+  if (CLIENT_ROUTES.includes(pathname)) {
+    return res.sendFile(indexPath);
+  }
+
+  const segments = pathname.split('/').filter(Boolean);
+
+  // 2. Если сегментов больше одного – неизвестный путь → 404
+  if (segments.length !== 1) {
+    return send404Page(res);
+  }
+
+  // 3. Один сегмент – возможно, это ID комнаты
+  const roomId = segments[0];
+  DataStore.getRoomInfo(roomId)
+    .then(room => {
       if (!room) {
         send404Page(res);
       } else {
         res.sendFile(indexPath);
       }
-    }).catch(() => {
+    })
+    .catch(() => {
       send404Page(res);
     });
-    return;
-  }
-  if (is404) {
-    send404Page(res);
-  } else {
-    res.sendFile(indexPath);
-  }
 });
 
 setInterval(async () => {
