@@ -15,7 +15,8 @@ import {
   useCanvasKeyboard,
   useCustomScrollbars,
   useModalBodyClass,
-  usePinchZoom
+  usePinchZoom,
+  usePageVisibility
 } from '../hooks';
 import '../styles/canvas.scss';
 
@@ -34,6 +35,11 @@ const Canvas = observer(() => {
   useCanvasKeyboard();
   useModalBodyClass();
   useCustomScrollbars(containerRef, canvasState.isConnected);
+  const isVisible = usePageVisibility();
+  
+  useEffect(() => {
+    canvasState.setPageVisible(isVisible);
+  }, [isVisible]);
 
   useEffect(() => {
     canvasState.setCanvas(canvasRef.current);

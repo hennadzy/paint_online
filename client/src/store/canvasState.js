@@ -33,6 +33,10 @@ class CanvasState {
   restoreTimestamp = null;
   returningFromRoom = false;
   cancelledStrokeIds = [];
+  pageVisible = true;
+  lastNotificationTime = 0;
+  notificationThrottle = 5000;
+  titleInterval = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -125,6 +129,11 @@ class CanvasState {
           this.pushStroke(figure);
           break;
       }
+      
+      // Notify user when page is not visible
+      if (!this.pageVisible) {
+        this.notifyUser('Новый рисунок', `${username} нарисовал(а)`);
+      }
     });
     WebSocketService.on('clearReceived', ({ username }) => {
       if (username !== this.username) {
@@ -133,11 +142,18 @@ class CanvasState {
         CanvasService.redraw();
         this.addChatMessage({ type: "system", username, message: `очистил холст` });
         this.scheduleThumbnailSave();
+        
+        if (!this.pageVisible) {
+          this.notifyUser('Холст очищен', `${username} очистил(а) холст`);
+        }
       }
     });
     WebSocketService.on('chatReceived', ({ username, message }) => {
       if (username !== this.username) {
         this.addChatMessage({ type: "chat", username, message });
+        if (!this.pageVisible) {
+          this.notifyUser(`Сообщение от ${username}`, message);
+        }
       }
     });
     HistoryService.on('strokeAdded', () => {
@@ -353,6 +369,11 @@ class CanvasState {
     this.setUsername(username);
     this.setupThumbnailInterval();
     setTimeout(() => this.saveThumbnail(), 1500);
+    
+    // Request notification permission
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }
 
   saveThumbnail() {
@@ -412,6 +433,12 @@ class CanvasState {
   disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
     
+    if (this.titleInterval) {
+      clearInterval(this.titleInterval);
+      this.titleInterval = null;
+      document.title = 'Рисование онлайн';
+    }
+    
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
       this.performAutoSave();
       this.returningFromRoom = true;
@@ -452,6 +479,58 @@ class CanvasState {
   }
   setShowRoomsList(val) {
     this.showRoomsList = val;
+  }
+  
+  setPageVisible(visible) {
+    this.pageVisible = visible;
+    if (visible && this.titleInterval) {
+      clearInterval(this.titleInterval);
+      this.titleInterval = null;
+      document.title = 'Рисование онлайн';
+    }
+  }
+
+  shouldNotify() {
+    const now = Date.now();
+    if (now - this.lastNotificationTime > this.notificationThrottle) {
+      this.lastNotificationTime = now;
+      return true;
+    }
+    return false;
+  }
+
+  notifyUser(title, body) {
+    if (!this.shouldNotify()) return;
+    if (!this.currentRoomId || !this.isConnected) return;
+
+    if (!("Notification" in window)) {
+      this.flashTitle(title);
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      new Notification(title, { body, icon: '/favicon.png', tag: 'paint-update' });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(perm => {
+        if (perm === "granted") {
+          new Notification(title, { body, icon: '/favicon.png', tag: 'paint-update' });
+        } else {
+          this.flashTitle(title);
+        }
+      });
+    } else {
+      this.flashTitle(title);
+    }
+  }
+
+  flashTitle(originalTitle) {
+    if (this.titleInterval) clearInterval(this.titleInterval);
+    const original = document.title;
+    let flag = false;
+    this.titleInterval = setInterval(() => {
+      document.title = flag ? `🔔 ${original}` : original;
+      flag = !flag;
+    }, 1000);
   }
   handleMessage(msg) {
     WebSocketService.handleMessage(msg);
