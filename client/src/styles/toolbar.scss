@@ -29,6 +29,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
     &::before {
@@ -45,6 +46,7 @@
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
       animation: glowing 20s linear infinite;
+      z-index: -1;
     }
 
     &:hover::before {
@@ -113,6 +115,7 @@
 
     .zoom-text {
       position: relative;
+      z-index: 1;
       font-size: 24px;
       font-weight: bold;
       color: #fff;
@@ -331,8 +334,12 @@
 }
 
 @media (max-width: 768px) {
-  .toolbar__btn .tooltip {
-    display: none !important;
+  .toolbar__btn {
+    overflow: hidden;
+    
+    .tooltip {
+      display: none !important;
+    }
   }
 
   .setting-bar {
