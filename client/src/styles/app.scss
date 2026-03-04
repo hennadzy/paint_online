@@ -115,6 +115,17 @@ body.modal-open {
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
   }
 
+  // Сброс фокуса для всех кнопок
+  &:focus {
+    outline: none;
+    background-color: transparent;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+  }
+
   &:active {
     animation: buttonPress 0.2s ease-out;
   }

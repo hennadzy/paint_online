@@ -80,6 +80,7 @@ const Toolbar = observer(() => {
 
   const renderButton = (toolName, ToolClass, label) => (
     <button
+      type="button"
       className={`toolbar__btn ${toolState.toolName === toolName ? "active" : ""}`}
       onClick={() => changeTool(ToolClass, toolName)}
     >
@@ -92,6 +93,7 @@ const Toolbar = observer(() => {
     <div className="toolbar" data-nosnippet>
       <div className="toolbar__group">
         <button
+          type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("brush")} ${toolState.isToolInGroup(toolState.toolName, "brush") ? "active" : ""}`}
           onClick={() => handleGroupClick("brush")}
         >
@@ -109,6 +111,7 @@ const Toolbar = observer(() => {
 
       <div className="toolbar__group">
         <button
+          type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("shapes")} ${toolState.isToolInGroup(toolState.toolName, "shapes") ? "active" : ""}`}
           onClick={() => handleGroupClick("shapes")}
         >
@@ -126,6 +129,7 @@ const Toolbar = observer(() => {
 
       <div className="toolbar__group">
         <button
+          type="button"
           className={`toolbar__btn ${toolState.getLastInGroup("color")} ${toolState.isToolInGroup(toolState.toolName, "color") ? "active" : ""}`}
           onClick={() => handleGroupClick("color")}
         >
@@ -144,6 +148,7 @@ const Toolbar = observer(() => {
       {renderButton("text", Text, "Текст")}
       
       <button
+        type="button"
         className="toolbar__btn"
         onClick={() => canvasState.toggleGrid()}
         title="Сетка"
@@ -153,6 +158,7 @@ const Toolbar = observer(() => {
       </button>
       
       <button
+        type="button"
         className="toolbar__btn"
         onClick={() => canvasState.clearCanvas()}
         title="Очистить холст"
@@ -162,6 +168,7 @@ const Toolbar = observer(() => {
       </button>
 
       <button
+        type="button"
         className="toolbar__btn zoom-btn"
         onClick={() => canvasState.zoomOut()}
         title="Уменьшить (Ctrl+-)"
@@ -171,6 +178,7 @@ const Toolbar = observer(() => {
       </button>
 
       <button
+        type="button"
         className="toolbar__btn zoom-btn"
         onClick={() => canvasState.zoomIn()}
         title="Увеличить (Ctrl++)"

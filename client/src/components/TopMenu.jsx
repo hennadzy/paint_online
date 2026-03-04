@@ -219,19 +219,22 @@ const TopMenu = observer(() => {
     <>
       <div className="top-menu" data-nosnippet>
         <div className="top-menu__actions">
-          <button className="toolbar__btn" onClick={() => canvasState.undo()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.undo()}>
             <span className="icon undo"></span>
+            <span className="tooltip">Отменить</span>
           </button>
-          <button className="toolbar__btn" onClick={() => canvasState.redo()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.redo()}>
             <span className="icon redo"></span>
+            <span className="tooltip">Вернуть</span>
           </button>
 
-          <button className="toolbar__btn" onClick={openExportModal} title="Сохранить">
+          <button type="button" className="toolbar__btn" onClick={openExportModal} title="Сохранить">
             <span className="icon save"></span>
             <span className="tooltip">Сохранить</span>
           </button>
 
           <button
+            type="button"
             className="toolbar__btn"
             onClick={handleUploadButtonClick}
             title="Загрузить картинку"
@@ -240,7 +243,7 @@ const TopMenu = observer(() => {
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          <button className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
+          <button type="button" className="toolbar__btn" onClick={handleShareImage} title="Поделиться рисунком">
             <span className="icon share"></span>
             <span className="tooltip">Поделиться</span>
           </button>
