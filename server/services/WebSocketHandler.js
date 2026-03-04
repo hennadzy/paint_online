@@ -1,4 +1,3 @@
-// server/services/WebSocketHandler.js
 const WebSocket = require('ws');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
@@ -7,10 +6,9 @@ const { verifyToken } = require('../utils/jwt');
 
 class WebSocketHandler {
   constructor() {
-    this.wsMessageLimits = new Map(); // для rate limiting
+    this.wsMessageLimits = new Map();
   }
 
-  // Проверка rate limiting (оставляем без изменений)
   checkRateLimit(ws) {
     const now = Date.now();
     const limit = this.wsMessageLimits.get(ws) || { count: 0, resetTime: now + 1000 };
@@ -25,7 +23,6 @@ class WebSocketHandler {
     return true;
   }
 
-  // Рассылка сообщения всем в комнате (кроме исключённого)
   broadcast(roomId, message, excludeWs = null) {
     const sockets = RoomManager.getRoomSockets(roomId);
     if (!sockets) return;
@@ -35,13 +32,11 @@ class WebSocketHandler {
         try {
           ws.send(messageString);
         } catch (error) {
-          // Игнорируем ошибки отправки
         }
       }
     });
   }
 
-  // Обработка подключения
   async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
@@ -83,19 +78,15 @@ class WebSocketHandler {
     }
     
     try {
-      // Добавляем пользователя через новый RoomManager
       const { strokes } = await RoomManager.addUser(roomId, username, ws);
       
-      // Отправляем текущие штрихи
       ws.send(JSON.stringify({ 
         method: "draws", 
         strokes 
       }));
       
-      // Оповещаем всех о новом пользователе
       this.broadcast(roomId, { method: 'connection', username });
       
-      // Отправляем обновлённый список пользователей
       const users = await RoomManager.getRoomUsers(roomId);
       this.broadcast(roomId, { 
         method: "users", 
@@ -107,7 +98,6 @@ class WebSocketHandler {
     }
   }
 
-  // Обработка рисования
   async handleDraw(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -115,8 +105,6 @@ class WebSocketHandler {
     
     if (msg.figure) {
       if (msg.figure.type === "undo") {
-        // В текущей реализации undo не удаляет из БД, только из Redis
-        // Просто рассылаем команду остальным
         this.broadcast(roomId, { 
           method: "draw", 
           username, 
@@ -132,10 +120,8 @@ class WebSocketHandler {
           return;
         }
         
-        // Добавляем штрих в Redis
         await RoomManager.addStroke(roomId, stroke);
         
-        // Рассылаем всем
         this.broadcast(roomId, { 
           method: "draw", 
           username, 
@@ -145,17 +131,14 @@ class WebSocketHandler {
         return;
       } 
       else {
-        // Обычный штрих
         await RoomManager.addStroke(roomId, msg.figure);
       }
     }
     
-    // Рассылаем всем, кроме отправителя
     this.broadcast(roomId, { ...msg, username }, ws);
     await RoomManager.updateUserActivity(ws);
   }
 
-  // Обработка очистки холста
   async handleClear(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -166,15 +149,12 @@ class WebSocketHandler {
     await RoomManager.updateUserActivity(ws);
   }
 
-  // Обработка сообщений чата (без изменений, но добавим сохранение в Redis опционально)
   async handleChat(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
     
-    const room = RoomManager.getRoomSockets(roomId); // нам нужна только рассылка, но для проверки спама нужно где-то хранить историю
-    // Пока оставляем как есть, без сохранения истории в Redis
-    // Но для rate limiting сообщений можно использовать Redis позже
+    const room = RoomManager.getRoomSockets(roomId);
     
     const message = sanitizeChatMessage(msg.message);
     
@@ -186,7 +166,6 @@ class WebSocketHandler {
     await RoomManager.updateUserActivity(ws);
   }
 
-  // Главный обработчик входящих сообщений
   handleMessage(ws, msgStr) {
     try {
       if (!this.checkRateLimit(ws)) {
@@ -209,11 +188,9 @@ class WebSocketHandler {
           break;
       }
     } catch (error) {
-      // Игнорируем ошибки парсинга
     }
   }
 
-  // Обработка закрытия соединения
   async handleClose(ws) {
     this.wsMessageLimits.delete(ws);
     const userInfo = await RoomManager.removeUser(ws);
@@ -228,9 +205,7 @@ class WebSocketHandler {
     }
   }
 
-  // Настройка нового подключения
   setupConnection(ws) {
-    // Генерируем уникальный ID для этого соединения (используется в RoomManager)
     ws._id = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));

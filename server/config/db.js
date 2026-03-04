@@ -1,4 +1,3 @@
-// server/config/db.js
 const { Pool } = require('pg');
 const Redis = require('ioredis');
 
@@ -12,7 +11,6 @@ if (process.env.DATABASE_URL) {
   });
 } else {
   console.error('DATABASE_URL not set');
-  // Для локальной разработки можно использовать запасной вариант, но лучше всегда задавать переменные.
   pgPool = new Pool({
     user: 'postgres',
     password: 'postgres',
@@ -27,7 +25,6 @@ if (process.env.REDIS_URL) {
   redis = new Redis(process.env.REDIS_URL);
 } else {
   console.error('REDIS_URL not set');
-  // Локальный Redis по умолчанию
   redis = new Redis({
     host: 'localhost',
     port: 6379

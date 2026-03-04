@@ -1,12 +1,6 @@
-// server/services/DataStore.js
 const { pgPool } = require('../config/db');
 
 class DataStore {
-  /**
-   * Получить информацию о комнате по ID
-   * @param {string} roomId
-   * @returns {Promise<Object|null>}
-   */
   async getRoomInfo(roomId) {
     try {
       const res = await pgPool.query(
@@ -29,11 +23,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Создать новую комнату
-   * @param {string} roomId
-   * @param {Object} data - { name, isPublic, hasPassword, passwordHash }
-   */
   async createRoom(roomId, data) {
     const { name, isPublic, hasPassword, passwordHash } = data;
     const now = Date.now();
@@ -51,10 +40,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Обновить время последней активности комнаты
-   * @param {string} roomId
-   */
   async updateRoomActivity(roomId) {
     try {
       await pgPool.query(
@@ -68,10 +53,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Удалить комнату и все её штрихи (каскадно)
-   * @param {string} roomId
-   */
   async deleteRoom(roomId) {
     try {
       await pgPool.query('DELETE FROM rooms WHERE id = $1', [roomId]);
@@ -82,11 +63,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Сохранить один штрих в БД
-   * @param {string} roomId
-   * @param {Object} stroke
-   */
   async saveStroke(roomId, stroke) {
     try {
       await pgPool.query(
@@ -100,11 +76,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Сохранить несколько штрихов (для пакетной вставки)
-   * @param {string} roomId
-   * @param {Array} strokes
-   */
   async saveStrokes(roomId, strokes) {
     if (!strokes.length) return true;
     try {
@@ -114,7 +85,6 @@ class DataStore {
         s.username || 'unknown',
         Date.now()
       ]);
-      // Используем параметризованный запрос для нескольких строк
       const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
       const flatValues = values.flat();
       await pgPool.query(
@@ -128,11 +98,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Загрузить все штрихи комнаты (упорядоченные по времени создания)
-   * @param {string} roomId
-   * @returns {Promise<Array>}
-   */
   async loadStrokes(roomId) {
     try {
       const res = await pgPool.query(
@@ -146,10 +111,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Удалить все штрихи комнаты
-   * @param {string} roomId
-   */
   async deleteStrokes(roomId) {
     try {
       await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [roomId]);
@@ -160,10 +121,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Получить список всех комнат (для списка публичных комнат)
-   * @returns {Promise<Array>}
-   */
   async getAllRooms() {
     try {
       const res = await pgPool.query(
@@ -183,10 +140,6 @@ class DataStore {
     }
   }
 
-  /**
-   * Очистить старые неактивные комнаты
-   * @param {number} expirationTime - время в мс, после которого комната удаляется
-   */
   async cleanupExpiredRooms(expirationTime) {
     try {
       const cutoff = Date.now() - expirationTime;

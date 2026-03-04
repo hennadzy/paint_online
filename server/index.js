@@ -122,7 +122,6 @@ app.get('*', (req, res) => {
     is404 = true;
   } else if (segments.length === 1) {
     const roomId = segments[0];
-    // Асинхронная проверка существования комнаты
     DataStore.getRoomInfo(roomId).then(room => {
       if (!room) {
         send404Page(res);
@@ -132,7 +131,7 @@ app.get('*', (req, res) => {
     }).catch(() => {
       send404Page(res);
     });
-    return; // Важно: не отправляем ответ дважды
+    return;
   }
   if (is404) {
     send404Page(res);
