@@ -539,30 +539,31 @@ class CanvasState {
   }
 
   setFaviconBadge(show) {
-    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    // Удаляем все существующие иконки
+    const links = document.querySelectorAll("link[rel*='icon']");
+    links.forEach(link => link.remove());
+
+    const link = document.createElement('link');
     link.type = 'image/x-icon';
     link.rel = 'shortcut icon';
-    
+
     if (!show) {
-      // Возвращаем обычный favicon
-      link.href = '/favicon.png'; // путь к вашему обычному favicon
+      link.href = '/favicon.png';
       document.head.appendChild(link);
       return;
     }
 
-    // Создаем canvas для рисования favicon с точкой
     const canvas = document.createElement('canvas');
     canvas.width = 32;
     canvas.height = 32;
     const ctx = canvas.getContext('2d');
 
-    // Загружаем изображение favicon
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = '/favicon.png'; // замените на путь к вашему favicon
+    img.src = '/favicon.png?' + Date.now(); // антикэш
     img.onload = () => {
       ctx.drawImage(img, 0, 0, 32, 32);
-      // Рисуем красную точку в правом верхнем углу
+      // Рисуем красную точку
       ctx.fillStyle = '#ff0000';
       ctx.beginPath();
       ctx.arc(28, 4, 6, 0, 2 * Math.PI);
@@ -571,6 +572,20 @@ class CanvasState {
       ctx.lineWidth = 2;
       ctx.stroke();
 
+      link.href = canvas.toDataURL('image/png');
+      document.head.appendChild(link);
+    };
+    img.onerror = () => {
+      // Если favicon не загрузился, рисуем точку на сером фоне
+      ctx.fillStyle = '#cccccc';
+      ctx.fillRect(0, 0, 32, 32);
+      ctx.fillStyle = '#ff0000';
+      ctx.beginPath();
+      ctx.arc(28, 4, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       link.href = canvas.toDataURL('image/png');
       document.head.appendChild(link);
     };

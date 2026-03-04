@@ -82,26 +82,20 @@ class RoomManager {
     // Load user's cancelled strokes from DB to Redis
     await this.loadCancelledStrokesFromDb(roomId, username);
     
-    // Сохраняем текущие активные штрихи из Redis в БД (если они есть)
-    const redisStrokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
-    if (redisStrokes.length > 0) {
-      const strokesObjects = redisStrokes.map(s => JSON.parse(s));
-      await DataStore.saveStrokes(roomId, strokesObjects);
-      // Очищаем Redis, чтобы потом загрузить из БД
-      await redis.del(`room:${roomId}:strokes`);
-    }
-
-    // Загружаем все штрихи из БД (теперь они самые актуальные)
-    const dbStrokes = await DataStore.loadStrokes(roomId);
-    const allStrokes = dbStrokes; // это массив объектов штрихов
-
-    // Сохраняем их в Redis (чтобы следующие пользователи не ждали БД)
-    if (dbStrokes.length > 0) {
-      const multi = redis.multi();
-      for (const s of dbStrokes) {
-        multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
+    // Загружаем активные штрихи: сначала пробуем из Redis, если нет — из БД
+    let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+    if (strokes.length === 0) {
+      strokes = await DataStore.loadStrokes(roomId);
+      if (strokes.length > 0) {
+        // Записываем в Redis для быстрого доступа следующим пользователям
+        const multi = redis.multi();
+        for (const s of strokes) {
+          multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
+        }
+        await multi.exec();
       }
-      await multi.exec();
+    } else {
+      strokes = strokes.map(s => JSON.parse(s));
     }
     
     // Get ALL cancelled strokes for ALL users
@@ -116,7 +110,7 @@ class RoomManager {
     });
     
     // Filter strokes - remove those cancelled by ANY user
-    const filteredStrokes = allStrokes.filter(s => !allCancelledStrokeIds.has(s.id));
+    const filteredStrokes = strokes.filter(s => !allCancelledStrokeIds.has(s.id));
     
     return { 
       strokes: filteredStrokes,
