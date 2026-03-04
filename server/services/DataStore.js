@@ -121,6 +121,51 @@ class DataStore {
     }
   }
 
+  async saveCancelledStrokes(roomId, username, strokes) {
+    if (!strokes.length) return true;
+    try {
+      // First, delete existing cancelled strokes for this user in this room
+      await pgPool.query(
+        'DELETE FROM cancelled_strokes WHERE room_id = $1 AND username = $2',
+        [roomId, username]
+      );
+      
+      const values = strokes.map(s => [
+        roomId,
+        s,
+        username,
+        Date.now()
+      ]);
+      const placeholders = values.map((_, i) => `($1, $2, $3, $4)`).join(',');
+      // We need to repeat the values for each placeholder group
+      const flatValues = [];
+      for (let i = 0; i < strokes.length; i++) {
+        flatValues.push(roomId, strokes[i], username, Date.now());
+      }
+      await pgPool.query(
+        `INSERT INTO cancelled_strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
+        flatValues
+      );
+      return true;
+    } catch (error) {
+      console.error('saveCancelledStrokes error:', error);
+      return false;
+    }
+  }
+
+  async loadCancelledStrokes(roomId, username) {
+    try {
+      const res = await pgPool.query(
+        'SELECT stroke_data FROM cancelled_strokes WHERE room_id = $1 AND username = $2 ORDER BY created_at',
+        [roomId, username]
+      );
+      return res.rows.map(row => row.stroke_data);
+    } catch (error) {
+      console.error('loadCancelledStrokes error:', error);
+      return [];
+    }
+  }
+
   async getAllRooms() {
     try {
       const res = await pgPool.query(

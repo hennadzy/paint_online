@@ -105,11 +105,23 @@ class WebSocketHandler {
     
     if (msg.figure) {
       if (msg.figure.type === "undo") {
+        // Get the stroke that was undone
+        const strokes = await RoomManager.getRoomStrokes(roomId);
+        const undoneStroke = strokes.find(s => s.id === msg.figure.strokeId);
+        
+        if (undoneStroke) {
+          // Store the undone stroke in cancelled strokes
+          await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
+          // Remove from active strokes
+          await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
+        }
+        
+        // Broadcast to all clients including the stroke data so they can remove it
         this.broadcast(roomId, { 
           method: "draw", 
           username, 
-          figure: { type: "undo", strokeId: msg.figure.strokeId } 
-        }, ws);
+          figure: { type: "undo", strokeId: msg.figure.strokeId, stroke: undoneStroke } 
+        });
         await RoomManager.updateUserActivity(ws);
         return;
       } 
@@ -121,12 +133,14 @@ class WebSocketHandler {
         }
         
         await RoomManager.addStroke(roomId, stroke);
+        // Remove from cancelled strokes if it was there
+        await RoomManager.removeCancelledStroke(roomId, username, stroke.id);
         
         this.broadcast(roomId, { 
           method: "draw", 
           username, 
           figure: { type: "redo", stroke } 
-        }, ws);
+        });
         await RoomManager.updateUserActivity(ws);
         return;
       } 

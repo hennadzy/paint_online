@@ -171,7 +171,16 @@ async function initDb() {
         created_at BIGINT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS cancelled_strokes (
+        id SERIAL PRIMARY KEY,
+        room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+        stroke_data JSONB NOT NULL,
+        username VARCHAR(30) NOT NULL,
+        created_at BIGINT NOT NULL
+      );
+
       CREATE INDEX IF NOT EXISTS idx_strokes_room_id ON strokes(room_id);
+      CREATE INDEX IF NOT EXISTS idx_cancelled_strokes_room_user ON cancelled_strokes(room_id, username);
       CREATE INDEX IF NOT EXISTS idx_rooms_last_activity ON rooms(last_activity);
     `);
     console.log('Database tables ready');
