@@ -136,6 +136,7 @@ const RoomInterface = observer(({ roomId }) => {
       }
     } catch (error) {
       setError('Ошибка загрузки комнат');
+      canvasState.setShowRoomInterface(false);
     }
   };
 
@@ -184,7 +185,15 @@ const RoomInterface = observer(({ roomId }) => {
       canvasState.setShowRoomInterface(false);
     } catch (error) {
       if (error.response?.data?.error) {
-        setError(error.response.data.error);
+        const errorMessage = error.response.data.error;
+        setError(errorMessage);
+        
+        // If room is full, redirect to rooms list after showing error
+        if (errorMessage.includes('максимальное количество пользователей')) {
+          setTimeout(() => {
+            navigate('/');
+          }, 3000);
+        }
       } else {
         setError('Ошибка подключения к комнате');
       }

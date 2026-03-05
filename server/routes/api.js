@@ -208,6 +208,12 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Room is private' });
     }
 
+    // Check current user count in room before allowing join
+    const currentUsers = await RoomManager.getRoomUsers(roomId);
+    if (currentUsers.length >= 10) {
+      return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
+    }
+
     const token = generateToken(roomId, username, true);
     res.json({ token });
   } catch (_) {
@@ -222,6 +228,12 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
 
     if (!roomId) {
       return res.status(400).json({ error: 'ID комнаты не указан' });
+    }
+
+    // Check current user count in room before allowing join
+    const currentUsers = await RoomManager.getRoomUsers(roomId);
+    if (currentUsers.length >= 10) {
+      return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
     }
 
     const validation = validateUsername(req.body.username);
