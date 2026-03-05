@@ -14,7 +14,6 @@ const GamesModal = observer(() => {
 
   if (!canvasState.showGamesModal) return null;
 
-  // Используем Portal для рендера в body
   return ReactDOM.createPortal(
     <div className="room-interface-overlay fullscreen" onClick={() => canvasState.setShowGamesModal(false)}>
       <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
@@ -30,7 +29,7 @@ const GamesModal = observer(() => {
             <div style={{ textAlign: 'center', padding: '20px' }}>
               <h2 style={{ color: '#ffcc00', marginBottom: '15px', fontSize: '28px' }}>Раздел в разработке</h2>
               <p style={{ color: '#fff', fontSize: '18px', lineHeight: '1.6', marginBottom: '20px' }}>
-                Мы готовим для вас увлекательные игровые режимы...
+                Мы готовим для вас увлекательные игровые режимы.
               </p>
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', marginBottom: '15px' }}>
                 Следите за обновлениями — скоро здесь будет весело! ✨

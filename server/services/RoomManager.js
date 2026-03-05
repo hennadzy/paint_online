@@ -320,6 +320,67 @@ class RoomManager {
     return this.roomSockets.get(roomId);
   }
 
+  // Check for inactive users and remove them (30 min timeout)
+  async checkInactiveUsers() {
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+    const now = Date.now();
+    try {
+      const pattern = 'ws:ws_*';
+      let cursor = '0';
+      const inactiveUsers = [];
+      do {
+        const [nextCursor, scanKeys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = nextCursor;
+        for (const key of scanKeys) {
+          const userData = await redis.hgetall(key);
+          if (userData && userData.lastActivity) {
+            const lastActivity = parseInt(userData.lastActivity);
+            if (now - lastActivity > INACTIVITY_TIMEOUT) {
+              inactiveUsers.push({
+                wsId: key.replace('ws:', ''),
+                roomId: userData.roomId,
+                username: userData.username
+              });
+            }
+          }
+        }
+      } while (cursor !== '0');
+      for (const user of inactiveUsers) {
+        await redis.srem(`room:${user.roomId}:users`, user.username);
+        await redis.del(`ws:${user.wsId}`);
+        await redis.del(`user:${user.username}:room`);
+        const roomSockets = this.roomSockets.get(user.roomId);
+        if (roomSockets) {
+          const message = JSON.stringify({ method: 'disconnection', username: user.username });
+          roomSockets.forEach(ws => { if (ws.readyState === 1) { try { ws.send(message); } catch (e) {} } });
+          const remainingUsers = await this.getRoomUsers(user.roomId);
+          const usersMessage = JSON.stringify({ method: 'users', users: remainingUsers });
+          roomSockets.forEach(ws => { if (ws.readyState === 1) { try { ws.send(usersMessage); } catch (e) {} } });
+          if (remainingUsers.length === 0) {
+            const strokes = await redis.lrange(`room:${user.roomId}:strokes`, 0, -1);
+            if (strokes.length > 0) {
+              const strokesObjects = strokes.map(s => JSON.parse(s));
+              await DataStore.saveStrokes(user.roomId, strokesObjects);
+            }
+            await redis.del(`room:${user.roomId}:strokes`);
+            const allCancelled = await this.getAllCancelledStrokes(user.roomId);
+            for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
+              if (cancelledStrokes.length > 0) {
+                await DataStore.saveCancelledStrokes(user.roomId, cancelledUsername, cancelledStrokes);
+              }
+              await redis.del(`room:${user.roomId}:cancelled:${cancelledUsername}`);
+            }
+            this.roomSockets.delete(user.roomId);
+          }
+        }
+      }
+      return inactiveUsers.length;
+    } catch (error) {
+      console.error('Error checking inactive users:', error);
+      return 0;
+    }
+  }
+
   _getWsId(ws) {
     if (!ws._id) {
       ws._id = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

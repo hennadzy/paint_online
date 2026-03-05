@@ -37,6 +37,7 @@ class CanvasState {
   lastNotificationTime = 0;
   notificationThrottle = 5000;
   titleInterval = null;
+  roomError = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -52,6 +53,11 @@ class CanvasState {
     });
     WebSocketService.on('disconnected', () => {
       this.isConnected = false;
+    });
+    WebSocketService.on('roomError', ({ message }) => {
+      this.roomError = message;
+      this.setShowRoomInterface(false);
+      alert(message);
     });
     WebSocketService.on('userConnected', ({ username }) => {
       this.addUser(username);
@@ -697,6 +703,14 @@ class CanvasState {
 
   setShowRestoreDialog(val) {
     this.showRestoreDialog = val;
+  }
+  
+  setRoomError(val) {
+    this.roomError = val;
+  }
+  
+  clearRoomError() {
+    this.roomError = null;
   }
 }
 

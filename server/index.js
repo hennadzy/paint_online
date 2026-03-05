@@ -158,6 +158,15 @@ setInterval(async () => {
   } catch (_) { }
 }, ROOM_CLEANUP_INTERVAL);
 
+// Check for inactive users every 5 minutes
+const INACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000;
+setInterval(async () => {
+  try {
+    const RoomManager = require('./services/RoomManager');
+    await RoomManager.checkInactiveUsers();
+  } catch (_) { }
+}, INACTIVITY_CHECK_INTERVAL);
+
 // Очистка просроченных сессий каждые 6 часов
 setInterval(async () => {
   try {

@@ -95,6 +95,11 @@ class WebSocketHandler {
       });
       
     } catch (error) {
+      // Send error message before closing
+      ws.send(JSON.stringify({
+        method: "error",
+        message: error.message
+      }));
       ws.close(1008, error.message);
     }
   }
