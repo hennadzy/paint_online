@@ -9,6 +9,7 @@ import profileIcon from '../assets/img/profile.png';
 import logoutIcon from '../assets/img/logout.png';
 import registerIcon from '../assets/img/register.png';
 import helpIcon from '../assets/img/help.png';
+import exitIcon from '../assets/img/exit.png';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
@@ -267,6 +268,101 @@ const TopMenu = observer(() => {
             <span className="tooltip">Справка</span>
           </button>
 
+          {/* КНОПКИ АУТЕНТИФИКАЦИИ */}
+          {userState.isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                className="toolbar__btn"
+                onClick={() => navigate('/profile')}
+                onMouseDown={(e) => e.target.blur()}
+                title="Профиль"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+                <span className="tooltip">Профиль</span>
+              </button>
+              <button
+                type="button"
+                className="toolbar__btn"
+                onClick={() => userState.logout()}
+                onMouseDown={(e) => e.target.blur()}
+                title="Выйти"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
+                <span className="tooltip">Выйти</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="toolbar__btn"
+                onClick={() => navigate('/login')}
+                onMouseDown={(e) => e.target.blur()}
+                title="Войти"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${loginIcon})` }} />
+                <span className="tooltip">Войти</span>
+              </button>
+              <button
+                type="button"
+                className="toolbar__btn"
+                onClick={() => navigate('/register')}
+                onMouseDown={(e) => e.target.blur()}
+                title="Регистрация"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${registerIcon})` }} />
+                <span className="tooltip">Регистрация</span>
+              </button>
+            </>
+          )}
+
+          {/* Кнопка Совместное рисование (текстовая) */}
+          {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) && (
+            <button
+              className="create-room-btn about-btn"
+              onClick={() => canvasState.setShowRoomInterface(true)}
+            >
+              Совместное рисование
+            </button>
+          )}
+
+          {/* Кнопка Игровые режимы (текстовая) */}
+          {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) && (
+            <button
+              className="create-room-btn about-btn"
+              onClick={() => canvasState.setShowGamesModal(true)}
+            >
+              Игровые режимы
+            </button>
+          )}
+
+          {/* Кнопки для режима комнаты */}
+          {canvasState.isConnected && (
+            <>
+              <button className="create-room-btn" onClick={handleInvite}>
+                Пригласить
+              </button>
+              {/* Кнопка выхода с иконкой крестика */}
+              <button
+                type="button"
+                className="toolbar__btn"
+                onClick={() => { 
+                  canvasState.setShowRoomInterface(true); 
+                  canvasState.setShowRoomsList(true); 
+                  canvasState.returningFromRoom = true; 
+                  canvasState.disconnect(true); 
+                  navigate('/'); 
+                }}
+                onMouseDown={(e) => e.target.blur()}
+                title="Выйти из комнаты"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${exitIcon})` }} />
+                <span className="tooltip">Выйти</span>
+              </button>
+            </>
+          )}
+
           <input
             key={fileInputKey.current}
             ref={fileInputRef}
@@ -275,80 +371,6 @@ const TopMenu = observer(() => {
             style={{ display: 'none' }}
             onChange={handleImageUpload}
           />
-
-          {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) ? (
-            <>
-              {/* Совместное рисование (перенесено на место кнопки О программе) */}
-              <button
-                className="create-room-btn about-btn"
-                onClick={() => canvasState.setShowRoomInterface(true)}
-              >
-                Совместное рисование
-              </button>
-              
-              {/* Кнопка обратной связи удалена */}
-              
-              {userState.isAuthenticated ? (
-                <>
-                  <button
-                    type="button"
-                    className="toolbar__btn"
-                    onClick={() => navigate('/profile')}
-                    onMouseDown={(e) => e.target.blur()}
-                    title="Профиль"
-                  >
-                    <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
-                    <span className="tooltip">Профиль</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="toolbar__btn"
-                    onClick={() => userState.logout()}
-                    onMouseDown={(e) => e.target.blur()}
-                    title="Выйти"
-                  >
-                    <span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
-                    <span className="tooltip">Выйти</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="toolbar__btn"
-                    onClick={() => navigate('/login')}
-                    onMouseDown={(e) => e.target.blur()}
-                    title="Войти"
-                  >
-                    <span className="icon" style={{ backgroundImage: `url(${loginIcon})` }} />
-                    <span className="tooltip">Войти</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="toolbar__btn"
-                    onClick={() => navigate('/register')}
-                    onMouseDown={(e) => e.target.blur()}
-                    title="Регистрация"
-                  >
-                    <span className="icon" style={{ backgroundImage: `url(${registerIcon})` }} />
-                    <span className="tooltip">Регистрация</span>
-                  </button>
-                </>
-              )}
-            </>
-          ) : canvasState.isConnected ? (
-            <>
-              <button className="create-room-btn" onClick={handleInvite}>
-                Пригласить
-              </button>
-              <button
-                className="create-room-btn disconnect-room-btn"
-                onClick={() => { canvasState.setShowRoomInterface(true); canvasState.setShowRoomsList(true); canvasState.returningFromRoom = true; canvasState.disconnect(true); navigate('/'); }}
-              >
-                Выйти
-              </button>
-            </>
-          ) : null}
         </div>
       </div>
 
