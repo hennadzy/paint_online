@@ -739,7 +739,6 @@ button:active {
     max-width: 250px;
     height: 480px;
     flex: none;
-    flex-direction: column;
   }
 }
 
@@ -847,15 +846,13 @@ button:active {
       flex-shrink: 0;
       border-bottom: none;
       border-left: 1px solid #ccc;
-      padding-bottom: 0;
-      margin-bottom: 0;
-      padding-left: 0;
-      margin-left: 0;
-      padding-top: 0;
+      padding: 0 0 0 5px;
+      margin: 0;
       
       h4 {
         font-size: 14px;
         margin-bottom: 8px;
+        margin-top: 5px;
       }
     }
     
@@ -873,6 +870,29 @@ button:active {
       color: white;
       cursor: pointer;
       width: 100%;
+      
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+    
+    .chat-input-container {
+      flex-direction: row;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .chat-invite-btn {
+      margin: 0;
+      padding: 6px 8px;
+      font-size: 12px;
+      background: linear-gradient(135deg, #ffcc00, #ff6699);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
       
       &:active {
         transform: scale(0.95);

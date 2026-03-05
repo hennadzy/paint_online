@@ -173,6 +173,7 @@ body.modal-open {
     align-items: center !important;
     justify-content: center !important;
     box-shadow: none !important;
+    margin-left: auto !important;
     
     // Добавляем тот же эффект свечения, что у других кнопок
     &::before {

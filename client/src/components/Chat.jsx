@@ -104,6 +104,11 @@ const Chat = observer(() => {
             placeholder="Введите сообщение"
             onKeyDown={sendMessage}
           />
+          {windowWidth <= 768 && (
+            <button className="chat-invite-btn" onClick={handleInvite}>
+              Пригласить
+            </button>
+          )}
           <button 
             className="chat-send-btn"
             onClick={handleSend}
@@ -120,11 +125,6 @@ const Chat = observer(() => {
             {user}
           </div>
         ))}
-        {windowWidth <= 768 && (
-          <button className="chat-invite-btn" onClick={handleInvite}>
-            Пригласить
-          </button>
-        )}
       </div>
     </div>
   );
