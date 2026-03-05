@@ -842,6 +842,25 @@ button:active {
   transform: scale(0.95);
 }
 
+.chat-invite-btn {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: linear-gradient(135deg, #ffcc00, #ff6699);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
 // Mobile vertical chat layout
 @media (max-width: 768px) {
   .chat {
@@ -865,7 +884,7 @@ button:active {
       flex-direction: column;
       
       h4 {
-        font-size: 14px;
+        font-size: 12px;
         margin-bottom: 8px;
         margin-top: 5px;
       }
