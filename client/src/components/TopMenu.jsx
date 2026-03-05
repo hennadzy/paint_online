@@ -8,6 +8,7 @@ import loginIcon from '../assets/img/login.png';
 import profileIcon from '../assets/img/profile.png';
 import logoutIcon from '../assets/img/logout.png';
 import registerIcon from '../assets/img/register.png';
+import helpIcon from '../assets/img/help.png';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
@@ -254,6 +255,18 @@ const TopMenu = observer(() => {
             <span className="tooltip">Поделиться</span>
           </button>
 
+          {/* Иконка Справки */}
+          <button
+            type="button"
+            className="toolbar__btn"
+            onClick={() => canvasState.setShowAboutModal(true)}
+            onMouseDown={(e) => e.target.blur()}
+            title="Справка"
+          >
+            <span className="icon" style={{ backgroundImage: `url(${helpIcon})` }} />
+            <span className="tooltip">Справка</span>
+          </button>
+
           <input
             key={fileInputKey.current}
             ref={fileInputRef}
@@ -271,14 +284,6 @@ const TopMenu = observer(() => {
                 onClick={() => canvasState.setShowRoomInterface(true)}
               >
                 Совместное рисование
-              </button>
-              
-              {/* Справка (бывшая О программе) */}
-              <button
-                className="create-room-btn about-btn"
-                onClick={() => canvasState.setShowAboutModal(true)}
-              >
-                Справка
               </button>
               
               {/* Кнопка обратной связи удалена */}

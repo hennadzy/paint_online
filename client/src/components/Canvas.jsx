@@ -7,6 +7,7 @@ import Brush from '../tools/Brush';
 import Chat from './Chat';
 import RoomInterface from './RoomInterface';
 import AboutModal from './AboutModal';
+import GamesModal from './GamesModal';
 import RestoreDialog from './RestoreDialog';
 import {
   useCanvasResize,
@@ -173,9 +174,9 @@ const Canvas = observer(() => {
             </button>
             <button
               className="about-btn-mobile"
-              onClick={() => canvasState.setShowAboutModal(true)}
+              onClick={() => canvasState.setShowGamesModal(true)}
             >
-              Справка
+              Игровые режимы
             </button>
           </div>
         )}
@@ -189,6 +190,8 @@ const Canvas = observer(() => {
       )}
 
       <AboutModal />
+
+      <GamesModal />
 
       <RestoreDialog
         show={canvasState.showRestoreDialog}
