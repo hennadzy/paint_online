@@ -9,6 +9,7 @@ import profileIcon from '../assets/img/profile.png';
 import logoutIcon from '../assets/img/logout.png';
 import registerIcon from '../assets/img/register.png';
 import helpIcon from '../assets/img/help.png';
+import exitIcon from '../assets/img/exit.png';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
@@ -364,13 +365,15 @@ const TopMenu = observer(() => {
               >
                 {windowWidth <= 768 ? (
                   <span className="icon" style={{ 
-                    fontSize: '24px', 
-                    lineHeight: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff'
-                  }}>✕</span>
+                    backgroundImage: `url(${exitIcon})`,
+                    width: '20px',
+                    height: '20px',
+                    display: 'block',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    filter: 'brightness(0) invert(1)'
+                  }} />
                 ) : (
                   'Выйти'
                 )}

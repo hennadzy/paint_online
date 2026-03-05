@@ -161,16 +161,25 @@ body.modal-open {
 
 // Мобильная версия кнопки выхода из комнаты
 @media (max-width: 768px) {
-  .disconnect-room-btn {
+  .disconnect-room-btn.mobile-exit {
     min-width: 32px;
     width: 32px;
     height: 32px;
     padding: 0;
     font-size: 0;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     .icon {
-      font-size: 18px;
-      line-height: 1;
+      width: 20px;
+      height: 20px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      filter: brightness(0) invert(1);
     }
   }
 }

@@ -19,7 +19,6 @@ const GamesModal = observer(() => {
         <div className="room-card about-content fullscreen">
           <div className="about-section">
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <span style={{ fontSize: '80px', display: 'block', marginBottom: '20px' }}>🎨</span>
               <h2 style={{ color: '#ffcc00', marginBottom: '15px', fontSize: '28px' }}>Раздел в разработке</h2>
               <p style={{ color: '#fff', fontSize: '18px', lineHeight: '1.6', marginBottom: '20px' }}>
                 Мы готовим для вас увлекательные игровые режимы, где можно будет
