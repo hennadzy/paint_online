@@ -233,13 +233,13 @@ const TopMenu = observer(() => {
     <>
       <div className="top-menu" data-nosnippet>
         <div className="top-menu__actions">
-          <button type="button" className="toolbar__btn" onClick={() => canvasState.undo()} onMouseDown={(e) => e.target.blur()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.undo()} onMouseDown={(e) => e.target.blur()} title="Отменить (Ctrl+Z)">
             <span className="icon undo"></span>
-            <span className="tooltip">Отменить</span>
+            <span className="tooltip">Отменить (Ctrl+Z)</span>
           </button>
-          <button type="button" className="toolbar__btn" onClick={() => canvasState.redo()} onMouseDown={(e) => e.target.blur()}>
+          <button type="button" className="toolbar__btn" onClick={() => canvasState.redo()} onMouseDown={(e) => e.target.blur()} title="Повторить (Ctrl+Y)">
             <span className="icon redo"></span>
-            <span className="tooltip">Вернуть</span>
+            <span className="tooltip">Повторить (Ctrl+Y)</span>
           </button>
 
           <button type="button" className="toolbar__btn" onClick={openExportModal} onMouseDown={(e) => e.target.blur()} title="Сохранить">
@@ -366,13 +366,13 @@ const TopMenu = observer(() => {
                 {windowWidth <= 768 ? (
                   <span className="icon" style={{ 
                     backgroundImage: `url(${exitIcon})`,
-                    width: '20px',
-                    height: '20px',
+                    width: '24px',
+                    height: '24px',
                     display: 'block',
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    filter: 'brightness(0) invert(1)'
+                    filter: 'none'
                   }} />
                 ) : (
                   'Выйти'

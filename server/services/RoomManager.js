@@ -90,12 +90,23 @@ class RoomManager {
         // Записываем в Redis для быстрого доступа следующим пользователям
         const multi = redis.multi();
         for (const s of strokes) {
+          // Убедимся, что lineWidth сохраняется
+          if (!s.lineWidth && s.type === 'brush') {
+            s.lineWidth = 1; // Значение по умолчанию
+          }
           multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
         }
         await multi.exec();
       }
     } else {
-      strokes = strokes.map(s => JSON.parse(s));
+      strokes = strokes.map(s => {
+        const parsed = JSON.parse(s);
+        // Убедимся, что lineWidth сохраняется
+        if (!parsed.lineWidth && parsed.type === 'brush') {
+          parsed.lineWidth = 1;
+        }
+        return parsed;
+      });
     }
     
     // Get ALL cancelled strokes for ALL users

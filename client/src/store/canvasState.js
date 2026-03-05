@@ -99,17 +99,27 @@ class CanvasState {
       switch (figure.type) {
         case "undo":
           // When receiving undo from ANY user
-          if (figure.strokeId && this.cancelledStrokeIds.includes(figure.strokeId)) {
-            // Remove this stroke from history if it's there
+          if (figure.strokeId) {
+            // Add to global cancelled list if not already there
+            if (!this.cancelledStrokeIds.includes(figure.strokeId)) {
+              this.cancelledStrokeIds.push(figure.strokeId);
+            }
+            
+            // Remove stroke from history
             HistoryService.undoById(figure.strokeId, username);
             CanvasService.rebuildBuffer(HistoryService.getStrokes());
             CanvasService.redraw();
+            
+            // Notify user when page is not visible
+            if (!this.pageVisible) {
+              this.notifyUser('Действие отменено', `${username} отменил(а) действие`);
+            }
           }
           break;
         case "redo":
           // When receiving redo from ANY user
           if (figure.stroke && figure.stroke.id) {
-            // Remove ID from cancelled list
+            // Remove ID from global cancelled list
             this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== figure.stroke.id);
             
             // Add stroke back if it's not there
@@ -118,6 +128,10 @@ class CanvasState {
               HistoryService.redoStroke(figure.stroke);
               CanvasService.rebuildBuffer(HistoryService.getStrokes());
               CanvasService.redraw();
+            }
+            
+            if (!this.pageVisible) {
+              this.notifyUser('Действие возвращено', `${username} вернул(а) действие`);
             }
           }
           break;
@@ -131,7 +145,7 @@ class CanvasState {
       }
       
       // Notify user when page is not visible
-      if (!this.pageVisible) {
+      if (!this.pageVisible && figure.type !== 'undo' && figure.type !== 'redo') {
         this.notifyUser('Новый рисунок', `${username} нарисовал(а)`);
       }
     });

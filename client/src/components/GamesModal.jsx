@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import canvasState from '../store/canvasState';
 import '../styles/room-interface.scss';
@@ -6,13 +6,56 @@ import '../styles/room-interface.scss';
 const GamesModal = observer(() => {
   if (!canvasState.showGamesModal) return null;
 
+  // Добавляем эффект для блокировки скролла body
+  useEffect(() => {
+    document.body.classList.add('modal-open');
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, []);
+
   // Принудительный z-index для модального окна игр
   const style = document.createElement('style');
   style.textContent = `
     .games-modal-fix {
       z-index: 9999999 !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(0, 0, 0, 0.98) !important;
+      backdrop-filter: blur(12px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    
+    .games-modal-fix .room-interface {
+      max-height: 90vh !important;
+      overflow-y: auto !important;
+      width: 90% !important;
+      max-width: 600px !important;
+      margin: 0 auto !important;
+    }
+    
+    @media (max-width: 768px) {
+      .games-modal-fix {
+        padding: env(safe-area-inset-top, 20px) 15px env(safe-area-inset-bottom, 20px) 15px !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+      }
+      
+      .games-modal-fix .room-interface {
+        width: 100% !important;
+        max-width: none !important;
+        margin-top: env(safe-area-inset-top, 20px) !important;
+      }
     }
   `;
+  
   if (!document.querySelector('.games-modal-style')) {
     style.className = 'games-modal-style';
     document.head.appendChild(style);
