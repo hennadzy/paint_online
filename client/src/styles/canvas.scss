@@ -719,8 +719,7 @@ button:active {
   overflow-wrap: break-word;
   word-break: break-word;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
 
   @media (max-width: 768px) {
     flex-direction: row;
@@ -735,6 +734,7 @@ button:active {
   }
 
   @media (min-width: 769px) {
+    flex-direction: column;
     width: 300px;
     max-width: 250px;
     height: 480px;
@@ -746,6 +746,7 @@ button:active {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   
   h4 {
     margin: 0 0 5px 0;
@@ -879,7 +880,7 @@ button:active {
       flex-shrink: 0;
       border-bottom: none;
       border-right: 1px solid #ccc;
-      padding: 0 0 0 5px;
+      padding: 0 5px 0 5px;
       margin: 0;
       display: flex;
       flex-direction: column;
