@@ -739,6 +739,7 @@ button:active {
     max-width: 250px;
     height: 480px;
     flex: none;
+    flex-direction: column;
   }
 }
 
@@ -832,6 +833,8 @@ button:active {
 // Mobile vertical chat layout
 @media (max-width: 768px) {
   .chat {
+    flex-direction: row;
+    
     .chat-main {
       flex: 1;
       display: flex;
@@ -840,14 +843,14 @@ button:active {
     }
     
     .chat-users {
-      width: 100px;
+      width: 90px;
       flex-shrink: 0;
       border-bottom: none;
       border-left: 1px solid #ccc;
       padding-bottom: 0;
       margin-bottom: 0;
-      padding-left: 10px;
-      margin-left: 10px;
+      padding-left: 0;
+      margin-left: 0;
       padding-top: 0;
       
       h4 {
@@ -874,6 +877,10 @@ button:active {
       &:active {
         transform: scale(0.95);
       }
+    }
+    
+    .chat-input {
+      margin-right: 5px;
     }
     
     .chat-send-btn {
