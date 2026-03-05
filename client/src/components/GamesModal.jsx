@@ -6,8 +6,20 @@ import '../styles/room-interface.scss';
 const GamesModal = observer(() => {
   if (!canvasState.showGamesModal) return null;
 
+  // Принудительный z-index для модального окна игр
+  const style = document.createElement('style');
+  style.textContent = `
+    .games-modal-fix {
+      z-index: 9999999 !important;
+    }
+  `;
+  if (!document.querySelector('.games-modal-style')) {
+    style.className = 'games-modal-style';
+    document.head.appendChild(style);
+  }
+
   return (
-    <div className="room-interface-overlay fullscreen" onClick={() => canvasState.setShowGamesModal(false)}>
+    <div className="room-interface-overlay fullscreen games-modal-fix" onClick={() => canvasState.setShowGamesModal(false)}>
       <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={() => canvasState.setShowGamesModal(false)}>×</button>
 
