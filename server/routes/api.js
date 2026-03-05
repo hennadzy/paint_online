@@ -113,8 +113,10 @@ router.get('/rooms/public', apiLimiter, async (req, res) => {
   try {
     const allRooms = await DataStore.getAllRooms();
     const filesDir = path.join(__dirname, '../files');
-    const result = allRooms.map(room => {
-      const onlineCount = RoomManager.getRoomUsers(room.id).length;
+    
+    const result = await Promise.all(allRooms.map(async room => {
+      const onlineUsers = await RoomManager.getRoomUsers(room.id);
+      const onlineCount = onlineUsers.length;
       let thumbnailUrl = null;
       if (room.isPublic) {
         const jpgPath = path.join(filesDir, `${room.id}.jpg`);
@@ -134,7 +136,7 @@ router.get('/rooms/public', apiLimiter, async (req, res) => {
         onlineCount,
         thumbnailUrl
       };
-    });
+    }));
     res.json(result);
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
