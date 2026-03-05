@@ -36,7 +36,15 @@ class CanvasService {
   
   ctx.save();
   ctx.globalAlpha = 1;
-  ctx.lineWidth = stroke.lineWidth || 1;
+  
+  // Убедимся, что lineWidth существует и корректен
+  const lineWidth = stroke.lineWidth || 
+                    (stroke.type === 'eraser' ? 10 : 
+                     stroke.type === 'text' ? 16 : 1);
+  
+  console.log(`Drawing ${stroke.type} with lineWidth: ${lineWidth}`);
+  
+  ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   

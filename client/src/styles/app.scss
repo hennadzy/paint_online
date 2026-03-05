@@ -58,7 +58,7 @@ body.modal-open {
   flex-wrap: nowrap;
   justify-content: flex-start;
   padding: 10px 5px;
-  gap: 5px;
+  gap: 4px;
   height: 100%;
   align-items: center;
   overflow-x: auto;
@@ -174,19 +174,56 @@ body.modal-open {
     justify-content: center !important;
     box-shadow: none !important;
     
+    // Добавляем тот же эффект свечения, что у других кнопок
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+      background-size: 400%;
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      animation: glowing 10s linear infinite;
+      z-index: -1;
+    }
+
+    &:hover::before {
+      opacity: 1;
+    }
+    
     .icon {
-      width: 20px !important;
-      height: 20px !important;
+      width: 24px !important;
+      height: 24px !important;
       background-size: contain !important;
       background-repeat: no-repeat !important;
       background-position: center !important;
       display: block !important;
+      filter: brightness(0) invert(1);
+      position: relative;
+      z-index: 1;
     }
-    
-    // Убираем возможный псевдоэлемент
-    &::before {
-      display: none !important;
-    }
+  }
+}
+
+// На десктопе кнопка выхода тоже должна быть в стиле кнопок
+.disconnect-room-btn:not(.mobile-exit) {
+  background: linear-gradient(135deg, #ff6699, #ffcc00);
+  color: #fff;
+  font-size: 14px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -194,23 +231,21 @@ body.modal-open {
   position: relative;
   width: auto;
   height: 32px;
-  padding: 0 14px;
+  padding: 0 10px;
   white-space: nowrap;
-  font-size: 16px;
+  font-size: 14px;
   color: #fff;
   border: none;
   outline: none;
   cursor: pointer;
   margin: 0 2px;
-  background-color: transparent;
+  background: linear-gradient(135deg, #ffcc00, #ff6699);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &::before {
     content: '';
@@ -230,17 +265,16 @@ body.modal-open {
   }
 
   &:hover::before {
-    background-color: #ffd700;
     opacity: 1;
   }
 
   &:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
   }
 
   &:active {
-    animation: buttonPress 0.2s ease-out;
+    transform: scale(0.95);
   }
 }
 
