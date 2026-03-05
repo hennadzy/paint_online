@@ -4,6 +4,77 @@ const DataStore = require('./DataStore');
 class RoomManager {
   constructor() {
     this.roomSockets = new Map();
+    // Start inactivity check interval (every 1 minute)
+    this.startInactivityCheck();
+  }
+
+  startInactivityCheck() {
+    setInterval(() => {
+      this.checkInactiveUsers();
+    }, 60000); // Check every minute
+  }
+
+  async checkInactiveUsers() {
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    const now = Date.now();
+    
+    // Get all WebSocket keys
+    const keys = await this.redis.keys('ws:*');
+    
+    for (const key of keys) {
+      try {
+        const data = await this.redis.hgetall(key);
+        if (!data || !data.lastActivity) continue;
+        
+        const lastActivity = parseInt(data.lastActivity);
+        const timeSinceLastActivity = now - lastActivity;
+        
+        if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
+          // User is inactive, remove them
+          const wsId = key.replace('ws:', '');
+          const { roomId, username } = data;
+          
+          if (roomId && username) {
+            await this.removeUserByInfo(roomId, username);
+            console.log(`Removed inactive user: ${username} from room ${roomId}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking inactive user:', error);
+      }
+    }
+  }
+
+  async removeUserByInfo(roomId, username) {
+    // Remove from Redis
+    await this.redis.srem(`room:${roomId}:users`, username);
+    await this.redis.del(`ws:${roomId}_${username}`);
+    await this.redis.del(`user:${username}:room`);
+    
+    // Broadcast disconnection
+    const sockets = this.roomSockets.get(roomId);
+    if (sockets) {
+      const WebSocket = require('ws');
+      const message = JSON.stringify({ method: 'disconnection', username });
+      sockets.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+      
+      // Broadcast updated users list
+      const users = await this.getRoomUsers(roomId);
+      const usersMessage = JSON.stringify({ method: 'users', users });
+      sockets.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(usersMessage);
+        }
+      });
+    }
+  }
+
+  get redis() {
+    return require('../config/db').redis;
   }
 
   async getAllRoomStrokes(roomId) {
@@ -40,7 +111,7 @@ class RoomManager {
   async addUser(roomId, username, ws) {
     const userCount = await redis.scard(`room:${roomId}:users`);
     if (userCount >= 10) {
-      throw new Error('Room is full');
+      throw new Error('Достигнуто максимальное количество пользователей в комнате');
     }
 
     // Get the list of users already in the room (online)

@@ -49,7 +49,12 @@ const TopMenu = observer(() => {
 
   useEffect(() => {
     const connectToRoom = async () => {
-      const { username, currentRoomId: roomId, isConnected, canvas } = canvasState;
+      const { username, currentRoomId: roomId, isConnected, canvas, roomError } = canvasState;
+      
+      // If there's a room error (e.g., room is full), don't try to reconnect
+      if (roomError) {
+        return;
+      }
       
       if (!username || username === 'local' || !roomId || isConnected || !canvas) {
         return;
@@ -62,14 +67,19 @@ const TopMenu = observer(() => {
         return;
       }
       
-      canvasState.setModalOpen(false);
-      canvasState.setShowRoomInterface(false);
+      // Don't close interface yet - wait for successful connection
+      // canvasState.setModalOpen(false);
+      // canvasState.setShowRoomInterface(false);
       
       try {
         await canvasState.connectToRoom(roomId, username, token);
+        // Only close interface after successful connection
+        canvasState.setModalOpen(false);
+        canvasState.setShowRoomInterface(false);
       } catch (error) {
         localStorage.removeItem(`room_token_${roomId}`);
         canvasState.setIsConnected(false);
+        // Show modal if connection fails
         canvasState.setModalOpen(true);
       }
     };
@@ -77,7 +87,7 @@ const TopMenu = observer(() => {
     if (canvasState.currentRoomId && canvasState.usernameReady && !canvasState.isConnected) {
       connectToRoom();
     }
-  }, [canvasState.usernameReady, canvasState.isConnected, canvasState.currentRoomId]);
+  }, [canvasState.usernameReady, canvasState.isConnected, canvasState.currentRoomId, canvasState.roomError]);
 
   const handleImageUpload = useCallback((e) => {
   const file = e.target.files[0];

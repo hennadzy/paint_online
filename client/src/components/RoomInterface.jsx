@@ -66,6 +66,9 @@ const RoomInterface = observer(({ roomId }) => {
 
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
   const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
+  
+  // Show room error if present
+  const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
 
   useEffect(() => {
     if (canvasState.showRoomsList) {
@@ -95,6 +98,15 @@ const RoomInterface = observer(({ roomId }) => {
       usernameInputRef.current.focus();
     }
   }, [showUsernameForm]);
+
+  // Sync room error to local error state
+  useEffect(() => {
+    if (canvasState.roomError) {
+      setError(canvasState.roomError);
+      // Clear the error after it's been shown
+      canvasState.clearRoomError();
+    }
+  }, [canvasState.roomError]);
 
   useEffect(() => {
     if (roomId && !canvasState.isConnected) {

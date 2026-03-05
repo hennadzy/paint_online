@@ -56,8 +56,9 @@ class CanvasState {
     });
     WebSocketService.on('roomError', ({ message }) => {
       this.roomError = message;
-      this.setShowRoomInterface(false);
-      alert(message);
+      // Don't close room interface - let the UI handle showing the error
+      // Reset connection state - isConnected stays false
+      this.isConnected = false;
     });
     WebSocketService.on('userConnected', ({ username }) => {
       this.addUser(username);
