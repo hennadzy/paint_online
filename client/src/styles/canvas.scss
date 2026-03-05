@@ -800,6 +800,7 @@ button:active {
   align-items: center;
   flex-shrink: 0;
   padding-right: 4px;
+  margin-top: auto;
   
   @media (max-width: 768px) {
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -877,7 +878,7 @@ button:active {
       width: 90px;
       flex-shrink: 0;
       border-bottom: none;
-      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
       padding: 0 0 0 5px;
       margin: 0;
       display: flex;
