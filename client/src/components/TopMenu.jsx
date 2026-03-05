@@ -352,9 +352,9 @@ const TopMenu = observer(() => {
               <button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
                 Пригласить
               </button>
-              {/* На ПК текст, на мобиле иконка */}
+              {/* Кнопка выхода из комнаты с иконкой крестика */}
               <button
-                className={`create-room-btn disconnect-room-btn ${windowWidth <= 768 ? 'mobile-exit' : ''}`}
+                className="create-room-btn disconnect-room-btn"
                 onClick={() => { 
                   canvasState.setShowRoomInterface(true); 
                   canvasState.setShowRoomsList(true); 
@@ -363,20 +363,16 @@ const TopMenu = observer(() => {
                   navigate('/'); 
                 }}
               >
-                {windowWidth <= 768 ? (
-                  <span className="icon" style={{ 
-                    backgroundImage: `url(${exitIcon})`,
-                    width: '24px',
-                    height: '24px',
-                    display: 'block',
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    filter: 'none'
-                  }} />
-                ) : (
-                  'Выйти'
-                )}
+                <span className="icon" style={{ 
+                  backgroundImage: `url(${exitIcon})`,
+                  width: '24px',
+                  height: '24px',
+                  display: 'block',
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                  filter: 'none'
+                }} />
               </button>
             </>
           )}

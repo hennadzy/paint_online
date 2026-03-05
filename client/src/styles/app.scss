@@ -210,21 +210,31 @@ body.modal-open {
   }
 }
 
-// На десктопе кнопка выхода тоже должна быть в стиле кнопок
-.disconnect-room-btn:not(.mobile-exit) {
-  background: linear-gradient(135deg, #ff6699, #ffcc00);
-  color: #fff;
-  font-size: 14px;
-  padding: 0 12px;
-  height: 32px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+// На десктопе кнопка выхода тоже должна быть с иконкой
+.disconnect-room-btn {
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  min-width: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  
+  .icon {
+    width: 24px !important;
+    height: 24px !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    display: block !important;
+    filter: brightness(0) invert(1);
+  }
   
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
   }
 }
 
