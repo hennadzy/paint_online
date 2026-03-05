@@ -159,6 +159,22 @@ body.modal-open {
   }
 }
 
+// Мобильная версия кнопки выхода из комнаты
+@media (max-width: 768px) {
+  .disconnect-room-btn {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 0;
+    
+    .icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+  }
+}
+
 .create-room-btn {
   position: relative;
   width: auto;
