@@ -115,15 +115,19 @@ const Chat = observer(() => {
       </div>
       <div className="chat-users">
         <h4>Пользователи:</h4>
-        {canvasState.users.map((user, index) => (
-          <div key={index} className="chat-user">
-            {user}
-          </div>
-        ))}
+        <div className="chat-users-list">
+          {canvasState.users.map((user, index) => (
+            <div key={index} className="chat-user">
+              {user}
+            </div>
+          ))}
+        </div>
         {windowWidth <= 768 && (
-          <button className="chat-invite-btn" onClick={handleInvite}>
-            Пригласить
-          </button>
+          <div className="chat-invite-container">
+            <button className="chat-invite-btn" onClick={handleInvite}>
+              Пригласить
+            </button>
+          </div>
         )}
       </div>
     </div>

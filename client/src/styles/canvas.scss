@@ -845,9 +845,11 @@ button:active {
       width: 90px;
       flex-shrink: 0;
       border-bottom: none;
-      border-right: 1px solid #ccc;
+      border-left: 1px solid #ccc;
       padding: 0 0 0 5px;
       margin: 0;
+      display: flex;
+      flex-direction: column;
       
       h4 {
         font-size: 14px;
@@ -856,10 +858,21 @@ button:active {
       }
     }
     
+    .chat-users-list {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    
     .chat-user {
       font-size: 11px;
     }
-    
+
+    .chat-invite-container {
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
     .chat-input-container {
       flex-direction: row;
       align-items: center;
@@ -877,7 +890,8 @@ button:active {
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
-      
+      width: 100%;
+
       &:active {
         transform: scale(0.95);
       }
