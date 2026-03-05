@@ -860,22 +860,6 @@ button:active {
       font-size: 11px;
     }
     
-    .chat-invite-btn {
-      margin-top: 10px;
-      padding: 6px 10px;
-      font-size: 12px;
-      background: linear-gradient(135deg, #ffcc00, #ff6699);
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      width: 100%;
-      
-      &:active {
-        transform: scale(0.95);
-      }
-    }
-    
     .chat-input-container {
       flex-direction: row;
       align-items: center;
