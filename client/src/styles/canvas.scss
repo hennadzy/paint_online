@@ -867,6 +867,7 @@ button:active {
 @media (max-width: 768px) {
   .chat {
     flex-direction: row;
+    gap: 5px;
     
     .chat-main {
       flex: 1;
