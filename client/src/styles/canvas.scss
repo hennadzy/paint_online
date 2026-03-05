@@ -723,6 +723,7 @@ button:active {
   gap: 10px;
 
   @media (max-width: 768px) {
+    flex-direction: row;
     flex: 1;
     height: auto;
     min-height: 150px;
@@ -826,6 +827,66 @@ button:active {
 
 .chat-send-btn:active {
   transform: scale(0.95);
+}
+
+// Mobile vertical chat layout
+@media (max-width: 768px) {
+  .chat {
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    
+    .chat-users {
+      width: 100px;
+      flex-shrink: 0;
+      border-bottom: none;
+      border-left: 1px solid #ccc;
+      padding-bottom: 0;
+      margin-bottom: 0;
+      padding-left: 10px;
+      margin-left: 10px;
+      padding-top: 0;
+      
+      h4 {
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+    }
+    
+    .chat-user {
+      font-size: 11px;
+    }
+    
+    .chat-invite-btn {
+      margin-top: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: linear-gradient(135deg, #ffcc00, #ff6699);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      width: 100%;
+      
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+    
+    .chat-send-btn {
+      padding: 6px 10px;
+      font-size: 16px;
+      min-width: 36px;
+    }
+  }
+  
+  // Hide invite button in top menu on mobile
+  .invite-btn-desktop {
+    display: none;
+  }
 }
 
 .setting-bar input[type="color"]:hover {
