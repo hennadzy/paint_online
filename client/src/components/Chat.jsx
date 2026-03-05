@@ -80,21 +80,6 @@ const Chat = observer(() => {
 
   return (
     <div className="chat" data-nosnippet>
-      <div className="chat-users">
-        <h4>Пользователи:</h4>
-        <div className="chat-users-list">
-          {canvasState.users.map((user, index) => (
-            <div key={index} className="chat-user">
-              {user}
-            </div>
-          ))}
-        </div>
-        <div className="chat-invite-container">
-          <button className="chat-invite-btn" onClick={handleInvite}>
-            Пригласить
-          </button>
-        </div>
-      </div>
       <div className="chat-main">
         <div className="chat-messages" ref={messagesRef}>
           {canvasState.chatMessages.map((msg, index) => (
@@ -125,6 +110,21 @@ const Chat = observer(() => {
             title="Отправить"
           >
             ↵
+          </button>
+        </div>
+      </div>
+      <div className="chat-users">
+        <h4>Пользователи:</h4>
+        <div className="chat-users-list">
+          {canvasState.users.map((user, index) => (
+            <div key={index} className="chat-user">
+              {user}
+            </div>
+          ))}
+        </div>
+        <div className="chat-invite-container">
+          <button className="chat-invite-btn" onClick={handleInvite}>
+            Пригласить
           </button>
         </div>
       </div>

@@ -349,7 +349,7 @@ const TopMenu = observer(() => {
           {/* Кнопки для режима комнаты */}
           {canvasState.isConnected && (
             <>
-              <button className="create-room-btn invite-btn-desktop" onClick={handleInvite}>
+              <button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
                 Пригласить
               </button>
               {/* На ПК текст, на мобиле иконка */}
