@@ -813,7 +813,7 @@ button:active {
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   color: white;
-  font-size: 13px;
+  font-size: 16px;
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -881,7 +881,7 @@ button:active {
     
     .chat-invite-btn {
       margin: 0;
-      padding: 6px 8px;
+      padding: 8px 10px;
       font-size: 12px;
       background: linear-gradient(135deg, #ffcc00, #ff6699);
       border: none;
@@ -891,6 +891,8 @@ button:active {
       white-space: nowrap;
       flex-shrink: 0;
       width: 100%;
+      height: 36px;
+      box-sizing: border-box;
 
       &:active {
         transform: scale(0.95);
@@ -902,9 +904,10 @@ button:active {
     }
     
     .chat-send-btn {
-      padding: 6px 10px;
-      font-size: 16px;
+      padding: 8px 10px;
+      font-size: 18px;
       min-width: 36px;
+      height: 36px;
     }
   }
   
