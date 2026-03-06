@@ -30,7 +30,7 @@ class UserState {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         username,
         email,
         password
@@ -56,7 +56,7 @@ class UserState {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
       });
@@ -79,7 +79,7 @@ class UserState {
 
   async logout() {
     try {
-      await axios.post(`${API_URL}/auth/logout`);
+      await axios.post(`${API_URL}/api/auth/logout`);
     } catch (error) {
       console.error('Logout error', error);
     } finally {
@@ -96,7 +96,7 @@ class UserState {
   async updateProfile(updates) {
     this.loading = true;
     try {
-      const response = await axios.put(`${API_URL}/users/me`, updates);
+      const response = await axios.put(`${API_URL}/api/users/me`, updates);
       runInAction(() => {
         this.user = response.data.user;
         localStorage.setItem('user', JSON.stringify(this.user));
@@ -115,7 +115,7 @@ class UserState {
     formData.append('avatar', file);
     this.loading = true;
     try {
-      const response = await axios.post(`${API_URL}/users/me/avatar`, formData, {
+      const response = await axios.post(`${API_URL}/api/users/me/avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       runInAction(() => {
@@ -133,7 +133,7 @@ class UserState {
 
   async updateSettings(settings) {
     try {
-      const response = await axios.put(`${API_URL}/users/me/settings`, { settings });
+      const response = await axios.put(`${API_URL}/api/users/me/settings`, { settings });
       runInAction(() => {
         this.user.settings = response.data.settings;
         localStorage.setItem('user', JSON.stringify(this.user));
@@ -145,7 +145,7 @@ class UserState {
 
   async fetchUserRooms() {
     try {
-      const response = await axios.get(`${API_URL}/users/me/rooms`);
+      const response = await axios.get(`${API_URL}/api/users/me/rooms`);
       runInAction(() => {
         this.userRooms = response.data.rooms;
       });
@@ -156,7 +156,7 @@ class UserState {
 
   async fetchFavorites() {
     try {
-      const response = await axios.get(`${API_URL}/users/me/favorites`);
+      const response = await axios.get(`${API_URL}/api/users/me/favorites`);
       runInAction(() => {
         this.favorites = response.data.favorites;
       });
@@ -167,7 +167,7 @@ class UserState {
 
   async addFavorite(roomId) {
     try {
-      await axios.post(`${API_URL}/users/me/favorites/${roomId}`);
+      await axios.post(`${API_URL}/api/users/me/favorites/${roomId}`);
       await this.fetchFavorites();
     } catch (error) {
       console.error('Add favorite error', error);
@@ -176,7 +176,7 @@ class UserState {
 
   async removeFavorite(roomId) {
     try {
-      await axios.delete(`${API_URL}/users/me/favorites/${roomId}`);
+      await axios.delete(`${API_URL}/api/users/me/favorites/${roomId}`);
       await this.fetchFavorites();
     } catch (error) {
       console.error('Remove favorite error', error);
