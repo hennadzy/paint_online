@@ -24,6 +24,8 @@
 }
 
 .main-content:has(.profile-page) {
+  padding-top: 0 !important;
+
   @media (min-width: 769px) {
     padding-left: 0;
     width: 100%;
@@ -50,6 +52,7 @@
   justify-content: center;
   align-items: center;
   margin-bottom: 30px;
+  width: 100%;
 
   h1 {
     font-size: 28px;
@@ -60,6 +63,8 @@
     margin: 0;
     font-weight: 700;
     z-index: 1;
+    text-align: center;
+    flex: 1;
   }
 
   .profile-btn {
@@ -69,16 +74,38 @@
     transform: translateY(-50%);
     z-index: 2;
 
-    // Убираем смещение при hover
     &:hover {
       transform: translateY(-50%) scale(1.05);
     }
 
+    .profile-back-text {
+      @media (max-width: 768px) {
+        display: none;
+      }
+    }
+
+    .profile-back-icon {
+      display: none;
+
+      @media (max-width: 768px) {
+        display: inline;
+        font-size: 24px;
+        line-height: 1;
+      }
+    }
+
     @media (max-width: 768px) {
-      position: static;
-      transform: none;
-      margin-left: auto;
-      opacity: 1;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      min-width: 44px;
+      height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
     }
   }
 }

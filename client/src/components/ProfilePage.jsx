@@ -82,8 +82,9 @@ const ProfilePage = observer(() => {
         {/* Header */}
         <div className="profile-header">
           <h1>Личный кабинет</h1>
-          <button className="profile-btn profile-btn-secondary" onClick={() => navigate('/')}>
-            ← На главную
+          <button className="profile-btn profile-btn-secondary" onClick={() => navigate('/')} aria-label="На главную">
+            <span className="profile-back-icon" aria-hidden="true">×</span>
+            <span className="profile-back-text">← На главную</span>
           </button>
         </div>
 
