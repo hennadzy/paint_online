@@ -498,6 +498,37 @@
   }
 }
 
+// Form styles for AuthPage
+.form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #ffcc00;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+.switch-link {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #ffcc00;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
 @keyframes glowing {
   0% {
     background-position: 0% 50%;
