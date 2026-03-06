@@ -114,6 +114,7 @@ class UserState {
     const formData = new FormData();
     formData.append('avatar', file);
     this.loading = true;
+    this.error = null;
     try {
       const response = await axios.post(`${API_URL}/api/users/me/avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -128,6 +129,7 @@ class UserState {
         this.error = error.response?.data?.error || 'Upload failed';
         this.loading = false;
       });
+      throw error; // Re-throw so component can catch
     }
   }
 

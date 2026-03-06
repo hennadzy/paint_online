@@ -1,8 +1,9 @@
 // client/src/components/ProfilePage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import { useNavigate } from 'react-router-dom';
+import '../styles/profile.scss';
 
 const ProfilePage = observer(() => {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ const ProfilePage = observer(() => {
   const [email, setEmail] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!userState.isAuthenticated) {
@@ -26,16 +29,31 @@ const ProfilePage = observer(() => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setUploadError('Файл слишком большой (макс. 2 МБ)');
+        return;
+      }
       setAvatarFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewUrl(event.target.result);
+      };
+      reader.readAsDataURL(file);
+      setUploadError('');
     }
   };
 
   const handleAvatarUpload = async () => {
-    if (avatarFile) {
+    if (!avatarFile) return;
+    setUploadError('');
+    try {
       await userState.uploadAvatar(avatarFile);
       setAvatarFile(null);
       setPreviewUrl(null);
+    } catch (err) {
+      setUploadError('Ошибка загрузки');
     }
   };
 
@@ -49,67 +67,166 @@ const ProfilePage = observer(() => {
     navigate('/');
   };
 
-  if (!userState.user) return <div>Loading...</div>;
+  if (!userState.user) return (
+    <div className="profile-loading">
+      <div className="spinner"></div>
+    </div>
+  );
 
   return (
     <div className="profile-page">
-      <h1>Профиль</h1>
-      <div className="profile-avatar">
-        <img src={previewUrl || userState.user.avatar_url || '/default-avatar.png'} alt="avatar" />
-        <input type="file" accept="image/*" onChange={handleAvatarChange} />
-        {avatarFile && <button onClick={handleAvatarUpload}>Загрузить</button>}
-      </div>
-
-      {editMode ? (
-        <div className="profile-edit">
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Имя пользователя"
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-          />
-          <button onClick={handleSaveProfile}>Сохранить</button>
-          <button onClick={() => setEditMode(false)}>Отмена</button>
+      <div className="profile-container">
+        {/* Header */}
+        <div className="profile-header">
+          <h1>Личный кабинет</h1>
+          <button className="profile-btn profile-btn-secondary" onClick={() => navigate('/')}>
+            ← На главную
+          </button>
         </div>
-      ) : (
-        <div className="profile-info">
-          <p><strong>Имя:</strong> {userState.user.username}</p>
-          <p><strong>Email:</strong> {userState.user.email}</p>
-          <p><strong>Дата регистрации:</strong> {new Date(userState.user.created_at).toLocaleDateString()}</p>
-          <button onClick={() => setEditMode(true)}>Редактировать</button>
+
+        {/* Main content */}
+        <div className="profile-content">
+          {/* Left column – avatar and actions */}
+          <div className="profile-left">
+            <div className="profile-avatar">
+              <img
+                src={previewUrl || userState.user.avatar_url || '/default-avatar.png'}
+                alt="аватар"
+                className="avatar-image"
+              />
+            </div>
+
+            <div className="avatar-actions">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                style={{ display: 'none' }}
+              />
+              <button
+                className="profile-btn profile-btn-primary"
+                onClick={() => fileInputRef.current.click()}
+              >
+                Выбрать файл
+              </button>
+              {avatarFile && (
+                <button
+                  className="profile-btn profile-btn-primary"
+                  onClick={handleAvatarUpload}
+                >
+                  Загрузить
+                </button>
+              )}
+              {uploadError && <div className="profile-error">{uploadError}</div>}
+            </div>
+          </div>
+
+          {/* Right column – information and settings */}
+          <div className="profile-right">
+            {editMode ? (
+              <div className="profile-edit-form">
+                <div className="form-group">
+                  <label>Имя пользователя</label>
+                  <input
+                    type="text"
+                    className="profile-input"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Ваше имя"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    className="profile-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email"
+                  />
+                </div>
+                <div className="form-actions">
+                  <button className="profile-btn profile-btn-primary" onClick={handleSaveProfile}>
+                    Сохранить
+                  </button>
+                  <button className="profile-btn profile-btn-secondary" onClick={() => setEditMode(false)}>
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="profile-info">
+                <div className="info-row">
+                  <span className="info-label">Имя:</span>
+                  <span className="info-value">{userState.user.username}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Email:</span>
+                  <span className="info-value">{userState.user.email}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Дата регистрации:</span>
+                  <span className="info-value">
+                    {new Date(userState.user.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <button className="profile-btn profile-btn-primary" onClick={() => setEditMode(true)}>
+                  Редактировать профиль
+                </button>
+              </div>
+            )}
+
+            <hr className="profile-divider" />
+
+            {/* My rooms */}
+            <div className="profile-section">
+              <h2>Мои комнаты</h2>
+              {userState.userRooms.length === 0 ? (
+                <p className="profile-empty">Вы ещё не создали ни одной комнаты</p>
+              ) : (
+                <ul className="profile-list">
+                  {userState.userRooms.map(room => (
+                    <li key={room.id} className="profile-list-item">
+                      <a href={`/${room.id}`} className="room-link">{room.name}</a>
+                      <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Favorites */}
+            <div className="profile-section">
+              <h2>Избранное</h2>
+              {userState.favorites.length === 0 ? (
+                <p className="profile-empty">Нет избранных комнат</p>
+              ) : (
+                <ul className="profile-list">
+                  {userState.favorites.map(room => (
+                    <li key={room.id} className="profile-list-item">
+                      <a href={`/${room.id}`} className="room-link">{room.name}</a>
+                      <button
+                        className="profile-btn profile-btn-small"
+                        onClick={() => userState.removeFavorite(room.id)}
+                      >
+                        Удалить
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Logout button */}
+            <div className="profile-logout">
+              <button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
+                Выйти
+              </button>
+            </div>
+          </div>
         </div>
-      )}
-
-      <div className="profile-rooms">
-        <h2>Мои комнаты</h2>
-        <ul>
-          {userState.userRooms.map(room => (
-            <li key={room.id}>
-              <a href={`/${room.id}`}>{room.name}</a> ({room.isPublic ? 'публичная' : 'приватная'})
-            </li>
-          ))}
-        </ul>
       </div>
-
-      <div className="profile-favorites">
-        <h2>Избранное</h2>
-        <ul>
-          {userState.favorites.map(room => (
-            <li key={room.id}>
-              <a href={`/${room.id}`}>{room.name}</a>
-              <button onClick={() => userState.removeFavorite(room.id)}>Удалить</button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <button onClick={handleLogout} className="logout-btn">Выйти</button>
     </div>
   );
 });

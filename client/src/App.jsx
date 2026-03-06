@@ -26,6 +26,7 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
+    const hideGlobalUI = ['/profile', '/login', '/register'].includes(location.pathname);
 
     useEffect(() => {
         const fallback = document.getElementById('server-404-fallback');
@@ -52,9 +53,9 @@ const App = observer(() => {
 
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
-            <TopMenu />
-            <Toolbar />
-            <SettingBar />
+            {!hideGlobalUI && <TopMenu />}
+            {!hideGlobalUI && <Toolbar />}
+            {!hideGlobalUI && <SettingBar />}
             <div className="main-content">
                 <Routes>
                     <Route path='/' element={<Canvas />} />
