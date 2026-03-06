@@ -32,7 +32,9 @@ const App = observer(() => {
         if (fallback) fallback.hidden = true;
 
         const path = location.pathname;
-        if (path === '/' || path === '/404') return;
+        // Разрешённые клиентские маршруты (не требуют проверки)
+        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404'];
+        if (allowedClientPaths.includes(path)) return;
 
         const segments = path.slice(1).split('/').filter(Boolean);
         if (segments.length !== 1) {
