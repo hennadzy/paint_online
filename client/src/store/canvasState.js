@@ -79,8 +79,11 @@ class CanvasState {
         this.cancelledStrokeIds = cancelledStrokeIds;
       }
       
-      HistoryService.setStrokes(strokes);
-      CanvasService.rebuildBuffer(strokes, () => {
+      // Фильтруем штрихи, удаляя отменённые
+      const filteredStrokes = strokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
+      
+      HistoryService.setStrokes(filteredStrokes);
+      CanvasService.rebuildBuffer(filteredStrokes, () => {
         setTimeout(() => this.saveThumbnail(), 500);
       });
     });
