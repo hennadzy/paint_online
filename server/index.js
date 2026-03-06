@@ -123,14 +123,16 @@ const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404'];
 
 app.get('*', (req, res) => {
   const pathname = req.path;
+  // Убираем завершающий слеш (или несколько)
+  const normalizedPath = pathname.replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
   // 1. Если путь точно клиентский – отдаём index.html
-  if (CLIENT_ROUTES.includes(pathname)) {
+  if (CLIENT_ROUTES.includes(normalizedPath)) {
     return res.sendFile(indexPath);
   }
 
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = normalizedPath.split('/').filter(Boolean);
 
   // 2. Если сегментов больше одного – неизвестный путь → 404
   if (segments.length !== 1) {

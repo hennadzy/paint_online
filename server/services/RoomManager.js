@@ -172,9 +172,11 @@ class RoomManager {
     } else {
       strokes = strokes.map(s => {
         const parsed = JSON.parse(s);
-        // Убедимся, что lineWidth сохраняется
-        if (!parsed.lineWidth && parsed.type === 'brush') {
-          parsed.lineWidth = 1;
+        // Если нет lineWidth, установить разумное значение по умолчанию в зависимости от типа
+        if (parsed.lineWidth === undefined) {
+          if (parsed.type === 'eraser') parsed.lineWidth = 10;
+          else if (parsed.type === 'text') parsed.lineWidth = 16;
+          else parsed.lineWidth = 1;
         }
         return parsed;
       });

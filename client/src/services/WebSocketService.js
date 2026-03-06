@@ -148,6 +148,9 @@ class WebSocketService {
       case 'chat':
         this.emit('chatReceived', { username: message.username, message: message.message });
         break;
+      case 'syncCancelled':
+        this.emit('syncCancelled', { cancelledStrokeIds: message.cancelledStrokeIds });
+        break;
       case 'error':
         this.emit('roomError', { message: message.message });
         break;
