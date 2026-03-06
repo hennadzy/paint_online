@@ -125,6 +125,7 @@ class UserState {
         this.loading = false;
       });
     } catch (error) {
+      console.error('Upload avatar error:', error.response || error); // лог ошибки
       runInAction(() => {
         this.error = error.response?.data?.error || 'Upload failed';
         this.loading = false;

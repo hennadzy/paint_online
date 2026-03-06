@@ -18,15 +18,16 @@
 }
 
 .profile-container {
-  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
   width: 100%;
+  max-width: 1200px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 0 auto;
 }
 
 .profile-header {
@@ -44,6 +45,7 @@
     background-clip: text;
     margin: 0;
     font-weight: 700;
+    z-index: 1;
   }
 
   .profile-btn {
@@ -51,6 +53,19 @@
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+    z-index: 2;
+
+    // Убираем смещение при hover
+    &:hover {
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      position: static;
+      transform: none;
+      margin-left: auto;
+      opacity: 1;
+    }
   }
 }
 

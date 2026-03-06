@@ -5,6 +5,9 @@ import userState from '../store/userState';
 import { useNavigate } from 'react-router-dom';
 import '../styles/profile.scss';
 
+// SVG-силуэт человека для fallback аватара
+const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='80' r='40' fill='%23cccccc'/%3E%3Cpath d='M30 170 Q100 130, 170 170' stroke='%23cccccc' stroke-width='10' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
+
 const ProfilePage = observer(() => {
   const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
@@ -90,7 +93,7 @@ const ProfilePage = observer(() => {
           <div className="profile-left">
             <div className="profile-avatar">
               <img
-                src={previewUrl || userState.user.avatar_url || '/default-avatar.png'}
+                src={previewUrl || userState.user.avatar_url || defaultAvatar}
                 alt="аватар"
                 className="avatar-image"
               />
