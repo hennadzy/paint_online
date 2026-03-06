@@ -95,7 +95,7 @@ body.modal-open {
     width: 100%;
     height: 100%;
     background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
-    background-size: 400%;
+    background-size: 400% 400%;
     border-radius: 10px;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
@@ -259,27 +259,29 @@ body.modal-open {
   flex-shrink: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-  // Убираем рассеянное свечение (было: filter: blur(5px))
-  // &::before {
-  //   content: '';
-  //   position: absolute;
-  //   bottom: 0;
-  //   left: 0;
-  //   width: 100%;
-  //   height: 100%;
-  //   background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
-  //   background-size: 400%;
-  //   filter: blur(5px);
-  //   border-radius: 10px;
-  //   opacity: 0;
-  //   transition: opacity 0.3s ease-in-out;
-  //   animation: glowing 10s linear infinite;
-  //   z-index: -1;
-  // }
+  &.about-btn::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    background-size: 400% 400%;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    animation: glowing 10s linear infinite;
+    z-index: -1;
+  }
 
-  // &:hover::before {
-  //   opacity: 1;
-  // }
+  &.about-btn:hover {
+    background: transparent;
+  }
+
+  &.about-btn:hover::before {
+    opacity: 1;
+  }
 
   &:hover {
     transform: scale(1.05);
