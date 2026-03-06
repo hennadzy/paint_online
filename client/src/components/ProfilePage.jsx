@@ -53,7 +53,7 @@ const ProfilePage = observer(() => {
       setAvatarFile(null);
       setPreviewUrl(null);
     } catch (err) {
-      setUploadError('Ошибка загрузки');
+      setUploadError(err.message || 'Ошибка загрузки');
     }
   };
 
@@ -115,7 +115,7 @@ const ProfilePage = observer(() => {
                   className="profile-btn profile-btn-primary"
                   onClick={handleAvatarUpload}
                 >
-                  Загрузить
+                  Сохранить
                 </button>
               )}
               {uploadError && <div className="profile-error">{uploadError}</div>}
@@ -168,7 +168,9 @@ const ProfilePage = observer(() => {
                 <div className="info-row">
                   <span className="info-label">Дата регистрации:</span>
                   <span className="info-value">
-                    {new Date(userState.user.created_at).toLocaleDateString()}
+                    {userState.user.created_at
+                      ? new Date(Number(userState.user.created_at)).toLocaleDateString()
+                      : 'неизвестно'}
                   </span>
                 </div>
                 <button className="profile-btn profile-btn-primary" onClick={() => setEditMode(true)}>
@@ -221,7 +223,7 @@ const ProfilePage = observer(() => {
             {/* Logout button */}
             <div className="profile-logout">
               <button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
-                Выйти
+                Выйти из аккаунта
               </button>
             </div>
           </div>

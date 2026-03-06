@@ -7,6 +7,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 40px 20px;
+  overflow-y: auto;
   box-sizing: border-box;
   font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
 
@@ -25,11 +26,13 @@
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 auto;
 }
 
 .profile-header {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 30px;
 
@@ -41,6 +44,13 @@
     background-clip: text;
     margin: 0;
     font-weight: 700;
+  }
+
+  .profile-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 
@@ -220,7 +230,7 @@
   }
 
   &:hover {
-    transform: translateY(-2px);
+    transform: scale(1.05);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
   }
 
