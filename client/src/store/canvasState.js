@@ -84,6 +84,7 @@ class CanvasState {
       
       HistoryService.setStrokes(filteredStrokes);
       CanvasService.rebuildBuffer(filteredStrokes, () => {
+        canvasState.setZoom(1); // принудительно сбросить масштаб после загрузки
         setTimeout(() => this.saveThumbnail(), 500);
       });
     });

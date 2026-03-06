@@ -551,11 +551,55 @@ button:active {
   }
 
   .chat {
-    width: 200px;
-    max-width: 200px;
+    flex-direction: column;
+    width: 220px;
+    max-width: 220px;
     height: 100%;
-    padding: 8px 10px;
+    padding: 10px;
     font-size: 12px;
+    border-radius: 12px;
+    flex: none;
+    min-height: 0;
+    max-height: 100%;
+    margin-bottom: 0;
+
+    .chat-users {
+      width: auto;
+      border-right: none;
+      border-bottom: 1px solid #ccc;
+      padding: 0 0 8px 0;
+      margin-bottom: 8px;
+
+      h4 {
+        font-size: 13px;
+        margin-bottom: 5px;
+      }
+    }
+
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .chat-users-list {
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .chat-input-container {
+      margin-top: auto;
+      display: flex;
+      gap: 5px;
+      padding-top: 8px;
+    }
 
     .chat-user {
       font-size: 12px;
@@ -566,13 +610,15 @@ button:active {
     }
 
     .chat-input {
+      flex: 1;
       padding: 6px 8px;
       font-size: 12px;
     }
 
     .chat-send-btn {
       padding: 6px 10px;
-      font-size: 12px;
+      font-size: 16px;
+      line-height: 1;
     }
   }
 
