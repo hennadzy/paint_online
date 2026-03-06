@@ -69,13 +69,13 @@
 
   .profile-btn {
     position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 10px;
+    top: 8px;
+    transform: none;
     z-index: 2;
 
     &:hover {
-      transform: translateY(-50%) scale(1.05);
+      transform: scale(1.05);
     }
 
     .profile-back-text {
@@ -89,23 +89,23 @@
 
       @media (max-width: 768px) {
         display: inline;
-        font-size: 24px;
+        font-size: 20px;  /* меньше крестик */
         line-height: 1;
       }
     }
 
     @media (max-width: 768px) {
       position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      min-width: 44px;
-      height: 44px;
+      right: 10px;
+      top: 8px;
+      transform: none;
+      min-width: 32px;
+      height: 32px;
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 0;       /* текст скрываем, оставляем только иконку */
     }
   }
 }
@@ -403,4 +403,19 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+// Мобильная прокрутка для Личного кабинета
+// Переопределяем жёсткие настройки из canvas.scss
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow: auto;
+    height: auto;
+  }
+  .app {
+    overflow: auto;
+    min-height: 100vh;
+    height: auto;
+  }
 }
