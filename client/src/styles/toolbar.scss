@@ -43,7 +43,7 @@
       background-size: 400% 400%;
       border-radius: 10px;
       opacity: 0.3;
-      animation: toolbarGlowing 10s linear infinite;
+      animation: toolbarGlowing 3s linear infinite;
       z-index: 0;
     }
 
@@ -504,6 +504,9 @@ canvas.eraser-cursor {
 
     &__btn {
       margin: 5px auto;
+      width: 32px !important;
+      height: 32px !important;
+      flex-shrink: 0;
     }
 
     &__group {
@@ -517,13 +520,12 @@ canvas.eraser-cursor {
       top: 50%;
       transform: translateY(-50%);
       flex-direction: row;
-      background: rgba(103, 103, 103, 0.9);
-      backdrop-filter: blur(5px);
-      border-radius: 8px;
-      padding: 5px;
-      min-width: 120px;
+      background-color: transparent;
+      border-radius: 0;
+      padding: 0;
+      min-width: auto;
       z-index: 1004;
-      box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+      box-shadow: none;
       display: none;
       overflow: visible;
 
@@ -533,8 +535,8 @@ canvas.eraser-cursor {
 
       .toolbar__btn {
         margin: 3px 5px;
-        width: 32px;
-        height: 32px;
+        width: 32px !important;
+        height: 32px !important;
         flex-shrink: 0;
       }
     }

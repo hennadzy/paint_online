@@ -7,7 +7,7 @@ const { validateUsername, validateEmail, validatePassword, hashPassword, verifyP
 const router = express.Router();
 
 const upload = multer({ 
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image files are allowed'));
@@ -106,10 +106,10 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Check file size before processing (should be under 2MB after base64 encoding)
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    // Check file size before processing (should be under 5MB after base64 encoding)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (req.file.size > maxSize) {
-      return res.status(400).json({ error: 'File too large (maximum 2MB)' });
+      return res.status(400).json({ error: 'File too large (maximum 5MB)' });
     }
 
     const base64 = req.file.buffer.toString('base64');
@@ -134,7 +134,7 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
       return res.status(400).json({ error: error.message });
     }
     if (error.code === '22001') { // String too long error
-      return res.status(400).json({ error: 'Image too large. Please use a smaller image (under 2MB).' });
+      return res.status(400).json({ error: 'Image too large. Please use a smaller image (under 5MB).' });
     }
     res.status(500).json({ error: 'Server error' });
   }

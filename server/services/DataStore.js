@@ -98,13 +98,26 @@ class DataStore {
     }
   }
 
-  async loadStrokes(roomId) {
+async loadStrokes(roomId) {
     try {
       const res = await pgPool.query(
         'SELECT stroke_data FROM strokes WHERE room_id = $1 ORDER BY created_at',
         [roomId]
       );
-      return res.rows.map(row => row.stroke_data);
+      // Normalize lineWidth for all strokes loaded from DB
+      return res.rows.map(row => {
+        const stroke = row.stroke_data;
+        if (stroke.lineWidth === undefined || stroke.lineWidth === null || stroke.lineWidth <= 0) {
+          if (stroke.type === 'eraser') {
+            stroke.lineWidth = 10;
+          } else if (stroke.type === 'text') {
+            stroke.lineWidth = 16;
+          } else {
+            stroke.lineWidth = 1;
+          }
+        }
+        return stroke;
+      });
     } catch (error) {
       console.error('loadStrokes error:', error);
       return [];
@@ -151,13 +164,26 @@ class DataStore {
     }
   }
 
-  async loadCancelledStrokes(roomId, username) {
+async loadCancelledStrokes(roomId, username) {
     try {
       const res = await pgPool.query(
         'SELECT stroke_data FROM cancelled_strokes WHERE room_id = $1 AND username = $2 ORDER BY created_at',
         [roomId, username]
       );
-      return res.rows.map(row => row.stroke_data);
+      // Normalize lineWidth for all cancelled strokes loaded from DB
+      return res.rows.map(row => {
+        const stroke = row.stroke_data;
+        if (stroke.lineWidth === undefined || stroke.lineWidth === null || stroke.lineWidth <= 0) {
+          if (stroke.type === 'eraser') {
+            stroke.lineWidth = 10;
+          } else if (stroke.type === 'text') {
+            stroke.lineWidth = 16;
+          } else {
+            stroke.lineWidth = 1;
+          }
+        }
+        return stroke;
+      });
     } catch (error) {
       console.error('loadCancelledStrokes error:', error);
       return [];

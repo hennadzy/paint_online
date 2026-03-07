@@ -519,10 +519,10 @@ button:active {
     flex-direction: row;
     align-items: flex-start;
     justify-content: center;
-    gap: 30px;
+    gap: 0;
     width: 100%;
     height: 100%;
-    padding: 50px 20px 0;          
+    padding: 50px 5px 0;
     box-sizing: border-box;
   }
 
@@ -547,23 +547,25 @@ button:active {
     gap: 15px;
     margin-top: 0;
     height: 100%;
-    width: auto;
-    max-width: 250px;
+    width: 100px;
+    max-width: 100px;
     overflow: hidden;
+    margin-right: 5px;
   }
 
   .chat {
     flex-direction: column !important;
-    width: 250px;
-    max-width: 250px;
+    width: 200px;
+    max-width: 200px;
     height: 100%;
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
     border-radius: 12px;
     flex: none;
     min-height: 0;
     max-height: 100%;
     margin-bottom: 0;
+    margin-left: 5px;
 
     .chat-users {
       width: auto;
@@ -573,12 +575,12 @@ button:active {
       min-height: 0;
       border-right: none;
       border-bottom: 1px solid #ccc;
-      padding: 0 0 10px 0;
-      margin-bottom: 10px;
+      padding: 0 0 8px 0;
+      margin-bottom: 8px;
 
       h4 {
-        font-size: 14px;
-        margin-bottom: 5px;
+        font-size: 13px;
+        margin-bottom: 4px;
       }
     }
     
@@ -606,33 +608,33 @@ button:active {
     .chat-input-container {
       margin-top: auto;
       display: flex;
-      gap: 6px;
-      padding-top: 10px;
+      gap: 5px;
+      padding-top: 8px;
     }
     
     .chat-user {
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .chat-message {
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .chat-input {
       flex: 1;
-      padding: 8px 10px;
-      font-size: 13px;
+      padding: 7px 9px;
+      font-size: 12px;
     }
-
+    
     .chat-send-btn {
-      padding: 8px 12px;
-      font-size: 16px;
+      padding: 7px 10px;
+      font-size: 15px;
       line-height: 1;
     }
 
     .chat-invite-btn {
-      font-size: 12px;
-      padding: 6px 10px;
+      font-size: 11px;
+      padding: 5px 8px;
     }
   }
   

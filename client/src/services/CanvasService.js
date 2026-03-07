@@ -31,17 +31,24 @@ class CanvasService {
     this.emit('initialized', { canvas });
   }
 
-  drawStroke(ctx, stroke) {
+drawStroke(ctx, stroke) {
   if (!stroke) return Promise.resolve();
   
   ctx.save();
   ctx.globalAlpha = 1;
   
-  const lineWidth = stroke.lineWidth || 
-                    (stroke.type === 'eraser' ? 10 : 
-                     stroke.type === 'text' ? 16 : 1);
+  // Нормализуем lineWidth: если значение отсутствует или некорректно, устанавливаем дефолт
+  let lineWidth = stroke.lineWidth;
   
-  console.log(`Drawing ${stroke.type} with lineWidth: ${lineWidth}`);
+  if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
+    lineWidth = (stroke.type === 'eraser' ? 10 : 
+                 stroke.type === 'text' ? 16 : 1);
+  }
+  
+  // Для brush гарантируем минимум 1
+  if (stroke.type === 'brush' && lineWidth < 1) {
+    lineWidth = 1;
+  }
   
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
@@ -162,14 +169,26 @@ clearImageCache() {
   this.imageCache.clear();
 }
 
-  renderBrushStroke(ctx, stroke, isEraser = false) {
-    const { points, lineWidth = 1, strokeStyle = '#000000', strokeOpacity = 1 } = stroke;
-    if (!points || points.length === 0) return;
-    
-    ctx.save();
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+renderBrushStroke(ctx, stroke, isEraser = false) {
+  if (!stroke || !stroke.points || stroke.points.length === 0) return;
+  
+  const { color = '#000000' } = stroke;
+  
+  // Нормализуем lineWidth так же, как в drawStroke
+  let lineWidth = stroke.lineWidth;
+  if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
+    lineWidth = isEraser ? 10 : 1;
+  }
+  // Для brush гарантируем минимум 1
+  if (!isEraser && lineWidth < 1) {
+    lineWidth = 1;
+  }
+  
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
     if (!isEraser && strokeStyle) {
       const r = parseInt(strokeStyle.slice(1, 3), 16);
