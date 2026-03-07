@@ -15,7 +15,7 @@ require('express-ws')(app);
 const PORT = process.env.PORT || 5000;
 
 const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
-const ROOM_EXPIRATION_TIME = 3 * 24 * 60 * 60 * 1000;
+const ROOM_EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000;
 
 app.use(helmet({
   contentSecurityPolicy: {

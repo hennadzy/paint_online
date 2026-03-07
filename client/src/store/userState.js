@@ -3,27 +3,60 @@ import axios from 'axios';
 import { API_URL } from './canvasState';
 
 class UserState {
-  user = null;
-  isAuthenticated = false;
-  loading = false;
-  error = null;
-  favorites = [];
-  userRooms = [];
+ user = null;
+ isAuthenticated = false;
+ loading = false;
+ error = null;
+ favorites = [];
+ userRooms = [];
 
-  constructor() {
-    makeAutoObservable(this);
-    this.loadFromStorage();
-  }
+ constructor() {
+ makeAutoObservable(this);
+ this.loadFromStorage();
+ }
 
-  loadFromStorage() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    if (token && user) {
-      this.user = JSON.parse(user);
-      this.isAuthenticated = true;
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-  }
+ saveUserToStorage(user) {
+ if (!user) return;
+
+ const storageUser = { ...user };
+
+ // Не сохраняем base64-аватар в localStorage, чтобы не переполнять квоту
+ if (typeof storageUser.avatar_url === 'string' && storageUser.avatar_url.startsWith('data:')) {
+ delete storageUser.avatar_url;
+ }
+
+ try {
+ localStorage.setItem('user', JSON.stringify(storageUser));
+ } catch (error) {
+ // Последняя попытка — сохранить только базовые поля
+ try {
+ const minimalUser = {
+ id: storageUser.id,
+ username: storageUser.username,
+ email: storageUser.email,
+ created_at: storageUser.created_at,
+ settings: storageUser.settings
+ };
+ localStorage.setItem('user', JSON.stringify(minimalUser));
+ } catch (_) {
+ // Игнорируем — пользователь останется в памяти текущей сессии
+ }
+ }
+ }
+
+ loadFromStorage() {
+ const token = localStorage.getItem('token');
+ const user = localStorage.getItem('user');
+ if (token && user) {
+ try {
+ this.user = JSON.parse(user);
+ this.isAuthenticated = true;
+ axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+ } catch (error) {
+ localStorage.removeItem('user');
+ }
+ }
+ }
 
   async register(username, email, password) {
     this.loading = true;
@@ -40,9 +73,9 @@ class UserState {
         this.isAuthenticated = true;
         this.loading = false;
       });
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+ localStorage.setItem('token', token);
+ this.saveUserToStorage(user);
+ axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       runInAction(() => {
         this.error = error.response?.data?.error || 'Registration failed';
@@ -65,9 +98,9 @@ class UserState {
         this.isAuthenticated = true;
         this.loading = false;
       });
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+ localStorage.setItem('token', token);
+ this.saveUserToStorage(user);
+ axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       runInAction(() => {
         this.error = error.response?.data?.error || 'Login failed';
@@ -96,11 +129,11 @@ class UserState {
     this.loading = true;
     try {
       const response = await axios.put(`${API_URL}/api/users/me`, updates);
-      runInAction(() => {
-        this.user = response.data.user;
-        localStorage.setItem('user', JSON.stringify(this.user));
-        this.loading = false;
-      });
+ runInAction(() => {
+ this.user = response.data.user;
+ this.saveUserToStorage(this.user);
+ this.loading = false;
+ });
     } catch (error) {
       runInAction(() => {
         this.error = error.response?.data?.error || 'Update failed';
@@ -138,11 +171,11 @@ class UserState {
       const response = await axios.post(`${API_URL}/api/users/me/avatar`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      runInAction(() => {
-        this.user.avatar_url = response.data.avatarUrl;
-        localStorage.setItem('user', JSON.stringify(this.user));
-        this.loading = false;
-      });
+ runInAction(() => {
+ this.user.avatar_url = response.data.avatarUrl;
+ this.saveUserToStorage(this.user);
+ this.loading = false;
+ });
     } catch (error) {
       console.error('Upload avatar error:', error.response || error);
       runInAction(() => {
@@ -156,10 +189,10 @@ class UserState {
   async updateSettings(settings) {
     try {
       const response = await axios.put(`${API_URL}/api/users/me/settings`, { settings });
-      runInAction(() => {
-        this.user.settings = response.data.settings;
-        localStorage.setItem('user', JSON.stringify(this.user));
-      });
+ runInAction(() => {
+ this.user.settings = response.data.settings;
+ this.saveUserToStorage(this.user);
+ });
     } catch (error) {
       console.error('Update settings error', error);
     }

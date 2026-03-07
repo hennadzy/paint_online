@@ -104,20 +104,8 @@ async loadStrokes(roomId) {
         'SELECT stroke_data FROM strokes WHERE room_id = $1 ORDER BY created_at',
         [roomId]
       );
-      // Normalize lineWidth for all strokes loaded from DB
-      return res.rows.map(row => {
-        const stroke = row.stroke_data;
-        if (stroke.lineWidth === undefined || stroke.lineWidth === null || stroke.lineWidth <= 0) {
-          if (stroke.type === 'eraser') {
-            stroke.lineWidth = 10;
-          } else if (stroke.type === 'text') {
-            stroke.lineWidth = 16;
-          } else {
-            stroke.lineWidth = 1;
-          }
-        }
-        return stroke;
-      });
+      // Return strokes as-is; client handles lineWidth defaults
+      return res.rows.map(row => row.stroke_data);
     } catch (error) {
       console.error('loadStrokes error:', error);
       return [];
@@ -170,20 +158,8 @@ async loadCancelledStrokes(roomId, username) {
         'SELECT stroke_data FROM cancelled_strokes WHERE room_id = $1 AND username = $2 ORDER BY created_at',
         [roomId, username]
       );
-      // Normalize lineWidth for all cancelled strokes loaded from DB
-      return res.rows.map(row => {
-        const stroke = row.stroke_data;
-        if (stroke.lineWidth === undefined || stroke.lineWidth === null || stroke.lineWidth <= 0) {
-          if (stroke.type === 'eraser') {
-            stroke.lineWidth = 10;
-          } else if (stroke.type === 'text') {
-            stroke.lineWidth = 16;
-          } else {
-            stroke.lineWidth = 1;
-          }
-        }
-        return stroke;
-      });
+      // Return strokes as-is; client handles lineWidth defaults
+      return res.rows.map(row => row.stroke_data);
     } catch (error) {
       console.error('loadCancelledStrokes error:', error);
       return [];
