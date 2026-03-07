@@ -1,4 +1,3 @@
-// client/src/store/userState.js
 import { makeAutoObservable, runInAction } from 'mobx';
 import axios from 'axios';
 import { API_URL } from './canvasState';
@@ -145,12 +144,12 @@ class UserState {
         this.loading = false;
       });
     } catch (error) {
-      console.error('Upload avatar error:', error.response || error); // лог ошибки
+      console.error('Upload avatar error:', error.response || error);
       runInAction(() => {
         this.error = error.response?.data?.error || 'Upload failed';
         this.loading = false;
       });
-      throw error; // Re-throw so component can catch
+      throw error;
     }
   }
 

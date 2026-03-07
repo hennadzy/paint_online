@@ -124,7 +124,6 @@ class DataStore {
   async saveCancelledStrokes(roomId, username, strokes) {
     if (!strokes.length) return true;
     try {
-      // First, delete existing cancelled strokes for this user in this room
       await pgPool.query(
         'DELETE FROM cancelled_strokes WHERE room_id = $1 AND username = $2',
         [roomId, username]
@@ -137,7 +136,6 @@ class DataStore {
         Date.now()
       ]);
       const placeholders = values.map((_, i) => `($1, $2, $3, $4)`).join(',');
-      // We need to repeat the values for each placeholder group
       const flatValues = [];
       for (let i = 0; i < strokes.length; i++) {
         flatValues.push(roomId, strokes[i], username, Date.now());
@@ -172,7 +170,6 @@ class DataStore {
         'SELECT username, stroke_data FROM cancelled_strokes WHERE room_id = $1 ORDER BY created_at',
         [roomId]
       );
-      // Группируем по username
       const grouped = {};
       for (const row of res.rows) {
         if (!grouped[row.username]) grouped[row.username] = [];

@@ -1,29 +1,19 @@
-// server/utils/auth.js
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const validator = require('validator');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
-const JWT_EXPIRES_IN = '7d'; // 7 дней
+const JWT_EXPIRES_IN = '7d';
 const BCRYPT_ROUNDS = 10;
 
-/**
- * Хеширование пароля
- */
 async function hashPassword(password) {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
-/**
- * Проверка пароля
- */
 async function verifyPassword(password, hash) {
   return bcrypt.compare(password, hash);
 }
 
-/**
- * Генерация JWT токена
- */
 function generateToken(userId, username, role) {
   return jwt.sign(
     {
@@ -37,9 +27,6 @@ function generateToken(userId, username, role) {
   );
 }
 
-/**
- * Проверка JWT токена
- */
 function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET);
@@ -48,9 +35,6 @@ function verifyToken(token) {
   }
 }
 
-/**
- * Валидация email
- */
 function validateEmail(email) {
   if (!email || typeof email !== 'string') {
     return { valid: false, error: 'Email обязателен' };
@@ -65,9 +49,6 @@ function validateEmail(email) {
   return { valid: true, email: trimmed };
 }
 
-/**
- * Валидация пароля
- */
 function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return { valid: false, error: 'Пароль обязателен' };
@@ -77,16 +58,13 @@ function validatePassword(password) {
     return { valid: false, error: 'Пароль должен быть не менее 6 символов' };
   }
   
-  if (password.length > 72) { // bcrypt ограничение
+  if (password.length > 72) {
     return { valid: false, error: 'Пароль слишком длинный' };
   }
   
   return { valid: true };
 }
 
-/**
- * Валидация имени пользователя (расширенная версия)
- */
 function validateUsername(username) {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
@@ -106,12 +84,10 @@ function validateUsername(username) {
     return { valid: false, error: 'Имя не должно превышать 30 символов' };
   }
   
-  // Разрешены буквы, цифры, пробелы, подчёркивание, дефис
   if (!/^[a-zA-Zа-яА-ЯёЁ0-9\s_-]+$/.test(trimmed)) {
     return { valid: false, error: 'Имя может содержать только буквы, цифры, пробелы, _ и -' };
   }
   
-  // Запрещённые слова
   const forbidden = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
   const lower = trimmed.toLowerCase();
   for (const word of forbidden) {

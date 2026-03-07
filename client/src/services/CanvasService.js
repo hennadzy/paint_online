@@ -37,7 +37,6 @@ class CanvasService {
   ctx.save();
   ctx.globalAlpha = 1;
   
-  // Убедимся, что lineWidth существует и корректен
   const lineWidth = stroke.lineWidth || 
                     (stroke.type === 'eraser' ? 10 : 
                      stroke.type === 'text' ? 16 : 1);

@@ -1,11 +1,7 @@
-// server/models/Session.js
 const { pgPool } = require('../config/db');
 const crypto = require('crypto');
 
 class Session {
-  /**
-   * Создать новую сессию
-   */
   static async create(userId, token, ipAddress, userAgent) {
     const id = crypto.randomUUID();
     const now = Date.now();
@@ -21,9 +17,6 @@ class Session {
     return result.rows[0].id;
   }
 
-  /**
-   * Найти сессию по токену
-   */
   static async findByToken(token) {
     const query = `
       SELECT s.*, u.id as user_id, u.username, u.role, u.is_active
@@ -35,25 +28,16 @@ class Session {
     return result.rows[0] || null;
   }
 
-  /**
-   * Удалить сессию
-   */
   static async delete(token) {
     const query = 'DELETE FROM sessions WHERE token = $1';
     await pgPool.query(query, [token]);
   }
 
-  /**
-   * Удалить все сессии пользователя
-   */
   static async deleteAllForUser(userId) {
     const query = 'DELETE FROM sessions WHERE user_id = $1';
     await pgPool.query(query, [userId]);
   }
 
-  /**
-   * Очистить просроченные сессии
-   */
   static async cleanExpired() {
     const query = 'DELETE FROM sessions WHERE expires_at < $1';
     await pgPool.query(query, [Date.now()]);

@@ -33,7 +33,6 @@ const App = observer(() => {
         if (fallback) fallback.hidden = true;
 
         const path = location.pathname;
-        // Разрешённые клиентские маршруты (не требуют проверки)
         const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404'];
         if (allowedClientPaths.includes(path)) return;
 

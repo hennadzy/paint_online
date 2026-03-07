@@ -68,10 +68,8 @@ const RoomInterface = observer(({ roomId }) => {
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
   const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified) && !userState.isAuthenticated;
   
-  // Show room error if present
   const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
 
-  // Автовход в комнату для авторизованного пользователя (имя уже известно)
   useEffect(() => {
     if (!roomId || !roomInfo?.exists || canvasState.isConnected || !userState.isAuthenticated || !userState.user?.username) return;
     if (roomInfo.hasPassword && !passwordVerified) return;
@@ -149,11 +147,9 @@ const RoomInterface = observer(({ roomId }) => {
     }
   }, [showUsernameForm]);
 
-  // Sync room error to local error state
   useEffect(() => {
     if (canvasState.roomError) {
       setError(canvasState.roomError);
-      // Clear the error after it's been shown
       canvasState.clearRoomError();
     }
   }, [canvasState.roomError]);
@@ -238,7 +234,6 @@ const RoomInterface = observer(({ roomId }) => {
         const errorMessage = error.response.data.error;
         setError(errorMessage);
         
-        // If room is full, redirect to rooms list after showing error
         if (errorMessage.includes('максимальное количество пользователей')) {
           setTimeout(() => {
             navigate('/');

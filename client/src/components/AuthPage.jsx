@@ -1,4 +1,3 @@
-// client/src/components/AuthPage.jsx
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -9,7 +8,6 @@ const AuthPage = observer(() => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Determine mode from URL: /register shows registration, /login shows login
   const isLogin = location.pathname !== '/register';
   
   const [formData, setFormData] = useState({
@@ -29,14 +27,12 @@ const AuthPage = observer(() => {
     setLocalError('');
 
     if (isLogin) {
-      // Login
       if (!formData.email || !formData.password) {
         setLocalError('Заполните все поля');
         return;
       }
       await userState.login(formData.email, formData.password);
     } else {
-      // Registration
       if (!formData.username || !formData.email || !formData.password) {
         setLocalError('Заполните все поля');
         return;
@@ -54,7 +50,6 @@ const AuthPage = observer(() => {
   };
 
   const switchMode = () => {
-    // Toggle between /login and /register
     navigate(isLogin ? '/register' : '/login');
     setFormData({ username: '', email: '', password: '' });
     setLocalError('');

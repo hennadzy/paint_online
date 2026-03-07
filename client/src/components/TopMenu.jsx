@@ -51,7 +51,6 @@ const TopMenu = observer(() => {
     const connectToRoom = async () => {
       const { username, currentRoomId: roomId, isConnected, canvas, roomError } = canvasState;
       
-      // If there's a room error (e.g., room is full), don't try to reconnect
       if (roomError) {
         return;
       }
@@ -67,19 +66,13 @@ const TopMenu = observer(() => {
         return;
       }
       
-      // Don't close interface yet - wait for successful connection
-      // canvasState.setModalOpen(false);
-      // canvasState.setShowRoomInterface(false);
-      
       try {
         await canvasState.connectToRoom(roomId, username, token);
-        // Only close interface after successful connection
         canvasState.setModalOpen(false);
         canvasState.setShowRoomInterface(false);
       } catch (error) {
         localStorage.removeItem(`room_token_${roomId}`);
         canvasState.setIsConnected(false);
-        // Show modal if connection fails
         canvasState.setModalOpen(true);
       }
     };
@@ -273,7 +266,6 @@ const TopMenu = observer(() => {
             <span className="tooltip">Поделиться</span>
           </button>
 
-          {/* Иконка Справки */}
           <button
             type="button"
             className="toolbar__btn"
@@ -285,7 +277,6 @@ const TopMenu = observer(() => {
             <span className="tooltip">Справка</span>
           </button>
 
-          {/* Иконки Войти/Регистрация или Профиль/Выйти — ТОЛЬКО НА ГЛАВНОЙ */}
           {isHome && !canvasState.isConnected && !canvasState.currentRoomId && (
             userState.isAuthenticated ? (
               <>
@@ -336,7 +327,6 @@ const TopMenu = observer(() => {
             )
           )}
 
-          {/* Кнопка Совместное рисование (текстовая) */}
           {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) && (
             <button
               className="create-room-btn about-btn"
@@ -346,7 +336,6 @@ const TopMenu = observer(() => {
             </button>
           )}
 
-          {/* Кнопка Игровые режимы (текстовая) */}
           {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) && (
             <button
               className="create-room-btn about-btn"
@@ -356,13 +345,11 @@ const TopMenu = observer(() => {
             </button>
           )}
 
-          {/* Кнопки для режима комнаты */}
           {canvasState.isConnected && (
             <>
               <button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
                 Пригласить
               </button>
-              {/* Кнопка выхода из комнаты с иконкой крестика */}
               <button
                 className="create-room-btn disconnect-room-btn"
                 onClick={() => { 

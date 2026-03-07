@@ -1,4 +1,3 @@
-// server/routes/users.js
 const express = require('express');
 const multer = require('multer');
 const User = require('../models/User');
@@ -7,9 +6,8 @@ const { validateUsername, validateEmail, validatePassword, hashPassword, verifyP
 
 const router = express.Router();
 
-// Multer configuration for avatar uploads
 const upload = multer({ 
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image files are allowed'));
@@ -18,10 +16,6 @@ const upload = multer({
   }
 });
 
-/**
- * GET /api/users/me
- * Получить профиль текущего пользователя (уже есть в auth.js, но продублируем для полноты)
- */
 router.get('/me', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
@@ -35,23 +29,17 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/users/me
- * Обновить профиль (username, email)
- */
 router.put('/me', authenticate, async (req, res) => {
   try {
     const { username, email } = req.body;
     const userId = req.user.userId;
     const updates = {};
 
-    // Валидация и обновление username
     if (username !== undefined) {
       const usernameValidation = validateUsername(username);
       if (!usernameValidation.valid) {
         return res.status(400).json({ error: usernameValidation.error });
       }
-      // Проверка уникальности username (исключая текущего пользователя)
       const existingUser = await User.findByUsername(usernameValidation.username);
       if (existingUser && existingUser.id !== userId) {
         return res.status(400).json({ error: 'Username already taken' });
@@ -59,7 +47,6 @@ router.put('/me', authenticate, async (req, res) => {
       updates.username = usernameValidation.username;
     }
 
-    // Валидация и обновление email
     if (email !== undefined) {
       const emailValidation = validateEmail(email);
       if (!emailValidation.valid) {
@@ -76,7 +63,6 @@ router.put('/me', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    // Выполняем обновление в БД
     const updatedUser = await User.update(userId, updates);
     res.json({ user: updatedUser });
   } catch (error) {
@@ -85,10 +71,6 @@ router.put('/me', authenticate, async (req, res) => {
   }
 });
 
-/**
- * PUT /api/users/me/password
- * Сменить пароль (текущий пароль + новый пароль)
- */
 router.put('/me/password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -118,22 +100,16 @@ router.put('/me/password', authenticate, async (req, res) => {
   }
 });
 
-/**
- * POST /api/users/me/avatar
- * Загрузить аватар
- */
 router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Конвертируем буфер в base64 data URL
     const base64 = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Обновляем пользователя
     const updatedUser = await User.update(req.user.userId, { avatarUrl: dataUrl });
 
     res.json({ avatarUrl: updatedUser.avatar_url });
@@ -146,18 +122,12 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
   }
 });
 
-/**
- * PUT /api/users/me/settings
- * Обновить настройки пользователя
- */
 router.put('/me/settings', authenticate, async (req, res) => {
   try {
     const { settings } = req.body;
     if (!settings || typeof settings !== 'object') {
       return res.status(400).json({ error: 'Settings must be an object' });
     }
-
-    // Можно добавить валидацию структуры настроек, если нужно
 
     const updatedUser = await User.update(req.user.userId, { settings });
     res.json({ settings: updatedUser.settings });
@@ -167,10 +137,6 @@ router.put('/me/settings', authenticate, async (req, res) => {
   }
 });
 
-/**
- * GET /api/users/me/rooms
- * Получить список комнат, созданных пользователем
- */
 router.get('/me/rooms', authenticate, async (req, res) => {
   try {
     const { pgPool } = require('../config/db');
@@ -189,10 +155,6 @@ router.get('/me/rooms', authenticate, async (req, res) => {
   }
 });
 
-/**
- * GET /api/users/me/favorites
- * Получить список избранных комнат
- */
 router.get('/me/favorites', authenticate, async (req, res) => {
   try {
     const { pgPool } = require('../config/db');
@@ -212,23 +174,17 @@ router.get('/me/favorites', authenticate, async (req, res) => {
   }
 });
 
-/**
- * POST /api/users/me/favorites/:roomId
- * Добавить комнату в избранное
- */
 router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.user.userId;
     const { pgPool } = require('../config/db');
 
-    // Проверяем существование комнаты
     const roomCheck = await pgPool.query('SELECT id FROM rooms WHERE id = $1', [roomId]);
     if (roomCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    // Добавляем в избранное
     await pgPool.query(
       'INSERT INTO favorite_rooms (user_id, room_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
       [userId, roomId, Date.now()]
@@ -241,10 +197,6 @@ router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/users/me/favorites/:roomId
- * Удалить комнату из избранного
- */
 router.delete('/me/favorites/:roomId', authenticate, async (req, res) => {
   try {
     const { roomId } = req.params;

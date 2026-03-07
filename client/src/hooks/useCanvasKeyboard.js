@@ -9,20 +9,18 @@ import Circle from '../tools/Circle';
 import Text from '../tools/Text';
 
 const TOOL_MAP = {
-  // Английские
   b: [Brush, 'brush'],
   e: [Eraser, 'eraser'],
   l: [Line, 'line'],
   r: [Rect, 'rect'],
   c: [Circle, 'circle'],
   t: [Text, 'text'],
-  // Русские (физически те же клавиши, но code может быть другим)
-  и: [Brush, 'brush'], // b
-  у: [Eraser, 'eraser'], // e
-  д: [Line, 'line'], // l
-  к: [Rect, 'rect'], // r
-  с: [Circle, 'circle'], // c
-  е: [Text, 'text'] // t
+  и: [Brush, 'brush'],
+  у: [Eraser, 'eraser'],
+  д: [Line, 'line'],
+  к: [Rect, 'rect'],
+  с: [Circle, 'circle'],
+  е: [Text, 'text']
 };
 
 export function useCanvasKeyboard() {
@@ -36,14 +34,12 @@ export function useCanvasKeyboard() {
       if (!canvas) return;
       const safeUsername = username || 'local';
 
-      // Отмена (Ctrl+Z / Ctrl+Я)
       if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'я') && !e.shiftKey) {
         e.preventDefault();
         canvasState.undo();
         return;
       }
 
-      // Повтор (Ctrl+Y / Ctrl+Н / Ctrl+Shift+Z / Ctrl+Shift+Я)
       if (((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'я')) ||
           ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'н'))) {
         e.preventDefault();
@@ -51,7 +47,6 @@ export function useCanvasKeyboard() {
         return;
       }
 
-      // Масштабирование
       if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         canvasState.zoomIn();
@@ -64,12 +59,11 @@ export function useCanvasKeyboard() {
         return;
       }
 
-      // Инструменты
       const key = e.key.toLowerCase();
       const tool = TOOL_MAP[key];
       if (tool) {
         toolState.setTool(new tool[0](canvas, socket, sessionId, safeUsername), tool[1]);
-      } else if (key === 'g' || key === 'п') { // G/П для сетки
+      } else if (key === 'g' || key === 'п') {
         canvasState.toggleGrid();
       }
     };

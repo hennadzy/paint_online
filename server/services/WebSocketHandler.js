@@ -95,7 +95,6 @@ class WebSocketHandler {
       });
       
     } catch (error) {
-      // Send error message before closing
       ws.send(JSON.stringify({
         method: "error",
         message: error.message
@@ -111,17 +110,13 @@ class WebSocketHandler {
     
     if (msg.figure) {
       if (msg.figure.type === "undo") {
-        // Get the stroke that was undone
         const strokes = await RoomManager.getAllRoomStrokes(roomId);
         const undoneStroke = strokes.find(s => s.id === msg.figure.strokeId);
         
         if (undoneStroke) {
-          // Store the undone stroke in cancelled strokes
           await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
-          // Remove from active strokes
           await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
           
-          // Get ALL cancelled IDs for sync
           const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
           const allCancelledIds = [];
           Object.values(allCancelledStrokes).forEach(cancelledArray => {
@@ -130,7 +125,6 @@ class WebSocketHandler {
             });
           });
           
-          // Broadcast to all clients with updated cancelled IDs
           this.broadcast(roomId, { 
             method: "syncCancelled", 
             cancelledStrokeIds: allCancelledIds 
@@ -145,10 +139,8 @@ class WebSocketHandler {
         if (!stroke) return;
         
         await RoomManager.addStroke(roomId, stroke);
-        // Remove from cancelled strokes for ALL users
         await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
         
-        // Get updated list of cancelled IDs
         const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
         const allCancelledIds = [];
         Object.values(allCancelledStrokes).forEach(cancelledArray => {
@@ -157,7 +149,6 @@ class WebSocketHandler {
           });
         });
         
-        // Broadcast to all clients with updated cancelled IDs
         this.broadcast(roomId, { 
           method: "syncCancelled", 
           cancelledStrokeIds: allCancelledIds 

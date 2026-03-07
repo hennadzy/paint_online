@@ -56,8 +56,6 @@ class CanvasState {
     });
     WebSocketService.on('roomError', ({ message }) => {
       this.roomError = message;
-      // Don't close room interface - let the UI handle showing the error
-      // Reset connection state - isConnected stays false
       this.isConnected = false;
     });
     WebSocketService.on('userConnected', ({ username }) => {
@@ -74,27 +72,23 @@ class CanvasState {
     WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
       
-      // Save ALL cancelled stroke IDs from ALL users
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
       }
       
-      // Фильтруем штрихи, удаляя отменённые
       const filteredStrokes = strokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
       
       HistoryService.setStrokes(filteredStrokes);
       CanvasService.rebuildBuffer(filteredStrokes, () => {
-        canvasState.setZoom(1); // принудительно сбросить масштаб после загрузки
+        canvasState.setZoom(1);
         setTimeout(() => this.saveThumbnail(), 500);
       });
     });
     
-    // New handler for syncing cancelled strokes
     WebSocketService.on('syncCancelled', ({ cancelledStrokeIds }) => {
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
         
-        // Rebuild history considering new cancelled IDs
         const currentStrokes = HistoryService.getStrokes();
         const filteredStrokes = currentStrokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
         
@@ -109,31 +103,24 @@ class CanvasState {
       if (!figure) return;
       switch (figure.type) {
         case "undo":
-          // When receiving undo from ANY user
           if (figure.strokeId) {
-            // Add to global cancelled list if not already there
             if (!this.cancelledStrokeIds.includes(figure.strokeId)) {
               this.cancelledStrokeIds.push(figure.strokeId);
             }
             
-            // Remove stroke from history
             HistoryService.undoById(figure.strokeId, username);
             CanvasService.rebuildBuffer(HistoryService.getStrokes());
             CanvasService.redraw();
             
-            // Notify user when page is not visible
             if (!this.pageVisible) {
               this.notifyUser('Действие отменено', `${username} отменил(а) действие`);
             }
           }
           break;
         case "redo":
-          // When receiving redo from ANY user
           if (figure.stroke && figure.stroke.id) {
-            // Remove ID from global cancelled list
             this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== figure.stroke.id);
             
-            // Add stroke back if it's not there
             const currentStrokes = HistoryService.getStrokes();
             if (!currentStrokes.some(s => s.id === figure.stroke.id)) {
               HistoryService.redoStroke(figure.stroke);
@@ -147,7 +134,6 @@ class CanvasState {
           }
           break;
         default:
-          // Don't add stroke if it's in global cancelled list
           if (figure.id && this.cancelledStrokeIds.includes(figure.id)) {
             return;
           }
@@ -155,7 +141,6 @@ class CanvasState {
           break;
       }
       
-      // Notify user when page is not visible
       if (!this.pageVisible && figure.type !== 'undo' && figure.type !== 'redo') {
         this.notifyUser('Новый рисунок', `${username} нарисовал(а)`);
       }
@@ -276,7 +261,6 @@ class CanvasState {
   undo() {
     const removed = HistoryService.undo(this.username);
     if (removed) {
-      // Add ID to global cancelled list
       if (!this.cancelledStrokeIds.includes(removed.id)) {
         this.cancelledStrokeIds.push(removed.id);
       }
@@ -293,7 +277,6 @@ class CanvasState {
   async redo() {
     const restored = HistoryService.redo(this.username);
     if (restored) {
-      // Remove ID from global cancelled list
       this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== restored.id);
       
       if (WebSocketService.isConnected) {
@@ -309,13 +292,11 @@ class CanvasState {
   }
 
   undoRemote(strokeId, fromUsername) {
-    // When receiving undo from ANY user, add to cancelled list and remove stroke
     if (strokeId) {
       if (!this.cancelledStrokeIds.includes(strokeId)) {
         this.cancelledStrokeIds.push(strokeId);
       }
       
-      // Remove stroke from history
       HistoryService.undoById(strokeId, fromUsername);
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
@@ -333,7 +314,6 @@ class CanvasState {
       stroke.username = fromUsername;
     }
     
-    // Remove ID from global cancelled list
     if (stroke.id) {
       this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== stroke.id);
     }
@@ -395,7 +375,6 @@ class CanvasState {
     this.setupThumbnailInterval();
     setTimeout(() => this.saveThumbnail(), 1500);
     
-    // Request notification permission
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -564,7 +543,6 @@ class CanvasState {
   }
 
   setFaviconBadge(show) {
-    // Удаляем все существующие иконки
     const links = document.querySelectorAll("link[rel*='icon']");
     links.forEach(link => link.remove());
 
@@ -585,10 +563,9 @@ class CanvasState {
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = '/favicon.png?' + Date.now(); // антикэш
+    img.src = '/favicon.png?' + Date.now();
     img.onload = () => {
       ctx.drawImage(img, 0, 0, 32, 32);
-      // Рисуем красную точку
       ctx.fillStyle = '#ff0000';
       ctx.beginPath();
       ctx.arc(28, 4, 6, 0, 2 * Math.PI);
@@ -601,7 +578,6 @@ class CanvasState {
       document.head.appendChild(link);
     };
     img.onerror = () => {
-      // Если favicon не загрузился, рисуем точку на сером фоне
       ctx.fillStyle = '#cccccc';
       ctx.fillRect(0, 0, 32, 32);
       ctx.fillStyle = '#ff0000';

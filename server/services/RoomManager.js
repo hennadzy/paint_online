@@ -4,21 +4,19 @@ const DataStore = require('./DataStore');
 class RoomManager {
   constructor() {
     this.roomSockets = new Map();
-    // Start inactivity check interval (every 1 minute)
     this.startInactivityCheck();
   }
 
   startInactivityCheck() {
     setInterval(() => {
       this.checkInactiveUsers();
-    }, 60000); // Check every minute
+    }, 60000);
   }
 
   async checkInactiveUsers() {
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
     const now = Date.now();
     
-    // Get all WebSocket keys
     const keys = await this.redis.keys('ws:*');
     
     for (const key of keys) {
@@ -30,7 +28,6 @@ class RoomManager {
         const timeSinceLastActivity = now - lastActivity;
         
         if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
-          // User is inactive, remove them
           const wsId = key.replace('ws:', '');
           const { roomId, username } = data;
           
@@ -46,12 +43,10 @@ class RoomManager {
   }
 
   async removeUserByInfo(roomId, username) {
-    // Remove from Redis
     await this.redis.srem(`room:${roomId}:users`, username);
     await this.redis.del(`ws:${roomId}_${username}`);
     await this.redis.del(`user:${username}:room`);
     
-    // Broadcast disconnection
     const sockets = this.roomSockets.get(roomId);
     if (sockets) {
       const WebSocket = require('ws');
@@ -62,7 +57,6 @@ class RoomManager {
         }
       });
       
-      // Broadcast updated users list
       const users = await this.getRoomUsers(roomId);
       const usersMessage = JSON.stringify({ method: 'users', users });
       sockets.forEach(ws => {
@@ -114,16 +108,12 @@ class RoomManager {
       throw new Error('Достигнуто максимальное количество пользователей в комнате');
     }
 
-    // Get the list of users already in the room (online)
     const onlineUsers = await this.getRoomUsers(roomId);
 
-    // Load all cancelled strokes for this room from DB
     const allCancelledFromDb = await DataStore.loadAllCancelledStrokes(roomId);
 
-    // Restore in Redis only for those who are not online
     for (const [cancelledUsername, strokes] of Object.entries(allCancelledFromDb)) {
       if (!onlineUsers.includes(cancelledUsername)) {
-        // Clear old list in Redis (if any)
         await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
         if (strokes.length > 0) {
           const multi = redis.multi();
@@ -150,20 +140,16 @@ class RoomManager {
     }
     this.roomSockets.get(roomId).add(ws);
 
-    // Load user's cancelled strokes from DB to Redis
     await this.loadCancelledStrokesFromDb(roomId, username);
     
-    // Загружаем активные штрихи: сначала пробуем из Redis, если нет — из БД
     let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     if (strokes.length === 0) {
       strokes = await DataStore.loadStrokes(roomId);
       if (strokes.length > 0) {
-        // Записываем в Redis для быстрого доступа следующим пользователям
         const multi = redis.multi();
         for (const s of strokes) {
-          // Убедимся, что lineWidth сохраняется
           if (!s.lineWidth && s.type === 'brush') {
-            s.lineWidth = 1; // Значение по умолчанию
+            s.lineWidth = 1;
           }
           multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
         }
@@ -172,7 +158,6 @@ class RoomManager {
     } else {
       strokes = strokes.map(s => {
         const parsed = JSON.parse(s);
-        // Если нет lineWidth, установить разумное значение по умолчанию в зависимости от типа
         if (parsed.lineWidth === undefined) {
           if (parsed.type === 'eraser') parsed.lineWidth = 10;
           else if (parsed.type === 'text') parsed.lineWidth = 16;
@@ -182,18 +167,15 @@ class RoomManager {
       });
     }
     
-    // Get ALL cancelled strokes for ALL users
     const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);
     const allCancelledStrokeIds = new Set();
     
-    // Collect IDs of all cancelled strokes from all users
     Object.values(allCancelledStrokes).forEach(cancelledArray => {
       cancelledArray.forEach(stroke => {
         allCancelledStrokeIds.add(stroke.id);
       });
     });
     
-    // Filter strokes - remove those cancelled by ANY user
     const filteredStrokes = strokes.filter(s => !allCancelledStrokeIds.has(s.id));
     
     return { 
@@ -209,14 +191,12 @@ class RoomManager {
 
     const { roomId, username } = userData;
 
-    // Save user's cancelled strokes to DB before removing
     await this.saveCancelledStrokesToDb(roomId, username);
 
     const multi = redis.multi();
     multi.srem(`room:${roomId}:users`, username);
     multi.del(`ws:${wsId}`);
     multi.del(`user:${username}:room`);
-    // НЕ удаляем multi.del(`room:${roomId}:cancelled:${username}`);
     await multi.exec();
 
     const roomSockets = this.roomSockets.get(roomId);
@@ -236,7 +216,6 @@ class RoomManager {
       }
       await redis.del(`room:${roomId}:strokes`);
 
-      // Сохраняем все отменённые штрихи и удаляем их ключи
       const allCancelled = await this.getAllCancelledStrokes(roomId);
       for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
         if (cancelledStrokes.length > 0) {
@@ -308,7 +287,7 @@ class RoomManager {
 
     const allCancelled = {};
     for (const key of keys) {
-      const username = key.split(':').pop(); // извлекаем имя пользователя
+      const username = key.split(':').pop();
       const cancelled = await redis.lrange(key, 0, -1);
       if (cancelled.length > 0) {
         allCancelled[username] = cancelled.map(s => JSON.parse(s));
@@ -358,7 +337,6 @@ class RoomManager {
       strokes = dbStrokes;
     }
     
-    // If a specific username is provided, filter out their cancelled strokes
     if (username) {
       const userCancelled = await this.getCancelledStrokes(roomId, username);
       const userCancelledIds = new Set(userCancelled.map(s => s.id));
@@ -393,7 +371,6 @@ class RoomManager {
     return this.roomSockets.get(roomId);
   }
 
-  // Check for inactive users and remove them (30 min timeout)
   async checkInactiveUsers() {
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
     const now = Date.now();

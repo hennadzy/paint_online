@@ -118,28 +118,23 @@ app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 
-// Добавляем массив клиентских маршрутов (можно дополнить при необходимости)
 const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404'];
 
 app.get('*', (req, res) => {
   const pathname = req.path;
-  // Убираем завершающий слеш (или несколько)
   const normalizedPath = pathname.replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
-  // 1. Если путь точно клиентский – отдаём index.html
   if (CLIENT_ROUTES.includes(normalizedPath)) {
     return res.sendFile(indexPath);
   }
 
   const segments = normalizedPath.split('/').filter(Boolean);
 
-  // 2. Если сегментов больше одного – неизвестный путь → 404
   if (segments.length !== 1) {
     return send404Page(res);
   }
 
-  // 3. Один сегмент – возможно, это ID комнаты
   const roomId = segments[0];
   DataStore.getRoomInfo(roomId)
     .then(room => {
@@ -160,7 +155,6 @@ setInterval(async () => {
   } catch (_) { }
 }, ROOM_CLEANUP_INTERVAL);
 
-// Check for inactive users every 5 minutes
 const INACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000;
 setInterval(async () => {
   try {
@@ -169,7 +163,6 @@ setInterval(async () => {
   } catch (_) { }
 }, INACTIVITY_CHECK_INTERVAL);
 
-// Очистка просроченных сессий каждые 6 часов
 setInterval(async () => {
   try {
     const Session = require('./models/Session');
@@ -255,8 +248,8 @@ async function initDb() {
     `);
     console.log('Database tables ready');
   } catch (err) {
-    console.error('Failed to initialize database tables:', err);
-    process.exit(1);
+    console.error('Failed to initialize database tables:', err.message);
+    console.warn('Server will start without database functionality');
   }
 }
 
@@ -265,8 +258,11 @@ initDb().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
 }).catch(err => {
-  console.error('Startup failed:', err);
-  process.exit(1);
+  console.error('Database connection error:', err.message);
+  console.warn('Server will start without database functionality');
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} (without database)`);
+  });
 });
 
 module.exports = app;

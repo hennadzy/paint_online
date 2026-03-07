@@ -1,11 +1,9 @@
-// client/src/components/ProfilePage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import { useNavigate } from 'react-router-dom';
 import '../styles/profile.scss';
 
-// SVG-силуэт человека для fallback аватара
 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='80' r='40' fill='%23cccccc'/%3E%3Cpath d='M30 170 Q100 130, 170 170' stroke='%23cccccc' stroke-width='10' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ProfilePage = observer(() => {
@@ -33,13 +31,11 @@ const ProfilePage = observer(() => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         setUploadError('Файл слишком большой (макс. 2 МБ)');
         return;
       }
       setAvatarFile(file);
-      // Create preview
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreviewUrl(event.target.result);
@@ -94,7 +90,6 @@ const ProfilePage = observer(() => {
   return (
     <div className="profile-page">
       <div className="profile-container">
-        {/* Header */}
         <div className="profile-header">
           <h1>Личный кабинет</h1>
           <button className="profile-btn profile-btn-secondary" onClick={() => navigate('/')} aria-label="На главную">
@@ -103,9 +98,7 @@ const ProfilePage = observer(() => {
           </button>
         </div>
 
-        {/* Main content */}
         <div className="profile-content">
-          {/* Left column – avatar and actions */}
           <div className="profile-left">
             <div className="profile-avatar">
               <img
@@ -141,7 +134,6 @@ const ProfilePage = observer(() => {
             </div>
           </div>
 
-          {/* Right column – information and settings */}
           <div className="profile-right">
             {editMode ? (
               <div className="profile-edit-form">
@@ -213,7 +205,6 @@ const ProfilePage = observer(() => {
 
             <hr className="profile-divider" />
 
-            {/* My rooms */}
             <div className="profile-section">
               <h2>Мои комнаты</h2>
               {userState.userRooms.length === 0 ? (
@@ -230,7 +221,6 @@ const ProfilePage = observer(() => {
               )}
             </div>
 
-            {/* Favorites */}
             <div className="profile-section">
               <h2>Избранное</h2>
               {userState.favorites.length === 0 ? (
@@ -252,7 +242,6 @@ const ProfilePage = observer(() => {
               )}
             </div>
 
-            {/* Logout button */}
             <div className="profile-logout">
               <button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
                 Выйти из аккаунта

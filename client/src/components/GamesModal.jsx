@@ -51,7 +51,7 @@ const GamesModal = observer(() => {
         </div>
       </div>
     </div>,
-    document.body // <-- ВАЖНО: рендерим в body
+    document.body
   );
 });
 

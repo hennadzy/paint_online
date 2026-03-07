@@ -72,7 +72,7 @@ const Canvas = observer(() => {
       }
     } else {
       canvasState.setShowRestoreDialog(false);
-      canvasState.setZoom(1); // Сбрасываем масштаб при входе в комнату
+      canvasState.setZoom(1);
       canvasState.setCurrentRoomId(params.id);
       canvasState.setUsername('');
       canvasState.setModalOpen(false);
