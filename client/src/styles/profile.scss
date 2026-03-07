@@ -44,10 +44,10 @@
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .profile-header {
-  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -69,8 +69,8 @@
 
   .profile-btn {
     position: absolute;
-    right: 10px;
-    top: 8px;
+    right: 15px;
+    top: 15px;
     transform: none;
     z-index: 2;
 
@@ -96,8 +96,8 @@
 
     @media (max-width: 768px) {
       position: absolute;
-      right: 10px;
-      top: 8px;
+      right: 15px;
+      top: 15px;
       transform: none;
       min-width: 32px;
       height: 32px;
@@ -182,9 +182,11 @@
     display: flex;
     margin-bottom: 15px;
     font-size: 16px;
+    gap: 15px;
 
     .info-label {
       width: 140px;
+      min-width: 140px;
       color: #ffcc00;
       font-weight: 600;
     }
