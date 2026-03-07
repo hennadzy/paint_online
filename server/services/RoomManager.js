@@ -1,10 +1,21 @@
 const { redis } = require('../config/db');
 const DataStore = require('./DataStore');
 
+const USE_REDIS = process.env.REDIS_URL && process.env.REDIS_URL.startsWith('redis');
+
 class RoomManager {
   constructor() {
     this.roomSockets = new Map();
-    this.startInactivityCheck();
+    if (USE_REDIS) {
+      this.startInactivityCheck();
+    }
+  }
+
+  get redis() {
+    if (!USE_REDIS || !redis) {
+      return null;
+    }
+    return redis;
   }
 
   startInactivityCheck() {
@@ -14,31 +25,38 @@ class RoomManager {
   }
 
   async checkInactiveUsers() {
+    if (!this.redis) return;
+    
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
     const now = Date.now();
     
-    const keys = await this.redis.keys('ws:*');
-    
-    for (const key of keys) {
-      try {
-        const data = await this.redis.hgetall(key);
-        if (!data || !data.lastActivity) continue;
-        
-        const lastActivity = parseInt(data.lastActivity);
-        const timeSinceLastActivity = now - lastActivity;
-        
-        if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
-          const wsId = key.replace('ws:', '');
-          const { roomId, username } = data;
+    try {
+      const keys = await this.redis.keys('ws:*');
+      if (!keys || keys.length === 0) return;
+      
+      for (const key of keys) {
+        try {
+          const data = await this.redis.hgetall(key);
+          if (!data || !data.lastActivity) continue;
           
-          if (roomId && username) {
-            await this.removeUserByInfo(roomId, username);
-            console.log(`Removed inactive user: ${username} from room ${roomId}`);
+          const lastActivity = parseInt(data.lastActivity);
+          const timeSinceLastActivity = now - lastActivity;
+          
+          if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
+            const wsId = key.replace('ws:', '');
+            const { roomId, username } = data;
+            
+            if (roomId && username) {
+              await this.removeUserByInfo(roomId, username);
+              console.log(`Removed inactive user: ${username} from room ${roomId}`);
+            }
           }
+        } catch (error) {
+          console.error('Error checking inactive user:', error);
         }
-      } catch (error) {
-        console.error('Error checking inactive user:', error);
       }
+    } catch (error) {
+      console.error('Error in checkInactiveUsers:', error);
     }
   }
 
