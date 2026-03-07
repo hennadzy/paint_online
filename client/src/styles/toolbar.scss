@@ -47,7 +47,7 @@
  border-radius:10px;
  z-index: -2;
  opacity:0;
- transition: opacity0.3s ease-in-out;
+ transition: opacity 0.3s ease-in-out;
  animation: glowing20s linear infinite;
  }
 
@@ -107,7 +107,7 @@
  white-space: nowrap;
  opacity:0;
  pointer-events: none;
- transition: opacity0.2s ease;
+ transition: opacity 0.2s ease;
  z-index:10000;
  }
 
