@@ -172,7 +172,7 @@ clearImageCache() {
 renderBrushStroke(ctx, stroke, isEraser = false) {
   if (!stroke || !stroke.points || stroke.points.length === 0) return;
   
-  const { color = '#000000' } = stroke;
+  const { strokeStyle = '#000000', strokeOpacity = 1, points } = stroke;
   
   // Нормализуем lineWidth так же, как в drawStroke
   let lineWidth = stroke.lineWidth;
@@ -184,38 +184,30 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
     lineWidth = 1;
   }
   
+  const color = this.hexToRgba(strokeStyle, strokeOpacity);
+  
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
+  ctx.beginPath();
 
-    if (!isEraser && strokeStyle) {
-      const r = parseInt(strokeStyle.slice(1, 3), 16);
-      const g = parseInt(strokeStyle.slice(3, 5), 16);
-      const b = parseInt(strokeStyle.slice(5, 7), 16);
-      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${strokeOpacity})`;
-    } else {
-      ctx.strokeStyle = strokeStyle;
+  if (points.length === 1) {
+    ctx.arc(points[0].x, points[0].y, lineWidth / 2, 0, 2 * Math.PI);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+  } else {
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
     }
-
-    ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
-    ctx.beginPath();
-    
-    if (points.length === 1) {
-      ctx.arc(points[0].x, points[0].y, lineWidth / 2, 0, 2 * Math.PI);
-      ctx.fillStyle = ctx.strokeStyle;
-      ctx.fill();
-    } else {
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-    }
-    
-    ctx.restore();
+    ctx.stroke();
   }
+
+  ctx.restore();
+}
 
   drawRectStroke(ctx, stroke) {
     const { x, y, width, height, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 1 } = stroke;
@@ -516,7 +508,7 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
         otherStrokes.push(stroke);
       }
     }
-
+      
     const preloadImage = (dataUrl) => {
       if (this.imageCache.has(dataUrl)) {
         const img = this.imageCache.get(dataUrl);
