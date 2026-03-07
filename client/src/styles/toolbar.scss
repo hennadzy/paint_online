@@ -31,6 +31,7 @@
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     background-color: transparent;
+    overflow: hidden;
 
     &::before {
       content: '';
@@ -41,8 +42,7 @@
       background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
       background-size: 400% 400%;
       border-radius: 10px;
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
+      opacity: 0.3;
       animation: toolbarGlowing 10s linear infinite;
       z-index: 0;
     }

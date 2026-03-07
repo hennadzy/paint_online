@@ -71,10 +71,16 @@ class RoomManager {
     return require('../config/db').redis;
   }
 
-  async getAllRoomStrokes(roomId) {
+async getAllRoomStrokes(roomId) {
     let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     if (strokes.length > 0) {
-      return strokes.map(s => JSON.parse(s));
+      return strokes.map(s => {
+        try {
+          return JSON.parse(s);
+        } catch (e) {
+          return null;
+        }
+      }).filter(s => s !== null);
     }
     const dbStrokes = await DataStore.loadStrokes(roomId);
     return dbStrokes;
@@ -102,7 +108,7 @@ class RoomManager {
     }
   }
 
-  async addUser(roomId, username, ws) {
+async addUser(roomId, username, ws) {
     const userCount = await redis.scard(`room:${roomId}:users`);
     if (userCount >= 10) {
       throw new Error('Достигнуто максимальное количество пользователей в комнате');
@@ -110,23 +116,12 @@ class RoomManager {
 
     const onlineUsers = await this.getRoomUsers(roomId);
 
-    const allCancelledFromDb = await DataStore.loadAllCancelledStrokes(roomId);
-
-    for (const [cancelledUsername, strokes] of Object.entries(allCancelledFromDb)) {
-      if (!onlineUsers.includes(cancelledUsername)) {
-        await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
-        if (strokes.length > 0) {
-          const multi = redis.multi();
-          for (const stroke of strokes) {
-            multi.rpush(`room:${roomId}:cancelled:${cancelledUsername}`, JSON.stringify(stroke));
-          }
-          await multi.exec();
-        }
-      }
-    }
-
+    // Optimized: load cancelled strokes only for current user
+    await this.loadCancelledStrokesFromDb(roomId, username);
+    
     const wsId = this._getWsId(ws);
 
+    // Optimized: combine all Redis operations in one pipeline
     const multi = redis.multi();
     multi.sadd(`room:${roomId}:users`, username);
     multi.hset(`ws:${wsId}`, 'roomId', roomId, 'username', username, 'lastActivity', Date.now());
@@ -139,29 +134,44 @@ class RoomManager {
       this.roomSockets.set(roomId, new Set());
     }
     this.roomSockets.get(roomId).add(ws);
-
-    await this.loadCancelledStrokesFromDb(roomId, username);
     
     let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     if (strokes.length === 0) {
       strokes = await DataStore.loadStrokes(roomId);
       if (strokes.length > 0) {
-        const multi = redis.multi();
-        for (const s of strokes) {
-          if (!s.lineWidth && s.type === 'brush') {
-            s.lineWidth = 1;
+        // Fixed: ensure all strokes have proper lineWidth before caching
+        const normalizedStrokes = strokes.map(s => {
+          if (s.lineWidth === undefined || s.lineWidth === null) {
+            if (s.type === 'eraser') {
+              return { ...s, lineWidth: 10 };
+            } else if (s.type === 'text') {
+              return { ...s, lineWidth: 16 };
+            } else {
+              return { ...s, lineWidth: 1 };
+            }
           }
+          return s;
+        });
+        
+        const multi = redis.multi();
+        for (const s of normalizedStrokes) {
           multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
         }
         await multi.exec();
+        strokes = normalizedStrokes;
       }
     } else {
       strokes = strokes.map(s => {
         const parsed = JSON.parse(s);
-        if (parsed.lineWidth === undefined) {
-          if (parsed.type === 'eraser') parsed.lineWidth = 10;
-          else if (parsed.type === 'text') parsed.lineWidth = 16;
-          else parsed.lineWidth = 1;
+        // Fixed: normalize lineWidth for all stroke types
+        if (parsed.lineWidth === undefined || parsed.lineWidth === null) {
+          if (parsed.type === 'eraser') {
+            parsed.lineWidth = 10;
+          } else if (parsed.type === 'text') {
+            parsed.lineWidth = 16;
+          } else {
+            parsed.lineWidth = 1;
+          }
         }
         return parsed;
       });
@@ -184,13 +194,14 @@ class RoomManager {
     };
   }
 
-  async removeUser(ws) {
+async removeUser(ws) {
     const wsId = this._getWsId(ws);
     const userData = await redis.hgetall(`ws:${wsId}`);
     if (!userData.roomId) return null;
 
     const { roomId, username } = userData;
 
+    // Fixed: save cancelled strokes for current user
     await this.saveCancelledStrokesToDb(roomId, username);
 
     const multi = redis.multi();
@@ -209,14 +220,31 @@ class RoomManager {
 
     const remaining = await redis.scard(`room:${roomId}:users`);
     if (remaining === 0) {
-      const strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+      // Get all strokes and filter out cancelled ones before saving
+      let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+      const allCancelled = await this.getAllCancelledStrokes(roomId);
+      const allCancelledIds = new Set();
+      
+      Object.values(allCancelled).forEach(cancelledArray => {
+        cancelledArray.forEach(stroke => {
+          allCancelledIds.add(stroke.id);
+        });
+      });
+      
       if (strokes.length > 0) {
         const strokesObjects = strokes.map(s => JSON.parse(s));
-        await DataStore.saveStrokes(roomId, strokesObjects);
+        // Filter out cancelled strokes before saving to DB
+        const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
+        
+        if (activeStrokes.length > 0) {
+          await DataStore.saveStrokes(roomId, activeStrokes);
+        } else {
+          await DataStore.deleteStrokes(roomId);
+        }
       }
       await redis.del(`room:${roomId}:strokes`);
 
-      const allCancelled = await this.getAllCancelledStrokes(roomId);
+      // Save all cancelled strokes to DB
       for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
         if (cancelledStrokes.length > 0) {
           await DataStore.saveCancelledStrokes(roomId, cancelledUsername, cancelledStrokes);

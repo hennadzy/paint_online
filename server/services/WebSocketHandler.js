@@ -117,17 +117,11 @@ class WebSocketHandler {
           await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
           await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
           
-          const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
-          const allCancelledIds = [];
-          Object.values(allCancelledStrokes).forEach(cancelledArray => {
-            cancelledArray.forEach(stroke => {
-              allCancelledIds.push(stroke.id);
-            });
-          });
-          
+          // Optimized: only broadcast cancelled stroke id, not all cancelled strokes
           this.broadcast(roomId, { 
-            method: "syncCancelled", 
-            cancelledStrokeIds: allCancelledIds 
+            method: "draw",
+            username,
+            figure: { type: "undo", strokeId: msg.figure.strokeId }
           }, null);
         }
         
@@ -141,17 +135,11 @@ class WebSocketHandler {
         await RoomManager.addStroke(roomId, stroke);
         await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
         
-        const allCancelledStrokes = await RoomManager.getAllCancelledStrokes(roomId);
-        const allCancelledIds = [];
-        Object.values(allCancelledStrokes).forEach(cancelledArray => {
-          cancelledArray.forEach(s => {
-            allCancelledIds.push(s.id);
-          });
-        });
-        
+        // Optimized: only broadcast redo action
         this.broadcast(roomId, { 
-          method: "syncCancelled", 
-          cancelledStrokeIds: allCancelledIds 
+          method: "draw",
+          username,
+          figure: { type: "redo", stroke }
         }, null);
         
         await RoomManager.updateUserActivity(ws);

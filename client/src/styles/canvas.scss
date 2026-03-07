@@ -548,13 +548,13 @@ button:active {
     margin-top: 0;
     height: 100%;
     width: auto;
-    max-width: 200px;
+    max-width: 250px;
     overflow: hidden;
   }
 
   .chat {
-    flex-direction: column;
-    width: 300px;
+    flex-direction: column !important;
+    width: 250px;
     max-width: 250px;
     height: 100%;
     padding: 12px 16px;
@@ -577,11 +577,11 @@ button:active {
       margin-bottom: 10px;
 
       h4 {
-        font-size: 16px;
+        font-size: 14px;
         margin-bottom: 5px;
       }
     }
-
+    
     .chat-main {
       flex: 1;
       display: flex;
@@ -609,28 +609,33 @@ button:active {
       gap: 6px;
       padding-top: 10px;
     }
-
+    
     .chat-user {
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .chat-message {
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .chat-input {
       flex: 1;
       padding: 8px 10px;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .chat-send-btn {
       padding: 8px 12px;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
     }
-  }
 
+    .chat-invite-btn {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+  }
+  
   .about-btns-mobile {
     display: none;
   }

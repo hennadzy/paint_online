@@ -106,17 +106,35 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    // Check file size before processing (should be under 2MB after base64 encoding)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (req.file.size > maxSize) {
+      return res.status(400).json({ error: 'File too large (maximum 2MB)' });
+    }
+
     const base64 = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
+    // Check if dataUrl is too large for PostgreSQL
+    if (dataUrl.length > 10 * 1024 * 1024) { // 10MB limit for TEXT field
+      return res.status(400).json({ error: 'Image too large after encoding. Please use a smaller image.' });
+    }
+
     const updatedUser = await User.update(req.user.userId, { avatarUrl: dataUrl });
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     res.json({ avatarUrl: updatedUser.avatar_url });
   } catch (error) {
     console.error('Avatar upload error:', error);
     if (error instanceof multer.MulterError) {
       return res.status(400).json({ error: error.message });
+    }
+    if (error.code === '22001') { // String too long error
+      return res.status(400).json({ error: 'Image too large. Please use a smaller image (under 2MB).' });
     }
     res.status(500).json({ error: 'Server error' });
   }
