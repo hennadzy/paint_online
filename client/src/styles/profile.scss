@@ -251,6 +251,38 @@
   }
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .profile-input {
+    padding-right: 50px;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #fff;
+  }
+
+  svg {
+    display: block;
+  }
+}
+
 .profile-btn {
   position: relative;
   padding: 10px 20px;
