@@ -42,6 +42,7 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
+    // In production, allow all origins
     if (process.env.NODE_ENV === 'production') {
       return callback(null, true);
     }
@@ -64,8 +65,28 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  maxAge: 86400
+  maxAge: 86400,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Explicit CORS headers for API routes
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin;
+  if (process.env.NODE_ENV === 'production' || 
+      origin === 'https://risovanie.online' ||
+      origin === 'http://localhost:3000') {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json({ limit: '5mb' }));
 
