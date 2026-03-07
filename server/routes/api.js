@@ -19,6 +19,7 @@ const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 const createRoomLimiter = rateLimit({
@@ -27,6 +28,7 @@ const createRoomLimiter = rateLimit({
   message: 'Too many rooms created from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 const passwordVerifyLimiter = rateLimit({
@@ -35,6 +37,7 @@ const passwordVerifyLimiter = rateLimit({
   message: 'Too many password attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 const tokenRequestLimiter = rateLimit({
@@ -43,6 +46,7 @@ const tokenRequestLimiter = rateLimit({
   message: 'Too many token requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 const imageSaveLimiter = rateLimit({
@@ -51,6 +55,7 @@ const imageSaveLimiter = rateLimit({
   message: 'Too many image saves, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 router.post('/image', imageSaveLimiter, (req, res) => {

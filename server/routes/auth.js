@@ -17,7 +17,8 @@ const router = express.Router();
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: 'Too many authentication attempts, please try again later.'
+  message: 'Too many authentication attempts, please try again later.',
+  validate: { xForwardedForHeader: false }
 });
 
 router.post('/register', authLimiter, async (req, res) => {

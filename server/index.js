@@ -12,6 +12,10 @@ const { pgPool } = require('./config/db');
 
 const app = express();
 require('express-ws')(app);
+
+// Trust proxy for Render/Render load balancer
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 5000;
 
 const ROOM_CLEANUP_INTERVAL = 60 * 60 * 1000;
