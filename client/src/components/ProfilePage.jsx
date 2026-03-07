@@ -12,7 +12,9 @@ const ProfilePage = observer(() => {
   const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadError, setUploadError] = useState('');
@@ -23,7 +25,6 @@ const ProfilePage = observer(() => {
       navigate('/login');
     } else {
       setUsername(userState.user?.username || '');
-      setEmail(userState.user?.email || '');
       userState.fetchUserRooms();
       userState.fetchFavorites();
     }
@@ -61,8 +62,22 @@ const ProfilePage = observer(() => {
   };
 
   const handleSaveProfile = async () => {
-    await userState.updateProfile({ username, email });
-    setEditMode(false);
+    setPasswordError('');
+    try {
+      await userState.updateProfile({ username });
+      if (newPassword.trim()) {
+        if (!currentPassword.trim()) {
+          setPasswordError('Введите текущий пароль для смены пароля');
+          return;
+        }
+        await userState.changePassword(currentPassword, newPassword);
+      }
+      setEditMode(false);
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err) {
+      setPasswordError(err.response?.data?.error || userState.error || 'Ошибка сохранения');
+    }
   };
 
   const handleLogout = () => {
@@ -141,20 +156,33 @@ const ProfilePage = observer(() => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
+                  <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
                   <input
-                    type="email"
+                    type="password"
                     className="profile-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email"
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
+                    placeholder="Новый пароль"
                   />
                 </div>
+                {newPassword.trim() && (
+                  <div className="form-group">
+                    <label>Текущий пароль (для смены пароля)</label>
+                    <input
+                      type="password"
+                      className="profile-input"
+                      value={currentPassword}
+                      onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(''); }}
+                      placeholder="Текущий пароль"
+                    />
+                  </div>
+                )}
+                {passwordError && <div className="profile-error">{passwordError}</div>}
                 <div className="form-actions">
                   <button className="profile-btn profile-btn-primary" onClick={handleSaveProfile}>
                     Сохранить
                   </button>
-                  <button className="profile-btn profile-btn-secondary" onClick={() => setEditMode(false)}>
+                  <button className="profile-btn profile-btn-secondary" onClick={() => { setEditMode(false); setCurrentPassword(''); setNewPassword(''); setPasswordError(''); }}>
                     Отмена
                   </button>
                 </div>

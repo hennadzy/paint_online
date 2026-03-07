@@ -110,6 +110,26 @@ class UserState {
     }
   }
 
+  async changePassword(currentPassword, newPassword) {
+    this.loading = true;
+    this.error = null;
+    try {
+      await axios.put(`${API_URL}/api/users/me/password`, {
+        currentPassword,
+        newPassword
+      });
+      runInAction(() => {
+        this.loading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.error = error.response?.data?.error || 'Ошибка смены пароля';
+        this.loading = false;
+      });
+      throw error;
+    }
+  }
+
   async uploadAvatar(file) {
     const formData = new FormData();
     formData.append('avatar', file);

@@ -1,6 +1,7 @@
 import React, { useRef, useLayoutEffect, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import canvasState from "../store/canvasState";
+import userState from "../store/userState";
 
 const sanitizeMessage = (text) => {
   if (typeof text !== 'string') return '';
@@ -84,8 +85,11 @@ const Chat = observer(() => {
         <h4>Пользователи:</h4>
         <div className="chat-users-list">
           {canvasState.users.map((user, index) => (
-            <div key={index} className="chat-user">
+            <div key={index} className={`chat-user ${user === canvasState.username && userState.isAuthenticated ? 'chat-user--verified' : ''}`}>
               {user}
+              {user === canvasState.username && userState.isAuthenticated && (
+                <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>
+              )}
             </div>
           ))}
         </div>

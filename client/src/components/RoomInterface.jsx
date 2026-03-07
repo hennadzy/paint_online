@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import canvasState, { API_URL } from '../store/canvasState';
+import userState from '../store/userState';
 import '../styles/room-interface.scss';
 
 const validateUsername = (username) => {
@@ -65,10 +66,59 @@ const RoomInterface = observer(({ roomId }) => {
   const navigate = useNavigate();
 
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
-  const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified);
+  const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified) && !userState.isAuthenticated;
   
   // Show room error if present
   const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
+
+  // Автовход в комнату для авторизованного пользователя (имя уже известно)
+  useEffect(() => {
+    if (!roomId || !roomInfo?.exists || canvasState.isConnected || !userState.isAuthenticated || !userState.user?.username) return;
+    if (roomInfo.hasPassword && !passwordVerified) return;
+
+    const profileUsername = userState.user.username.trim();
+    if (profileUsername.length < 2) return;
+
+    let cancelled = false;
+    const doJoin = async () => {
+      try {
+        const roomInfoRes = await axios.get(`${API_URL}/rooms/${roomId}/exists`);
+        if (!roomInfoRes.data.exists || cancelled) return;
+
+        const endpoint = roomInfoRes.data.hasPassword ? 'join-private' : 'join-public';
+        const payload = { username: profileUsername };
+        if (roomInfoRes.data.hasPassword) {
+          const tempPassword = localStorage.getItem(`temp_room_password_${roomId}`);
+          if (tempPassword) {
+            payload.password = tempPassword;
+            localStorage.removeItem(`temp_room_password_${roomId}`);
+          }
+        }
+
+        const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
+        const token = tokenResponse.data.token;
+        localStorage.setItem(`room_token_${roomId}`, token);
+        localStorage.removeItem(`room_password_verified_${roomId}`);
+
+        if (cancelled) return;
+        canvasState.setUsername(profileUsername);
+        canvasState.setModalOpen(false);
+        canvasState.setShowRoomInterface(false);
+      } catch (err) {
+        if (cancelled) return;
+        if (err.response?.data?.error) {
+          setError(err.response.data.error);
+          if (String(err.response.data.error).includes('максимальное количество')) {
+            setTimeout(() => navigate('/'), 3000);
+          }
+        } else {
+          setError('Ошибка подключения к комнате');
+        }
+      }
+    };
+    doJoin();
+    return () => { cancelled = true; };
+  }, [roomId, roomInfo?.exists, roomInfo?.hasPassword, passwordVerified, userState.isAuthenticated, userState.user?.username]);
 
   useEffect(() => {
     if (canvasState.showRoomsList) {

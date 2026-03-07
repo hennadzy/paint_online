@@ -807,6 +807,15 @@ button:active {
     color: #ff6699;
   }
 
+  .chat-user--verified {
+    font-weight: 600;
+  }
+
+  .chat-user-check {
+    color: #22c55e;
+    font-weight: bold;
+  }
+
   border-bottom: 1px solid #ccc;
   padding-bottom: 10px;
   margin-bottom: 10px;
@@ -927,8 +936,8 @@ button:active {
   }
 }
 
-// Mobile vertical chat layout
-@media (max-width: 768px) {
+// Mobile vertical chat layout (только портрет; в ландшафте — структура как на ПК)
+@media (max-width: 768px) and (orientation: portrait) {
   .chat {
     flex-direction: row;
     gap: 5px;
@@ -1018,6 +1027,12 @@ button:active {
   }
   
   // Hide invite button in top menu on mobile
+  .invite-btn-desktop {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
   .invite-btn-desktop {
     display: none;
   }

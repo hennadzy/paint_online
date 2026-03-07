@@ -3,7 +3,7 @@ const express = require('express');
 const multer = require('multer');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
-const { validateUsername, validateEmail } = require('../utils/auth');
+const { validateUsername, validateEmail, validatePassword, hashPassword, verifyPassword } = require('../utils/auth');
 
 const router = express.Router();
 
@@ -81,6 +81,39 @@ router.put('/me', authenticate, async (req, res) => {
     res.json({ user: updatedUser });
   } catch (error) {
     console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * PUT /api/users/me/password
+ * Сменить пароль (текущий пароль + новый пароль)
+ */
+router.put('/me/password', authenticate, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Текущий и новый пароль обязательны' });
+    }
+    const pwdValidation = validatePassword(newPassword);
+    if (!pwdValidation.valid) {
+      return res.status(400).json({ error: pwdValidation.error });
+    }
+    const userId = req.user.userId;
+    const { pgPool } = require('../config/db');
+    const row = await pgPool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (!row.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const valid = await verifyPassword(currentPassword, row.rows[0].password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Неверный текущий пароль' });
+    }
+    const newHash = await hashPassword(newPassword);
+    await User.changePassword(userId, newHash);
+    res.json({ message: 'Пароль изменён' });
+  } catch (error) {
+    console.error('Change password error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
