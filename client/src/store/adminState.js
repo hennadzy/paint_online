@@ -31,6 +31,7 @@ class AdminState {
   searchQuery = '';
   sortBy = 'created_at';
   sortOrder = 'DESC';
+  filters = {};
   
   // Modal state
   showUserModal = false;
@@ -62,6 +63,10 @@ class AdminState {
     this.sortOrder = sortOrder;
   }
 
+  setFilters(filters) {
+    this.filters = filters;
+  }
+
   // Stats
   async fetchStats() {
     try {
@@ -85,7 +90,8 @@ class AdminState {
           limit: this.usersPagination.limit,
           search: this.searchQuery,
           sortBy: this.sortBy,
-          sortOrder: this.sortOrder
+          sortOrder: this.sortOrder,
+          ...this.filters
         }
       });
       runInAction(() => {
@@ -199,7 +205,8 @@ class AdminState {
           limit: this.roomsPagination.limit,
           search: this.searchQuery,
           sortBy: this.sortBy,
-          sortOrder: this.sortOrder
+          sortOrder: this.sortOrder,
+          ...this.filters
         }
       });
       runInAction(() => {

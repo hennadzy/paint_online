@@ -99,9 +99,9 @@ class User {
     return result.rows[0] || null;
   }
 
-  // Admin methods
+// Admin methods
   static async getAll(options = {}) {
-    const { limit = 20, offset = 0, search = '', sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    const { limit = 20, offset = 0, search = '', sortBy = 'created_at', sortOrder = 'DESC', role, isActive } = options;
     
     let query = `
       SELECT id, username, email, role, created_at, last_login, avatar_url, settings, is_active
@@ -110,13 +110,28 @@ class User {
     const values = [];
     let paramIndex = 1;
 
+    // Filter by role
+    if (role) {
+      query += ` WHERE role = $${paramIndex}`;
+      values.push(role);
+      paramIndex++;
+    }
+
+    // Filter by is_active
+    if (isActive !== undefined) {
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = $${paramIndex}`;
+      values.push(isActive);
+      paramIndex++;
+    }
+
+    // Search
     if (search) {
-      query += ` WHERE username ILIKE $${paramIndex} OR email ILIKE $${paramIndex}`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
       paramIndex++;
     }
 
-const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role', 'is_active'];
+    const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role', 'is_active'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -127,12 +142,30 @@ const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role
     return result.rows;
   }
 
-  static async count(search = '') {
+  static async count(search = '', filters = {}) {
+    const { role, isActive } = filters;
+    
     let query = 'SELECT COUNT(*) as total FROM users';
     const values = [];
+    let paramIndex = 1;
 
+    // Filter by role
+    if (role) {
+      query += ` WHERE role = $${paramIndex}`;
+      values.push(role);
+      paramIndex++;
+    }
+
+    // Filter by is_active
+    if (isActive !== undefined) {
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = $${paramIndex}`;
+      values.push(isActive);
+      paramIndex++;
+    }
+
+    // Search
     if (search) {
-      query += ' WHERE username ILIKE $1 OR email ILIKE $1';
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
     }
 

@@ -134,6 +134,14 @@ const AdminPage = observer(() => {
   });
   const [userFormError, setUserFormError] = useState('');
 
+  // Filter state - Users
+  const [usersFilterRole, setUsersFilterRole] = useState('all');
+  const [usersFilterStatus, setUsersFilterStatus] = useState('all');
+
+  // Filter state - Rooms
+  const [roomsFilterType, setRoomsFilterType] = useState('all');
+  const [roomsFilterPassword, setRoomsFilterPassword] = useState('all');
+
   // Room Modal state
   const [roomFormData, setRoomFormData] = useState({ name: '' });
   const [roomFormError, setRoomFormError] = useState('');
@@ -208,6 +216,36 @@ const AdminPage = observer(() => {
     setRoomsSortBy(field);
     setRoomsSortOrder(newOrder);
     adminState.setSort(field, newOrder);
+    adminState.fetchRooms(1);
+  };
+
+  const handleUsersFilter = () => {
+    adminState.setFilters({
+      role: usersFilterRole !== 'all' ? usersFilterRole : undefined,
+      isActive: usersFilterStatus !== 'all' ? usersFilterStatus === 'active' : undefined
+    });
+    adminState.fetchUsers(1);
+  };
+
+  const handleRoomsFilter = () => {
+    adminState.setFilters({
+      isPublic: roomsFilterType !== 'all' ? roomsFilterType === 'public' : undefined,
+      hasPassword: roomsFilterPassword !== 'all' ? roomsFilterPassword === 'yes' : undefined
+    });
+    adminState.fetchRooms(1);
+  };
+
+  const clearUsersFilters = () => {
+    setUsersFilterRole('all');
+    setUsersFilterStatus('all');
+    adminState.setFilters({});
+    adminState.fetchUsers(1);
+  };
+
+  const clearRoomsFilters = () => {
+    setRoomsFilterType('all');
+    setRoomsFilterPassword('all');
+    adminState.setFilters({});
     adminState.fetchRooms(1);
   };
 
@@ -319,6 +357,43 @@ const AdminPage = observer(() => {
       <div>
         <div className="admin-table-container">
           <div className="admin-toolbar">
+            <div className="admin-filters">
+              <div className="admin-filter-group">
+                <select
+                  className="admin-filter-select"
+                  value={usersFilterRole}
+                  onChange={(e) => setUsersFilterRole(e.target.value)}
+                >
+                  <option value="all">Все роли</option>
+                  <option value="user">Пользователь</option>
+                  <option value="admin">Админ</option>
+                  <option value="superadmin">Супер Админ</option>
+                </select>
+              </div>
+              <div className="admin-filter-group">
+                <select 
+                  className="admin-filter-select"
+                  value={usersFilterStatus}
+                  onChange={(e) => setUsersFilterStatus(e.target.value)}
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="active">Активные</option>
+                  <option value="inactive">Заблокированные</option>
+                </select>
+              </div>
+              <button 
+                className="admin-btn admin-btn--secondary admin-btn--small"
+                onClick={handleUsersFilter}
+              >
+                Применить
+              </button>
+              <button 
+                className="admin-btn admin-btn--secondary admin-btn--small"
+                onClick={clearUsersFilters}
+              >
+                Сбросить
+              </button>
+            </div>
             <form className="admin-toolbar__search" onSubmit={handleSearch}>
               <div className="admin-search">
                 <input
@@ -484,6 +559,42 @@ const AdminPage = observer(() => {
       <div>
         <div className="admin-table-container">
           <div className="admin-toolbar">
+            <div className="admin-filters">
+              <div className="admin-filter-group">
+                <select
+                  className="admin-filter-select"
+                  value={roomsFilterType}
+                  onChange={(e) => setRoomsFilterType(e.target.value)}
+                >
+                  <option value="all">Все типы</option>
+                  <option value="public">Публичные</option>
+                  <option value="private">Приватные</option>
+                </select>
+              </div>
+              <div className="admin-filter-group">
+                <select 
+                  className="admin-filter-select"
+                  value={roomsFilterPassword}
+                  onChange={(e) => setRoomsFilterPassword(e.target.value)}
+                >
+                  <option value="all">Пароль: любой</option>
+                  <option value="yes">С паролем</option>
+                  <option value="no">Без пароля</option>
+                </select>
+              </div>
+              <button 
+                className="admin-btn admin-btn--secondary admin-btn--small"
+                onClick={handleRoomsFilter}
+              >
+                Применить
+              </button>
+              <button 
+                className="admin-btn admin-btn--secondary admin-btn--small"
+                onClick={clearRoomsFilters}
+              >
+                Сбросить
+              </button>
+            </div>
             <form className="admin-toolbar__search" onSubmit={handleSearch}>
               <div className="admin-search">
                 <input
@@ -961,6 +1072,7 @@ const AdminPage = observer(() => {
           Панель администратора
         </div>
         <div className="admin-header__user">
+          <span>{userState.user?.username}</span>
           <button 
             className="admin-header__home" 
             onClick={() => navigate('/')}
@@ -968,7 +1080,6 @@ const AdminPage = observer(() => {
           >
             <HomeIcon /> Главная
           </button>
-          <span>{userState.user?.username}</span>
           <button className="admin-header__logout" onClick={handleLogout}>
             <LogoutIcon /> Выйти
           </button>

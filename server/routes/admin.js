@@ -74,7 +74,7 @@ router.get('/stats', async (req, res) => {
 // ==================== USERS ====================
 router.get('/users', async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 20, search = '', sortBy = 'created_at', sortOrder = 'DESC', role, isActive } = req.query;
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     
     const users = await User.getAll({
@@ -82,10 +82,12 @@ router.get('/users', async (req, res) => {
       offset,
       search,
       sortBy,
-      sortOrder
+      sortOrder,
+      role,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined
     });
 
-    const total = await User.count(search);
+    const total = await User.count(search, { role, isActive: isActive !== undefined ? isActive === 'true' : undefined });
 
     res.json({
       users,
@@ -250,7 +252,7 @@ router.post('/users/:id/change-password', async (req, res) => {
 // ==================== ROOMS ====================
 router.get('/rooms', async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '', sortBy = 'last_activity', sortOrder = 'DESC' } = req.query;
+    const { page = 1, limit = 20, search = '', sortBy = 'last_activity', sortOrder = 'DESC', isPublic, hasPassword } = req.query;
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     let query = `
@@ -284,6 +286,21 @@ router.get('/rooms', async (req, res) => {
     const values = [];
     let paramIndex = 1;
 
+    // Filter by is_public
+    if (isPublic !== undefined) {
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.is_public = $${paramIndex}`;
+      values.push(isPublic === 'true');
+      paramIndex++;
+    }
+
+    // Filter by has_password
+    if (hasPassword !== undefined) {
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.has_password = $${paramIndex}`;
+      values.push(hasPassword === 'true');
+      paramIndex++;
+    }
+
+    // Search by name
     if (search) {
       query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.name ILIKE $${paramIndex}`;
       values.push(`%${search}%`);
@@ -296,10 +313,25 @@ router.get('/rooms', async (req, res) => {
 
     // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM rooms';
-    if (search) {
-      countQuery += ' WHERE name ILIKE $1';
+    const countValues = [];
+    let countParamIndex = 1;
+    
+    if (isPublic !== undefined) {
+      countQuery += (countParamIndex === 1 ? ' WHERE' : ' AND') + ` is_public = $${countParamIndex}`;
+      countValues.push(isPublic === 'true');
+      countParamIndex++;
     }
-    const countResult = await pgPool.query(countQuery, search ? [values[0]] : []);
+    if (hasPassword !== undefined) {
+      countQuery += (countParamIndex === 1 ? ' WHERE' : ' AND') + ` has_password = $${countParamIndex}`;
+      countValues.push(hasPassword === 'true');
+      countParamIndex++;
+    }
+    if (search) {
+      countQuery += (countParamIndex === 1 ? ' WHERE' : ' AND') + ` name ILIKE $${countParamIndex}`;
+      countValues.push(`%${search}%`);
+    }
+    
+    const countResult = await pgPool.query(countQuery, countValues);
     const total = parseInt(countResult.rows[0].total, 10);
 
     query += ` ORDER BY r.${safeSortBy} ${safeSortOrder} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;

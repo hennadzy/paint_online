@@ -176,6 +176,40 @@
   }
 }
 
+// Filters
+.admin-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-filter-group {
+  display: flex;
+  align-items: center;
+}
+
+.admin-filter-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 140px;
+
+  &:focus {
+    outline: none;
+    border-color: #ffd700;
+  }
+
+  option {
+    background: #1a1a1a;
+    color: #fff;
+  }
+}
+
 .admin-search {
   flex: 1;
   max-width: 300px;
