@@ -520,19 +520,19 @@ button:active {
     z-index: 0 !important;
   }
 
-  .canvas-layout {
+.canvas-layout {
     display: flex;
     flex-direction: row;
     align-items: stretch;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 5px;
     width: calc(100% - 60px);
     height: calc(100% - 50px);
     padding: 50px 5px 0;
     box-sizing: border-box;
     margin-left: 60px;
   }
-
+    
   .canvas-container {
     flex: 2;
     height: 100%;

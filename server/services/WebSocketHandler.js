@@ -37,10 +37,11 @@ class WebSocketHandler {
     });
   }
 
-  async handleConnection(ws, msg) {
+async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
     let username = sanitizeUsername(msg.username);
+    const isVerified = Boolean(msg.isVerified);
     
     if (!token || !roomId || !username) {
       ws.close(1008, 'Invalid request');
@@ -78,16 +79,16 @@ class WebSocketHandler {
     }
     
     try {
-      const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws);
-      
+      const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified);
+
       ws.send(JSON.stringify({ 
         method: "draws", 
         strokes,
         cancelledStrokeIds
       }));
       
-      this.broadcast(roomId, { method: 'connection', username });
-      
+      this.broadcast(roomId, { method: 'connection', username, isVerified });
+
       const users = await RoomManager.getRoomUsers(roomId);
       this.broadcast(roomId, { 
         method: "users", 
@@ -177,7 +178,11 @@ async handleChat(ws, msg) {
       return;
     }
     
-    this.broadcast(roomId, { method: "chat", username, message, isVerified: msg.isVerified || false }, ws);
+    // Get verified users for this room
+    const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
+    const isVerified = verifiedUsers.includes(username);
+
+    this.broadcast(roomId, { method: "chat", username, message, isVerified }, ws);
     await RoomManager.updateUserActivity(ws);
   }
 

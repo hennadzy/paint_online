@@ -37,12 +37,13 @@ drawStroke(ctx, stroke) {
   ctx.save();
   ctx.globalAlpha = 1;
   
-  // Нормализуем lineWidth: если значение отсутствует или некорректно, устанавливаем дефолт
+// Нормализуем lineWidth: если значение отсутствует или некорректно, устанавливаем дефолт
   let lineWidth = stroke.lineWidth;
   
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
-    lineWidth = (stroke.type === 'eraser' ? 10 : 
-                 stroke.type === 'text' ? 16 : 1);
+    lineWidth = (stroke.type === 'eraser' ? 20 :
+                 stroke.type === 'text' ? 20 :
+                 stroke.type === 'fill' ? 1 : 5);
   }
   
   // Для brush гарантируем минимум 1
@@ -174,10 +175,10 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   
   const { strokeStyle = '#000000', strokeOpacity = 1, points } = stroke;
   
-  // Нормализуем lineWidth так же, как в drawStroke
+// Нормализуем lineWidth так же, как в drawStroke
   let lineWidth = stroke.lineWidth;
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
-    lineWidth = isEraser ? 10 : 1;
+    lineWidth = isEraser ? 20 : 5;
   }
   // Для brush гарантируем минимум 1
   if (!isEraser && lineWidth < 1) {
@@ -209,8 +210,8 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   ctx.restore();
 }
 
-  drawRectStroke(ctx, stroke) {
-    const { x, y, width, height, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 1 } = stroke;
+drawRectStroke(ctx, stroke) {
+    const { x, y, width, height, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
     
     ctx.save();
@@ -227,7 +228,7 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   }
 
   drawCircleStroke(ctx, stroke) {
-    const { x, y, radius, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 1 } = stroke;
+    const { x, y, radius, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
     
     ctx.save();
@@ -242,7 +243,7 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   }
 
   drawLineStroke(ctx, stroke) {
-    const { x1, y1, x2, y2, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 1 } = stroke;
+    const { x1, y1, x2, y2, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
     
     ctx.save();
@@ -259,8 +260,8 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
     ctx.restore();
   }
 
-  drawArrowStroke(ctx, stroke) {
-    const { x1, y1, x2, y2, strokeStyle = '#000000', lineWidth = 2, opacity = 1 } = stroke;
+drawArrowStroke(ctx, stroke) {
+    const { x1, y1, x2, y2, strokeStyle = '#000000', lineWidth = 5, opacity = 1 } = stroke;
     const headlen = Math.max(10, lineWidth * 3);
     const angle = Math.atan2(y2 - y1, x2 - x1);
 
@@ -292,8 +293,8 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
     ctx.restore();
   }
 
-  drawPolygonStroke(ctx, stroke) {
-    const { points, strokeStyle = '#000000', lineWidth = 1, opacity = 1 } = stroke;
+drawPolygonStroke(ctx, stroke) {
+    const { points, strokeStyle = '#000000', lineWidth = 5, opacity = 1 } = stroke;
     if (!points || points.length < 3) return;
 
     ctx.save();

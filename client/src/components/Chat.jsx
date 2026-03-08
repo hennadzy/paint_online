@@ -83,15 +83,20 @@ const Chat = observer(() => {
     <div className="chat" data-nosnippet>
       <div className="chat-users">
         <h4>Пользователи:</h4>
-        <div className="chat-users-list">
-          {canvasState.users.map((user, index) => (
-            <div key={index} className={`chat-user ${user === canvasState.username && userState.isAuthenticated ? 'chat-user--verified' : ''}`}>
-              {user}
-              {user === canvasState.username && userState.isAuthenticated && (
-                <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>
-              )}
-            </div>
-          ))}
+<div className="chat-users-list">
+          {canvasState.users.map((user, index) => {
+            const isVerified = typeof user === 'object' ? user.isVerified : false;
+            const username = typeof user === 'object' ? user.username : user;
+
+            return (
+              <div key={index} className={`chat-user ${isVerified ? 'chat-user--verified' : ''}`}>
+                {username}
+                {isVerified && (
+                  <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="chat-invite-container">
           <button className="chat-invite-btn" onClick={handleInvite}>

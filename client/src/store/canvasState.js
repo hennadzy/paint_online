@@ -66,8 +66,14 @@ class CanvasState {
       this.removeUser(username);
       this.addChatMessage({ type: "system", username, message: `покинул комнату` });
     });
-    WebSocketService.on('usersList', ({ users }) => {
-      this.users = users;
+WebSocketService.on('usersList', ({ users }) => {
+      // Normalize users array - ensure all users are objects with username and isVerified
+      this.users = users.map(user => {
+        if (typeof user === 'string') {
+          return { username: user, isVerified: false };
+        }
+        return user;
+      });
     });
     WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);

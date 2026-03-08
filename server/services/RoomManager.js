@@ -132,7 +132,7 @@ async getAllRoomStrokes(roomId) {
     }
   }
 
-async addUser(roomId, username, ws) {
+async addUser(roomId, username, ws, isVerified = false) {
     const userCount = await redis.scard(`room:${roomId}:users`);
     if (userCount >= 10) {
       throw new Error('Достигнуто максимальное количество пользователей в комнате');
@@ -148,8 +148,11 @@ async addUser(roomId, username, ws) {
     // Optimized: combine all Redis operations in one pipeline
     const multi = redis.multi();
     multi.sadd(`room:${roomId}:users`, username);
-    multi.hset(`ws:${wsId}`, 'roomId', roomId, 'username', username, 'lastActivity', Date.now());
+    multi.hset(`ws:${wsId}`, 'roomId', roomId, 'username', username, 'lastActivity', Date.now(), 'isVerified', isVerified ? '1' : '0');
     multi.set(`user:${username}:room`, roomId);
+    if (isVerified) {
+      multi.sadd(`room:${roomId}:verified_users`, username);
+    }
     await multi.exec();
 
     await DataStore.updateRoomActivity(roomId);
@@ -159,7 +162,7 @@ async addUser(roomId, username, ws) {
     }
     this.roomSockets.get(roomId).add(ws);
     
-let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+    let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     if (strokes.length === 0) {
       strokes = await DataStore.loadStrokes(roomId);
       if (strokes.length > 0) {
@@ -179,7 +182,7 @@ let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
           }
           return s;
         });
-        
+
         const multi = redis.multi();
         for (const s of normalizedStrokes) {
           multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
@@ -208,16 +211,16 @@ let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     
     const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);
     const allCancelledStrokeIds = new Set();
-    
+
     Object.values(allCancelledStrokes).forEach(cancelledArray => {
       cancelledArray.forEach(stroke => {
         allCancelledStrokeIds.add(stroke.id);
       });
     });
-    
+
     const filteredStrokes = strokes.filter(s => !allCancelledStrokeIds.has(s.id));
-    
-    return { 
+
+    return {
       strokes: filteredStrokes,
       cancelledStrokeIds: Array.from(allCancelledStrokeIds)
     };
@@ -235,6 +238,7 @@ async removeUser(ws) {
 
     const multi = redis.multi();
     multi.srem(`room:${roomId}:users`, username);
+    multi.srem(`room:${roomId}:verified_users`, username);
     multi.del(`ws:${wsId}`);
     multi.del(`user:${username}:room`);
     await multi.exec();
@@ -247,7 +251,7 @@ async removeUser(ws) {
       }
     }
 
-const remaining = await redis.scard(`room:${roomId}:users`);
+    const remaining = await redis.scard(`room:${roomId}:users`);
     if (remaining === 0) {
       // Get all strokes and filter out cancelled ones before saving
       let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
@@ -413,8 +417,25 @@ async addStroke(roomId, stroke) {
     await DataStore.deleteStrokes(roomId);
   }
 
-  async getRoomUsers(roomId) {
-    return redis.smembers(`room:${roomId}:users`);
+async getRoomUsers(roomId) {
+    const usernames = await redis.smembers(`room:${roomId}:users`);
+    const verifiedUsers = await redis.smembers(`room:${roomId}:verified_users`);
+
+    return usernames.map(username => ({
+      username,
+      isVerified: verifiedUsers.includes(username)
+    }));
+  }
+
+  async getVerifiedUsers(roomId) {
+    return redis.smembers(`room:${roomId}:verified_users`);
+  }
+          }
+        } while (cursor !== '0');
+      }
+    }
+
+    return users;
   }
 
   async updateUserActivity(ws) {

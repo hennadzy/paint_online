@@ -13,7 +13,7 @@ class WebSocketService {
     this.shouldReconnect = true;
   }
 
-  connect(wsUrl, roomId, username, token) {
+connect(wsUrl, roomId, username, token) {
     return new Promise((resolve, reject) => {
       try {
         this.roomId = roomId;
@@ -27,11 +27,13 @@ class WebSocketService {
           this.shouldReconnect = true;
           this.sessionId = this.generateSessionId();
           
+          const userState = require('../store/userState').default;
           this.send({
             method: "connection",
             id: roomId,
             username: username,
-            token: token
+            token: token,
+            isVerified: userState.isAuthenticated
           });
           
           this.emit('connected', { roomId, username });

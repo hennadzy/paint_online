@@ -85,7 +85,7 @@ body.modal-open {
   margin: 0 2px;
   background-color: transparent;
   border-radius: 10px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s;
 
   &::before {
     content: '';
@@ -99,12 +99,13 @@ body.modal-open {
     border-radius: 10px;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
-    animation: glowing 10s linear infinite;
     z-index: -1;
   }
 
-  &:hover::before {
+  &:hover::before,
+  &.active::before {
     opacity: 1;
+    animation: glowing 10s linear infinite;
   }
 
   &:hover {
