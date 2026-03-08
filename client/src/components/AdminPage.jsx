@@ -106,6 +106,52 @@ const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
   
+  // User Modal state
+  const [userFormData, setUserFormData] = useState({
+    username: '',
+    email: '',
+    role: 'user',
+    isActive: true
+  });
+  const [userFormError, setUserFormError] = useState('');
+
+  // Room Modal state
+  const [roomFormData, setRoomFormData] = useState({ name: '' });
+  const [roomFormError, setRoomFormError] = useState('');
+
+  // Password Modal state
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordFormError, setPasswordFormError] = useState('');
+
+  // Sync form data when selected user/room changes
+  useEffect(() => {
+    if (adminState.selectedUser) {
+      const user = adminState.selectedUser;
+      setUserFormData({
+        username: user.username || '',
+        email: user.email || '',
+        role: user.role || 'user',
+        isActive: user.is_active !== false
+      });
+      setUserFormError('');
+    }
+  }, [adminState.selectedUser]);
+
+  useEffect(() => {
+    if (adminState.selectedRoom) {
+      const room = adminState.selectedRoom;
+      setRoomFormData({ name: room.name || '' });
+      setRoomFormError('');
+    }
+  }, [adminState.selectedRoom]);
+
+  useEffect(() => {
+    if (adminState.selectedUser) {
+      setNewPassword('');
+      setPasswordFormError('');
+    }
+  }, [adminState.selectedUser]);
+
   useEffect(() => {
     // Check if user is admin
     if (!userState.user || !['admin', 'superadmin'].includes(userState.user.role)) {
@@ -536,21 +582,14 @@ const AdminPage = observer(() => {
     if (!adminState.showUserModal) return null;
 
     const user = adminState.selectedUser || {};
-    const [formData, setFormData] = useState({
-      username: user.username || '',
-      email: user.email || '',
-      role: user.role || 'user',
-      isActive: user.is_active !== false
-    });
-    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setError('');
+      setUserFormError('');
       
-      const result = await adminState.updateUser(user.id, formData);
+      const result = await adminState.updateUser(user.id, userFormData);
       if (!result.success) {
-        setError(result.error);
+        setUserFormError(result.error);
       }
     };
 
@@ -565,14 +604,14 @@ const AdminPage = observer(() => {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
-              {error && <div className="admin-form__error" style={{marginBottom: '15px'}}>{error}</div>}
+              {userFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{userFormError}</div>}
               
               <div className="admin-form__group">
                 <label>Имя пользователя</label>
                 <input
                   type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  value={userFormData.username}
+                  onChange={(e) => setUserFormData({...userFormData, username: e.target.value})}
                   required
                 />
               </div>
@@ -581,8 +620,8 @@ const AdminPage = observer(() => {
                 <label>Email</label>
                 <input
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  value={userFormData.email}
+                  onChange={(e) => setUserFormData({...userFormData, email: e.target.value})}
                   required
                 />
               </div>
@@ -590,8 +629,8 @@ const AdminPage = observer(() => {
               <div className="admin-form__group">
                 <label>Роль</label>
                 <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  value={userFormData.role}
+                  onChange={(e) => setUserFormData({...userFormData, role: e.target.value})}
                 >
                   <option value="user">Пользователь</option>
                   <option value="admin">Админ</option>
@@ -603,8 +642,8 @@ const AdminPage = observer(() => {
                 <label>
                   <input
                     type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                    checked={userFormData.isActive}
+                    onChange={(e) => setUserFormData({...userFormData, isActive: e.target.checked})}
                     style={{marginRight: '8px'}}
                   />
                   Активен
@@ -630,18 +669,14 @@ const AdminPage = observer(() => {
     if (!adminState.showRoomModal) return null;
 
     const room = adminState.selectedRoom || {};
-    const [formData, setFormData] = useState({
-      name: room.name || ''
-    });
-    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setError('');
+      setRoomFormError('');
       
-      const result = await adminState.updateRoom(room.id, formData);
+      const result = await adminState.updateRoom(room.id, roomFormData);
       if (!result.success) {
-        setError(result.error);
+        setRoomFormError(result.error);
       }
     };
 
@@ -656,7 +691,7 @@ const AdminPage = observer(() => {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
-              {error && <div className="admin-form__error" style={{marginBottom: '15px'}}>{error}</div>}
+              {roomFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{roomFormError}</div>}
               
               <div className="admin-room-details__info">
                 <div className="admin-room-details__item">
@@ -701,8 +736,8 @@ const AdminPage = observer(() => {
                 <label>Название</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  value={roomFormData.name}
+                  onChange={(e) => setRoomFormData({...roomFormData, name: e.target.value})}
                   required
                 />
               </div>
@@ -740,21 +775,19 @@ const AdminPage = observer(() => {
     if (!adminState.showPasswordModal) return null;
 
     const user = adminState.selectedUser || {};
-    const [newPassword, setNewPassword] = useState('');
-    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      setError('');
+      setPasswordFormError('');
       
       if (newPassword.length < 6) {
-        setError('Пароль должен быть не менее 6 символов');
+        setPasswordFormError('Пароль должен быть не менее 6 символов');
         return;
       }
       
       const result = await adminState.changeUserPassword(user.id, newPassword);
       if (!result.success) {
-        setError(result.error);
+        setPasswordFormError(result.error);
       } else {
         alert('Пароль изменён');
       }
@@ -771,7 +804,7 @@ const AdminPage = observer(() => {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
-              {error && <div className="admin-form__error" style={{marginBottom: '15px'}}>{error}</div>}
+              {passwordFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{passwordFormError}</div>}
               
               <div className="admin-form__group">
                 <label>Новый пароль</label>
