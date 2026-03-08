@@ -75,7 +75,9 @@ class User {
       const dbKey = key === 'username' ? 'username' :
                     key === 'email' ? 'email' :
                     key === 'avatarUrl' ? 'avatar_url' :
-                    key === 'settings' ? 'settings' : null;
+                    key === 'settings' ? 'settings' :
+                    key === 'role' ? 'role' :
+                    key === 'isActive' ? 'is_active' : null;
       if (dbKey) {
         setClause.push(`${dbKey} = $${index}`);
         values.push(value);
@@ -94,6 +96,71 @@ class User {
     `;
 
     const result = await pgPool.query(query, values);
+    return result.rows[0] || null;
+  }
+
+  // Admin methods
+  static async getAll(options = {}) {
+    const { limit = 20, offset = 0, search = '', sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    
+    let query = `
+      SELECT id, username, email, role, created_at, last_login, avatar_url, settings, is_active
+      FROM users
+    `;
+    const values = [];
+    let paramIndex = 1;
+
+    if (search) {
+      query += ` WHERE username ILIKE $${paramIndex} OR email ILIKE $${paramIndex}`;
+      values.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role'];
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    query += ` ORDER BY ${safeSortBy} ${safeSortOrder} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    values.push(limit, offset);
+
+    const result = await pgPool.query(query, values);
+    return result.rows;
+  }
+
+  static async count(search = '') {
+    let query = 'SELECT COUNT(*) as total FROM users';
+    const values = [];
+
+    if (search) {
+      query += ' WHERE username ILIKE $1 OR email ILIKE $1';
+      values.push(`%${search}%`);
+    }
+
+    const result = await pgPool.query(query, values);
+    return parseInt(result.rows[0].total, 10);
+  }
+
+  static async delete(id) {
+    const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
+    const result = await pgPool.query(query, [id]);
+    return result.rows[0] || null;
+  }
+
+  static async setActive(id, isActive) {
+    const query = 'UPDATE users SET is_active = $1 WHERE id = $2 RETURNING id, username, email, role, is_active';
+    const result = await pgPool.query(query, [isActive, id]);
+    return result.rows[0] || null;
+  }
+
+  static async setRole(id, role) {
+    const query = 'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, email, role, is_active';
+    const result = await pgPool.query(query, [role, id]);
+    return result.rows[0] || null;
+  }
+
+  static async findByIdFull(id) {
+    const query = 'SELECT * FROM users WHERE id = $1';
+    const result = await pgPool.query(query, [id]);
     return result.rows[0] || null;
   }
 }

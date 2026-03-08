@@ -76,6 +76,14 @@ const Canvas = observer(() => {
       canvasState.setCurrentRoomId(params.id);
       canvasState.setUsername('');
       canvasState.setModalOpen(false);
+      
+      // Check for admin join token
+      const adminToken = localStorage.getItem('adminJoinToken');
+      if (adminToken) {
+        localStorage.removeItem('adminJoinToken');
+        // Use the admin token directly
+        canvasState.connectToRoom(params.id, 'Admin', adminToken);
+      }
     }
 
     return () => {

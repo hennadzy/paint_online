@@ -41,7 +41,7 @@ function requireAdmin(req, res, next) {
 }
 
 function requireSuperAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'superadmin') {
+  if (!req.user || (req.user.role !== 'superadmin' && req.user.role !== 'admin')) {
     return res.status(403).json({ error: 'Super admin access required' });
   }
   next();

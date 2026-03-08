@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import "./styles/app.scss"
 import "./styles/room-interface.scss"
 import "./styles/not-found.scss"
+import "./styles/admin.scss"
 import SettingBar from "./components/SettingBar";
 import Toolbar from "./components/Toolbar";
 import TopMenu from "./components/TopMenu";
@@ -10,6 +11,7 @@ import Canvas from "./components/Canvas";
 import NotFoundPage from "./components/NotFoundPage";
 import ProfilePage from "./components/ProfilePage";
 import AuthPage from "./components/AuthPage";
+import AdminPage from "./components/AdminPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 
@@ -26,14 +28,14 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
-    const hideGlobalUI = ['/profile', '/login', '/register'].includes(location.pathname);
+    const hideGlobalUI = ['/profile', '/login', '/register', '/admin'].includes(location.pathname);
 
     useEffect(() => {
         const fallback = document.getElementById('server-404-fallback');
         if (fallback) fallback.hidden = true;
 
         const path = location.pathname;
-        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404'];
+        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404', '/admin'];
         if (allowedClientPaths.includes(path)) return;
 
         const segments = path.slice(1).split('/').filter(Boolean);
@@ -61,6 +63,7 @@ const App = observer(() => {
                     <Route path='/login' element={<AuthPage />} />
                     <Route path='/register' element={<AuthPage />} />
                     <Route path='/profile' element={<ProfilePage />} />
+                    <Route path='/admin' element={<AdminPage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>

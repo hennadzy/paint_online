@@ -8,6 +8,7 @@ const WebSocketHandler = require('./services/WebSocketHandler');
 const apiRouter = require('./routes/api');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const adminRouter = require('./routes/admin');
 const { pgPool } = require('./config/db');
 
 const app = express();
@@ -139,6 +140,7 @@ app.ws('/', (ws, req) => {
 app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/admin', adminRouter);
 
 const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404'];
 
@@ -268,6 +270,24 @@ async function initDb() {
       );
     `);
     console.log('Database tables ready');
+
+    // Create default admin user if not exists
+    const bcrypt = require('bcrypt');
+    const { hashPassword } = require('./utils/auth');
+    
+    const adminExists = await pgPool.query(
+      "SELECT id FROM users WHERE email = 'admin@admin.com'"
+    );
+    
+    if (adminExists.rows.length === 0) {
+      const adminPasswordHash = await hashPassword('Hbcjdfkrf!13');
+      await pgPool.query(
+        `INSERT INTO users (username, email, password_hash, role, created_at, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        ['admin', 'admin@admin.com', adminPasswordHash, 'superadmin', Date.now(), true]
+      );
+      console.log('Default admin user created: admin@admin.com');
+    }
   } catch (err) {
     console.error('Failed to initialize database tables:', err.message);
     console.warn('Server will start without database functionality');
