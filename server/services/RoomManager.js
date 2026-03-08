@@ -19,12 +19,10 @@ class RoomManager {
   }
 
 startInactivityCheck() {
-    // Проверка неактивных пользователей
     setInterval(() => {
       this.checkInactiveUsers();
     }, 60000);
 
-    // Очистка устаревших ключей Redis каждые 10 минут
     setInterval(() => {
       this.cleanupStaleKeys();
     }, 600000);
@@ -140,12 +138,10 @@ async addUser(roomId, username, ws, isVerified = false) {
 
     const onlineUsers = await this.getRoomUsers(roomId);
 
-    // Optimized: load cancelled strokes only for current user
     await this.loadCancelledStrokesFromDb(roomId, username);
     
     const wsId = this._getWsId(ws);
 
-    // Optimized: combine all Redis operations in one pipeline
     const multi = redis.multi();
     multi.sadd(`room:${roomId}:users`, username);
     multi.hset(`ws:${wsId}`, 'roomId', roomId, 'username', username, 'lastActivity', Date.now(), 'isVerified', isVerified ? '1' : '0');
@@ -166,10 +162,8 @@ async addUser(roomId, username, ws, isVerified = false) {
     if (strokes.length === 0) {
       strokes = await DataStore.loadStrokes(roomId);
       if (strokes.length > 0) {
-        // Fixed: ensure all strokes have proper lineWidth before caching
         const normalizedStrokes = strokes.map(s => {
           if (s.lineWidth === undefined || s.lineWidth === null) {
-            // Use default lineWidth values that match the client defaults
             if (s.type === 'eraser') {
               return { ...s, lineWidth: 20 };
             } else if (s.type === 'text') {
@@ -193,7 +187,6 @@ async addUser(roomId, username, ws, isVerified = false) {
     } else {
       strokes = strokes.map(s => {
         const parsed = JSON.parse(s);
-        // Fixed: normalize lineWidth for all stroke types
         if (parsed.lineWidth === undefined || parsed.lineWidth === null) {
           if (parsed.type === 'eraser') {
             parsed.lineWidth = 20;
@@ -233,7 +226,6 @@ async removeUser(ws) {
 
     const { roomId, username } = userData;
 
-    // Fixed: save cancelled strokes for current user
     await this.saveCancelledStrokesToDb(roomId, username);
 
     const multi = redis.multi();
@@ -253,7 +245,6 @@ async removeUser(ws) {
 
     const remaining = await redis.scard(`room:${roomId}:users`);
     if (remaining === 0) {
-      // Get all strokes and filter out cancelled ones before saving
       let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
       const allCancelled = await this.getAllCancelledStrokes(roomId);
       const allCancelledIds = new Set();
@@ -266,7 +257,6 @@ async removeUser(ws) {
       
       if (strokes.length > 0) {
         const strokesObjects = strokes.map(s => JSON.parse(s));
-        // Filter out cancelled strokes before saving to DB
         const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
         
         if (activeStrokes.length > 0) {
@@ -277,7 +267,6 @@ async removeUser(ws) {
       }
       await redis.del(`room:${roomId}:strokes`);
 
-      // Save all cancelled strokes to DB
       for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
         if (cancelledStrokes.length > 0) {
           await DataStore.saveCancelledStrokes(roomId, cancelledUsername, cancelledStrokes);
@@ -285,7 +274,6 @@ async removeUser(ws) {
         await redis.del(`room:${roomId}:cancelled:${cancelledUsername}`);
       }
 
-      // Очистка памяти после сохранения
       this.roomSockets.delete(roomId);
     }
 
@@ -294,7 +282,6 @@ async removeUser(ws) {
 
 async addStroke(roomId, stroke) {
     await redis.rpush(`room:${roomId}:strokes`, JSON.stringify(stroke));
-    // Ограничиваем количество strokes в Redis (максимум 5000)
     await redis.ltrim(`room:${roomId}:strokes`, -5000, -1);
   }
 
@@ -518,10 +505,9 @@ _getWsId(ws) {
     if (!this.redis) return;
 
     try {
-      const STALE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 часа
+      const STALE_TIMEOUT = 24 * 60 * 60 * 1000;
       const now = Date.now();
 
-      // Очистка устаревших ws ключей
       const wsKeys = await this.redis.keys('ws:*');
       for (const key of wsKeys) {
         try {
@@ -532,7 +518,6 @@ _getWsId(ws) {
               await this.redis.del(key);
             }
           } else if (!data || Object.keys(data).length === 0) {
-            // Удаляем пустые ключи
             await this.redis.del(key);
           }
         } catch (error) {
@@ -540,7 +525,6 @@ _getWsId(ws) {
         }
       }
 
-      // Очистка устаревших user ключей
       const userKeys = await this.redis.keys('user:*');
       for (const key of userKeys) {
         try {

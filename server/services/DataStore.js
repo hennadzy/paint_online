@@ -104,7 +104,6 @@ async loadStrokes(roomId) {
         'SELECT stroke_data FROM strokes WHERE room_id = $1 ORDER BY created_at',
         [roomId]
       );
-      // Return strokes as-is; client handles lineWidth defaults
       return res.rows.map(row => row.stroke_data);
     } catch (error) {
       console.error('loadStrokes error:', error);
@@ -158,7 +157,6 @@ async loadCancelledStrokes(roomId, username) {
         'SELECT stroke_data FROM cancelled_strokes WHERE room_id = $1 AND username = $2 ORDER BY created_at',
         [roomId, username]
       );
-      // Return strokes as-is; client handles lineWidth defaults
       return res.rows.map(row => row.stroke_data);
     } catch (error) {
       console.error('loadCancelledStrokes error:', error);

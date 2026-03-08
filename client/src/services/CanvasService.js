@@ -37,7 +37,6 @@ drawStroke(ctx, stroke) {
   ctx.save();
   ctx.globalAlpha = 1;
   
-// Нормализуем lineWidth: если значение отсутствует или некорректно, устанавливаем дефолт
   let lineWidth = stroke.lineWidth;
   
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
@@ -46,7 +45,6 @@ drawStroke(ctx, stroke) {
                  stroke.type === 'fill' ? 1 : 5);
   }
   
-  // Для brush гарантируем минимум 1
   if (stroke.type === 'brush' && lineWidth < 1) {
     lineWidth = 1;
   }
@@ -175,12 +173,10 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   
   const { strokeStyle = '#000000', strokeOpacity = 1, points } = stroke;
   
-// Нормализуем lineWidth так же, как в drawStroke
   let lineWidth = stroke.lineWidth;
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
     lineWidth = isEraser ? 20 : 5;
   }
-  // Для brush гарантируем минимум 1
   if (!isEraser && lineWidth < 1) {
     lineWidth = 1;
   }

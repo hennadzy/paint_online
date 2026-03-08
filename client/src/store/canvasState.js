@@ -67,7 +67,6 @@ class CanvasState {
       this.addChatMessage({ type: "system", username, message: `покинул комнату` });
     });
 WebSocketService.on('usersList', ({ users }) => {
-      // Normalize users array - ensure all users are objects with username and isVerified
       this.users = users.map(user => {
         if (typeof user === 'string') {
           return { username: user, isVerified: false };
@@ -418,7 +417,7 @@ scheduleThumbnailSave() {
       if (this.isConnected) {
         this.saveThumbnail();
       }
-    }, 15000); // Увеличил с 5 сек до 15 секунд
+    }, 15000);
   }
 
 setupThumbnailInterval() {
@@ -427,7 +426,7 @@ setupThumbnailInterval() {
       if (this.isConnected && this.currentRoomId) {
         this.saveThumbnail();
       }
-    }, 120000); // Увеличил с 30 сек до 2 минут
+    }, 120000);
   }
 
   stopThumbnailInterval() {
@@ -500,7 +499,7 @@ setupThumbnailInterval() {
         clearInterval(this.titleInterval);
         this.titleInterval = null;
         document.title = 'Рисование онлайн';
-        this.setFaviconBadge(false); // убираем точку
+        this.setFaviconBadge(false);
       }
     }
   }
@@ -542,7 +541,7 @@ setupThumbnailInterval() {
     if (this.titleInterval) clearInterval(this.titleInterval);
     const original = document.title;
     let flag = false;
-    this.setFaviconBadge(true); // показываем точку
+    this.setFaviconBadge(true);
     this.titleInterval = setInterval(() => {
       document.title = flag ? `🔔 ${original}` : original;
       flag = !flag;

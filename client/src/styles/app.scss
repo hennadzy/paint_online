@@ -159,7 +159,6 @@ body.modal-open {
   }
 }
 
-// Мобильная версия кнопки выхода из комнаты
 @media (max-width: 768px) {
   .disconnect-room-btn.mobile-exit {
     min-width: 32px !important;
@@ -175,7 +174,6 @@ body.modal-open {
     box-shadow: none !important;
     margin-left: auto !important;
     
-    // Добавляем тот же эффект свечения, что у других кнопок
     &::before {
       content: '';
       position: absolute;
@@ -207,7 +205,6 @@ body.modal-open {
   }
 }
 
-// На десктопе кнопка выхода тоже должна быть с иконкой
 .disconnect-room-btn {
   background: transparent !important;
   border: none !important;
@@ -600,7 +597,6 @@ body.modal-open {
   }
 }
 
-// Auth Page Styles
 .auth-page {
   display: flex;
   align-items: center;

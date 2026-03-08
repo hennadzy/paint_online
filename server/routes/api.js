@@ -59,7 +59,6 @@ const imageSaveLimiter = rateLimit({
 });
 
 router.post('/image', imageSaveLimiter, (req, res) => {
-  // CORS headers for image endpoint
   const origin = req.headers.origin;
   if (process.env.NODE_ENV === 'production' ||
       origin === 'https://risovanie.online' ||

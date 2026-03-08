@@ -13,7 +13,6 @@ const { pgPool } = require('./config/db');
 const app = express();
 require('express-ws')(app);
 
-// Trust proxy for Render/Render load balancer
 app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 5000;
@@ -46,7 +45,6 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
-    // In production, allow all origins
     if (process.env.NODE_ENV === 'production') {
       return callback(null, true);
     }
@@ -74,7 +72,6 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Explicit CORS headers for API routes
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin;
   if (process.env.NODE_ENV === 'production' || 
@@ -258,7 +255,6 @@ async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_strokes_room_id ON strokes(room_id);
       CREATE INDEX IF NOT EXISTS idx_cancelled_strokes_room_user ON cancelled_strokes(room_id, username);
       CREATE INDEX IF NOT EXISTS idx_rooms_last_activity ON rooms(last_activity);
-      -- Индексы для производительности
       CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
       CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

@@ -106,8 +106,7 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Check file size before processing (should be under 5MB after base64 encoding)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (req.file.size > maxSize) {
       return res.status(400).json({ error: 'File too large (maximum 5MB)' });
     }
@@ -116,8 +115,7 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
     const mimeType = req.file.mimetype;
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Check if dataUrl is too large for PostgreSQL
-    if (dataUrl.length > 10 * 1024 * 1024) { // 10MB limit for TEXT field
+    if (dataUrl.length > 10 * 1024 * 1024) {
       return res.status(400).json({ error: 'Image too large after encoding. Please use a smaller image.' });
     }
 
@@ -133,7 +131,7 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
     if (error instanceof multer.MulterError) {
       return res.status(400).json({ error: error.message });
     }
-    if (error.code === '22001') { // String too long error
+    if (error.code === '22001') {
       return res.status(400).json({ error: 'Image too large. Please use a smaller image (under 5MB).' });
     }
     res.status(500).json({ error: 'Server error' });

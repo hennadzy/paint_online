@@ -20,7 +20,6 @@ class UserState {
 
  const storageUser = { ...user };
 
- // Не сохраняем base64-аватар в localStorage, чтобы не переполнять квоту
  if (typeof storageUser.avatar_url === 'string' && storageUser.avatar_url.startsWith('data:')) {
  delete storageUser.avatar_url;
  }
@@ -28,7 +27,6 @@ class UserState {
  try {
  localStorage.setItem('user', JSON.stringify(storageUser));
  } catch (error) {
- // Последняя попытка — сохранить только базовые поля
  try {
  const minimalUser = {
  id: storageUser.id,
@@ -39,7 +37,6 @@ class UserState {
  };
  localStorage.setItem('user', JSON.stringify(minimalUser));
  } catch (_) {
- // Игнорируем — пользователь останется в памяти текущей сессии
  }
  }
  }

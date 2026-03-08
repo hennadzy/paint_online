@@ -118,7 +118,6 @@ async handleConnection(ws, msg) {
           await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
           await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
           
-          // Optimized: only broadcast cancelled stroke id, not all cancelled strokes
           this.broadcast(roomId, { 
             method: "draw",
             username,
@@ -136,7 +135,6 @@ async handleConnection(ws, msg) {
         await RoomManager.addStroke(roomId, stroke);
         await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
         
-        // Optimized: only broadcast redo action
         this.broadcast(roomId, { 
           method: "draw",
           username,
@@ -178,7 +176,6 @@ async handleChat(ws, msg) {
       return;
     }
     
-    // Get verified users for this room
     const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     const isVerified = verifiedUsers.includes(username);
 
@@ -212,7 +209,6 @@ async handleChat(ws, msg) {
   }
 
 async handleClose(ws) {
-    // Очистка rate limit карты для предотвращения утечки памяти
     this.wsMessageLimits.delete(ws);
 
     const userInfo = await RoomManager.removeUser(ws);
