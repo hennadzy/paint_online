@@ -59,7 +59,22 @@ const imageSaveLimiter = rateLimit({
 });
 
 router.post('/image', imageSaveLimiter, (req, res) => {
-  try {
+  // CORS headers for image endpoint
+  const origin = req.headers.origin;
+  if (process.env.NODE_ENV === 'production' ||
+      origin === 'https://risovanie.online' ||
+      origin === 'http://localhost:3000') {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+try {
     const id = sanitizeInput(String(req.query.id || ''), 50).replace(/[^a-zA-Z0-9_-]/g, '') || 'image';
     const img = req.body?.img;
     if (!img || typeof img !== 'string') {

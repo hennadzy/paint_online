@@ -101,7 +101,7 @@ const Chat = observer(() => {
       </div>
       <div className="chat-main">
         <div className="chat-messages" ref={messagesRef}>
-          {canvasState.chatMessages.map((msg, index) => (
+{canvasState.chatMessages.map((msg, index) => (
             <div key={index} className="chat-message">
               {msg.type === "system" ? (
                 <>
@@ -109,7 +109,9 @@ const Chat = observer(() => {
                 </>
               ) : (
                 <>
-                  <strong>{msg.username}:</strong> {msg.message}
+                  <strong>{msg.username}</strong>
+                  {msg.isVerified && <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>}
+                  : {msg.message}
                 </>
               )}
             </div>

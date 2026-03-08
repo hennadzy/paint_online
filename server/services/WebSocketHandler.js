@@ -164,7 +164,7 @@ class WebSocketHandler {
     await RoomManager.updateUserActivity(ws);
   }
 
-  async handleChat(ws, msg) {
+async handleChat(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
@@ -177,7 +177,7 @@ class WebSocketHandler {
       return;
     }
     
-    this.broadcast(roomId, { method: "chat", username, message }, ws);
+    this.broadcast(roomId, { method: "chat", username, message, isVerified: msg.isVerified || false }, ws);
     await RoomManager.updateUserActivity(ws);
   }
 
@@ -206,8 +206,10 @@ class WebSocketHandler {
     }
   }
 
-  async handleClose(ws) {
+async handleClose(ws) {
+    // Очистка rate limit карты для предотвращения утечки памяти
     this.wsMessageLimits.delete(ws);
+
     const userInfo = await RoomManager.removeUser(ws);
     if (userInfo) {
       const { roomId, username } = userInfo;

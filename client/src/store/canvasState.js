@@ -158,9 +158,9 @@ class CanvasState {
         }
       }
     });
-    WebSocketService.on('chatReceived', ({ username, message }) => {
+WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
       if (username !== this.username) {
-        this.addChatMessage({ type: "chat", username, message });
+        this.addChatMessage({ type: "chat", username, message, isVerified });
         if (!this.pageVisible) {
           this.notifyUser(`Сообщение от ${username}`, message);
         }
@@ -361,10 +361,11 @@ class CanvasState {
   addChatMessage(msg) {
     this.chatMessages.push(msg);
   }
-  sendChatMessage(message) {
+sendChatMessage(message) {
     if (WebSocketService.isConnected) {
+      const userState = require('./userState').default;
       WebSocketService.sendChat(message);
-      this.addChatMessage({ type: "chat", username: this.username, message });
+      this.addChatMessage({ type: "chat", username: this.username, message, isVerified: userState.isAuthenticated });
     }
   }
 
@@ -402,7 +403,7 @@ class CanvasState {
     } catch (_) { }
   }
 
-  scheduleThumbnailSave() {
+scheduleThumbnailSave() {
     if (this._thumbnailDebounceTimer) {
       clearTimeout(this._thumbnailDebounceTimer);
     }
@@ -411,16 +412,16 @@ class CanvasState {
       if (this.isConnected) {
         this.saveThumbnail();
       }
-    }, 5000);
+    }, 15000); // Увеличил с 5 сек до 15 секунд
   }
 
-  setupThumbnailInterval() {
+setupThumbnailInterval() {
     if (this._thumbnailInterval) return;
     this._thumbnailInterval = setInterval(() => {
       if (this.isConnected && this.currentRoomId) {
         this.saveThumbnail();
       }
-    }, 30000);
+    }, 120000); // Увеличил с 30 сек до 2 минут
   }
 
   stopThumbnailInterval() {

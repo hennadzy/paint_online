@@ -114,12 +114,14 @@ class WebSocketService {
     });
   }
 
-  sendChat(message) {
+sendChat(message) {
+    const userState = require('../store/userState').default;
     return this.send({
       method: "chat",
       id: this.sessionId,
       username: this.username,
-      message: message
+      message: message,
+      isVerified: userState.isAuthenticated
     });
   }
 
