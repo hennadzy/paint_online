@@ -210,7 +210,8 @@ async function initDb() {
         has_password BOOLEAN NOT NULL DEFAULT false,
         password_hash VARCHAR(60),
         created_at BIGINT NOT NULL,
-        last_activity BIGINT NOT NULL
+        last_activity BIGINT NOT NULL,
+        weight INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS strokes (
@@ -270,6 +271,13 @@ async function initDb() {
       );
     `);
     console.log('Database tables ready');
+
+    // Add weight column if it doesn't exist
+    try {
+      await pgPool.query(`
+        ALTER TABLE rooms ADD COLUMN IF NOT EXISTS weight INTEGER DEFAULT 0
+      `);
+    } catch (_) { }
 
     // Create default admin user if not exists
     const bcrypt = require('bcrypt');

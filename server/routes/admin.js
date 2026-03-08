@@ -257,7 +257,7 @@ router.get('/rooms', async (req, res) => {
 
     let query = `
       SELECT 
-        r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity,
+        r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity, r.weight,
         (SELECT COUNT(*) FROM strokes WHERE room_id = r.id) as stroke_count,
         (SELECT COUNT(DISTINCT username) FROM strokes WHERE room_id = r.id) as unique_users
       FROM rooms r
@@ -268,7 +268,7 @@ router.get('/rooms', async (req, res) => {
     if (sortBy === 'stroke_count' || sortBy === 'unique_users') {
       query = `
         SELECT 
-          r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity,
+          r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity, r.weight,
           COALESCE(s.stroke_count, 0) as stroke_count,
           COALESCE(s.unique_users, 0) as unique_users
         FROM rooms r
@@ -311,6 +311,12 @@ router.get('/rooms', async (req, res) => {
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'last_activity';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
+    // Handle weight sorting - use COALESCE to handle NULL values
+    let orderByColumn = `r.${safeSortBy}`;
+    if (safeSortBy === 'weight') {
+      orderByColumn = 'COALESCE(r.weight, 0)';
+    }
+
     // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM rooms';
     const countValues = [];
@@ -334,7 +340,7 @@ router.get('/rooms', async (req, res) => {
     const countResult = await pgPool.query(countQuery, countValues);
     const total = parseInt(countResult.rows[0].total, 10);
 
-    query += ` ORDER BY r.${safeSortBy} ${safeSortOrder} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    query += ` ORDER BY ${orderByColumn} ${safeSortOrder} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     values.push(parseInt(limit, 10), offset);
 
     const rooms = await pgPool.query(query, values);
