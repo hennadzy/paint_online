@@ -1,13 +1,21 @@
 @import "./variables";
 
 .admin-page {
-  min-height: 100dvh;
+  min-height: 100vh;
   background: #1a1a1a;
   color: #e0e0e0;
   font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
   width: 100%;
   margin: 0;
   padding: 0;
+  padding-bottom: 50px;
+  box-sizing: border-box;
+}
+
+// Ensure html and body also have the background and cover full height
+html, body {
+  background: #1a1a1a;
+  min-height: 100%;
 }
 
 .admin-header {

@@ -255,13 +255,28 @@ const AdminPage = observer(() => {
   };
 
   const formatDate = (timestamp) => {
-    if (!timestamp) return '-';
-    return new Date(timestamp).toLocaleString('ru-RU');
+    if (!timestamp || timestamp === null || timestamp === 0) return '-';
+    
+    let ts;
+    // Handle different timestamp formats
+    if (typeof timestamp === 'string') {
+      // ISO string or date string
+      const parsed = Date.parse(timestamp);
+      if (isNaN(parsed)) return '-';
+      ts = parsed;
+    } else {
+      ts = Number(timestamp);
+    }
+    
+    if (isNaN(ts) || ts <= 0) return '-';
+    return new Date(ts).toLocaleString('ru-RU');
   };
 
   const formatRelativeTime = (timestamp) => {
-    if (!timestamp) return '-';
-    const diff = Date.now() - timestamp;
+    if (!timestamp || timestamp === null || timestamp === 0) return '-';
+    const ts = Number(timestamp);
+    if (isNaN(ts) || ts <= 0) return '-';
+    const diff = Date.now() - ts;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days > 0) return `${days} дн. назад`;
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -659,7 +674,7 @@ const AdminPage = observer(() => {
                             onClick={async () => {
                               const result = await adminState.joinRoom(room.id);
                               if (result.success) {
-                                localStorage.setItem('adminJoinToken', result.data.token);
+                                localStorage.setItem(`room_token_${room.id}`, result.data.token);
                                 navigate(`/${room.id}`);
                               }
                             }}
@@ -900,7 +915,7 @@ const AdminPage = observer(() => {
                 onClick={async () => {
                   const result = await adminState.joinRoom(room.id);
                   if (result.success) {
-                    localStorage.setItem('adminJoinToken', result.data.token);
+                    localStorage.setItem(`room_token_${room.id}`, result.data.token);
                     navigate(`/${room.id}`);
                   }
                 }}
