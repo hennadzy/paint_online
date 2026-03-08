@@ -526,11 +526,10 @@ button:active {
     align-items: stretch;
     justify-content: flex-start;
     gap: 5px;
-    width: calc(100% - 180px);
+    width: 100%;
     height: calc(100% - 50px);
-    padding: 50px 5px 0 5px;
+    padding: 0 5px 0 0;
     box-sizing: border-box;
-    margin-left: 180px;
   }
     
   .canvas-container {
