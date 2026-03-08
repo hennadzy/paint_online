@@ -63,7 +63,10 @@ router.get('/stats', async (req, res) => {
       strokes: {
         total: parseInt(strokeStats.rows[0].total_strokes, 10)
       },
-      recentRegistrations: recentUsers.rows
+      recentRegistrations: recentUsers.rows.map(u => ({
+        ...u,
+        created_at: u.created_at ? new Date(u.created_at).getTime() : null
+      }))
     });
   } catch (error) {
     console.error('Admin stats error:', error);
@@ -359,8 +362,8 @@ router.get('/rooms', async (req, res) => {
         name: r.name,
         isPublic: r.is_public,
         hasPassword: r.has_password,
-        createdAt: r.created_at,
-        lastActivity: r.last_activity,
+        createdAt: r.created_at ? new Date(r.created_at).getTime() : null,
+        lastActivity: r.last_activity ? new Date(r.last_activity).getTime() : null,
         strokeCount: parseInt(r.stroke_count, 10),
         uniqueUsers: parseInt(r.unique_users, 10),
         weight: parseInt(r.weight || 0, 10)
@@ -424,6 +427,8 @@ router.get('/rooms/:id', async (req, res) => {
     res.json({
       room: {
         ...room,
+        createdAt: room.createdAt ? new Date(room.createdAt).getTime() : null,
+        lastActivity: room.lastActivity ? new Date(room.lastActivity).getTime() : null,
         strokeCount: parseInt(strokeCount.rows[0].count, 10),
         uniqueUsers: parseInt(uniqueUsers.rows[0].count, 10),
         canvasWidth: Math.ceil(maxX + 50),
@@ -562,8 +567,8 @@ router.get('/export/rooms', async (req, res) => {
       name: r.name,
       isPublic: r.is_public,
       hasPassword: r.has_password,
-      createdAt: r.created_at,
-      lastActivity: r.last_activity,
+      createdAt: r.created_at ? new Date(r.created_at).getTime() : null,
+      lastActivity: r.last_activity ? new Date(r.last_activity).getTime() : null,
       strokeCount: parseInt(r.stroke_count, 10),
       uniqueUsers: parseInt(r.unique_users, 10)
     }));
