@@ -6,6 +6,11 @@ import canvasState, { API_URL } from '../store/canvasState';
 import userState from '../store/userState';
 import '../styles/room-interface.scss';
 
+// Таймаут для axios запросов (10 секунд)
+const axiosInstance = axios.create({
+  timeout: 10000
+});
+
 const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
@@ -80,7 +85,7 @@ const RoomInterface = observer(({ roomId }) => {
     let cancelled = false;
     const doJoin = async () => {
       try {
-        const roomInfoRes = await axios.get(`${API_URL}/rooms/${roomId}/exists`);
+        const roomInfoRes = await axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`);
         if (!roomInfoRes.data.exists || cancelled) return;
 
         const endpoint = roomInfoRes.data.hasPassword ? 'join-private' : 'join-public';
@@ -93,7 +98,7 @@ const RoomInterface = observer(({ roomId }) => {
           }
         }
 
-        const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
+        const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
         const token = tokenResponse.data.token;
         localStorage.setItem(`room_token_${roomId}`, token);
         localStorage.removeItem(`room_password_verified_${roomId}`);
@@ -141,6 +146,21 @@ const RoomInterface = observer(({ roomId }) => {
     }
   }, [activeTab, roomId]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchPublicRooms = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get(`${API_URL}/rooms/public`);
+      const rooms = response.data || [];
+      setPublicRooms(rooms);
+      if (rooms.length === 0) {
+        setActiveTab('create');
+      }
+    } catch (error) {
+      setError('Ошибка загрузки комнат');
+      canvasState.setShowRoomInterface(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (showUsernameForm && usernameInputRef.current) {
       usernameInputRef.current.focus();
@@ -156,7 +176,7 @@ const RoomInterface = observer(({ roomId }) => {
 
   useEffect(() => {
     if (roomId && !canvasState.isConnected) {
-      axios.get(`${API_URL}/rooms/${roomId}/exists`)
+      axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`)
         .then(response => {
           if (response.data.exists) {
             setRoomInfo(response.data);
@@ -172,20 +192,6 @@ const RoomInterface = observer(({ roomId }) => {
     }
   }, [roomId, canvasState.isConnected, navigate]);
 
-  const fetchPublicRooms = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/rooms/public`);
-      const rooms = response.data || [];
-      setPublicRooms(rooms);
-      if (rooms.length === 0) {
-        setActiveTab('create');
-      }
-    } catch (error) {
-      setError('Ошибка загрузки комнат');
-      canvasState.setShowRoomInterface(false);
-    }
-  };
-
   const handleJoinRoom = async () => {
     const validation = validateUsername(username);
     if (!validation.valid) {
@@ -195,7 +201,7 @@ const RoomInterface = observer(({ roomId }) => {
     setError('');
 
     try {
-      const roomInfo = await axios.get(`${API_URL}/rooms/${roomId}/exists`);
+      const roomInfo = await axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`);
 
       if (!roomInfo.data.exists) {
         setError('Комната не найдена');
@@ -220,7 +226,7 @@ const RoomInterface = observer(({ roomId }) => {
         }
       }
 
-      const tokenResponse = await axios.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
+      const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
 
       const token = tokenResponse.data.token;
       localStorage.setItem(`room_token_${roomId}`, token);
@@ -265,7 +271,7 @@ const RoomInterface = observer(({ roomId }) => {
     }
     setError('');
     try {
-      const response = await axios.post(`${API_URL}/rooms`, {
+      const response = await axiosInstance.post(`${API_URL}/rooms`, {
         name: roomName,
         isPublic,
         password: !isPublic ? password : null
@@ -312,7 +318,7 @@ const RoomInterface = observer(({ roomId }) => {
     try {
       const roomIdToJoin = passwordPrompt.id;
 
-      const response = await axios.post(`${API_URL}/rooms/${roomIdToJoin}/verify-password`, {
+      const response = await axiosInstance.post(`${API_URL}/rooms/${roomIdToJoin}/verify-password`, {
         password: roomPassword
       });
 

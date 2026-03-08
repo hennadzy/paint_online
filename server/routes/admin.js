@@ -320,9 +320,9 @@ router.get('/rooms', async (req, res) => {
     if (safeSortBy === 'is_public' || safeSortBy === 'has_password') {
       orderByColumn = `r.${safeSortBy}`;
     }
-    // Handle stroke_count and unique_users sorting - use subquery aliases
+    // Handle stroke_count and unique_users sorting - use subquery aliases with numeric casting
     if (safeSortBy === 'stroke_count' || safeSortBy === 'unique_users') {
-      orderByColumn = `s.${safeSortBy}`;
+      orderByColumn = `COALESCE(s.${safeSortBy}, 0)::INTEGER`;
     }
 
     // Get total count

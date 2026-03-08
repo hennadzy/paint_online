@@ -1,3 +1,5 @@
+import userState from '../store/userState';
+
 class WebSocketService {
   constructor() {
     this.socket = null;
@@ -27,7 +29,6 @@ connect(wsUrl, roomId, username, token) {
           this.shouldReconnect = true;
           this.sessionId = this.generateSessionId();
           
-          const userState = require('../store/userState').default;
           this.send({
             method: "connection",
             id: roomId,
@@ -116,8 +117,7 @@ connect(wsUrl, roomId, username, token) {
     });
   }
 
-sendChat(message) {
-    const userState = require('../store/userState').default;
+  sendChat(message) {
     return this.send({
       method: "chat",
       id: this.sessionId,
