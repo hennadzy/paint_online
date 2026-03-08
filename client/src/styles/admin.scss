@@ -53,6 +53,25 @@
       border-color: #5a5a5a;
     }
   }
+
+  &__home {
+    background: #2a4a2a;
+    border: 1px solid #3a5a3a;
+    color: #90EE90;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover {
+      background: #3a5a3a;
+      border-color: #4a6a4a;
+    }
+  }
 }
 
 .admin-nav {
@@ -89,8 +108,7 @@
 
 .admin-content {
   padding: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
+  // Full width - no max-width constraint
 }
 
 // Stats Cards
@@ -269,6 +287,16 @@
     color: #888;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+
+  th.admin-sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #ffd700;
+    }
   }
 
   tr:hover td {

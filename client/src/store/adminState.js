@@ -57,6 +57,11 @@ class AdminState {
     this.searchQuery = query;
   }
 
+  setSort(sortBy, sortOrder) {
+    this.sortBy = sortBy;
+    this.sortOrder = sortOrder;
+  }
+
   // Stats
   async fetchStats() {
     try {

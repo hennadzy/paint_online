@@ -87,6 +87,13 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const HomeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9,22 9,12 15,12 15,22"/>
+  </svg>
+);
+
 const DownloadIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -102,9 +109,21 @@ const CloseIcon = () => (
   </svg>
 );
 
+const SortIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <path d="M12 5v14M5 12l7-7 7 7"/>
+  </svg>
+);
+
 const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
+  
+  // Sorting state
+  const [usersSortBy, setUsersSortBy] = useState('created_at');
+  const [usersSortOrder, setUsersSortOrder] = useState('DESC');
+  const [roomsSortBy, setRoomsSortBy] = useState('last_activity');
+  const [roomsSortOrder, setRoomsSortOrder] = useState('DESC');
   
   // User Modal state
   const [userFormData, setUserFormData] = useState({
@@ -176,6 +195,27 @@ const AdminPage = observer(() => {
     }
   };
 
+  const handleUsersSort = (field) => {
+    const newOrder = usersSortBy === field && usersSortOrder === 'DESC' ? 'ASC' : 'DESC';
+    setUsersSortBy(field);
+    setUsersSortOrder(newOrder);
+    adminState.setSort(field, newOrder);
+    adminState.fetchUsers(1);
+  };
+
+  const handleRoomsSort = (field) => {
+    const newOrder = roomsSortBy === field && roomsSortOrder === 'DESC' ? 'ASC' : 'DESC';
+    setRoomsSortBy(field);
+    setRoomsSortOrder(newOrder);
+    adminState.setSort(field, newOrder);
+    adminState.fetchRooms(1);
+  };
+
+  const renderSortIcon = (field, currentSortBy, currentSortOrder) => {
+    if (currentSortBy !== field) return null;
+    return <span style={{ marginLeft: '4px' }}>{currentSortOrder === 'ASC' ? '↑' : '↓'}</span>;
+  };
+
   const formatDate = (timestamp) => {
     if (!timestamp) return '-';
     return new Date(timestamp).toLocaleString('ru-RU');
@@ -190,6 +230,14 @@ const AdminPage = observer(() => {
     if (hours > 0) return `${hours} ч. назад`;
     const mins = Math.floor(diff / (1000 * 60));
     return `${mins} мин. назад`;
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes || bytes === 0) return '0 Б';
+    const k = 1024;
+    const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
   // Render Dashboard
@@ -309,12 +357,22 @@ const AdminPage = observer(() => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Имя</th>
-                    <th>Email</th>
-                    <th>Роль</th>
+                    <th className="admin-sortable" onClick={() => handleUsersSort('username')}>
+                      Имя {renderSortIcon('username', usersSortBy, usersSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleUsersSort('email')}>
+                      Email {renderSortIcon('email', usersSortBy, usersSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleUsersSort('role')}>
+                      Роль {renderSortIcon('role', usersSortBy, usersSortOrder)}
+                    </th>
                     <th>Статус</th>
-                    <th>Дата регистрации</th>
-                    <th>Последний вход</th>
+                    <th className="admin-sortable" onClick={() => handleUsersSort('created_at')}>
+                      Дата регистрации {renderSortIcon('created_at', usersSortBy, usersSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleUsersSort('last_login')}>
+                      Последний вход {renderSortIcon('last_login', usersSortBy, usersSortOrder)}
+                    </th>
                     <th>Действия</th>
                   </tr>
                 </thead>
@@ -464,12 +522,25 @@ const AdminPage = observer(() => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Название</th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('name')}>
+                      Название {renderSortIcon('name', roomsSortBy, roomsSortOrder)}
+                    </th>
                     <th>Тип</th>
-                    <th>Штрихов</th>
-                    <th>Пользователей</th>
-                    <th>Создана</th>
-                    <th>Активность</th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('stroke_count')}>
+                      Штрихов {renderSortIcon('stroke_count', roomsSortBy, roomsSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('unique_users')}>
+                      Пользователей {renderSortIcon('unique_users', roomsSortBy, roomsSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('weight')}>
+                      Размер {renderSortIcon('weight', roomsSortBy, roomsSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('created_at')}>
+                      Создана {renderSortIcon('created_at', roomsSortBy, roomsSortOrder)}
+                    </th>
+                    <th className="admin-sortable" onClick={() => handleRoomsSort('last_activity')}>
+                      Активность {renderSortIcon('last_activity', roomsSortBy, roomsSortOrder)}
+                    </th>
                     <th>Действия</th>
                   </tr>
                 </thead>
@@ -485,6 +556,7 @@ const AdminPage = observer(() => {
                       </td>
                       <td>{room.strokeCount}</td>
                       <td>{room.uniqueUsers}</td>
+                      <td>{formatBytes(room.weight)}</td>
                       <td>{formatDate(room.createdAt)}</td>
                       <td>{formatRelativeTime(room.lastActivity)}</td>
                       <td>
@@ -889,6 +961,13 @@ const AdminPage = observer(() => {
           Панель администратора
         </div>
         <div className="admin-header__user">
+          <button 
+            className="admin-header__home" 
+            onClick={() => navigate('/')}
+            title="На главную"
+          >
+            <HomeIcon /> Главная
+          </button>
           <span>{userState.user?.username}</span>
           <button className="admin-header__logout" onClick={handleLogout}>
             <LogoutIcon /> Выйти

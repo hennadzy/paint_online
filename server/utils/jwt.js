@@ -3,12 +3,13 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
 const JWT_EXPIRATION = '1h';
 
-function generateToken(roomId, username, isPublic) {
+function generateToken(roomId, username, isPublic, role = 'user') {
   return jwt.sign(
     {
       roomId,
       username,
       isPublic,
+      role,
       iat: Math.floor(Date.now() / 1000)
     },
     JWT_SECRET,

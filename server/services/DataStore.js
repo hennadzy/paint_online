@@ -1,7 +1,7 @@
 const { pgPool } = require('../config/db');
 
 class DataStore {
-  async getRoomInfo(roomId) {
+async getRoomInfo(roomId) {
     try {
       const res = await pgPool.query(
         `SELECT 
@@ -11,7 +11,8 @@ class DataStore {
           has_password AS "hasPassword", 
           password_hash AS "passwordHash", 
           created_at AS "createdAt", 
-          last_activity AS "lastActivity" 
+          last_activity AS "lastActivity",
+          weight 
          FROM rooms 
          WHERE id = $1`,
         [roomId]
@@ -53,13 +54,44 @@ class DataStore {
     }
   }
 
-  async deleteRoom(roomId) {
+async deleteRoom(roomId) {
     try {
       await pgPool.query('DELETE FROM rooms WHERE id = $1', [roomId]);
       return true;
     } catch (error) {
       console.error('deleteRoom error:', error);
       return false;
+    }
+  }
+
+  async updateRoomWeight(roomId, weight) {
+    try {
+      await pgPool.query(
+        'UPDATE rooms SET weight = $1 WHERE id = $2',
+        [weight, roomId]
+      );
+      return true;
+    } catch (error) {
+      console.error('updateRoomWeight error:', error);
+      return false;
+    }
+  }
+
+  async calculateRoomWeight(roomId) {
+    try {
+      // Calculate weight as the total size of stroke_data in bytes
+      const result = await pgPool.query(
+        `SELECT SUM(LENGTH(stroke_data::text)) as total_weight 
+         FROM strokes 
+         WHERE room_id = $1`,
+        [roomId]
+      );
+      const weight = parseInt(result.rows[0]?.total_weight || 0, 10);
+      await this.updateRoomWeight(roomId, weight);
+      return weight;
+    } catch (error) {
+      console.error('calculateRoomWeight error:', error);
+      return 0;
     }
   }
 

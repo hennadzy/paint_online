@@ -7,6 +7,7 @@ const DataStore = require('../services/DataStore');
 const RoomManager = require('../services/RoomManager');
 const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -244,6 +245,18 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     const roomId = sanitizeInput(req.params.id, 20);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
 
+    // Check if user is authenticated as superadmin (optional header)
+    const authHeader = req.headers.authorization;
+    let isSuperAdmin = false;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const { verifyToken } = require('../utils/jwt');
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyToken(token);
+      if (decoded && decoded.role === 'superadmin') {
+        isSuperAdmin = true;
+      }
+    }
+
     if (!roomId) {
       return res.status(400).json({ error: 'ID комнаты не указан' });
     }
@@ -270,10 +283,13 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
       return res.status(400).json({ error: 'Use join-public for public rooms' });
     }
 
-    if (room.hasPassword && room.passwordHash) {
-      const isValid = await bcrypt.compare(password, room.passwordHash);
-      if (!isValid) {
-        return res.status(401).json({ error: 'Invalid password' });
+    // Skip password check for superadmin
+    if (!isSuperAdmin) {
+      if (room.hasPassword && room.passwordHash) {
+        const isValid = await bcrypt.compare(password, room.passwordHash);
+        if (!isValid) {
+          return res.status(401).json({ error: 'Invalid password' });
+        }
       }
     }
 

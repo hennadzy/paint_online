@@ -260,16 +260,37 @@ router.get('/rooms', async (req, res) => {
         (SELECT COUNT(DISTINCT username) FROM strokes WHERE room_id = r.id) as unique_users
       FROM rooms r
     `;
+    
+    // For stroke_count and unique_users sorting, we need a subquery
+    let countSubquery = '';
+    if (sortBy === 'stroke_count' || sortBy === 'unique_users') {
+      query = `
+        SELECT 
+          r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity,
+          COALESCE(s.stroke_count, 0) as stroke_count,
+          COALESCE(s.unique_users, 0) as unique_users
+        FROM rooms r
+        LEFT JOIN (
+          SELECT 
+            room_id,
+            COUNT(*) as stroke_count,
+            COUNT(DISTINCT username) as unique_users
+          FROM strokes
+          GROUP BY room_id
+        ) s ON r.id = s.room_id
+      `;
+    }
+    
     const values = [];
     let paramIndex = 1;
 
     if (search) {
-      query += ` WHERE r.name ILIKE $${paramIndex}`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.name ILIKE $${paramIndex}`;
       values.push(`%${search}%`);
       paramIndex++;
     }
 
-    const validSortColumns = ['created_at', 'last_activity', 'name'];
+    const validSortColumns = ['created_at', 'last_activity', 'name', 'stroke_count', 'unique_users', 'weight'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'last_activity';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -295,7 +316,8 @@ router.get('/rooms', async (req, res) => {
         createdAt: r.created_at,
         lastActivity: r.last_activity,
         strokeCount: parseInt(r.stroke_count, 10),
-        uniqueUsers: parseInt(r.unique_users, 10)
+        uniqueUsers: parseInt(r.unique_users, 10),
+        weight: parseInt(r.weight || 0, 10)
       })),
       pagination: {
         page: parseInt(page, 10),
@@ -347,13 +369,20 @@ router.get('/rooms/:id', async (req, res) => {
       } catch (e) {}
     }
 
+    // Get or calculate weight
+    let weight = room.weight || 0;
+    if (!weight) {
+      weight = await DataStore.calculateRoomWeight(req.params.id);
+    }
+
     res.json({
       room: {
         ...room,
         strokeCount: parseInt(strokeCount.rows[0].count, 10),
         uniqueUsers: parseInt(uniqueUsers.rows[0].count, 10),
         canvasWidth: Math.ceil(maxX + 50),
-        canvasHeight: Math.ceil(maxY + 50)
+        canvasHeight: Math.ceil(maxY + 50),
+        weight
       }
     });
   } catch (error) {

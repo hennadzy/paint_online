@@ -116,7 +116,7 @@ class User {
       paramIndex++;
     }
 
-    const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role'];
+const validSortColumns = ['created_at', 'last_login', 'username', 'email', 'role', 'is_active'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
