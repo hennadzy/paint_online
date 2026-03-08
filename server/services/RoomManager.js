@@ -427,15 +427,8 @@ async getRoomUsers(roomId) {
     }));
   }
 
-  async getVerifiedUsers(roomId) {
+async getVerifiedUsers(roomId) {
     return redis.smembers(`room:${roomId}:verified_users`);
-  }
-          }
-        } while (cursor !== '0');
-      }
-    }
-
-    return users;
   }
 
   async updateUserActivity(ws) {
