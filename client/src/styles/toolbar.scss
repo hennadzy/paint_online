@@ -505,10 +505,9 @@ canvas.eraser-cursor {
     justify-content: flex-start;
     background-color: #67676759;
     box-shadow: 4px 0 5px gray;
-    z-index: 1003;
+    z-index: 1004;
     padding: 10px 0;
-    overflow-y: auto;
-    overflow-x: visible;
+    overflow: visible;
 
     &__btn {
       margin: 5px auto;
@@ -550,7 +549,7 @@ canvas.eraser-cursor {
     }
   }
 
-.setting-bar {
+  .setting-bar {
     position: fixed;
     top: 50px;
     left: 60px;
@@ -558,7 +557,7 @@ canvas.eraser-cursor {
     height: calc(100vh - 50px);
     background-color: #67676759;
     box-shadow: 4px 0 5px gray;
-    z-index: 9998;
+    z-index: 1002;
     display: flex;
     flex-direction: column;
     align-items: stretch;

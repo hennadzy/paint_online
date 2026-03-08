@@ -137,11 +137,12 @@ body.modal-open {
     z-index: 1;
   }
 
-.tooltip {
+  .tooltip {
     position: absolute;
     top: -40px;
     left: 50%;
-    transform: translateX(-50%) translateY(5px);
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+    transform-origin: bottom center;
     background: rgba(0, 0, 0, 0.85);
     color: #fff;
     padding: 4px 8px;
@@ -150,13 +151,15 @@ body.modal-open {
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.22s ease, transform 0.22s ease;
     z-index: 10000;
+    will-change: opacity, transform;
   }
 
   &:hover .tooltip {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(0) scale(1);
+    animation: topMenuTooltipIn 0.22s ease;
   }
 }
 
@@ -549,6 +552,18 @@ body.modal-open {
       background: #444;
       color: #fff;
     }
+  }
+}
+
+@keyframes topMenuTooltipIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
   }
 }
 
