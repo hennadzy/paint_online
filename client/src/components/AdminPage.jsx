@@ -561,44 +561,6 @@ const AdminPage = observer(() => {
       <div>
         <div className="admin-table-container">
           <div className="admin-toolbar">
-            <div className="admin-filters">
-              <div className="admin-filter-group">
-                <select
-                  className="admin-filter-select"
-                  value={roomsFilterType}
-                  onChange={(e) => {
-                    setRoomsFilterType(e.target.value);
-                    adminState.setFilters({
-                      isPublic: e.target.value !== 'all' ? e.target.value === 'public' : undefined,
-                      hasPassword: roomsFilterPassword !== 'all' ? roomsFilterPassword === 'yes' : undefined
-                    });
-                    adminState.fetchRooms(1);
-                  }}
-                >
-                  <option value="all">Все типы</option>
-                  <option value="public">Публичные</option>
-                  <option value="private">Приватные</option>
-                </select>
-              </div>
-              <div className="admin-filter-group">
-                <select 
-                  className="admin-filter-select"
-                  value={roomsFilterPassword}
-                  onChange={(e) => {
-                    setRoomsFilterPassword(e.target.value);
-                    adminState.setFilters({
-                      isPublic: roomsFilterType !== 'all' ? roomsFilterType === 'public' : undefined,
-                      hasPassword: e.target.value !== 'all' ? e.target.value === 'yes' : undefined
-                    });
-                    adminState.fetchRooms(1);
-                  }}
-                >
-                  <option value="all">Пароль: любой</option>
-                  <option value="yes">С паролем</option>
-                  <option value="no">Без пароля</option>
-                </select>
-              </div>
-            </div>
             <form className="admin-toolbar__search" onSubmit={handleSearch}>
               <div className="admin-search">
                 <input

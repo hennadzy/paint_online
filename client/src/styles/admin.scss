@@ -2,9 +2,13 @@
 
 .admin-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #1a1a1a;
   color: #e0e0e0;
   font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .admin-header {
