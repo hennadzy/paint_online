@@ -310,6 +310,10 @@
     border-radius: 8px;
     padding: 0;
     box-shadow: none;
+    
+    &.show {
+      display: flex;
+    }
   }
 
   .setting-bar {
@@ -546,19 +550,19 @@ canvas.eraser-cursor {
       overflow: visible;
     }
 
-&__submenu {
+    &__submenu {
       position: absolute;
       left: 100%;
       top: 0;
       transform: translateY(0);
       flex-direction: row;
-      background-color: rgba(80, 80, 80, 0.75);
-      backdrop-filter: blur(8px);
+      background-color: rgba(80, 80, 80, 0.75) !important;
+      backdrop-filter: blur(8px) !important;
       border-radius: 8px;
       padding: 6px 8px;
       min-width: auto;
       z-index: 9999;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
       display: none;
       overflow: visible;
 
