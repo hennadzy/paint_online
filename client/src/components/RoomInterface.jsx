@@ -71,7 +71,9 @@ const RoomInterface = observer(({ roomId }) => {
   const navigate = useNavigate();
 
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
-  const showUsernameForm = roomId && !canvasState.isConnected && (!roomInfo?.hasPassword || passwordVerified) && !userState.isAuthenticated;
+  // Показывать форму ввода имени только для НЕ авторизованных пользователей
+  // Для авторизованных - вход происходит автоматически
+  const showUsernameForm = roomId && !canvasState.isConnected && !userState.isAuthenticated;
   
   const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
 
@@ -181,6 +183,8 @@ const RoomInterface = observer(({ roomId }) => {
           if (response.data.exists) {
             setRoomInfo(response.data);
             const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
+            // Запрашивать пароль для приватных комнат, если он не верифицирован
+            // Это работает как для авторизованных, так и для неавторизованных пользователей
             if (response.data.hasPassword && !passwordVerified) {
               setPasswordPrompt({ id: roomId, name: response.data.name });
             }

@@ -211,12 +211,29 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
       return res.status(400).json({ error: 'ID комнаты не указан' });
     }
 
-    const validation = validateUsername(req.body.username);
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error });
+    // Check if user is authenticated as superadmin (optional header)
+    const authHeader = req.headers.authorization;
+    let isSuperAdmin = false;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const { verifyToken } = require('../utils/jwt');
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyToken(token);
+      if (decoded && decoded.role === 'superadmin') {
+        isSuperAdmin = true;
+      }
     }
 
-    const username = sanitizeUsername(validation.username);
+    // Skip username validation for superadmin
+    let username;
+    if (isSuperAdmin) {
+      username = sanitizeUsername(req.body.username || 'Admin');
+    } else {
+      const validation = validateUsername(req.body.username);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+      username = sanitizeUsername(validation.username);
+    }
 
     const room = await DataStore.getRoomInfo(roomId);
 
