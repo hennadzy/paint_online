@@ -29,8 +29,13 @@ class AdminState {
   // UI State
   activeTab = 'dashboard';
   searchQuery = '';
-  sortBy = 'created_at';
-  sortOrder = 'DESC';
+  
+  // Separate sort states for users and rooms
+  usersSortBy = 'created_at';
+  usersSortOrder = 'DESC';
+  roomsSortBy = 'last_activity';
+  roomsSortOrder = 'DESC';
+  
   filters = {};
   
   // Modal state
@@ -58,9 +63,14 @@ class AdminState {
     this.searchQuery = query;
   }
 
-  setSort(sortBy, sortOrder) {
-    this.sortBy = sortBy;
-    this.sortOrder = sortOrder;
+  setSort(sortBy, sortOrder, type = 'users') {
+    if (type === 'users') {
+      this.usersSortBy = sortBy;
+      this.usersSortOrder = sortOrder;
+    } else {
+      this.roomsSortBy = sortBy;
+      this.roomsSortOrder = sortOrder;
+    }
   }
 
   setFilters(filters) {
@@ -89,8 +99,8 @@ class AdminState {
           page,
           limit: this.usersPagination.limit,
           search: this.searchQuery,
-          sortBy: this.sortBy,
-          sortOrder: this.sortOrder,
+          sortBy: this.usersSortBy,
+          sortOrder: this.usersSortOrder,
           ...this.filters
         }
       });
@@ -204,8 +214,8 @@ class AdminState {
           page,
           limit: this.roomsPagination.limit,
           search: this.searchQuery,
-          sortBy: this.sortBy,
-          sortOrder: this.sortOrder,
+          sortBy: this.roomsSortBy,
+          sortOrder: this.roomsSortOrder,
           ...this.filters
         }
       });

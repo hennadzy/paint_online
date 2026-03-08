@@ -307,7 +307,7 @@ router.get('/rooms', async (req, res) => {
       paramIndex++;
     }
 
-    const validSortColumns = ['created_at', 'last_activity', 'name', 'stroke_count', 'unique_users', 'weight'];
+    const validSortColumns = ['created_at', 'last_activity', 'name', 'stroke_count', 'unique_users', 'weight', 'is_public', 'has_password'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'last_activity';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -315,6 +315,10 @@ router.get('/rooms', async (req, res) => {
     let orderByColumn = `r.${safeSortBy}`;
     if (safeSortBy === 'weight') {
       orderByColumn = 'COALESCE(r.weight, 0)';
+    }
+    // Handle is_public and has_password sorting
+    if (safeSortBy === 'is_public' || safeSortBy === 'has_password') {
+      orderByColumn = `r.${safeSortBy}`;
     }
 
     // Get total count

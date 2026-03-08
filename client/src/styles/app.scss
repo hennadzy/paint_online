@@ -335,6 +335,14 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   padding-top: 50px;
+
+  &--admin {
+    padding-top: 0;
+    padding-left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: auto;
+  }
 }
 
 @media (min-width: 769px) {

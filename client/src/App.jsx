@@ -52,12 +52,14 @@ const App = observer(() => {
         return <NotFoundPage />;
     }
 
+    const isAdminPage = location.pathname === '/admin';
+    
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className="main-content">
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''}`}>
                 <Routes>
                     <Route path='/' element={<Canvas />} />
                     <Route path='/login' element={<AuthPage />} />
