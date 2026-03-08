@@ -46,7 +46,9 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (process.env.NODE_ENV === 'production') {
+    // Разрешаем все origins в production для работы с render.com
+    // Проверяем не только NODE_ENV, но и RENDER_EXTERNAL_URL
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
       return callback(null, true);
     }
 
@@ -75,7 +77,9 @@ app.use(cors({
 
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin;
+  // Разрешаем все origins в production для работы с render.com
   if (process.env.NODE_ENV === 'production' || 
+      process.env.RENDER_EXTERNAL_URL ||
       origin === 'https://risovanie.online' ||
       origin === 'http://localhost:3000') {
     res.header('Access-Control-Allow-Origin', origin || '*');
