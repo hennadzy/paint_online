@@ -7,7 +7,7 @@ class UserState {
  isAuthenticated = false;
  loading = false;
  error = null;
- favorites = [];
+ activityRooms = [];
  userRooms = [];
 
  constructor() {
@@ -206,33 +206,23 @@ class UserState {
     }
   }
 
-  async fetchFavorites() {
+  async fetchActivityRooms() {
     try {
-      const response = await axios.get(`${API_URL}/api/users/me/favorites`);
+      const response = await axios.get(`${API_URL}/api/users/me/activity-rooms`);
       runInAction(() => {
-        this.favorites = response.data.favorites;
+        this.activityRooms = response.data.rooms || [];
       });
     } catch (error) {
-      console.error('Fetch favorites error', error);
+      console.error('Fetch activity rooms error', error);
     }
   }
 
-  async addFavorite(roomId) {
-    try {
-      await axios.post(`${API_URL}/api/users/me/favorites/${roomId}`);
-      await this.fetchFavorites();
-    } catch (error) {
-      console.error('Add favorite error', error);
-    }
+  async deleteRoom(roomId) {
+    await axios.delete(`${API_URL}/rooms/${roomId}`);
   }
 
-  async removeFavorite(roomId) {
-    try {
-      await axios.delete(`${API_URL}/api/users/me/favorites/${roomId}`);
-      await this.fetchFavorites();
-    } catch (error) {
-      console.error('Remove favorite error', error);
-    }
+  async updateRoomVisibility(roomId, { isPublic, password }) {
+    await axios.patch(`${API_URL}/rooms/${roomId}`, { isPublic, password });
   }
 }
 

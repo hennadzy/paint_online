@@ -1,7 +1,7 @@
 const { pgPool } = require('../config/db');
 
 class DataStore {
-async getRoomInfo(roomId) {
+  async getRoomInfo(roomId) {
     try {
       const res = await pgPool.query(
         `SELECT 
@@ -12,7 +12,8 @@ async getRoomInfo(roomId) {
           password_hash AS "passwordHash", 
           created_at AS "createdAt", 
           last_activity AS "lastActivity",
-          weight 
+          weight,
+          owner_id AS "ownerId"
          FROM rooms 
          WHERE id = $1`,
         [roomId]
@@ -25,14 +26,14 @@ async getRoomInfo(roomId) {
   }
 
   async createRoom(roomId, data) {
-    const { name, isPublic, hasPassword, passwordHash } = data;
+    const { name, isPublic, hasPassword, passwordHash, ownerId } = data;
     const now = Date.now();
     try {
       await pgPool.query(
         `INSERT INTO rooms 
-         (id, name, is_public, has_password, password_hash, created_at, last_activity)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [roomId, name, isPublic, hasPassword, passwordHash, now, now]
+         (id, name, is_public, has_password, password_hash, created_at, last_activity, owner_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [roomId, name, isPublic, hasPassword, passwordHash, now, now, ownerId || null]
       );
       return true;
     } catch (error) {
@@ -56,11 +57,78 @@ async getRoomInfo(roomId) {
 
 async deleteRoom(roomId) {
     try {
+      await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [roomId]);
+      await pgPool.query('DELETE FROM cancelled_strokes WHERE room_id = $1', [roomId]);
+      await pgPool.query('DELETE FROM favorite_rooms WHERE room_id = $1', [roomId]);
+      await pgPool.query('DELETE FROM user_room_activity WHERE room_id = $1', [roomId]);
       await pgPool.query('DELETE FROM rooms WHERE id = $1', [roomId]);
       return true;
     } catch (error) {
       console.error('deleteRoom error:', error);
       return false;
+    }
+  }
+
+  async updateRoomVisibility(roomId, { isPublic, hasPassword, passwordHash }) {
+    try {
+      const updates = [];
+      const values = [roomId];
+      let paramIndex = 2;
+      if (isPublic !== undefined) {
+        updates.push(`is_public = $${paramIndex++}`);
+        values.push(isPublic);
+      }
+      if (hasPassword !== undefined) {
+        updates.push(`has_password = $${paramIndex++}`);
+        values.push(hasPassword);
+      }
+      if (passwordHash !== undefined) {
+        updates.push(`password_hash = $${paramIndex++}`);
+        values.push(passwordHash);
+      }
+      if (updates.length === 0) return true;
+      await pgPool.query(
+        `UPDATE rooms SET ${updates.join(', ')} WHERE id = $1`,
+        values
+      );
+      return true;
+    } catch (error) {
+      console.error('updateRoomVisibility error:', error);
+      return false;
+    }
+  }
+
+  async recordUserRoomActivity(userId, roomId) {
+    try {
+      const now = Date.now();
+      await pgPool.query(
+        `INSERT INTO user_room_activity (user_id, room_id, last_activity)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, room_id) DO UPDATE SET last_activity = $3`,
+        [userId, roomId, now]
+      );
+      return true;
+    } catch (error) {
+      console.error('recordUserRoomActivity error:', error);
+      return false;
+    }
+  }
+
+  async getUserActivityRooms(userId) {
+    try {
+      const res = await pgPool.query(
+        `SELECT r.id, r.name, r.is_public AS "isPublic", r.has_password AS "hasPassword",
+                r.last_activity AS "lastActivity", r.owner_id AS "ownerId", a.last_activity AS "activityAt"
+         FROM user_room_activity a
+         JOIN rooms r ON r.id = a.room_id
+         WHERE a.user_id = $1 AND (r.is_deleted IS NOT TRUE OR r.is_deleted IS NULL)
+         ORDER BY a.last_activity DESC`,
+        [userId]
+      );
+      return res.rows;
+    } catch (error) {
+      console.error('getUserActivityRooms error:', error);
+      return [];
     }
   }
 
@@ -221,8 +289,10 @@ async loadCancelledStrokes(roomId, username) {
           name, 
           is_public AS "isPublic", 
           has_password AS "hasPassword", 
-          last_activity AS "lastActivity" 
+          last_activity AS "lastActivity",
+          owner_id AS "ownerId"
          FROM rooms 
+         WHERE (is_deleted IS NOT TRUE OR is_deleted IS NULL)
          ORDER BY last_activity DESC`
       );
       return res.rows;

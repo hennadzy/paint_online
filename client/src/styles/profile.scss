@@ -413,6 +413,129 @@
   }
 }
 
+.room-actions-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.room-actions-trigger {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.room-actions-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 180px;
+  z-index: 100;
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 204, 0, 0.2);
+    }
+
+    &.room-actions-delete:hover:not(:disabled) {
+      background: rgba(255, 82, 82, 0.2);
+      color: #ff5252;
+    }
+  }
+}
+
+.room-actions-password-prompt {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 220px;
+  z-index: 100;
+
+  p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+
+  .room-actions-prompt-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+
+      &:first-child {
+        background: #ffcc00;
+        color: #1a1a1a;
+      }
+
+      &:last-child {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+    }
+  }
+}
+
+.profile-list-item-with-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .room-link {
+    flex: 1;
+  }
+}
+
 .profile-logout {
   margin-top: 20px;
   display: flex;

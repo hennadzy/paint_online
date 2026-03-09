@@ -270,13 +270,24 @@ async function initDb() {
         created_at BIGINT NOT NULL,
         PRIMARY KEY (user_id, room_id)
       );
+
+      CREATE TABLE IF NOT EXISTS user_room_activity (
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+        last_activity BIGINT NOT NULL,
+        PRIMARY KEY (user_id, room_id)
+      );
     `);
     console.log('Database tables ready');
 
     try {
-      await pgPool.query(`
-        ALTER TABLE rooms ADD COLUMN IF NOT EXISTS weight INTEGER DEFAULT 0
-      `);
+      await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS weight INTEGER DEFAULT 0`);
+    } catch (_) { }
+    try {
+      await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES users(id) ON DELETE SET NULL`);
+    } catch (_) { }
+    try {
+      await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`);
     } catch (_) { }
 
     const bcrypt = require('bcrypt');

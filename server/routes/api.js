@@ -7,7 +7,7 @@ const DataStore = require('../services/DataStore');
 const RoomManager = require('../services/RoomManager');
 const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -99,7 +99,7 @@ try {
   }
 });
 
-router.post('/rooms', createRoomLimiter, async (req, res) => {
+router.post('/rooms', createRoomLimiter, optionalAuthenticate, async (req, res) => {
   try {
     const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
     const isPublic = Boolean(req.body.isPublic);
@@ -116,11 +116,14 @@ router.post('/rooms', createRoomLimiter, async (req, res) => {
       hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     }
 
+    const ownerId = req.user ? req.user.userId : null;
+
     await DataStore.createRoom(roomId, {
       name,
       isPublic,
       hasPassword: !isPublic && !!password,
-      passwordHash: hashedPassword
+      passwordHash: hashedPassword,
+      ownerId
     });
 
     res.json({ roomId });
@@ -154,7 +157,8 @@ router.get('/rooms/public', apiLimiter, async (req, res) => {
         hasPassword: room.hasPassword,
         lastActivity: room.lastActivity,
         onlineCount,
-        thumbnailUrl
+        thumbnailUrl,
+        ownerId: room.ownerId || null
       };
     }));
     res.json(result);
@@ -175,7 +179,8 @@ router.get('/rooms/:id/exists', apiLimiter, async (req, res) => {
     res.json({
       exists: true,
       hasPassword: room.hasPassword || false,
-      name: room.name
+      name: room.name,
+      ownerId: room.ownerId || null
     });
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
@@ -213,12 +218,16 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
 
     const authHeader = req.headers.authorization;
     let isPrivileged = false;
+    let authUserId = null;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const { verifyToken } = require('../utils/jwt');
       const token = authHeader.split(' ')[1];
-      const decoded = verifyToken(token);
-      if (decoded && (decoded.role === 'admin' || decoded.role === 'superadmin')) {
-        isPrivileged = true;
+      const Session = require('../models/Session');
+      const session = await Session.findByToken(token);
+      if (session) {
+        authUserId = session.user_id;
+        if (session.role === 'admin' || session.role === 'superadmin') {
+          isPrivileged = true;
+        }
       }
     }
 
@@ -249,7 +258,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
     }
 
-    const token = generateToken(roomId, username, true);
+    const token = generateToken(roomId, username, true, isPrivileged ? 'admin' : 'user', authUserId);
     res.json({ token, username });
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
@@ -263,12 +272,16 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
 
     const authHeader = req.headers.authorization;
     let isPrivileged = false;
+    let authUserId = null;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const { verifyToken } = require('../utils/jwt');
       const token = authHeader.split(' ')[1];
-      const decoded = verifyToken(token);
-      if (decoded && (decoded.role === 'admin' || decoded.role === 'superadmin')) {
-        isPrivileged = true;
+      const Session = require('../models/Session');
+      const session = await Session.findByToken(token);
+      if (session) {
+        authUserId = session.user_id;
+        if (session.role === 'admin' || session.role === 'superadmin') {
+          isPrivileged = true;
+        }
       }
     }
 
@@ -312,9 +325,65 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
       }
     }
 
-    const token = generateToken(roomId, username, false);
+    const token = generateToken(roomId, username, false, isPrivileged ? 'admin' : 'user', authUserId);
     res.json({ token, username });
   } catch (_) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.patch('/rooms/:id', authenticate, async (req, res) => {
+  try {
+    const roomId = sanitizeInput(req.params.id, 20);
+    const room = await DataStore.getRoomInfo(roomId);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const isCreator = req.user && room.ownerId && String(room.ownerId) === String(req.user.userId);
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({ error: 'Только создатель комнаты может изменять её настройки' });
+    }
+
+    const { isPublic, password } = req.body;
+    const updates = {};
+    if (typeof isPublic === 'boolean') {
+      updates.isPublic = isPublic;
+      updates.hasPassword = !isPublic;
+      updates.passwordHash = null;
+    }
+    if (password !== undefined && !updates.isPublic) {
+      const pwd = password ? sanitizeInput(password, 50) : null;
+      updates.hasPassword = !!pwd;
+      updates.passwordHash = pwd ? await bcrypt.hash(pwd, BCRYPT_ROUNDS) : null;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await DataStore.updateRoomVisibility(roomId, updates);
+    }
+    const updated = await DataStore.getRoomInfo(roomId);
+    res.json({ room: updated });
+  } catch (err) {
+    console.error('Update room error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/rooms/:id', authenticate, async (req, res) => {
+  try {
+    const roomId = sanitizeInput(req.params.id, 20);
+    const room = await DataStore.getRoomInfo(roomId);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const isCreator = req.user && room.ownerId && String(room.ownerId) === String(req.user.userId);
+    const isAdmin = req.user && (req.user.role === 'admin' || req.user.role === 'superadmin');
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({ error: 'Только создатель комнаты может удалить её' });
+    }
+
+    await DataStore.deleteRoom(roomId);
+    res.json({ message: 'Room deleted successfully' });
+  } catch (err) {
+    console.error('Delete room error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

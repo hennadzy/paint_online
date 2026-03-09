@@ -77,9 +77,11 @@ async handleConnection(ws, msg) {
       ws.close(1008, 'Invalid token for private room');
       return;
     }
+
+    const userId = payload.userId || null;
     
     try {
-      const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified);
+      const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
 
       ws.send(JSON.stringify({ 
         method: "draws", 
@@ -107,7 +109,11 @@ async handleConnection(ws, msg) {
   async handleDraw(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
-    const { roomId, username } = userInfo;
+    const { roomId, username, userId } = userInfo;
+    
+    if (userId) {
+      await DataStore.recordUserRoomActivity(userId, roomId);
+    }
     
     if (msg.figure) {
       if (msg.figure.type === "undo") {
@@ -166,7 +172,11 @@ async handleConnection(ws, msg) {
 async handleChat(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
-    const { roomId, username } = userInfo;
+    const { roomId, username, userId } = userInfo;
+
+    if (userId) {
+      await DataStore.recordUserRoomActivity(userId, roomId);
+    }
     
     const room = RoomManager.getRoomSockets(roomId);
     

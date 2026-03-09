@@ -33,6 +33,24 @@ async function authenticate(req, res, next) {
   }
 }
 
+async function optionalAuthenticate(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+    if (!decoded) return next();
+    const session = await Session.findByToken(token);
+    if (!session) return next();
+    req.user = { userId: session.user_id, username: session.username, role: session.role };
+    next();
+  } catch (error) {
+    next();
+  }
+}
+
 function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -49,6 +67,7 @@ function requireSuperAdmin(req, res, next) {
 
 module.exports = {
   authenticate,
+  optionalAuthenticate,
   requireAdmin,
   requireSuperAdmin
 };

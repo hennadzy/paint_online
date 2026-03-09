@@ -171,21 +171,13 @@ router.get('/me/rooms', authenticate, async (req, res) => {
   }
 });
 
-router.get('/me/favorites', authenticate, async (req, res) => {
+router.get('/me/activity-rooms', authenticate, async (req, res) => {
   try {
-    const { pgPool } = require('../config/db');
-    const query = `
-      SELECT r.id, r.name, r.is_public AS "isPublic", r.has_password AS "hasPassword",
-             r.last_activity AS "lastActivity", f.created_at AS "favoritedAt"
-      FROM favorite_rooms f
-      JOIN rooms r ON f.room_id = r.id
-      WHERE f.user_id = $1 AND (r.is_deleted IS NOT TRUE OR r.is_deleted IS NULL)
-      ORDER BY f.created_at DESC
-    `;
-    const result = await pgPool.query(query, [req.user.userId]);
-    res.json({ favorites: result.rows });
+    const DataStore = require('../services/DataStore');
+    const rooms = await DataStore.getUserActivityRooms(req.user.userId);
+    res.json({ rooms });
   } catch (error) {
-    console.error('Get favorites error:', error);
+    console.error('Get activity rooms error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

@@ -482,10 +482,6 @@ router.delete('/rooms/:id', async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [id]);
-    await pgPool.query('DELETE FROM cancelled_strokes WHERE room_id = $1', [id]);
-    await pgPool.query('DELETE FROM favorite_rooms WHERE room_id = $1', [id]);
-    
     await DataStore.deleteRoom(id);
 
     res.json({ message: 'Room deleted successfully' });

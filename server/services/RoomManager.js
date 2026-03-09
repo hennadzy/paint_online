@@ -130,7 +130,7 @@ async getAllRoomStrokes(roomId) {
     }
   }
 
-async addUser(roomId, username, ws, isVerified = false) {
+async addUser(roomId, username, ws, isVerified = false, userId = null) {
     const userCount = await redis.scard(`room:${roomId}:users`);
     if (userCount >= 10) {
       throw new Error('Достигнуто максимальное количество пользователей в комнате');
@@ -144,7 +144,9 @@ async addUser(roomId, username, ws, isVerified = false) {
 
     const multi = redis.multi();
     multi.sadd(`room:${roomId}:users`, username);
-    multi.hset(`ws:${wsId}`, 'roomId', roomId, 'username', username, 'lastActivity', Date.now(), 'isVerified', isVerified ? '1' : '0');
+    const wsFields = ['roomId', roomId, 'username', username, 'lastActivity', Date.now(), 'isVerified', isVerified ? '1' : '0'];
+    if (userId) wsFields.push('userId', String(userId));
+    multi.hset(`ws:${wsId}`, ...wsFields);
     multi.set(`user:${username}:room`, roomId);
     if (isVerified) {
       multi.sadd(`room:${roomId}:verified_users`, username);
@@ -152,6 +154,10 @@ async addUser(roomId, username, ws, isVerified = false) {
     await multi.exec();
 
     await DataStore.updateRoomActivity(roomId);
+
+    if (userId) {
+      await DataStore.recordUserRoomActivity(userId, roomId);
+    }
 
     if (!this.roomSockets.has(roomId)) {
       this.roomSockets.set(roomId, new Set());
@@ -427,7 +433,7 @@ async getVerifiedUsers(roomId) {
     const wsId = this._getWsId(ws);
     const data = await redis.hgetall(`ws:${wsId}`);
     if (!data.roomId) return null;
-    return { roomId: data.roomId, username: data.username };
+    return { roomId: data.roomId, username: data.username, userId: data.userId || null };
   }
 
   getRoomSockets(roomId) {

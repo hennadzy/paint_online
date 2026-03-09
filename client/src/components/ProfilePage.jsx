@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import { useNavigate } from 'react-router-dom';
+import RoomActionsDropdown from './RoomActionsDropdown';
 import '../styles/profile.scss';
 
 const EyeIcon = ({ visible, onClick }) => (
@@ -48,7 +49,7 @@ const ProfilePage = observer(() => {
     } else {
       setUsername(userState.user?.username || '');
       userState.fetchUserRooms();
-      userState.fetchFavorites();
+      userState.fetchActivityRooms();
     }
   }, [userState.isAuthenticated, navigate]);
 
@@ -243,8 +244,17 @@ const ProfilePage = observer(() => {
                 <ul className="profile-list">
                   {userState.userRooms.map(room => (
                     <li key={room.id} className="profile-list-item">
-                      <a href={`/${room.id}`} className="room-link">{room.name}</a>
-                      <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
+                      <div className="profile-list-item-with-actions">
+                        <a href={`/${room.id}`} className="room-link">{room.name}</a>
+                        <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
+                        <RoomActionsDropdown
+                          room={room}
+                          isCreator={true}
+                          compact
+                          onDeleted={() => userState.fetchUserRooms()}
+                          onUpdated={() => userState.fetchUserRooms()}
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -252,20 +262,15 @@ const ProfilePage = observer(() => {
             </div>
 
             <div className="profile-section">
-              <h2>Избранное</h2>
-              {userState.favorites.length === 0 ? (
-                <p className="profile-empty">Нет избранных комнат</p>
+              <h2>Где я рисовал</h2>
+              {userState.activityRooms.length === 0 ? (
+                <p className="profile-empty">Вы ещё не участвовали ни в одной комнате</p>
               ) : (
                 <ul className="profile-list">
-                  {userState.favorites.map(room => (
+                  {userState.activityRooms.map(room => (
                     <li key={room.id} className="profile-list-item">
                       <a href={`/${room.id}`} className="room-link">{room.name}</a>
-                      <button
-                        className="profile-btn profile-btn-small"
-                        onClick={() => userState.removeFavorite(room.id)}
-                      >
-                        Удалить
-                      </button>
+                      <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
                     </li>
                   ))}
                 </ul>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import canvasState, { API_URL } from '../store/canvasState';
 import userState from '../store/userState';
+import RoomActionsDropdown from './RoomActionsDropdown';
 import '../styles/room-interface.scss';
 
 const axiosInstance = axios.create({
@@ -66,6 +67,7 @@ const validateUsername = (username) => {
 
 const RoomInterface = observer(({ roomId }) => {
   const [activeTab, setActiveTab] = useState('create');
+  const [joinSubTab, setJoinSubTab] = useState('all');
   const [username, setUsername] = useState('');
   const [roomName, setRoomName] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -157,10 +159,20 @@ const RoomInterface = observer(({ roomId }) => {
   useEffect(() => {
     if (activeTab === 'join' && !roomId) {
       fetchPublicRooms();
-      const interval = setInterval(fetchPublicRooms, 15000);
+      if (userState.isAuthenticated) {
+        userState.fetchUserRooms();
+        userState.fetchActivityRooms();
+      }
+      const interval = setInterval(() => {
+        fetchPublicRooms();
+        if (userState.isAuthenticated) {
+          userState.fetchUserRooms();
+          userState.fetchActivityRooms();
+        }
+      }, 15000);
       return () => clearInterval(interval);
     }
-  }, [activeTab, roomId]);
+  }, [activeTab, roomId, userState.isAuthenticated]);
 
   const fetchPublicRooms = useCallback(async () => {
     try {
@@ -543,6 +555,28 @@ const RoomInterface = observer(({ roomId }) => {
               ) : (
                 <div className="room-card">
                   <div className="room-card-body">
+                    {userState.isAuthenticated && (
+                      <div className="room-join-subtabs">
+                        <button
+                          className={`room-join-subtab ${joinSubTab === 'all' ? 'active' : ''}`}
+                          onClick={() => setJoinSubTab('all')}
+                        >
+                          Все комнаты
+                        </button>
+                        <button
+                          className={`room-join-subtab ${joinSubTab === 'mine' ? 'active' : ''}`}
+                          onClick={() => setJoinSubTab('mine')}
+                        >
+                          Мои комнаты
+                        </button>
+                        <button
+                          className={`room-join-subtab ${joinSubTab === 'activity' ? 'active' : ''}`}
+                          onClick={() => setJoinSubTab('activity')}
+                        >
+                          Где я рисовал
+                        </button>
+                      </div>
+                    )}
                     {passwordPrompt ? (
                       <div className="password-prompt">
                         <h3>Вход в комнату "{passwordPrompt.name}"</h3>
@@ -574,62 +608,83 @@ const RoomInterface = observer(({ roomId }) => {
                           </button>
                         </div>
                       </div>
-                    ) : publicRooms.length === 0 ? (
-                      <div className="empty-state">
-                        <span className="empty-icon">🎨</span>
-                        <p>Нет доступных комнат</p>
-                        <p className="empty-hint">Создайте первую комнату!</p>
-                      </div>
-                    ) : (
+                    ) : (() => {
+                      const effectiveSubTab = userState.isAuthenticated ? joinSubTab : 'all';
+                      const roomsToShow = effectiveSubTab === 'all' ? publicRooms : effectiveSubTab === 'mine' ? userState.userRooms : userState.activityRooms;
+                      const emptyMsg = effectiveSubTab === 'all'
+                        ? { icon: '🎨', text: 'Нет доступных комнат', hint: 'Создайте первую комнату!' }
+                        : effectiveSubTab === 'mine'
+                          ? { icon: '🏠', text: 'Вы ещё не создали ни одной комнаты', hint: 'Создайте комнату во вкладке «Создать комнату»' }
+                          : { icon: '🖌', text: 'Вы ещё не участвовали ни в одной комнате', hint: 'Зайдите в комнату и начните рисовать!' };
+                      if (roomsToShow.length === 0) {
+                        return (
+                          <div className="empty-state">
+                            <span className="empty-icon">{emptyMsg.icon}</span>
+                            <p>{emptyMsg.text}</p>
+                            <p className="empty-hint">{emptyMsg.hint}</p>
+                          </div>
+                        );
+                      }
+                      return (
                       <div className="rooms-list fullscreen">
-                        {publicRooms.map(room => (
-                          <div key={room.id} className="room-item">
-                            <div className="room-item-info">
-                              <div className="room-item-icon">
-                                {room.thumbnailUrl ? (
-                                  <img
-                                    src={`${API_URL}${room.thumbnailUrl}?t=${Date.now()}`}
-                                    alt={room.name}
-                                    className="room-thumbnail"
-                                    onError={(e) => {
-                                      console.log('Image load error for:', room.thumbnailUrl);
-                                      e.target.style.display = 'none';
-                                      if (e.target.nextSibling) {
-                                        e.target.nextSibling.style.display = 'flex';
-                                      }
-                                    }}
-                                    onLoad={() => console.log('Image loaded:', room.thumbnailUrl)}
-                                  />
-                                ) : null}
-                                <span
-                                  style={{ display: room.thumbnailUrl ? 'none' : 'flex' }}
-                                  className="room-item-icon-fallback"
-                                >
-                                  {room.hasPassword ? '🔒' : '🎨'}
-                                </span>
-                              </div>
-                              <div className="room-item-details">
-                                <h3>{room.name}</h3>
-                                <div className="room-item-meta">
-                                  <span className="room-item-status">
-                                    {room.isPublic ? 'Публичная' : 'Приватная'}
-                                  </span>
-                                  <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
-                                    {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн
+                        {roomsToShow.map(room => {
+                          const isCreator = effectiveSubTab === 'mine' || (userState.isAuthenticated && userState.user?.id && room.ownerId && String(room.ownerId) === String(userState.user.id));
+                          return (
+                            <div key={room.id} className="room-item">
+                              <div className="room-item-info">
+                                <div className="room-item-icon">
+                                  {room.thumbnailUrl ? (
+                                    <img
+                                      src={`${API_URL}${room.thumbnailUrl}?t=${Date.now()}`}
+                                      alt={room.name}
+                                      className="room-thumbnail"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <span
+                                    style={{ display: room.thumbnailUrl ? 'none' : 'flex' }}
+                                    className="room-item-icon-fallback"
+                                  >
+                                    {room.hasPassword ? '🔒' : '🎨'}
                                   </span>
                                 </div>
+                                <div className="room-item-details">
+                                  <h3>{room.name}</h3>
+                                  <div className="room-item-meta">
+                                    <span className="room-item-status">
+                                      {room.isPublic ? 'Публичная' : 'Приватная'}
+                                    </span>
+                                    {room.onlineCount !== undefined && (
+                                      <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
+                                        {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="room-item-with-actions">
+                                <RoomActionsDropdown
+                                  room={room}
+                                  isCreator={isCreator}
+                                  onDeleted={fetchPublicRooms}
+                                  onUpdated={fetchPublicRooms}
+                                />
+                                <button
+                                  className="room-btn room-btn-join"
+                                  onClick={() => joinPublicRoom(room)}
+                                >
+                                  Войти
+                                </button>
                               </div>
                             </div>
-                            <button
-                              className="room-btn room-btn-join"
-                              onClick={() => joinPublicRoom(room)}
-                            >
-                              Войти
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               )}

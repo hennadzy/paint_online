@@ -146,6 +146,35 @@
   }
 }
 
+.room-join-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.room-join-subtab {
+  padding: 8px 16px;
+  border: 1px solid #555;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, rgba(255, 204, 0, 0.2), rgba(255, 102, 153, 0.2));
+    border-color: #ffcc00;
+    color: #fff;
+  }
+}
+
 .room-tabs {
   display: flex;
   gap: 10px;
@@ -682,6 +711,140 @@
   align-items: center;
   justify-content: center;
   font-size: 32px;
+}
+
+.room-actions-dropdown {
+  position: relative;
+}
+
+.room-actions-trigger {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &.compact {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+}
+
+.room-actions-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 180px;
+  z-index: 100;
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 204, 0, 0.2);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.room-actions-delete:hover:not(:disabled) {
+      background: rgba(255, 82, 82, 0.2);
+      color: #ff5252;
+    }
+  }
+}
+
+.room-actions-password-prompt {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 220px;
+  z-index: 100;
+
+  p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+
+  .room-actions-prompt-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+
+      &:first-child {
+        background: #ffcc00;
+        color: #1a1a1a;
+      }
+
+      &:last-child {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+    }
+  }
+}
+
+.room-item .room-item-with-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  .room-actions-dropdown {
+    flex-shrink: 0;
+  }
 }
 
 .empty-state {
