@@ -11,6 +11,18 @@ const axiosInstance = axios.create({
   timeout: 10000
 });
 
+// Attach auth token lazily (instance was created before userState loads)
+axiosInstance.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (_) {}
+  return config;
+});
+
 const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
@@ -71,6 +83,9 @@ const RoomInterface = observer(({ roomId }) => {
   const navigate = useNavigate();
 
   const passwordVerified = roomId ? localStorage.getItem(`room_password_verified_${roomId}`) : null;
+  const isPrivilegedUser = Boolean(
+    userState.isAuthenticated && (userState.user?.role === 'admin' || userState.user?.role === 'superadmin')
+  );
   // Показывать форму ввода имени только для НЕ авторизованных пользователей
   // Для авторизованных - вход происходит автоматически
   const showUsernameForm = roomId && !canvasState.isConnected && !userState.isAuthenticated;
@@ -79,7 +94,7 @@ const RoomInterface = observer(({ roomId }) => {
 
   useEffect(() => {
     if (!roomId || !roomInfo?.exists || canvasState.isConnected || !userState.isAuthenticated || !userState.user?.username) return;
-    if (roomInfo.hasPassword && !passwordVerified) return;
+    if (roomInfo.hasPassword && !passwordVerified && !isPrivilegedUser) return;
 
     const profileUsername = userState.user.username.trim();
     if (profileUsername.length < 2) return;
@@ -93,10 +108,12 @@ const RoomInterface = observer(({ roomId }) => {
         const endpoint = roomInfoRes.data.hasPassword ? 'join-private' : 'join-public';
         const payload = { username: profileUsername };
         if (roomInfoRes.data.hasPassword) {
-          const tempPassword = localStorage.getItem(`temp_room_password_${roomId}`);
-          if (tempPassword) {
-            payload.password = tempPassword;
-            localStorage.removeItem(`temp_room_password_${roomId}`);
+          if (!isPrivilegedUser) {
+            const tempPassword = localStorage.getItem(`temp_room_password_${roomId}`);
+            if (tempPassword) {
+              payload.password = tempPassword;
+              localStorage.removeItem(`temp_room_password_${roomId}`);
+            }
           }
         }
 
@@ -123,7 +140,7 @@ const RoomInterface = observer(({ roomId }) => {
     };
     doJoin();
     return () => { cancelled = true; };
-  }, [roomId, roomInfo?.exists, roomInfo?.hasPassword, passwordVerified, userState.isAuthenticated, userState.user?.username]);
+  }, [roomId, roomInfo?.exists, roomInfo?.hasPassword, passwordVerified, userState.isAuthenticated, userState.user?.username, isPrivilegedUser]);
 
   useEffect(() => {
     if (canvasState.showRoomsList) {
@@ -185,7 +202,7 @@ const RoomInterface = observer(({ roomId }) => {
             const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
             // Запрашивать пароль для приватных комнат, если он не верифицирован
             // Это работает как для авторизованных, так и для неавторизованных пользователей
-            if (response.data.hasPassword && !passwordVerified) {
+            if (response.data.hasPassword && !passwordVerified && !isPrivilegedUser) {
               setPasswordPrompt({ id: roomId, name: response.data.name });
             }
           } else {
@@ -194,7 +211,7 @@ const RoomInterface = observer(({ roomId }) => {
         })
         .catch(() => navigate('/404', { replace: true }));
     }
-  }, [roomId, canvasState.isConnected, navigate]);
+  }, [roomId, canvasState.isConnected, navigate, isPrivilegedUser]);
 
   const handleJoinRoom = async () => {
     const validation = validateUsername(username);

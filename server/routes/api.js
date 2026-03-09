@@ -211,22 +211,23 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
       return res.status(400).json({ error: 'ID комнаты не указан' });
     }
 
-    // Check if user is authenticated as superadmin (optional header)
+    // Check if user is authenticated as admin/superadmin (optional header)
     const authHeader = req.headers.authorization;
-    let isSuperAdmin = false;
+    let isPrivileged = false;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const { verifyToken } = require('../utils/jwt');
       const token = authHeader.split(' ')[1];
       const decoded = verifyToken(token);
-      if (decoded && decoded.role === 'superadmin') {
-        isSuperAdmin = true;
+      if (decoded && (decoded.role === 'admin' || decoded.role === 'superadmin')) {
+        isPrivileged = true;
       }
     }
 
-    // Skip username validation for superadmin
+    // Skip username validation for admin/superadmin
     let username;
-    if (isSuperAdmin) {
+    if (isPrivileged) {
       username = sanitizeUsername(req.body.username || 'Admin');
+      if (!username || username.trim().length < 2) username = 'Admin';
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
@@ -262,15 +263,15 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     const roomId = sanitizeInput(req.params.id, 20);
     const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
 
-    // Check if user is authenticated as superadmin (optional header)
+    // Check if user is authenticated as admin/superadmin (optional header)
     const authHeader = req.headers.authorization;
-    let isSuperAdmin = false;
+    let isPrivileged = false;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const { verifyToken } = require('../utils/jwt');
       const token = authHeader.split(' ')[1];
       const decoded = verifyToken(token);
-      if (decoded && decoded.role === 'superadmin') {
-        isSuperAdmin = true;
+      if (decoded && (decoded.role === 'admin' || decoded.role === 'superadmin')) {
+        isPrivileged = true;
       }
     }
 
@@ -283,12 +284,17 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
       return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
     }
 
-    const validation = validateUsername(req.body.username);
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error });
+    let username;
+    if (isPrivileged) {
+      username = sanitizeUsername(req.body.username || 'Admin');
+      if (!username || username.trim().length < 2) username = 'Admin';
+    } else {
+      const validation = validateUsername(req.body.username);
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+      username = sanitizeUsername(validation.username);
     }
-
-    const username = sanitizeUsername(validation.username);
 
     const room = await DataStore.getRoomInfo(roomId);
 
@@ -300,8 +306,8 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
       return res.status(400).json({ error: 'Use join-public for public rooms' });
     }
 
-    // Skip password check for superadmin
-    if (!isSuperAdmin) {
+    // Skip password check for admin/superadmin
+    if (!isPrivileged) {
       if (room.hasPassword && room.passwordHash) {
         const isValid = await bcrypt.compare(password, room.passwordHash);
         if (!isValid) {

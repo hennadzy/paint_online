@@ -254,28 +254,42 @@ const AdminPage = observer(() => {
     return <span style={{ marginLeft: '4px' }}>{currentSortOrder === 'ASC' ? '↑' : '↓'}</span>;
   };
 
-  const formatDate = (timestamp) => {
-    if (!timestamp || timestamp === null || timestamp === 0) return '-';
-    
-    let ts;
-    // Handle different timestamp formats
-    if (typeof timestamp === 'string') {
-      // ISO string or date string
-      const parsed = Date.parse(timestamp);
-      if (isNaN(parsed)) return '-';
-      ts = parsed;
-    } else {
-      ts = Number(timestamp);
+  const normalizeTimestampMs = (value) => {
+    if (value === null || value === undefined) return null;
+    if (value instanceof Date) {
+      const ms = value.getTime();
+      return Number.isFinite(ms) ? ms : null;
     }
-    
-    if (isNaN(ts) || ts <= 0) return '-';
-    return new Date(ts).toLocaleString('ru-RU');
+
+    // numeric string timestamps (e.g. from BIGINT) need special handling
+    if (typeof value === 'string') {
+      const s = value.trim();
+      if (s.length === 0) return null;
+      if (/^\d+(\.\d+)?$/.test(s)) {
+        const n = Number(s);
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return n < 1e12 ? n * 1000 : n; // seconds -> ms
+      }
+      const parsed = Date.parse(s);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return n < 1e12 ? n * 1000 : n; // seconds -> ms
+  };
+
+  const formatDate = (timestamp) => {
+    const ts = normalizeTimestampMs(timestamp);
+    if (!ts) return '-';
+    const d = new Date(ts);
+    if (!Number.isFinite(d.getTime())) return '-';
+    return d.toLocaleString('ru-RU');
   };
 
   const formatRelativeTime = (timestamp) => {
-    if (!timestamp || timestamp === null || timestamp === 0) return '-';
-    const ts = Number(timestamp);
-    if (isNaN(ts) || ts <= 0) return '-';
+    const ts = normalizeTimestampMs(timestamp);
+    if (!ts) return '-';
     const diff = Date.now() - ts;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days > 0) return `${days} дн. назад`;

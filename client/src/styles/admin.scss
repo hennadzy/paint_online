@@ -14,8 +14,13 @@
 
 // Ensure html and body also have the background and cover full height
 html, body {
-  background: #1a1a1a;
+  background: #1a1a1a !important;
   min-height: 100%;
+}
+
+// Admin route renders inside `.main-content--admin` which scrolls independently
+.main-content--admin {
+  background: #1a1a1a !important;
 }
 
 .admin-header {

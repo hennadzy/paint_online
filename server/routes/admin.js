@@ -13,6 +13,32 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireSuperAdmin);
 
+const toEpochMs = (value) => {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return value < 1e12 ? value * 1000 : value;
+  }
+  if (typeof value === 'string') {
+    const s = value.trim();
+    if (!s) return null;
+    if (/^\d+(\.\d+)?$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n) || n <= 0) return null;
+      return n < 1e12 ? n * 1000 : n;
+    }
+    const parsed = Date.parse(s);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n < 1e12 ? n * 1000 : n;
+};
+
 // ==================== STATS ====================
 router.get('/stats', async (req, res) => {
   try {
@@ -65,7 +91,7 @@ router.get('/stats', async (req, res) => {
       },
       recentRegistrations: recentUsers.rows.map(u => ({
         ...u,
-        created_at: u.created_at ? new Date(u.created_at).getTime() : null
+        created_at: toEpochMs(u.created_at)
       }))
     });
   } catch (error) {
@@ -362,8 +388,8 @@ router.get('/rooms', async (req, res) => {
         name: r.name,
         isPublic: r.is_public,
         hasPassword: r.has_password,
-        createdAt: r.created_at ? new Date(r.created_at).getTime() : null,
-        lastActivity: r.last_activity ? new Date(r.last_activity).getTime() : null,
+        createdAt: toEpochMs(r.created_at),
+        lastActivity: toEpochMs(r.last_activity),
         strokeCount: parseInt(r.stroke_count, 10),
         uniqueUsers: parseInt(r.unique_users, 10),
         weight: parseInt(r.weight || 0, 10)
@@ -427,8 +453,8 @@ router.get('/rooms/:id', async (req, res) => {
     res.json({
       room: {
         ...room,
-        createdAt: room.createdAt ? new Date(room.createdAt).getTime() : null,
-        lastActivity: room.lastActivity ? new Date(room.lastActivity).getTime() : null,
+        createdAt: toEpochMs(room.createdAt),
+        lastActivity: toEpochMs(room.lastActivity),
         strokeCount: parseInt(strokeCount.rows[0].count, 10),
         uniqueUsers: parseInt(uniqueUsers.rows[0].count, 10),
         canvasWidth: Math.ceil(maxX + 50),
