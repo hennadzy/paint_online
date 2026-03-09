@@ -141,7 +141,7 @@ connect(wsUrl, roomId, username, token) {
         this.emit('usersList', { users: message.users });
         break;
       case 'draws':
-        this.emit('drawsReceived', { strokes: message.strokes });
+        this.emit('drawsReceived', { strokes: message.strokes, cancelledStrokeIds: message.cancelledStrokeIds });
         break;
       case 'draw':
         this.emit('drawReceived', { username: message.username, figure: message.figure });
@@ -150,7 +150,7 @@ connect(wsUrl, roomId, username, token) {
         this.emit('clearReceived', { username: message.username });
         break;
       case 'chat':
-        this.emit('chatReceived', { username: message.username, message: message.message });
+        this.emit('chatReceived', { username: message.username, message: message.message, isVerified: message.isVerified });
         break;
       case 'syncCancelled':
         this.emit('syncCancelled', { cancelledStrokeIds: message.cancelledStrokeIds });

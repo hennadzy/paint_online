@@ -119,11 +119,12 @@ const RoomInterface = observer(({ roomId }) => {
 
         const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
         const token = tokenResponse.data.token;
+        const effectiveUsername = tokenResponse.data.username || profileUsername;
         localStorage.setItem(`room_token_${roomId}`, token);
         localStorage.removeItem(`room_password_verified_${roomId}`);
 
         if (cancelled) return;
-        canvasState.setUsername(profileUsername);
+        canvasState.setUsername(effectiveUsername);
         canvasState.setModalOpen(false);
         canvasState.setShowRoomInterface(false);
       } catch (err) {
@@ -250,10 +251,11 @@ const RoomInterface = observer(({ roomId }) => {
       const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
 
       const token = tokenResponse.data.token;
+      const effectiveUsername = tokenResponse.data.username || username.trim();
       localStorage.setItem(`room_token_${roomId}`, token);
       localStorage.removeItem(`room_password_verified_${roomId}`);
 
-      canvasState.setUsername(username);
+      canvasState.setUsername(effectiveUsername);
       canvasState.setModalOpen(false);
       canvasState.setShowRoomInterface(false);
     } catch (error) {

@@ -227,7 +227,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
     let username;
     if (isPrivileged) {
       username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Admin';
+      if (!username || username.trim().length < 2) username = 'Operator';
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
@@ -252,7 +252,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
     }
 
     const token = generateToken(roomId, username, true);
-    res.json({ token });
+    res.json({ token, username });
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -287,7 +287,7 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     let username;
     if (isPrivileged) {
       username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Admin';
+      if (!username || username.trim().length < 2) username = 'Operator';
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
@@ -317,7 +317,7 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     }
 
     const token = generateToken(roomId, username, false);
-    res.json({ token });
+    res.json({ token, username });
   } catch (_) {
     res.status(500).json({ error: 'Server error' });
   }
