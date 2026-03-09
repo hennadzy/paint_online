@@ -752,7 +752,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 180px;
-  z-index: 100;
+  z-index: 999999;
 
   button {
     display: block;
@@ -792,7 +792,7 @@
   border-radius: 8px;
   padding: 12px;
   min-width: 220px;
-  z-index: 100;
+  z-index: 999999;
 
   p {
     margin: 0 0 8px 0;
@@ -844,6 +844,30 @@
 
   .room-actions-dropdown {
     flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .room-item {
+    flex-wrap: wrap;
+  }
+
+  .room-item .room-item-with-actions {
+    flex: 1 1 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .room-item .room-item-with-actions .room-actions-dropdown {
+    align-self: flex-end;
+  }
+
+  .room-item .room-item-with-actions .room-btn-join {
+    width: 100%;
   }
 }
 

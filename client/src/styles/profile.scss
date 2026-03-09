@@ -447,7 +447,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 180px;
-  z-index: 100;
+  z-index: 999999;
 
   button {
     display: block;
@@ -482,7 +482,7 @@
   border-radius: 8px;
   padding: 12px;
   min-width: 220px;
-  z-index: 100;
+  z-index: 999999;
 
   p {
     margin: 0 0 8px 0;
