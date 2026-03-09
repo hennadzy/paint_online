@@ -46,8 +46,6 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Разрешаем все origins в production для работы с render.com
-    // Проверяем не только NODE_ENV, но и RENDER_EXTERNAL_URL
     if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
       return callback(null, true);
     }
@@ -77,7 +75,6 @@ app.use(cors({
 
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin;
-  // Разрешаем все origins в production для работы с render.com
   if (process.env.NODE_ENV === 'production' || 
       process.env.RENDER_EXTERNAL_URL ||
       origin === 'https://risovanie.online' ||
@@ -276,14 +273,12 @@ async function initDb() {
     `);
     console.log('Database tables ready');
 
-    // Add weight column if it doesn't exist
     try {
       await pgPool.query(`
         ALTER TABLE rooms ADD COLUMN IF NOT EXISTS weight INTEGER DEFAULT 0
       `);
     } catch (_) { }
 
-    // Create default admin user if not exists
     const bcrypt = require('bcrypt');
     const { hashPassword } = require('./utils/auth');
     

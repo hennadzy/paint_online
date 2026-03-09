@@ -79,7 +79,6 @@ async deleteRoom(roomId) {
 
   async calculateRoomWeight(roomId) {
     try {
-      // Calculate weight as the total size of stroke_data in bytes
       const result = await pgPool.query(
         `SELECT SUM(LENGTH(stroke_data::text)) as total_weight 
          FROM strokes 

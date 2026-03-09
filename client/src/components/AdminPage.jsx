@@ -5,7 +5,6 @@ import adminState from '../store/adminState';
 import userState from '../store/userState';
 import '../styles/admin.scss';
 
-// Icons as SVG components
 const DashboardIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="3" width="7" height="9" rx="1"/>
@@ -119,13 +118,11 @@ const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
   
-  // Sorting state
   const [usersSortBy, setUsersSortBy] = useState('created_at');
   const [usersSortOrder, setUsersSortOrder] = useState('DESC');
   const [roomsSortBy, setRoomsSortBy] = useState('last_activity');
   const [roomsSortOrder, setRoomsSortOrder] = useState('DESC');
   
-  // User Modal state
   const [userFormData, setUserFormData] = useState({
     username: '',
     email: '',
@@ -134,23 +131,18 @@ const AdminPage = observer(() => {
   });
   const [userFormError, setUserFormError] = useState('');
 
-  // Filter state - Users
   const [usersFilterRole, setUsersFilterRole] = useState('all');
   const [usersFilterStatus, setUsersFilterStatus] = useState('all');
 
-  // Filter state - Rooms
   const [roomsFilterType, setRoomsFilterType] = useState('all');
   const [roomsFilterPassword, setRoomsFilterPassword] = useState('all');
 
-  // Room Modal state
   const [roomFormData, setRoomFormData] = useState({ name: '' });
   const [roomFormError, setRoomFormError] = useState('');
 
-  // Password Modal state
   const [newPassword, setNewPassword] = useState('');
   const [passwordFormError, setPasswordFormError] = useState('');
 
-  // Sync form data when selected user/room changes
   useEffect(() => {
     if (adminState.selectedUser) {
       const user = adminState.selectedUser;
@@ -180,7 +172,6 @@ const AdminPage = observer(() => {
   }, [adminState.selectedUser]);
 
   useEffect(() => {
-    // Check if user is admin
     if (!userState.user || !['admin', 'superadmin'].includes(userState.user.role)) {
       navigate('/login');
       return;
@@ -261,14 +252,13 @@ const AdminPage = observer(() => {
       return Number.isFinite(ms) ? ms : null;
     }
 
-    // numeric string timestamps (e.g. from BIGINT) need special handling
     if (typeof value === 'string') {
       const s = value.trim();
       if (s.length === 0) return null;
       if (/^\d+(\.\d+)?$/.test(s)) {
         const n = Number(s);
         if (!Number.isFinite(n) || n <= 0) return null;
-        return n < 1e12 ? n * 1000 : n; // seconds -> ms
+        return n < 1e12 ? n * 1000 : n;
       }
       const parsed = Date.parse(s);
       return Number.isFinite(parsed) ? parsed : null;
@@ -276,7 +266,7 @@ const AdminPage = observer(() => {
 
     const n = Number(value);
     if (!Number.isFinite(n) || n <= 0) return null;
-    return n < 1e12 ? n * 1000 : n; // seconds -> ms
+    return n < 1e12 ? n * 1000 : n;
   };
 
   const formatDate = (timestamp) => {
@@ -307,7 +297,6 @@ const AdminPage = observer(() => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // Render Dashboard
   const renderDashboard = () => {
     if (!adminState.stats) {
       return (
@@ -380,7 +369,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // Render Users
   const renderUsers = () => {
     return (
       <div>
@@ -584,7 +572,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // Render Rooms
   const renderRooms = () => {
     return (
       <div>
@@ -757,7 +744,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // User Modal
   const renderUserModal = () => {
     if (!adminState.showUserModal) return null;
 
@@ -844,7 +830,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // Room Modal
   const renderRoomModal = () => {
     if (!adminState.showRoomModal) return null;
 
@@ -950,7 +935,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // Password Modal
   const renderPasswordModal = () => {
     if (!adminState.showPasswordModal) return null;
 
@@ -1012,7 +996,6 @@ const AdminPage = observer(() => {
     );
   };
 
-  // Delete Confirm Modal
   const renderDeleteConfirm = () => {
     if (!adminState.showDeleteConfirm) return null;
 

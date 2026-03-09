@@ -9,7 +9,6 @@ const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
 
-// Apply auth and admin middleware to all routes
 router.use(authenticate);
 router.use(requireSuperAdmin);
 
@@ -39,10 +38,8 @@ const toEpochMs = (value) => {
   return n < 1e12 ? n * 1000 : n;
 };
 
-// ==================== STATS ====================
 router.get('/stats', async (req, res) => {
   try {
-    // User stats
     const userStats = await pgPool.query(`
       SELECT 
         COUNT(*) as total_users,
@@ -51,7 +48,6 @@ router.get('/stats', async (req, res) => {
       FROM users
     `, [Date.now() - 7 * 24 * 60 * 60 * 1000]);
 
-    // Room stats
     const roomStats = await pgPool.query(`
       SELECT 
         COUNT(*) as total_rooms,
@@ -61,12 +57,10 @@ router.get('/stats', async (req, res) => {
       FROM rooms
     `, [Date.now() - 7 * 24 * 60 * 60 * 1000]);
 
-    // Stroke stats
     const strokeStats = await pgPool.query(`
       SELECT COUNT(*) as total_strokes FROM strokes
     `);
 
-    // Recent registrations
     const recentUsers = await pgPool.query(`
       SELECT id, username, email, created_at 
       FROM users 
@@ -100,7 +94,6 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// ==================== USERS ====================
 router.get('/users', async (req, res) => {
   try {
     const { page = 1, limit = 20, search = '', sortBy = 'created_at', sortOrder = 'DESC', role, isActive } = req.query;
@@ -151,13 +144,11 @@ router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
     const { username, email, role, isActive } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findByIdFull(id);
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Prevent changing own admin role
     if (id === req.user.userId && existingUser.role === 'superadmin' && role !== 'superadmin') {
       return res.status(400).json({ error: 'Cannot change your own superadmin role' });
     }
@@ -215,7 +206,6 @@ router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Prevent deleting yourself
     if (id === req.user.userId) {
       return res.status(400).json({ error: 'Cannot delete yourself' });
     }
@@ -236,7 +226,6 @@ router.post('/users/:id/toggle-active', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Prevent deactivating yourself
     if (id === req.user.userId) {
       return res.status(400).json({ error: 'Cannot deactivate yourself' });
     }
@@ -278,7 +267,6 @@ router.post('/users/:id/change-password', async (req, res) => {
   }
 });
 
-// ==================== ROOMS ====================
 router.get('/rooms', async (req, res) => {
   try {
     const { page = 1, limit = 20, search = '', sortBy = 'last_activity', sortOrder = 'DESC', isPublic, hasPassword } = req.query;
@@ -292,7 +280,6 @@ router.get('/rooms', async (req, res) => {
       FROM rooms r
     `;
     
-    // For stroke_count and unique_users sorting, we need a subquery
     let countSubquery = '';
     if (sortBy === 'stroke_count' || sortBy === 'unique_users') {
       query = `
@@ -315,21 +302,18 @@ router.get('/rooms', async (req, res) => {
     const values = [];
     let paramIndex = 1;
 
-    // Filter by is_public
     if (isPublic !== undefined) {
       query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.is_public = $${paramIndex}`;
       values.push(isPublic === 'true');
       paramIndex++;
     }
 
-    // Filter by has_password
     if (hasPassword !== undefined) {
       query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.has_password = $${paramIndex}`;
       values.push(hasPassword === 'true');
       paramIndex++;
     }
 
-    // Search by name
     if (search) {
       query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` r.name ILIKE $${paramIndex}`;
       values.push(`%${search}%`);
@@ -340,21 +324,17 @@ router.get('/rooms', async (req, res) => {
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'last_activity';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    // Handle weight sorting - use COALESCE to handle NULL values
     let orderByColumn = `r.${safeSortBy}`;
     if (safeSortBy === 'weight') {
       orderByColumn = 'COALESCE(r.weight, 0)';
     }
-    // Handle is_public and has_password sorting
     if (safeSortBy === 'is_public' || safeSortBy === 'has_password') {
       orderByColumn = `r.${safeSortBy}`;
     }
-    // Handle stroke_count and unique_users sorting - use subquery aliases with numeric casting
     if (safeSortBy === 'stroke_count' || safeSortBy === 'unique_users') {
       orderByColumn = `COALESCE(s.${safeSortBy}, 0)::INTEGER`;
     }
 
-    // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM rooms';
     const countValues = [];
     let countParamIndex = 1;
@@ -414,7 +394,6 @@ router.get('/rooms/:id', async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    // Get additional stats
     const strokeCount = await pgPool.query(
       'SELECT COUNT(*) as count FROM strokes WHERE room_id = $1',
       [req.params.id]
@@ -430,7 +409,6 @@ router.get('/rooms/:id', async (req, res) => {
       [req.params.id]
     );
 
-    // Calculate canvas size from strokes
     let maxX = 0, maxY = 0;
     for (const row of strokesData.rows) {
       try {
@@ -444,7 +422,6 @@ router.get('/rooms/:id', async (req, res) => {
       } catch (e) {}
     }
 
-    // Get or calculate weight
     let weight = room.weight || 0;
     if (!weight) {
       weight = await DataStore.calculateRoomWeight(req.params.id);
@@ -505,12 +482,10 @@ router.delete('/rooms/:id', async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    // Delete all strokes first
     await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [id]);
     await pgPool.query('DELETE FROM cancelled_strokes WHERE room_id = $1', [id]);
     await pgPool.query('DELETE FROM favorite_rooms WHERE room_id = $1', [id]);
     
-    // Delete room
     await DataStore.deleteRoom(id);
 
     res.json({ message: 'Room deleted successfully' });
@@ -520,7 +495,6 @@ router.delete('/rooms/:id', async (req, res) => {
   }
 });
 
-// ==================== JOIN ROOM (for admin) ====================
 router.post('/rooms/:id/join', async (req, res) => {
   try {
     const { id } = req.params;
@@ -531,7 +505,6 @@ router.post('/rooms/:id/join', async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    // Generate token for the admin to join
     const token = generateToken(id, username, false);
 
     res.json({ 
@@ -547,7 +520,6 @@ router.post('/rooms/:id/join', async (req, res) => {
   }
 });
 
-// ==================== EXPORT ====================
 router.get('/export/users', async (req, res) => {
   try {
     const { format = 'json' } = req.query;

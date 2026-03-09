@@ -3,34 +3,27 @@ import axios from 'axios';
 import { API_URL } from './canvasState';
 
 class AdminState {
-  // Stats
   stats = null;
   
-  // Users
   users = [];
   usersPagination = { page: 1, limit: 20, total: 0, totalPages: 0 };
   usersLoading = false;
   usersError = null;
   
-  // Rooms
   rooms = [];
   roomsPagination = { page: 1, limit: 20, total: 0, totalPages: 0 };
   roomsLoading = false;
   roomsError = null;
   
-  // Room details
   selectedRoom = null;
   roomDetailsLoading = false;
   
-  // User details
   selectedUser = null;
   userDetailsLoading = false;
   
-  // UI State
   activeTab = 'dashboard';
   searchQuery = '';
   
-  // Separate sort states for users and rooms
   usersSortBy = 'created_at';
   usersSortOrder = 'DESC';
   roomsSortBy = 'last_activity';
@@ -38,13 +31,12 @@ class AdminState {
   
   filters = {};
   
-  // Modal state
   showUserModal = false;
   showRoomModal = false;
   showDeleteConfirm = false;
   showPasswordModal = false;
   deleteTarget = null;
-  modalMode = 'edit'; // 'edit' or 'create'
+  modalMode = 'edit';
   
   constructor() {
     makeAutoObservable(this);
@@ -77,7 +69,6 @@ class AdminState {
     this.filters = filters;
   }
 
-  // Stats
   async fetchStats() {
     try {
       const response = await axios.get(`${API_URL}/api/admin/stats`);
@@ -89,7 +80,6 @@ class AdminState {
     }
   }
 
-  // Users
   async fetchUsers(page = 1) {
     this.usersLoading = true;
     this.usersError = null;
@@ -204,7 +194,6 @@ class AdminState {
     }
   }
 
-  // Rooms
   async fetchRooms(page = 1) {
     this.roomsLoading = true;
     this.roomsError = null;
@@ -301,7 +290,6 @@ class AdminState {
     }
   }
 
-  // Export
   async exportUsers(format = 'json') {
     try {
       const response = await axios.get(`${API_URL}/api/admin/export/users`, {
@@ -352,7 +340,6 @@ class AdminState {
     }
   }
 
-  // Modal controls
   openUserModal(user = null) {
     this.selectedUser = user;
     this.modalMode = user ? 'edit' : 'create';
@@ -395,7 +382,6 @@ class AdminState {
     this.selectedUser = null;
   }
 
-  // Pagination
   changePage(type, page) {
     if (type === 'users') {
       this.fetchUsers(page);

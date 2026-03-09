@@ -6,12 +6,10 @@ import canvasState, { API_URL } from '../store/canvasState';
 import userState from '../store/userState';
 import '../styles/room-interface.scss';
 
-// Таймаут для axios запросов (10 секунд)
 const axiosInstance = axios.create({
   timeout: 10000
 });
 
-// Attach auth token lazily (instance was created before userState loads)
 axiosInstance.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem('token');
@@ -86,8 +84,6 @@ const RoomInterface = observer(({ roomId }) => {
   const isPrivilegedUser = Boolean(
     userState.isAuthenticated && (userState.user?.role === 'admin' || userState.user?.role === 'superadmin')
   );
-  // Показывать форму ввода имени только для НЕ авторизованных пользователей
-  // Для авторизованных - вход происходит автоматически
   const showUsernameForm = roomId && !canvasState.isConnected && !userState.isAuthenticated;
   
   const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
@@ -166,7 +162,6 @@ const RoomInterface = observer(({ roomId }) => {
     }
   }, [activeTab, roomId]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchPublicRooms = useCallback(async () => {
     try {
       const response = await axiosInstance.get(`${API_URL}/rooms/public`);
@@ -200,9 +195,6 @@ const RoomInterface = observer(({ roomId }) => {
         .then(response => {
           if (response.data.exists) {
             setRoomInfo(response.data);
-            const passwordVerified = localStorage.getItem(`room_password_verified_${roomId}`);
-            // Запрашивать пароль для приватных комнат, если он не верифицирован
-            // Это работает как для авторизованных, так и для неавторизованных пользователей
             if (response.data.hasPassword && !passwordVerified && !isPrivilegedUser) {
               setPasswordPrompt({ id: roomId, name: response.data.name });
             }
