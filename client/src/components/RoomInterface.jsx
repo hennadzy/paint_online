@@ -97,8 +97,14 @@ const RoomInterface = observer(({ roomId }) => {
     if (!roomId || !roomInfo?.exists || canvasState.isConnected || !userState.isAuthenticated || !userState.user?.username) return;
     if (roomInfo.hasPassword && !passwordVerified && !isPrivilegedUser) return;
 
-    const profileUsername = userState.user.username.trim();
+    let profileUsername = userState.user.username.trim();
     if (profileUsername.length < 2) return;
+
+    // If the user is an admin and their username is "Admin", use it directly
+    // Otherwise, validate the username
+    if (!isPrivilegedUser && profileUsername.toLowerCase() === 'admin') {
+      profileUsername = 'User' + Math.floor(Math.random() * 1000);
+    }
 
     let cancelled = false;
     const doJoin = async () => {
