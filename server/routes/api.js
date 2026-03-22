@@ -234,7 +234,7 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
     let username;
     if (isPrivileged) {
       username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Operator';
+      if (!username || username.trim().length < 2) username = 'Admin';
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
@@ -297,7 +297,7 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
     let username;
     if (isPrivileged) {
       username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Operator';
+      if (!username || username.trim().length < 2) username = 'Admin';
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {

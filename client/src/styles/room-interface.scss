@@ -850,6 +850,7 @@
 @media (max-width: 768px) {
   .room-item {
     flex-wrap: wrap;
+    position: relative;
   }
 
   .room-item .room-item-with-actions {
@@ -863,7 +864,9 @@
   }
 
   .room-item .room-item-with-actions .room-actions-dropdown {
-    align-self: flex-end;
+    position: absolute;
+    top: 15px;
+    right: 15px;
   }
 
   .room-item .room-item-with-actions .room-btn-join {
@@ -1152,6 +1155,26 @@
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.game-modes-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.game-mode-btn {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 102, 153, 0.6);
+  }
+  
+  &:active {
+    transform: translateY(-1px);
   }
 }
 
