@@ -74,16 +74,26 @@ WebSocketService.on('usersList', ({ users }) => {
         return user;
       });
     });
-    WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
+WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
       
+      // Clear existing strokes to prevent duplication
+      HistoryService.clearStrokes();
+      
+      // Update cancelled stroke IDs
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
+      } else {
+        this.cancelledStrokeIds = [];
       }
       
+      // Filter out cancelled strokes
       const filteredStrokes = strokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
       
+      // Set the filtered strokes
       HistoryService.setStrokes(filteredStrokes);
+      
+      // Rebuild the buffer with the filtered strokes
       CanvasService.rebuildBuffer(filteredStrokes, () => {
         canvasState.setZoom(1);
         setTimeout(() => this.saveThumbnail(), 500);

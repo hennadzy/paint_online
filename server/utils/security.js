@@ -169,7 +169,7 @@ const validateUsername = (username) => {
   return { valid: true, username: trimmed };
 };
 
-const sanitizeUsername = (username) => {
+const sanitizeUsername = (username, isPrivileged = false) => {
   if (typeof username !== 'string') return '';
   
   let sanitized = username.trim();
@@ -184,18 +184,21 @@ const sanitizeUsername = (username) => {
   
   sanitized = sanitized.replace(/\s+/g, ' ');
   
-  const dangerousPatterns = [
-    /admin/gi,
-    /moderator/gi,
-    /system/gi,
-    /bot/gi,
-    /null/gi,
-    /undefined/gi
-  ];
-  
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
+  // Skip dangerous patterns check for privileged users (admins)
+  if (!isPrivileged) {
+    const dangerousPatterns = [
+      /admin/gi,
+      /moderator/gi,
+      /system/gi,
+      /bot/gi,
+      /null/gi,
+      /undefined/gi
+    ];
+    
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+  }
   
   sanitized = validator.escape(sanitized);
   

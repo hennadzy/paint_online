@@ -40,7 +40,12 @@ class WebSocketHandler {
 async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
-    let username = sanitizeUsername(msg.username);
+    
+    // Verify token and check if user is privileged
+    const payload = verifyToken(token);
+    const isPrivileged = payload && (payload.role === 'admin' || payload.role === 'superadmin');
+    
+    let username = sanitizeUsername(msg.username, isPrivileged);
     const isVerified = Boolean(msg.isVerified);
     
     if (!token || !roomId || !username) {
@@ -53,14 +58,12 @@ async handleConnection(ws, msg) {
       return;
     }
     
-    const payload = verifyToken(token);
-    
     if (!payload) {
       ws.close(1008, 'Invalid or expired token');
       return;
     }
     
-    const sanitizedPayloadUsername = sanitizeUsername(payload.username);
+    const sanitizedPayloadUsername = sanitizeUsername(payload.username, isPrivileged);
     if (payload.roomId !== roomId || sanitizedPayloadUsername !== username) {
       ws.close(1008, 'Token mismatch');
       return;

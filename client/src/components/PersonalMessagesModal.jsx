@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import WebSocketService from '../services/WebSocketService';
+import { API_URL } from '../store/canvasState';
+import axios from 'axios';
 
 const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -9,30 +11,23 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [conversations, setConversations] = useState({});
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const messagesEndRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
-      // Load users and conversations from localStorage
+      // Load conversations from localStorage
       try {
         const savedConversations = localStorage.getItem('personalConversations');
         if (savedConversations) {
           setConversations(JSON.parse(savedConversations));
         }
         
-        // In a real app, we would fetch users from the server
-        // For now, we'll use the activity rooms to get users
-        if (userState.activityRooms.length > 0) {
-          const uniqueUsers = new Set();
-          userState.activityRooms.forEach(room => {
-            // In a real implementation, we would get users from each room
-            // For now, we'll just add some placeholder users
-            uniqueUsers.add('User1');
-            uniqueUsers.add('User2');
-            uniqueUsers.add('User3');
-          });
-          setUsers(Array.from(uniqueUsers));
-        }
+        // Fetch real users from the server
+        fetchUsers();
       } catch (error) {
         console.error('Error loading conversations:', error);
       }
@@ -47,6 +42,44 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      // Fetch active users from the server
+      const response = await axios.get(`${API_URL}/users/active`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Filter out non-existent users from conversations
+        const activeUserIds = new Set(response.data.map(user => user.id));
+        const validUsers = response.data.filter(user => 
+          user.id !== userState.user?.id && // Don't include current user
+          user.is_active !== false // Filter out inactive users
+        );
+        
+        setUsers(validUsers);
+        
+        // Clean up conversations for non-existent users
+        const updatedConversations = { ...conversations };
+        Object.keys(updatedConversations).forEach(userId => {
+          if (!activeUserIds.has(userId) && userId !== 'system') {
+            delete updatedConversations[userId];
+          }
+        });
+        
+        setConversations(updatedConversations);
+        localStorage.setItem('personalConversations', JSON.stringify(updatedConversations));
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Scroll to bottom when messages change
     if (messagesEndRef.current) {
@@ -54,8 +87,41 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     }
   }, [selectedUser, conversations]);
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    
+    setIsSearching(true);
+    setLoading(true);
+    
+    try {
+      const response = await axios.get(`${API_URL}/users/search?q=${encodeURIComponent(searchQuery)}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Filter out current user and inactive users
+        const filteredResults = response.data.filter(user => 
+          user.id !== userState.user?.id && 
+          user.is_active !== false
+        );
+        setSearchResults(filteredResults);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReceiveMessage = (data) => {
-    const { from, message } = data;
+    const { from, message, timestamp } = data;
     
     setConversations(prev => {
       const newConversations = { ...prev };
@@ -66,7 +132,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       newConversations[from].push({
         sender: from,
         text: message,
-        timestamp: Date.now()
+        timestamp: timestamp || Date.now()
       });
       
       // Save to localStorage
@@ -74,23 +140,50 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       
       return newConversations;
     });
+    
+    // Notify user about new message
+    if (document.hidden && Notification.permission === 'granted') {
+      const sender = users.find(u => u.id === from)?.username || 'User';
+      new Notification(`New message from ${sender}`, {
+        body: message,
+        icon: '/favicon.png'
+      });
+    }
+  };
+
+  const addUserToContacts = (user) => {
+    // Add user to contacts and start conversation
+    setSelectedUser(user);
+    setIsSearching(false);
+    setSearchQuery('');
+    
+    // Make sure user is in the users list
+    if (!users.some(u => u.id === user.id)) {
+      setUsers(prev => [...prev, user]);
+    }
   };
 
   const handleSendMessage = () => {
     if (!selectedUser || !message.trim()) return;
     
-    // In a real app, we would send this via WebSocket
-    // For now, we'll just update the local state
+    const timestamp = Date.now();
+    
+    // Send message via WebSocket
+    if (WebSocketService.isConnected) {
+      WebSocketService.sendPersonalMessage(selectedUser.id, message.trim(), timestamp);
+    }
+    
+    // Update local state
     setConversations(prev => {
       const newConversations = { ...prev };
-      if (!newConversations[selectedUser]) {
-        newConversations[selectedUser] = [];
+      if (!newConversations[selectedUser.id]) {
+        newConversations[selectedUser.id] = [];
       }
       
-      newConversations[selectedUser].push({
-        sender: userState.user?.username || 'Me',
+      newConversations[selectedUser.id].push({
+        sender: userState.user?.id || 'me',
         text: message.trim(),
-        timestamp: Date.now()
+        timestamp
       });
       
       // Save to localStorage
@@ -98,9 +191,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       
       return newConversations;
     });
-    
-    // In a real implementation, we would send via WebSocket:
-    // WebSocketService.sendPersonalMessage(selectedUser, message.trim());
     
     setMessage('');
   };
@@ -109,100 +199,201 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
 
   return (
     <div className="room-interface-overlay" onClick={onClose} data-nosnippet>
-      <div className="room-interface" onClick={(e) => e.stopPropagation()}>
+      <div className="room-interface personal-messages-modal" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={onClose}>×</button>
         
-        <div className="room-card">
-          <div className="room-card-header">
-            <h2>Личные сообщения</h2>
-            <p>Общайтесь с другими пользователями</p>
-          </div>
-          
-          <div className="room-card-body personal-messages-container">
-            <div className="users-list">
-              <h3>Пользователи</h3>
-              {users.length === 0 ? (
-                <div className="empty-state">
-                  <span className="empty-icon">👥</span>
-                  <p>Нет доступных пользователей</p>
-                  <p className="empty-hint">Посетите комнаты, чтобы найти собеседников</p>
-                </div>
-              ) : (
-                <ul className="users-list-items">
-                  {users.map(user => (
-                    <li 
-                      key={user} 
-                      className={`user-item ${selectedUser === user ? 'selected' : ''}`}
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      <span className="user-avatar">👤</span>
-                      <span className="user-name">{user}</span>
-                      {conversations[user] && conversations[user].length > 0 && (
-                        <span className="message-count">{conversations[user].length}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+        <div className="personal-messages-container">
+          <div className="sidebar">
+            <div className="search-container">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="search-input"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button 
+                className="search-btn"
+                onClick={handleSearch}
+                disabled={loading}
+              >
+                {loading ? '...' : '🔍'}
+              </button>
             </div>
             
-            <div className="messages-area">
-              {selectedUser ? (
-                <>
-                  <div className="messages-header">
-                    <h3>{selectedUser}</h3>
+            {isSearching ? (
+              <div className="search-results">
+                <div className="section-header">
+                  <h3>Search Results</h3>
+                  <button 
+                    className="back-btn"
+                    onClick={() => {
+                      setIsSearching(false);
+                      setSearchQuery('');
+                    }}
+                  >
+                    Back
+                  </button>
+                </div>
+                
+                {searchResults.length === 0 ? (
+                  <div className="empty-state">
+                    <span className="empty-icon">🔍</span>
+                    <p>No users found</p>
                   </div>
-                  
-                  <div className="messages-list">
-                    {!conversations[selectedUser] || conversations[selectedUser].length === 0 ? (
-                      <div className="empty-state">
-                        <span className="empty-icon">💬</span>
-                        <p>Нет сообщений</p>
-                        <p className="empty-hint">Начните общение прямо сейчас</p>
-                      </div>
+                ) : (
+                  <ul className="users-list">
+                    {searchResults.map(user => (
+                      <li 
+                        key={user.id} 
+                        className="user-item"
+                        onClick={() => addUserToContacts(user)}
+                      >
+                        <div className="user-avatar">
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt={user.username} />
+                          ) : (
+                            <span>{user.username.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <span className="user-name">{user.username}</span>
+                          <span className="user-status">
+                            {user.is_online ? 'Online' : 'Offline'}
+                          </span>
+                        </div>
+                        <button className="add-user-btn">Add</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <div className="contacts">
+                <h3>Contacts</h3>
+                {users.length === 0 ? (
+                  <div className="empty-state">
+                    <span className="empty-icon">👥</span>
+                    <p>No contacts yet</p>
+                    <p className="empty-hint">Search for users to start chatting</p>
+                  </div>
+                ) : (
+                  <ul className="users-list">
+                    {users.map(user => {
+                      const unreadCount = conversations[user.id]?.filter(
+                        msg => msg.sender === user.id && !msg.read
+                      ).length || 0;
+                      
+                      return (
+                        <li 
+                          key={user.id} 
+                          className={`user-item ${selectedUser?.id === user.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedUser(user)}
+                        >
+                          <div className="user-avatar">
+                            {user.avatar_url ? (
+                              <img src={user.avatar_url} alt={user.username} />
+                            ) : (
+                              <span>{user.username.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="user-info">
+                            <span className="user-name">{user.username}</span>
+                            {conversations[user.id] && conversations[user.id].length > 0 && (
+                              <span className="last-message">
+                                {conversations[user.id][conversations[user.id].length - 1].text.substring(0, 20)}
+                                {conversations[user.id][conversations[user.id].length - 1].text.length > 20 ? '...' : ''}
+                              </span>
+                            )}
+                          </div>
+                          {unreadCount > 0 && (
+                            <span className="unread-badge">{unreadCount}</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <div className="chat-area">
+            {selectedUser ? (
+              <>
+                <div className="chat-header">
+                  <div className="user-avatar">
+                    {selectedUser.avatar_url ? (
+                      <img src={selectedUser.avatar_url} alt={selectedUser.username} />
                     ) : (
-                      conversations[selectedUser].map((msg, index) => (
+                      <span>{selectedUser.username.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="user-info">
+                    <h3>{selectedUser.username}</h3>
+                    <span className="user-status">
+                      {selectedUser.is_online ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="messages-list">
+                  {!conversations[selectedUser.id] || conversations[selectedUser.id].length === 0 ? (
+                    <div className="empty-state">
+                      <span className="empty-icon">💬</span>
+                      <p>No messages yet</p>
+                      <p className="empty-hint">Start the conversation</p>
+                    </div>
+                  ) : (
+                    conversations[selectedUser.id].map((msg, index) => {
+                      const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
+                      const messageDate = new Date(msg.timestamp);
+                      
+                      return (
                         <div 
                           key={index} 
-                          className={`message ${msg.sender === (userState.user?.username || 'Me') ? 'sent' : 'received'}`}
+                          className={`message ${isSentByMe ? 'sent' : 'received'}`}
                         >
                           <div className="message-content">
                             <p>{msg.text}</p>
                             <span className="message-time">
-                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
-                      ))
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                  
-                  <div className="message-input-container">
-                    <input
-                      type="text"
-                      className="room-input"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Введите сообщение..."
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    />
-                    <button 
-                      className="room-btn room-btn-primary"
-                      onClick={handleSendMessage}
-                      disabled={!message.trim() || loading}
-                    >
-                      Отправить
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="empty-state">
-                  <span className="empty-icon">👈</span>
-                  <p>Выберите пользователя для начала общения</p>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-              )}
-            </div>
+                
+                <div className="message-input-container">
+                  <input
+                    type="text"
+                    className="message-input"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  />
+                  <button 
+                    className="send-btn"
+                    onClick={handleSendMessage}
+                    disabled={!message.trim() || loading}
+                  >
+                    Send
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">
+                <span className="empty-icon">👈</span>
+                <p>Select a contact to start chatting</p>
+                <p className="empty-hint">Or search for new users</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
