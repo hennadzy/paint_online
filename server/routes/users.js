@@ -234,7 +234,6 @@ router.get('/messages/:userId', authenticate, async (req, res) => {
   }
 });
 
-// Отправка личного сообщения через HTTP (работает без WebSocket / вне комнаты)
 router.post('/messages', authenticate, async (req, res) => {
   try {
     const { toUserId, message, timestamp } = req.body;
@@ -248,7 +247,6 @@ router.post('/messages', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Message is empty after sanitization' });
     }
 
-    // Проверяем, что получатель существует
     const { pgPool } = require('../config/db');
     const recipientCheck = await pgPool.query(
       'SELECT id, username FROM users WHERE id = $1 AND is_deleted IS NOT TRUE',
@@ -262,14 +260,11 @@ router.post('/messages', authenticate, async (req, res) => {
     const ts = timestamp || Date.now();
     const fromUserId = req.user.userId;
 
-    // Получаем username отправителя
     const senderRow = await pgPool.query('SELECT username FROM users WHERE id = $1', [fromUserId]);
     const fromUsername = senderRow.rows[0]?.username || fromUserId;
 
-    // Сохраняем в БД
     const msgId = await PersonalMessageStore.saveMessage(fromUserId, toUserId, sanitized, ts);
 
-    // Пытаемся доставить через WebSocket если получатель онлайн
     const WebSocketHandler = require('../services/WebSocketHandler');
     await WebSocketHandler.deliverPersonalMessageToUser(
       toUserId, fromUserId, fromUsername, sanitized, ts, msgId

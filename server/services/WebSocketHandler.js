@@ -7,7 +7,6 @@ const { verifyToken } = require('../utils/jwt');
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
-    // Глобальный реестр: userId -> ws (для маршрутизации личных сообщений)
     this.userSockets = new Map();
   }
 
@@ -43,7 +42,6 @@ async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
     
-    // Verify token and check if user is privileged
     const payload = verifyToken(token);
     const isPrivileged = payload && (payload.role === 'admin' || payload.role === 'superadmin');
     
@@ -85,12 +83,8 @@ async handleConnection(ws, msg) {
 
     const userId = payload.userId || null;
 
-    // Сохраняем userId и username прямо на объекте ws для доступа без RoomManager
     ws._userId = userId;
     ws._username = username;
-    // Примечание: регистрация в userSockets теперь происходит только через
-    // /ws/personal (handlePersonalAuth). Комнатные сокеты не перезаписывают
-    // персональный сокет пользователя.
     
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
@@ -206,7 +200,6 @@ async handleChat(ws, msg) {
   }
 
   async handlePersonalMessage(ws, msg) {
-    // Используем userId прямо с ws объекта (не требует нахождения в комнате)
     const userId = ws._userId;
     const senderUsername = ws._username;
     if (!userId) return;
@@ -220,10 +213,8 @@ async handleChat(ws, msg) {
     const PersonalMessageStore = require('./PersonalMessageStore');
     const ts = timestamp || Date.now();
 
-    // Сохраняем в БД (delivered=false по умолчанию)
     const msgId = await PersonalMessageStore.saveMessage(userId, toUserId, sanitizedMessage, ts);
 
-    // Если получатель онлайн — доставляем сразу с fromUsername
     const recipientWs = this.userSockets.get(toUserId);
     if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
       recipientWs.send(JSON.stringify({
@@ -233,17 +224,12 @@ async handleChat(ws, msg) {
         message: sanitizedMessage,
         timestamp: ts
       }));
-      // Помечаем как доставленное
       if (msgId) {
         await PersonalMessageStore.markDelivered([msgId]);
       }
     }
   }
 
-  /**
-   * Публичный метод для доставки личного сообщения через WebSocket
-   * (используется из HTTP-эндпоинта)
-   */
   async deliverPersonalMessageToUser(toUserId, fromUserId, fromUsername, message, timestamp, msgId) {
     const recipientWs = this.userSockets.get(toUserId);
     if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
@@ -321,7 +307,6 @@ async handleChat(ws, msg) {
   async handleClose(ws) {
     this.wsMessageLimits.delete(ws);
 
-    // Удаляем из глобального реестра
     for (const [uid, userWs] of this.userSockets.entries()) {
       if (userWs === ws) {
         this.userSockets.delete(uid);
@@ -349,12 +334,6 @@ async handleChat(ws, msg) {
     ws.on('error', () => {});
   }
 
-  // ─── Personal WebSocket connection (/ws/personal) ───────────────────────────
-
-  /**
-   * Entry point for /ws/personal connections.
-   * Uses the user's auth token (not a room token).
-   */
   setupPersonalConnection(ws) {
     ws._id = `ws_personal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     ws._isPersonalConnection = true;
@@ -376,7 +355,6 @@ async handleChat(ws, msg) {
           this.handlePersonalAuth(ws, msg);
           break;
         case 'personalMessage':
-          // Only allow sending after authentication
           if (ws._userId) {
             this.handlePersonalMessage(ws, msg);
           }
@@ -392,8 +370,6 @@ async handleChat(ws, msg) {
       return;
     }
 
-    // Auth tokens (from login) are signed with the same JWT_SECRET but contain
-    // { userId, username, role } — no roomId field.
     const { verifyToken: verifyAuthToken } = require('../utils/auth');
     const payload = verifyAuthToken(token);
 
@@ -405,13 +381,10 @@ async handleChat(ws, msg) {
     ws._userId = payload.userId;
     ws._username = payload.username || payload.userId;
 
-    // Register in the global userSockets map so personal messages can be routed
     this.userSockets.set(payload.userId, ws);
 
-    // Deliver any messages that arrived while the user was offline
     await this.deliverPendingMessages(ws, payload.userId);
 
-    // Confirm authentication to the client
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ method: 'authenticated', userId: payload.userId }));
     }
@@ -420,8 +393,6 @@ async handleChat(ws, msg) {
   handlePersonalConnectionClose(ws) {
     this.wsMessageLimits.delete(ws);
 
-    // Remove from userSockets only if this socket is still the current entry
-    // (it may have been overwritten by a newer connection)
     if (ws._userId) {
       const current = this.userSockets.get(ws._userId);
       if (current === ws) {

@@ -63,7 +63,6 @@ export default class Fill extends Tool {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    // Парсим цвет заливки (поддержка hex и rgb)
     let fillR, fillG, fillB;
     if (fillColor.startsWith('#')) {
       const hex = fillColor.replace('#', '');
@@ -77,7 +76,6 @@ export default class Fill extends Tool {
         fillB = parseInt(hex.slice(4, 6), 16);
       }
     } else {
-      // Fallback: чёрный
       fillR = 0; fillG = 0; fillB = 0;
     }
 
@@ -87,15 +85,12 @@ export default class Fill extends Tool {
     const startB = data[startPos + 2];
     const startA = data[startPos + 3];
 
-    // Не заливаем, если цвет уже совпадает
     if (startR === fillR && startG === fillG && startB === fillB && startA === 255) {
       return;
     }
 
-    // Порог схожести цветов — для захвата антиалиасированных пикселей на границах
     const threshold = 32;
 
-    // Быстрая проверка совпадения цвета с начальным (без sqrt для скорости)
     const matchesStartColor = (pos) => {
       const dr = data[pos]     - startR;
       const dg = data[pos + 1] - startG;
@@ -104,7 +99,6 @@ export default class Fill extends Tool {
       return (dr * dr + dg * dg + db * db + da * da) <= threshold * threshold * 4;
     };
 
-    // Установка цвета пикселя (без блендинга — чистая заливка как в Paint)
     const setColor = (pos) => {
       data[pos]     = fillR;
       data[pos + 1] = fillG;
@@ -112,11 +106,8 @@ export default class Fill extends Tool {
       data[pos + 3] = 255;
     };
 
-    // Используем Uint8Array для отслеживания посещённых пикселей — O(1) доступ
     const visited = new Uint8Array(width * height);
 
-    // Scanline flood fill (стек вместо очереди — pop() O(1), не shift() O(n))
-    // Каждый элемент стека: [x, y]
     const stack = [[x, y]];
 
     while (stack.length > 0) {
@@ -128,19 +119,16 @@ export default class Fill extends Tool {
       const pos = (ny * width + nx) * 4;
       if (!matchesStartColor(pos)) continue;
 
-      // Сканируем влево до границы
       let west = nx;
       while (west > 0 && !visited[ny * width + (west - 1)] && matchesStartColor((ny * width + (west - 1)) * 4)) {
         west--;
       }
 
-      // Сканируем вправо до границы
       let east = nx;
       while (east < width - 1 && !visited[ny * width + (east + 1)] && matchesStartColor((ny * width + (east + 1)) * 4)) {
         east++;
       }
 
-      // Заливаем всю горизонтальную линию от west до east
       for (let i = west; i <= east; i++) {
         const idx = ny * width + i;
         if (!visited[idx]) {
@@ -149,7 +137,6 @@ export default class Fill extends Tool {
         }
       }
 
-      // Добавляем строки выше и ниже в стек
       for (let i = west; i <= east; i++) {
         if (ny > 0 && !visited[(ny - 1) * width + i]) {
           const upPos = ((ny - 1) * width + i) * 4;

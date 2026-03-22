@@ -139,8 +139,6 @@ const Canvas = observer(() => {
     if (!isMobilePortrait) return;
 
     const centerContainer = (container) => {
-      // Центрируем холст через scrollLeft/scrollTop, т.к. justify-content: flex-start
-      // используется на мобильном portrait для доступности левого края при увеличении.
       const scrollX = Math.max(0, (container.scrollWidth - container.clientWidth) / 2);
       const scrollY = Math.max(0, (container.scrollHeight - container.clientHeight) / 2);
       container.scrollLeft = scrollX;
@@ -153,7 +151,6 @@ const Canvas = observer(() => {
         const availableW = container.clientWidth - 20;
         const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
         canvasState.setZoom(fitZoom);
-        // Центрируем после применения зума (размеры меняются после рендера)
         requestAnimationFrame(() => centerContainer(container));
       }
     };

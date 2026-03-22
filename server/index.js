@@ -138,8 +138,6 @@ app.ws('/', (ws, req) => {
   WebSocketHandler.setupConnection(ws);
 });
 
-// Dedicated WebSocket endpoint for personal messages.
-// Uses the user's auth token (not a room token) — see WebSocketHandler.handlePersonalAuth.
 app.ws('/ws/personal', (ws, req) => {
   WebSocketHandler.setupPersonalConnection(ws);
 });
@@ -295,7 +293,6 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`);
     } catch (_) { }
 
-    // Добавляем недостающие колонки в таблицу users
     try {
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false`);
     } catch (_) { }
@@ -306,7 +303,6 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
     } catch (_) { }
 
-    // Таблица личных сообщений
     try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS personal_messages (

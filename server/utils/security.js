@@ -184,7 +184,6 @@ const sanitizeUsername = (username, isPrivileged = false) => {
   
   sanitized = sanitized.replace(/\s+/g, ' ');
   
-  // Skip dangerous patterns check for privileged users (admins)
   if (!isPrivileged) {
     const dangerousPatterns = [
       /admin/gi,

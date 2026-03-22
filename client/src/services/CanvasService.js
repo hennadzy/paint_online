@@ -344,27 +344,22 @@ drawPolygonStroke(ctx, stroke) {
     const startB = data[startPos + 2];
     const startA = data[startPos + 3];
 
-    // Don't fill if the target color is the same as the fill color
     if (startR === fillR && startG === fillG && startB === fillB) {
         return;
     }
 
-    // Color similarity threshold (0-255)
     const threshold = 5;
 
-    // Check if a pixel matches the start color within the threshold
     const matchesStartColor = (pos) => {
         const r = data[pos];
         const g = data[pos + 1];
         const b = data[pos + 2];
         const a = data[pos + 3];
         
-        // Check alpha separately - we only want to fill fully opaque or transparent areas
         if (Math.abs(a - startA) > threshold) {
             return false;
         }
         
-        // Calculate color distance using a simple Euclidean distance
         const colorDist = Math.sqrt(
             Math.pow(r - startR, 2) + 
             Math.pow(g - startG, 2) + 
@@ -374,9 +369,7 @@ drawPolygonStroke(ctx, stroke) {
         return colorDist <= threshold;
     };
 
-    // Set the color with anti-aliasing at edges
     const setColor = (pos, strength = 1) => {
-        // Full strength fill
         if (strength >= 0.99) {
             data[pos] = fillR;
             data[pos + 1] = fillG;
@@ -385,16 +378,13 @@ drawPolygonStroke(ctx, stroke) {
             return;
         }
         
-        // Blend with existing color for anti-aliasing
         data[pos] = Math.round(data[pos] * (1 - strength) + fillR * strength);
         data[pos + 1] = Math.round(data[pos + 1] * (1 - strength) + fillG * strength);
         data[pos + 2] = Math.round(data[pos + 2] * (1 - strength) + fillB * strength);
         data[pos + 3] = Math.max(data[pos + 3], Math.round(255 * strength));
     };
 
-    // Use a queue for breadth-first fill (more efficient for large areas)
     const pixelStack = [[x, y]];
-    // Keep track of visited pixels to avoid revisiting
     const visited = new Set();
     const getKey = (nx, ny) => `${nx},${ny}`;
 
@@ -414,10 +404,8 @@ drawPolygonStroke(ctx, stroke) {
 
         visited.add(key);
         
-        // Fill current pixel
         setColor(currentPos);
 
-        // Scan west and east to fill and find boundaries
         let west = nx;
         while (west > 0 && matchesStartColor((ny * width + (west - 1)) * 4)) {
             west--;
@@ -431,29 +419,24 @@ drawPolygonStroke(ctx, stroke) {
             east++;
             const eastPos = (ny * width + east) * 4;
             setColor(eastPos);
-            visited.add(getKey(east, ny));
+        visited.add(getKey(east, ny));
         }
 
-        // Check pixels above and below the filled line
         for (let i = west; i <= east; i++) {
-            // Check pixel above
             if (ny > 0) {
                 const upPos = ((ny - 1) * width + i) * 4;
                 if (matchesStartColor(upPos) && !visited.has(getKey(i, ny - 1))) {
                     pixelStack.push([i, ny - 1]);
                 } else if (!visited.has(getKey(i, ny - 1))) {
-                    // Add anti-aliasing at the edge
                     setColor(upPos, 0.5);
                 }
             }
             
-            // Check pixel below
             if (ny < height - 1) {
                 const downPos = ((ny + 1) * width + i) * 4;
                 if (matchesStartColor(downPos) && !visited.has(getKey(i, ny + 1))) {
                     pixelStack.push([i, ny + 1]);
                 } else if (!visited.has(getKey(i, ny + 1))) {
-                    // Add anti-aliasing at the edge
                     setColor(downPos, 0.5);
                 }
             }

@@ -90,12 +90,10 @@ function validateUsername(username) {
   
   const lower = trimmed.toLowerCase();
   
-  // Запрещаем создавать новые имена "admin", но разрешаем существующему админу входить
   if (lower === 'admin') {
     return { valid: false, error: `Имя "${trimmed}" зарезервировано системой` };
   }
   
-  // Проверка на запрещенные слова
   const forbidden = ['moderator', 'system', 'bot', 'null', 'undefined'];
   for (const word of forbidden) {
     if (lower.includes(word)) {

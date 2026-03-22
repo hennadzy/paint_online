@@ -77,24 +77,20 @@ WebSocketService.on('usersList', ({ users }) => {
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
       
-      // Очищаем существующие штрихи, чтобы предотвратить дублирование
       HistoryService.clearStrokes();
       
-      // Очищаем буфер холста
       if (CanvasService.bufferCtx) {
         CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
         CanvasService.bufferCtx.fillStyle = 'white';
         CanvasService.bufferCtx.fillRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
       }
       
-      // Обновляем отмененные ID штрихов
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
       } else {
         this.cancelledStrokeIds = [];
       }
       
-      // Фильтруем отмененные штрихи и удаляем дубликаты
       const uniqueStrokeIds = new Set();
       const filteredStrokes = strokes
         .filter(s => !this.cancelledStrokeIds.includes(s.id))
@@ -106,12 +102,9 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
           return true;
         });
       
-      // Устанавливаем отфильтрованные штрихи
       HistoryService.setStrokes(filteredStrokes);
       
-      // Перестраиваем буфер с отфильтрованными штрихами
       CanvasService.rebuildBuffer(filteredStrokes, () => {
-        // Устанавливаем масштаб 1 только при первом входе
         if (this.zoom === 1) {
           setTimeout(() => this.saveThumbnail(), 500);
         }

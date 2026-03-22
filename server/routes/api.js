@@ -233,7 +233,6 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
 
     let username;
     if (isPrivileged) {
-      // For privileged users, allow "Admin" username directly
       if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
         username = 'Admin';
       } else {
@@ -301,7 +300,6 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
 
     let username;
     if (isPrivileged) {
-      // For privileged users, allow "Admin" username directly
       if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
         username = 'Admin';
       } else {

@@ -46,8 +46,6 @@ html, body {
   max-width: 100%;
   max-height: 100%;
   overflow: auto;
-  // На мобильном portrait justify-content: center блокирует прокрутку к левому краю.
-  // Переопределяется в media query ниже.
   scrollbar-width: thick;
   scrollbar-color: #ff8533 rgba(103, 103, 103, 0.6);
   
@@ -360,9 +358,6 @@ button:active {
     width: 100%;
     position: relative;
     display: flex;
-    // flex-start вместо center — позволяет прокручивать к левому краю при увеличении.
-    // justify-content: center блокирует scrollLeft < 0, делая левый край недоступным.
-    // Центрирование выполняется через scrollLeft/scrollTop в JS (Canvas.jsx).
     justify-content: flex-start;
     align-items: flex-start;
     overflow: auto;
@@ -386,7 +381,6 @@ button:active {
     min-width: 100%;
     height: max-content;
     min-height: 100%;
-    /* Добавляем отступы для обеспечения возможности прокрутки к краям (Issue #5) */
     padding: 20px;
   }
 
@@ -962,7 +956,6 @@ button:active {
   }
 }
 
-// Mobile vertical chat layout (только портрет; в ландшафте — структура как на ПК)
 @media (max-width: 768px) and (orientation: portrait) {
   .chat {
     flex-direction: row;
@@ -1052,7 +1045,6 @@ button:active {
     }
   }
   
-  // Hide invite button in top menu on mobile
   .invite-btn-desktop {
     display: none;
   }

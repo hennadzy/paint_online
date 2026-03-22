@@ -50,7 +50,6 @@ const validateUsername = (username, isPrivileged = false) => {
     };
   }
 
-  // Skip dangerous words check for privileged users (admins)
   if (!isPrivileged) {
     const dangerousWords = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
     const lowerUsername = trimmed.toLowerCase();
@@ -100,8 +99,6 @@ const RoomInterface = observer(({ roomId }) => {
     let profileUsername = userState.user.username.trim();
     if (profileUsername.length < 2) return;
 
-    // If the user is an admin and their username is "Admin", use it directly
-    // Otherwise, validate the username
     if (!isPrivilegedUser && profileUsername.toLowerCase() === 'admin') {
       profileUsername = 'User' + Math.floor(Math.random() * 1000);
     }

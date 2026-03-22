@@ -9,7 +9,6 @@ class UserState {
  error = null;
  activityRooms = [];
  userRooms = [];
- // Входящие личные сообщения, полученные пока модалка закрыта
  incomingPersonalMessages = [];
 
  constructor() {

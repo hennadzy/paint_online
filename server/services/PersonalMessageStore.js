@@ -1,9 +1,6 @@
 const { pgPool } = require('../config/db');
 
 class PersonalMessageStore {
-  /**
-   * Сохранить сообщение в БД
-   */
   async saveMessage(fromUserId, toUserId, message, timestamp) {
     try {
       const result = await pgPool.query(
@@ -18,9 +15,6 @@ class PersonalMessageStore {
     }
   }
 
-  /**
-   * Получить недоставленные сообщения для пользователя
-   */
   async getPendingMessages(userId) {
     try {
       const result = await pgPool.query(
@@ -39,9 +33,6 @@ class PersonalMessageStore {
     }
   }
 
-  /**
-   * Пометить сообщения как доставленные
-   */
   async markDelivered(messageIds) {
     if (!messageIds || messageIds.length === 0) return;
     try {
@@ -54,9 +45,6 @@ class PersonalMessageStore {
     }
   }
 
-  /**
-   * Получить историю переписки между двумя пользователями
-   */
   async getHistory(userId1, userId2, limit = 100) {
     try {
       const result = await pgPool.query(

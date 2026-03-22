@@ -12,13 +12,11 @@
   box-sizing: border-box;
 }
 
-// Ensure html and body also have the background and cover full height
 html, body {
   background: #1a1a1a !important;
   min-height: 100%;
 }
 
-// Admin route renders inside `.main-content--admin` which scrolls independently
 .main-content--admin {
   background: #1a1a1a !important;
 }
@@ -124,10 +122,8 @@ html, body {
 
 .admin-content {
   padding: 30px;
-  // Full width - no max-width constraint
 }
 
-// Stats Cards
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -162,7 +158,6 @@ html, body {
   }
 }
 
-// Tables
 .admin-table-container {
   background: #2a2a2a;
   border-radius: 12px;
@@ -193,7 +188,6 @@ html, body {
   }
 }
 
-// Filters
 .admin-filters {
   display: flex;
   align-items: center;
@@ -445,7 +439,6 @@ html, body {
   }
 }
 
-// Pagination
 .admin-pagination {
   display: flex;
   justify-content: center;
@@ -492,7 +485,6 @@ html, body {
   }
 }
 
-// Modal
 .admin-modal-overlay {
   position: fixed;
   inset: 0;
@@ -597,7 +589,6 @@ html, body {
   }
 }
 
-// Confirm Dialog
 .admin-confirm {
   text-align: center;
 
@@ -631,7 +622,6 @@ html, body {
   }
 }
 
-// Room Details
 .admin-room-details {
   &__info {
     display: grid;
@@ -664,7 +654,6 @@ html, body {
   }
 }
 
-// Loading
 .admin-loading {
   display: flex;
   align-items: center;
@@ -685,7 +674,6 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
-// Empty state
 .admin-empty {
   text-align: center;
   padding: 60px 20px;
@@ -701,7 +689,6 @@ html, body {
   }
 }
 
-// Responsive
 @media (max-width: 768px) {
   .admin-header {
     padding: 12px 15px;

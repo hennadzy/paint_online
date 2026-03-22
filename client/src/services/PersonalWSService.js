@@ -1,9 +1,3 @@
-/**
- * PersonalWSService — dedicated WebSocket service for personal messages.
- * Connects to /ws/personal endpoint using the user's auth token (not room token).
- * Stays connected as long as the user is authenticated.
- */
-
 const WS_URL = window.location.hostname === 'localhost'
   ? 'ws://localhost:5000'
   : 'wss://paint-online-back.onrender.com';
@@ -22,14 +16,9 @@ class PersonalWSService {
     this._reconnectTimer = null;
   }
 
-  /**
-   * Connect to /ws/personal with the user's auth token.
-   * Safe to call multiple times — won't reconnect if already open.
-   */
   connect(token) {
     if (!token) return;
 
-    // Already connected with same token — nothing to do
     if (
       this.token === token &&
       this.socket &&
@@ -39,7 +28,6 @@ class PersonalWSService {
       return;
     }
 
-    // Store token and enable auto-reconnect
     this.token = token;
     this.shouldReconnect = true;
     this.reconnectAttempts = 0;
@@ -51,9 +39,8 @@ class PersonalWSService {
   _openSocket() {
     if (!this.token || !this.shouldReconnect) return;
 
-    // Close existing socket cleanly before opening a new one
     if (this.socket) {
-      this.socket.onclose = null; // prevent reconnect loop from old socket
+      this.socket.onclose = null;
       this.socket.onerror = null;
       try { this.socket.close(); } catch (_) {}
       this.socket = null;
@@ -66,7 +53,6 @@ class PersonalWSService {
       this.socket.onopen = () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
-        // Send auth message immediately after connection
         this._rawSend({ method: 'auth', token: this.token });
       };
 
@@ -78,7 +64,6 @@ class PersonalWSService {
       };
 
       this.socket.onerror = () => {
-        // onclose will fire after onerror — reconnect logic is there
       };
 
       this.socket.onclose = () => {
@@ -96,7 +81,6 @@ class PersonalWSService {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
 
     this.reconnectAttempts++;
-    // Exponential back-off capped at 30 s
     const delay = Math.min(
       this.baseReconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1),
       30000
@@ -115,7 +99,6 @@ class PersonalWSService {
     }
   }
 
-  /** Disconnect and stop auto-reconnect (e.g. on logout). */
   disconnect() {
     this.shouldReconnect = false;
     this.isAuthenticated = false;
@@ -133,7 +116,6 @@ class PersonalWSService {
     this.reconnectAttempts = 0;
   }
 
-  /** Send a personal message to another user. */
   sendPersonalMessage(toUserId, message, timestamp) {
     return this._rawSend({
       method: 'personalMessage',

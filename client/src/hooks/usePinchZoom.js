@@ -88,10 +88,7 @@ export function usePinchZoom(containerRef) {
 
           canvasState.setZoom(newZoom);
 
-          // Убедимся, что прокрутка работает корректно на мобильных устройствах
           requestAnimationFrame(() => {
-            // Вычисляем новые координаты прокрутки и ограничиваем в допустимых пределах,
-            // чтобы гарантировать доступность всех краёв (включая левый) и корректную работу ползунков.
             const rawScrollLeft = canvasPointX * newZoom - viewportX;
             const rawScrollTop = canvasPointY * newZoom - viewportY;
 
@@ -104,7 +101,6 @@ export function usePinchZoom(containerRef) {
             container.scrollLeft = clampedLeft;
             container.scrollTop = clampedTop;
 
-            // Повторная корректировка после возможной перерисовки контента
             requestAnimationFrame(() => {
               const maxL = Math.max(0, container.scrollWidth - container.clientWidth);
               const maxT = Math.max(0, container.scrollHeight - container.clientHeight);

@@ -12,7 +12,6 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overscroll-behavior: contain;
 
-  // Темная тема
   &.dark-theme {
     background-color: #222;
     color: #eee;
@@ -105,7 +104,6 @@
 
 .sidebar {
   width: 300px;
-  // Убираем border-right — он создавал "разделитель справа" (Issue #2)
   border-right: none;
   display: flex;
   flex-direction: column;
@@ -173,7 +171,6 @@
   width: 100%;
 }
 
-// Issue #2: контакт занимает всю строку
 .user-item {
   display: flex;
   align-items: center;
@@ -183,8 +180,8 @@
   width: 100%;
   box-sizing: border-box;
   transition: background-color 0.15s ease;
-  margin-right: 0; /* Убираем отступ справа */
-  border-right: none; /* Убираем границу справа */
+  margin-right: 0;
+  border-right: none;
 
   &:hover {
     background-color: #f0f0f0;
@@ -272,10 +269,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  // border-left убран — он создавал "разделитель" между сайдбаром и чатом
 }
 
-// Когда пользователь не выбран — сайдбар занимает всю ширину, чат скрыт
 .personal-messages-container:not(.has-selected):not(.mobile-chat-only) {
   .sidebar {
     width: 100%;
@@ -287,7 +282,6 @@
   }
 }
 
-// Когда пользователь выбран — стандартный layout (сайдбар 280px + чат)
 .personal-messages-container.has-selected:not(.mobile-chat-only) {
   .sidebar {
     width: 280px;
@@ -428,7 +422,6 @@
   color: #aaa;
 }
 
-// Заголовок для всех версий
 .pm-header {
   display: flex;
   align-items: center;
@@ -465,11 +458,7 @@
   line-height: 1;
 }
 
-// ============================================================
-// Issue #1: Мобильный — полный экран без отступов
-// ============================================================
 @media (max-width: 768px) {
-  // Оверлей без отступов, без прокрутки фона
   .room-interface-overlay.pm-overlay-mobile {
     padding: 0 !important;
     overflow: hidden !important;
@@ -477,7 +466,6 @@
     justify-content: stretch !important;
   }
 
-  // Модалка занимает весь экран
   .personal-messages-modal {
     width: 100% !important;
     height: 100% !important;
@@ -493,7 +481,6 @@
     height: 100%;
   }
 
-  // Боковая панель — полная ширина на мобильном
   .sidebar {
     width: 100%;
     border-right: none;
@@ -502,7 +489,6 @@
     overflow-y: auto;
   }
 
-  // Область чата — полная ширина
   .chat-area {
     width: 100%;
     border-left: none;
@@ -511,7 +497,6 @@
     flex-direction: column;
   }
 
-  // Issue #2: контакты занимают всю строку на мобильном
   .user-item {
     width: 100%;
     box-sizing: border-box;
@@ -537,7 +522,6 @@
     padding: 8px 14px;
   }
 
-  // Показываем только один из компонентов в зависимости от состояния
   .personal-messages-container:not(.mobile-chat-only) .sidebar {
     display: flex;
     flex-direction: column;
@@ -556,14 +540,12 @@
     flex: 1;
   }
 
-  // Центрирование заголовка "Контакты" на мобильном
   .contacts-title {
     text-align: center;
     width: 100%;
   }
 }
 
-// Автоматическое применение темной темы при наличии системных настроек
 @media (prefers-color-scheme: dark) {
   .personal-messages-modal {
     &:not(.light-theme) {

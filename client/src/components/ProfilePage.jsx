@@ -313,7 +313,6 @@ const ProfilePage = observer(() => {
         </div>
       </div>
 
-      {/* Modals */}
       <CreateRoomModal 
         isOpen={showCreateRoomModal} 
         onClose={() => setShowCreateRoomModal(false)} 

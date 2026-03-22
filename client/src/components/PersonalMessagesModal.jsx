@@ -28,7 +28,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Загружаем контакты из localStorage при открытии
   useEffect(() => {
     if (!isOpen) return;
 
@@ -44,7 +43,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Загружаем историю для всех контактов при открытии модалки (Issue #4)
   useEffect(() => {
     if (!isOpen) return;
     const token = localStorage.getItem('token');
@@ -87,7 +85,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     loadAllHistory();
   }, [isOpen]);
 
-  // Обработчик входящих сообщений
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
 
@@ -106,10 +103,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     });
   }, []);
 
-  // Потребляем сообщения, накопленные в глобальном хранилище пока модалка была закрыта,
-  // а также мгновенно отображаем новые сообщения пока модалка открыта.
-  // App.jsx добавляет все входящие сообщения в userState.incomingPersonalMessages через
-  // PersonalWSService, поэтому здесь достаточно следить за длиной массива.
   useEffect(() => {
     if (!isOpen) return;
     if (userState.incomingPersonalMessages.length === 0) return;
@@ -117,7 +110,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     incoming.forEach(data => handleReceiveMessage(data));
   }, [isOpen, userState.incomingPersonalMessages.length, handleReceiveMessage]);
 
-  // Загружаем историю при выборе контакта
   useEffect(() => {
     if (!selectedUser) return;
 
@@ -201,7 +193,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setSearchQuery('');
   };
 
-  // Отправка через HTTP API (сохранение в БД + доставка получателю через WebSocket)
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
 
@@ -209,7 +200,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     const timestamp = Date.now();
     const myId = userState.user?.id || 'me';
 
-    // Оптимистично добавляем в UI
     setConversations(prev => {
       const next = { ...prev };
       if (!next[selectedUser.id]) next[selectedUser.id] = [];
@@ -219,7 +209,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setMessage('');
 
     try {
-      // Сохраняем через HTTP API — он же доставляет получателю через WebSocket
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/api/users/messages`,
@@ -228,7 +217,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       );
     } catch (error) {
       console.error('Error sending message:', error);
-      // Откатываем оптимистичное обновление при ошибке
       setConversations(prev => {
         const next = { ...prev };
         if (next[selectedUser.id]) {
@@ -395,11 +383,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                   ) : (
                     currentMessages.map((msg, index) => {
                       const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
-                      // Проверяем валидность timestamp и создаем объект Date
                       const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
                       const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
                       
-                      // Форматируем время с проверкой на валидность даты
                       const formattedTime = messageDate instanceof Date && !isNaN(messageDate) 
                         ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         : '00:00';

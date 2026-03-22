@@ -33,7 +33,6 @@ const App = observer(() => {
     const navigate = useNavigate();
     const hideGlobalUI = ['/profile', '/login', '/register', '/admin'].includes(location.pathname);
 
-    // Подключаем PersonalWSService при аутентификации и отключаем при выходе
     useEffect(() => {
         if (userState.isAuthenticated) {
             const token = localStorage.getItem('token');
@@ -45,7 +44,6 @@ const App = observer(() => {
         }
     }, [userState.isAuthenticated]);
 
-    // Глобальный слушатель личных сообщений через PersonalWSService
     useEffect(() => {
         const handlePersonalMessage = (data) => {
             userState.addIncomingPersonalMessage(data);
@@ -54,8 +52,6 @@ const App = observer(() => {
         return () => PersonalWSService.off('personalMessage', handlePersonalMessage);
     }, []);
 
-    // Запасной слушатель через комнатный WebSocket (на случай если пользователь
-    // находится в комнате и PersonalWSService временно недоступен)
     useEffect(() => {
         const handlePersonalMessage = (data) => {
             userState.addIncomingPersonalMessage(data);

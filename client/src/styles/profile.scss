@@ -89,7 +89,7 @@
 
       @media (max-width: 768px) {
         display: inline;
-        font-size: 20px;  /* меньше крестик */
+        font-size: 20px;
         line-height: 1;
       }
     }
@@ -105,7 +105,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0;       /* текст скрываем, оставляем только иконку */
+      font-size: 0;
     }
   }
 }
@@ -542,7 +542,6 @@
   justify-content: flex-end;
 }
 
-/* Create Room Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -603,8 +602,6 @@
   cursor: pointer;
 }
 
-
-/* Profile page action buttons */
 .profile-actions {
   display: flex;
   gap: 10px;
@@ -659,8 +656,6 @@
   to { transform: rotate(360deg); }
 }
 
-// Мобильная прокрутка для Личного кабинета
-// Переопределяем жёсткие настройки из canvas.scss
 @media (max-width: 768px) {
   html,
   body {
