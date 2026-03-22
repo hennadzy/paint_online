@@ -182,6 +182,24 @@ router.get('/me/activity-rooms', authenticate, async (req, res) => {
   }
 });
 
+router.get('/active', authenticate, async (req, res) => {
+  try {
+    const { pgPool } = require('../config/db');
+    const query = `
+      SELECT id, username, avatar_url, is_online, is_active, is_verified
+      FROM users
+      WHERE is_active IS NOT FALSE AND is_deleted IS NOT TRUE
+      ORDER BY is_online DESC, username ASC
+      LIMIT 50
+    `;
+    const result = await pgPool.query(query, []);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get active users error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/search', authenticate, async (req, res) => {
   try {
     const searchQuery = req.query.q;

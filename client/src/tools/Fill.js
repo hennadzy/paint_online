@@ -78,8 +78,8 @@ export default class Fill extends Tool {
         return;
     }
 
-    // Color similarity threshold (0-255)
-    const threshold = 5;
+    // Color similarity threshold (0-255) - увеличиваем для более точной заливки
+    const threshold = 10;
 
     // Check if a pixel matches the start color within the threshold
     const matchesStartColor = (pos) => {
@@ -127,6 +127,11 @@ export default class Fill extends Tool {
     const visited = new Set();
     const getKey = (nx, ny) => `${nx},${ny}`;
 
+    // Проверяем диагональные соседи для более точной заливки
+    const checkDiagonals = true;
+    // Сила сглаживания краев
+    const edgeAntiAlias = 0.7;
+
     while (pixelStack.length) {
         const [nx, ny] = pixelStack.shift();
         const key = getKey(nx, ny);
@@ -172,7 +177,7 @@ export default class Fill extends Tool {
                     pixelStack.push([i, ny - 1]);
                 } else if (!visited.has(getKey(i, ny - 1))) {
                     // Add anti-aliasing at the edge
-                    setColor(upPos, 0.5);
+                    setColor(upPos, edgeAntiAlias);
                 }
             }
             
@@ -183,7 +188,42 @@ export default class Fill extends Tool {
                     pixelStack.push([i, ny + 1]);
                 } else if (!visited.has(getKey(i, ny + 1))) {
                     // Add anti-aliasing at the edge
-                    setColor(downPos, 0.5);
+                    setColor(downPos, edgeAntiAlias);
+                }
+            }
+            
+            // Проверяем диагональные соседи для более точной заливки
+            if (checkDiagonals) {
+                // Верхний левый
+                if (ny > 0 && i > west) {
+                    const diagPos = ((ny - 1) * width + (i - 1)) * 4;
+                    if (matchesStartColor(diagPos) && !visited.has(getKey(i - 1, ny - 1))) {
+                        pixelStack.push([i - 1, ny - 1]);
+                    }
+                }
+                
+                // Верхний правый
+                if (ny > 0 && i < east) {
+                    const diagPos = ((ny - 1) * width + (i + 1)) * 4;
+                    if (matchesStartColor(diagPos) && !visited.has(getKey(i + 1, ny - 1))) {
+                        pixelStack.push([i + 1, ny - 1]);
+                    }
+                }
+                
+                // Нижний левый
+                if (ny < height - 1 && i > west) {
+                    const diagPos = ((ny + 1) * width + (i - 1)) * 4;
+                    if (matchesStartColor(diagPos) && !visited.has(getKey(i - 1, ny + 1))) {
+                        pixelStack.push([i - 1, ny + 1]);
+                    }
+                }
+                
+                // Нижний правый
+                if (ny < height - 1 && i < east) {
+                    const diagPos = ((ny + 1) * width + (i + 1)) * 4;
+                    if (matchesStartColor(diagPos) && !visited.has(getKey(i + 1, ny + 1))) {
+                        pixelStack.push([i + 1, ny + 1]);
+                    }
                 }
             }
         }

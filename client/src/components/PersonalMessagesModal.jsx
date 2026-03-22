@@ -4,6 +4,7 @@ import userState from '../store/userState';
 import WebSocketService from '../services/WebSocketService';
 import { API_URL } from '../store/canvasState';
 import axios from 'axios';
+import '../styles/personal-messages.scss';
 
 const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -14,8 +15,24 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const messagesEndRef = useRef(null);
   const searchInputRef = useRef(null);
+  
+  // Определяем, является ли устройство мобильным
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -202,8 +219,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       <div className="room-interface personal-messages-modal" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={onClose}>×</button>
         
-        <div className="personal-messages-container">
-          <div className="sidebar">
+        <div className={`personal-messages-container ${isMobileView && selectedUser ? 'show-chat' : 'show-contacts'}`}>
+          <div className={`sidebar ${isMobileView && selectedUser ? '' : 'active'}`}>
             <div className="search-container">
               <input
                 ref={searchInputRef}
@@ -324,6 +341,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
             {selectedUser ? (
               <>
                 <div className="chat-header">
+                  {isMobileView && (
+                    <button 
+                      className="back-to-contacts" 
+                      onClick={() => setSelectedUser(null)}
+                    >
+                      ←
+                    </button>
+                  )}
                   <div className="user-avatar">
                     {selectedUser.avatar_url ? (
                       <img src={selectedUser.avatar_url} alt={selectedUser.username} />
