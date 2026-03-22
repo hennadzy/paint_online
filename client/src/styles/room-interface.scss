@@ -869,6 +869,12 @@
     right: 5px;
     z-index: 10;
   }
+  
+  .room-item .room-item-with-actions .room-actions-dropdown .room-actions-trigger {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
 
   .room-item .room-item-with-actions .room-btn-join {
     width: 100%;

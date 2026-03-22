@@ -233,8 +233,13 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
 
     let username;
     if (isPrivileged) {
-      username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Admin';
+      // For privileged users, allow "Admin" username directly
+      if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
+        username = 'Admin';
+      } else {
+        username = sanitizeUsername(req.body.username || 'Admin');
+        if (!username || username.trim().length < 2) username = 'Admin';
+      }
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
@@ -296,8 +301,13 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => 
 
     let username;
     if (isPrivileged) {
-      username = sanitizeUsername(req.body.username || 'Admin');
-      if (!username || username.trim().length < 2) username = 'Admin';
+      // For privileged users, allow "Admin" username directly
+      if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
+        username = 'Admin';
+      } else {
+        username = sanitizeUsername(req.body.username || 'Admin');
+        if (!username || username.trim().length < 2) username = 'Admin';
+      }
     } else {
       const validation = validateUsername(req.body.username);
       if (!validation.valid) {
