@@ -88,9 +88,18 @@ function validateUsername(username) {
     return { valid: false, error: 'Имя может содержать только буквы, цифры, пробелы, _ и -' };
   }
   
+  // Check for exact matches with forbidden words for regular users
+  // This allows "Admin" for privileged users but prevents regular users from using it
   const forbidden = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
   const lower = trimmed.toLowerCase();
-  for (const word of forbidden) {
+  
+  // Check for exact match with forbidden words
+  if (forbidden.includes(lower)) {
+    return { valid: false, error: `Имя "${trimmed}" зарезервировано системой` };
+  }
+  
+  // Check for substrings in other cases
+  for (const word of ['moderator', 'system', 'bot', 'null', 'undefined']) {
     if (lower.includes(word)) {
       return { valid: false, error: `Имя не может содержать "${word}"` };
     }

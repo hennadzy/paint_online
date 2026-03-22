@@ -3,6 +3,8 @@ import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import { useNavigate } from 'react-router-dom';
 import RoomActionsDropdown from './RoomActionsDropdown';
+import CreateRoomModal from './CreateRoomModal';
+import PersonalMessagesModal from './PersonalMessagesModal';
 import '../styles/profile.scss';
 
 const EyeIcon = ({ visible, onClick }) => (
@@ -41,6 +43,8 @@ const ProfilePage = observer(() => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadError, setUploadError] = useState('');
+  const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
+  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -236,6 +240,29 @@ const ProfilePage = observer(() => {
 
             <hr className="profile-divider" />
 
+            <div className="profile-actions">
+              <button 
+                className="profile-action-btn" 
+                onClick={() => setShowCreateRoomModal(true)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <span>Создать комнату</span>
+              </button>
+              <button 
+                className="profile-action-btn"
+                onClick={() => setShowPersonalMessagesModal(true)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Личные сообщения</span>
+              </button>
+            </div>
+
             <div className="profile-section">
               <h2>Мои комнаты</h2>
               {userState.userRooms.length === 0 ? (
@@ -285,6 +312,17 @@ const ProfilePage = observer(() => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <CreateRoomModal 
+        isOpen={showCreateRoomModal} 
+        onClose={() => setShowCreateRoomModal(false)} 
+      />
+      
+      <PersonalMessagesModal 
+        isOpen={showPersonalMessagesModal} 
+        onClose={() => setShowPersonalMessagesModal(false)} 
+      />
     </div>
   );
 });

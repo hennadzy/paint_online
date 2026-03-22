@@ -224,6 +224,31 @@ class UserState {
   async updateRoomVisibility(roomId, { isPublic, password }) {
     await axios.patch(`${API_URL}/rooms/${roomId}`, { isPublic, password });
   }
+
+  async createRoom(name, isPublic, password = null) {
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await axios.post(`${API_URL}/rooms`, {
+        name,
+        isPublic,
+        password: isPublic ? null : password
+      });
+      
+      runInAction(() => {
+        this.loading = false;
+      });
+      
+      await this.fetchUserRooms();
+      return response.data.roomId;
+    } catch (error) {
+      runInAction(() => {
+        this.error = error.response?.data?.error || 'Ошибка создания комнаты';
+        this.loading = false;
+      });
+      throw error;
+    }
+  }
 }
 
 export default new UserState();

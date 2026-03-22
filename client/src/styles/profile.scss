@@ -542,6 +542,273 @@
   justify-content: flex-end;
 }
 
+/* Create Room Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #2a2a2a;
+  border-radius: 16px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #ffcc00;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* Personal Messages Modal Styles */
+.personal-messages-modal {
+  max-width: 800px;
+  width: 90%;
+  height: 80vh;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.personal-messages-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.users-list {
+  width: 30%;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.users-list h3 {
+  margin-top: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffcc00;
+}
+
+.users-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-item {
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-item.selected {
+  background-color: rgba(255, 204, 0, 0.2);
+}
+
+.message-count {
+  background-color: #ffcc00;
+  color: #1a1a1a;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.messages-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messages-header {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.messages-header h3 {
+  margin: 0;
+  color: #ffcc00;
+}
+
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 18px;
+  word-break: break-word;
+}
+
+.message.sent {
+  align-self: flex-end;
+  background-color: rgba(255, 204, 0, 0.2);
+}
+
+.message.received {
+  align-self: flex-start;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content p {
+  margin: 0;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  color: #aaa;
+  align-self: flex-end;
+  margin-top: 2px;
+}
+
+.message-input-container {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-input-container input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  margin-right: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.message-input-container button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ffcc00, #ff6699);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.message-input-container button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.no-user-selected {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #aaa;
+}
+
+.empty-message {
+  text-align: center;
+  color: #aaa;
+  margin: 20px 0;
+}
+
+/* Profile page action buttons */
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.profile-action-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  color: #fff;
+}
+
+.profile-action-btn:hover {
+  background: rgba(255, 204, 0, 0.2);
+}
+
+.profile-action-btn svg {
+  margin-bottom: 5px;
+  width: 24px;
+  height: 24px;
+}
+
+.profile-action-btn span {
+  font-size: 0.9rem;
+}
+
 .profile-loading {
   min-height: 100vh;
   display: flex;
