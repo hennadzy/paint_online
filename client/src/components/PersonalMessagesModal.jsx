@@ -209,7 +209,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                 ref={searchInputRef}
                 type="text"
                 className="search-input"
-                placeholder="Search users..."
+                placeholder="Поиск пользователей..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -226,7 +226,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
             {isSearching ? (
               <div className="search-results">
                 <div className="section-header">
-                  <h3>Search Results</h3>
+                  <h3>Результаты поиска</h3>
                   <button 
                     className="back-btn"
                     onClick={() => {
@@ -234,14 +234,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                       setSearchQuery('');
                     }}
                   >
-                    Back
+                    Назад
                   </button>
                 </div>
                 
                 {searchResults.length === 0 ? (
                   <div className="empty-state">
                     <span className="empty-icon">🔍</span>
-                    <p>No users found</p>
+                    <p>Пользователи не найдены</p>
                   </div>
                 ) : (
                   <ul className="users-list">
@@ -261,10 +261,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                         <div className="user-info">
                           <span className="user-name">{user.username}</span>
                           <span className="user-status">
-                            {user.is_online ? 'Online' : 'Offline'}
+                      {user.is_online ? 'В сети' : 'Не в сети'}
                           </span>
                         </div>
-                        <button className="add-user-btn">Add</button>
+                        <button className="add-user-btn">Добавить</button>
                       </li>
                     ))}
                   </ul>
@@ -272,12 +272,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
               </div>
             ) : (
               <div className="contacts">
-                <h3>Contacts</h3>
+                <h3>Контакты</h3>
                 {users.length === 0 ? (
                   <div className="empty-state">
                     <span className="empty-icon">👥</span>
-                    <p>No contacts yet</p>
-                    <p className="empty-hint">Search for users to start chatting</p>
+                    <p>Пока нет контактов</p>
+                    <p className="empty-hint">Найдите пользователей, чтобы начать общение</p>
                   </div>
                 ) : (
                   <ul className="users-list">
@@ -334,7 +334,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                   <div className="user-info">
                     <h3>{selectedUser.username}</h3>
                     <span className="user-status">
-                      {selectedUser.is_online ? 'Online' : 'Offline'}
+                      {selectedUser.is_online ? 'В сети' : 'Не в сети'}
                     </span>
                   </div>
                 </div>
@@ -343,8 +343,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                   {!conversations[selectedUser.id] || conversations[selectedUser.id].length === 0 ? (
                     <div className="empty-state">
                       <span className="empty-icon">💬</span>
-                      <p>No messages yet</p>
-                      <p className="empty-hint">Start the conversation</p>
+                      <p>Пока нет сообщений</p>
+                      <p className="empty-hint">Начните разговор</p>
                     </div>
                   ) : (
                     conversations[selectedUser.id].map((msg, index) => {
@@ -375,7 +375,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                     className="message-input"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    placeholder="Введите сообщение..."
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   />
                   <button 
@@ -383,15 +383,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                     onClick={handleSendMessage}
                     disabled={!message.trim() || loading}
                   >
-                    Send
+                    Отправить
                   </button>
                 </div>
               </>
             ) : (
               <div className="empty-state">
                 <span className="empty-icon">👈</span>
-                <p>Select a contact to start chatting</p>
-                <p className="empty-hint">Or search for new users</p>
+                <p>Выберите контакт, чтобы начать общение</p>
+                <p className="empty-hint">Или найдите новых пользователей</p>
               </div>
             )}
           </div>

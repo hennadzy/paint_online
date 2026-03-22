@@ -182,6 +182,29 @@ router.get('/me/activity-rooms', authenticate, async (req, res) => {
   }
 });
 
+router.get('/search', authenticate, async (req, res) => {
+  try {
+    const searchQuery = req.query.q;
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return res.json([]);
+    }
+
+    const { pgPool } = require('../config/db');
+    const query = `
+      SELECT id, username, avatar_url, is_online, is_active, is_verified
+      FROM users
+      WHERE username ILIKE $1 AND is_deleted IS NOT TRUE
+      ORDER BY is_online DESC, username ASC
+      LIMIT 20
+    `;
+    const result = await pgPool.query(query, [`%${searchQuery}%`]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
   try {
     const { roomId } = req.params;
