@@ -90,10 +90,10 @@ export function usePinchZoom(containerRef) {
 
           // Убедимся, что прокрутка работает корректно на мобильных устройствах
           requestAnimationFrame(() => {
-            // Вычисляем новые координаты прокрутки
-            // Вычисляем новые координаты прокрутки, не допуская отрицательных значений (Issue #5)
-            const newScrollLeft = Math.max(0, canvasPointX * newZoom - viewportX);
-            const newScrollTop = Math.max(0, canvasPointY * newZoom - viewportY);
+            // Вычисляем новые координаты прокрутки без ограничений на минимальные значения
+            // Это позволит прокручивать холст к левому краю (Issue #5)
+            const newScrollLeft = canvasPointX * newZoom - viewportX;
+            const newScrollTop = canvasPointY * newZoom - viewportY;
 
             container.scrollLeft = newScrollLeft;
             container.scrollTop = newScrollTop;

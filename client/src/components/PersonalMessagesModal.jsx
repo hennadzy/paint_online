@@ -197,7 +197,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setSearchQuery('');
   };
 
-  // Отправка через HTTP API (Issue #3) — работает всегда, не зависит от WebSocket
+  // Отправка через HTTP API и WebSocket (Issue #2) — мгновенная доставка
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
 
@@ -215,6 +215,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setMessage('');
 
     try {
+      // Отправляем через WebSocket для мгновенной доставки
+      WebSocketService.sendPersonalMessage(selectedUser.id, trimmed, timestamp);
+      
+      // Дублируем через HTTP API для надежности и сохранения в БД
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/api/users/messages`,
@@ -388,13 +392,21 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                   ) : (
                     currentMessages.map((msg, index) => {
                       const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
-                      const messageDate = new Date(msg.timestamp);
+                      // Проверяем валидность timestamp и создаем объект Date
+                      const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
+                      const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
+                      
+                      // Форматируем время с проверкой на валидность даты
+                      const formattedTime = messageDate instanceof Date && !isNaN(messageDate) 
+                        ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '00:00';
+                      
                       return (
                         <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
                           <div className="message-content">
                             <p>{msg.text}</p>
                             <span className="message-time">
-                              {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formattedTime}
                             </span>
                           </div>
                         </div>

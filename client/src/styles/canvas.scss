@@ -358,9 +358,9 @@ button:active {
     width: 100%;
     position: relative;
     display: flex;
-    /* Убираем центрирование — оно блокирует прокрутку к левому/верхнему краю при зуме */
-    justify-content: flex-start;
-    align-items: flex-start;
+    /* Возвращаем центрирование для начального отображения, но сохраняем возможность прокрутки */
+    justify-content: center;
+    align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     padding: 10px;
@@ -382,7 +382,8 @@ button:active {
     min-width: 100%;
     height: max-content;
     min-height: 100%;
-    /* margin: auto убран — он блокирует прокрутку к левому/верхнему краю при зуме (Issue #5) */
+    /* Добавляем отступы для обеспечения возможности прокрутки к краям (Issue #5) */
+    padding: 20px;
   }
 
   .canvas-wrapper {
