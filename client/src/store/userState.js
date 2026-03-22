@@ -9,6 +9,8 @@ class UserState {
  error = null;
  activityRooms = [];
  userRooms = [];
+ // Входящие личные сообщения, полученные пока модалка закрыта
+ incomingPersonalMessages = [];
 
  constructor() {
  makeAutoObservable(this);
@@ -215,6 +217,16 @@ class UserState {
     } catch (error) {
       console.error('Fetch activity rooms error', error);
     }
+  }
+
+  addIncomingPersonalMessage(msg) {
+    this.incomingPersonalMessages = [...this.incomingPersonalMessages, msg];
+  }
+
+  consumeIncomingPersonalMessages() {
+    const msgs = [...this.incomingPersonalMessages];
+    this.incomingPersonalMessages = [];
+    return msgs;
   }
 
   async deleteRoom(roomId) {

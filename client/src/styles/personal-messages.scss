@@ -272,7 +272,27 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-left: 1px solid #e0e0e0;
+  // border-left убран — он создавал "разделитель" между сайдбаром и чатом
+}
+
+// Когда пользователь не выбран — сайдбар занимает всю ширину, чат скрыт
+.personal-messages-container:not(.has-selected):not(.mobile-chat-only) {
+  .sidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  .chat-area {
+    display: none;
+  }
+}
+
+// Когда пользователь выбран — стандартный layout (сайдбар 280px + чат)
+.personal-messages-container.has-selected:not(.mobile-chat-only) {
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+  }
 }
 
 .chat-header {
@@ -595,9 +615,6 @@
         color: #aaa;
       }
 
-      .chat-area {
-        border-left-color: #444;
-      }
 
       .chat-header {
         border-bottom-color: #444;

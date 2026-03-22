@@ -14,6 +14,8 @@ import AuthPage from "./components/AuthPage";
 import AdminPage from "./components/AdminPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
+import userState from "./store/userState";
+import WebSocketService from "./services/WebSocketService";
 
 const isValidRoomId = (id) => /^[a-zA-Z0-9]{9}$/.test(id);
 
@@ -29,6 +31,15 @@ const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
     const hideGlobalUI = ['/profile', '/login', '/register', '/admin'].includes(location.pathname);
+
+    // Глобальный слушатель личных сообщений — активен всегда пока приложение открыто
+    useEffect(() => {
+        const handlePersonalMessage = (data) => {
+            userState.addIncomingPersonalMessage(data);
+        };
+        WebSocketService.on('personalMessage', handlePersonalMessage);
+        return () => WebSocketService.off('personalMessage', handlePersonalMessage);
+    }, []);
 
     useEffect(() => {
         const fallback = document.getElementById('server-404-fallback');

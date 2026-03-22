@@ -46,6 +46,8 @@ html, body {
   max-width: 100%;
   max-height: 100%;
   overflow: auto;
+  // На мобильном portrait justify-content: center блокирует прокрутку к левому краю.
+  // Переопределяется в media query ниже.
   scrollbar-width: thick;
   scrollbar-color: #ff8533 rgba(103, 103, 103, 0.6);
   
@@ -358,9 +360,11 @@ button:active {
     width: 100%;
     position: relative;
     display: flex;
-    /* Возвращаем центрирование для начального отображения, но сохраняем возможность прокрутки */
-    justify-content: center;
-    align-items: center;
+    // flex-start вместо center — позволяет прокручивать к левому краю при увеличении.
+    // justify-content: center блокирует scrollLeft < 0, делая левый край недоступным.
+    // Центрирование выполняется через scrollLeft/scrollTop в JS (Canvas.jsx).
+    justify-content: flex-start;
+    align-items: flex-start;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     padding: 10px;

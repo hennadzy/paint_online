@@ -107,11 +107,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     });
   }, []);
 
+  // Обрабатываем входящие сообщения из глобального хранилища.
+  // Глобальный слушатель в App.jsx накапливает сообщения даже когда модалка закрыта.
+  // Этот эффект срабатывает при открытии модалки и при каждом новом входящем сообщении.
   useEffect(() => {
     if (!isOpen) return;
-    WebSocketService.on('personalMessage', handleReceiveMessage);
-    return () => WebSocketService.off('personalMessage', handleReceiveMessage);
-  }, [isOpen, handleReceiveMessage]);
+    if (userState.incomingPersonalMessages.length === 0) return;
+    const incoming = userState.consumeIncomingPersonalMessages();
+    incoming.forEach(data => handleReceiveMessage(data));
+  }, [isOpen, userState.incomingPersonalMessages.length, handleReceiveMessage]);
 
   // Загружаем историю при выборе контакта
   useEffect(() => {
@@ -270,7 +274,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
           <button className="room-close-btn" onClick={onClose}>×</button>
         )}
 
-        <div className={`personal-messages-container${mobileShowChat ? ' mobile-chat-only' : ''}`}>
+        <div className={`personal-messages-container${mobileShowChat ? ' mobile-chat-only' : ''}${selectedUser ? ' has-selected' : ''}`}>
           {!mobileShowChat && (
             <div className="sidebar active">
               <div className="search-container">
