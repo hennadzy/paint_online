@@ -1,35 +1,13 @@
-# TODO — Исправления ЛС и мобильного холста
+# TODO: Fix Personal Messages Real-time Delivery
 
-Статус выполнения по задаче:
+## Root Cause
+Server rejects WS connection with `roomId='personal'` + auth token because auth token has no `roomId` field.
+`userSockets` map is never populated for profile-page users → messages not delivered in real-time.
 
-- [x] ЛС: мгновенное отображение сообщений
-  - Добавлена локальная подписка на WebSocket в `client/src/components/PersonalMessagesModal.jsx`:
-    - При открытой модалке подписываемся на событие `personalMessage` и сразу обновляем UI.
-    - Во избежание дублей, при активной подписке не потребляем буфер из `userState` (guard через `wsSubscribedRef`), при закрытии — отписка.
-- [x] Мобильный холст: доступ к левому краю при pinch-zoom
-  - В `client/src/hooks/usePinchZoom.js` введено расчетное ограничение `scrollLeft/scrollTop` в допустимый диапазон `[0, max]` после пересчёта координат, плюс повторная корректировка на следующий `requestAnimationFrame`.
-- [x] ЛС: контакты занимают всю ширину и без правого разделителя
-  - Актуальные стили уже есть в `client/src/styles/personal-messages.scss`:
-    - `.sidebar { border-right: none; }`
-    - `.users-list { width: 100%; }` и `.user-item { width: 100%; margin-right: 0; border-right: none; }`
-  - Конфликтующих старых стилей в `client/src/styles/profile.scss` на текущий момент нет (блок "Personal Messages Modal Styles" отсутствует), правки не потребовались.
-- [x] ЛС: убрать внешнюю рамку у сообщений
-  - После исключения конфликтов стилей внешний бокс/фон у сообщений берется только из `personal-messages.scss` (`.message-content`), внешних рамок нет.
+## Steps
 
-Проверки (ручное тестирование):
-- [ ] ЛС: в модалке «Контакты» элементы списка занимают всю ширину, справа отсутствует разделитель/граница.
-- [ ] ЛС: при открытой модалке входящие личные сообщения появляются мгновенно у обоих пользователей (без перезагрузки/переоткрытия).
-- [ ] ЛС: у сообщений видна только «внутренняя» карточка (`.message-content`), нет второй внешней рамки.
-- [ ] Мобильный холст: на телефоне в портретной ориентации при максимальном зуме можно домотать до левого края и всех сторон; ползунки и жесты работают корректно.
-
-Подсказки по тестированию:
-1) Откройте модалку ЛС с двух аккаунтов/браузеров. Отправьте сообщение — оно должно появиться сразу на обеих сторонах (WebSocket).
-2) Вкладка «Контакты» — каждый элемент тянется на 100% ширины контейнера, без правого бордера.
-3) Сообщения в чате ЛС не имеют внешней рамки: видна только стилизованная «плашка» `.message-content`.
-4) На мобильном: увеличьте холст щипком и убедитесь, что левый край (и остальные стороны) доступны прокруткой, как жестами, так и ползунками.
-
-Технические детали изменений:
-- `client/src/components/PersonalMessagesModal.jsx` — добавлен `wsSubscribedRef` и локальная подписка `WebSocketService.on('personalMessage', ...)`, с отпиской при закрытии модалки.
-- `client/src/hooks/usePinchZoom.js` — добавлено ограничение `scrollLeft/scrollTop` к диапазону `[0, max]` и повторная корректировка на кадре для стабильности.
-- `client/src/styles/personal-messages.scss` — уже содержит нужные стили: `.sidebar { border-right: none; }`, `.user-item { width: 100%; }`.
-- `client/src/styles/profile.scss` — актуальная версия файла не содержит конфликтующего блока «Personal Messages Modal Styles», поэтому правок в нём не потребовалось.
+- [x] 1. Create `client/src/services/PersonalWSService.js` — dedicated WS service for personal messages
+- [x] 2. Update `server/services/WebSocketHandler.js` — add personal connection handler, remove userSockets from room handleConnection
+- [x] 3. Update `server/index.js` — add `/ws/personal` WebSocket endpoint
+- [x] 4. Update `client/src/App.jsx` — connect PersonalWSService when authenticated, global listener
+- [x] 5. Update `client/src/components/PersonalMessagesModal.jsx` — use PersonalWSService, remove broken WS logic

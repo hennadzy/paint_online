@@ -138,6 +138,12 @@ app.ws('/', (ws, req) => {
   WebSocketHandler.setupConnection(ws);
 });
 
+// Dedicated WebSocket endpoint for personal messages.
+// Uses the user's auth token (not a room token) — see WebSocketHandler.handlePersonalAuth.
+app.ws('/ws/personal', (ws, req) => {
+  WebSocketHandler.setupPersonalConnection(ws);
+});
+
 app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

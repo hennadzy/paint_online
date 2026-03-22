@@ -88,13 +88,9 @@ async handleConnection(ws, msg) {
     // Сохраняем userId и username прямо на объекте ws для доступа без RoomManager
     ws._userId = userId;
     ws._username = username;
-
-    // Регистрируем соединение пользователя глобально для личных сообщений
-    if (userId) {
-      this.userSockets.set(userId, ws);
-      // Доставляем накопленные сообщения
-      this.deliverPendingMessages(ws, userId).catch(() => {});
-    }
+    // Примечание: регистрация в userSockets теперь происходит только через
+    // /ws/personal (handlePersonalAuth). Комнатные сокеты не перезаписывают
+    // персональный сокет пользователя.
     
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
@@ -351,6 +347,87 @@ async handleChat(ws, msg) {
     ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));
     ws.on('close', () => this.handleClose(ws));
     ws.on('error', () => {});
+  }
+
+  // ─── Personal WebSocket connection (/ws/personal) ───────────────────────────
+
+  /**
+   * Entry point for /ws/personal connections.
+   * Uses the user's auth token (not a room token).
+   */
+  setupPersonalConnection(ws) {
+    ws._id = `ws_personal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    ws._isPersonalConnection = true;
+
+    ws.on('message', (msgStr) => this.handlePersonalConnectionMessage(ws, msgStr));
+    ws.on('close', () => this.handlePersonalConnectionClose(ws));
+    ws.on('error', () => {});
+  }
+
+  handlePersonalConnectionMessage(ws, msgStr) {
+    try {
+      if (!this.checkRateLimit(ws)) {
+        ws.close(1008, 'Rate limit exceeded');
+        return;
+      }
+      const msg = JSON.parse(msgStr);
+      switch (msg.method) {
+        case 'auth':
+          this.handlePersonalAuth(ws, msg);
+          break;
+        case 'personalMessage':
+          // Only allow sending after authentication
+          if (ws._userId) {
+            this.handlePersonalMessage(ws, msg);
+          }
+          break;
+      }
+    } catch (_) {}
+  }
+
+  async handlePersonalAuth(ws, msg) {
+    const { token } = msg;
+    if (!token) {
+      ws.close(1008, 'No token');
+      return;
+    }
+
+    // Auth tokens (from login) are signed with the same JWT_SECRET but contain
+    // { userId, username, role } — no roomId field.
+    const { verifyToken: verifyAuthToken } = require('../utils/auth');
+    const payload = verifyAuthToken(token);
+
+    if (!payload || !payload.userId) {
+      ws.close(1008, 'Invalid or expired token');
+      return;
+    }
+
+    ws._userId = payload.userId;
+    ws._username = payload.username || payload.userId;
+
+    // Register in the global userSockets map so personal messages can be routed
+    this.userSockets.set(payload.userId, ws);
+
+    // Deliver any messages that arrived while the user was offline
+    await this.deliverPendingMessages(ws, payload.userId);
+
+    // Confirm authentication to the client
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ method: 'authenticated', userId: payload.userId }));
+    }
+  }
+
+  handlePersonalConnectionClose(ws) {
+    this.wsMessageLimits.delete(ws);
+
+    // Remove from userSockets only if this socket is still the current entry
+    // (it may have been overwritten by a newer connection)
+    if (ws._userId) {
+      const current = this.userSockets.get(ws._userId);
+      if (current === ws) {
+        this.userSockets.delete(ws._userId);
+      }
+    }
   }
 }
 

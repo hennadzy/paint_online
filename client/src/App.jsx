@@ -16,6 +16,7 @@ import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 're
 import canvasState from "./store/canvasState";
 import userState from "./store/userState";
 import WebSocketService from "./services/WebSocketService";
+import PersonalWSService from "./services/PersonalWSService";
 
 const isValidRoomId = (id) => /^[a-zA-Z0-9]{9}$/.test(id);
 
@@ -32,7 +33,29 @@ const App = observer(() => {
     const navigate = useNavigate();
     const hideGlobalUI = ['/profile', '/login', '/register', '/admin'].includes(location.pathname);
 
-    // Глобальный слушатель личных сообщений — активен всегда пока приложение открыто
+    // Подключаем PersonalWSService при аутентификации и отключаем при выходе
+    useEffect(() => {
+        if (userState.isAuthenticated) {
+            const token = localStorage.getItem('token');
+            if (token) {
+                PersonalWSService.connect(token);
+            }
+        } else {
+            PersonalWSService.disconnect();
+        }
+    }, [userState.isAuthenticated]);
+
+    // Глобальный слушатель личных сообщений через PersonalWSService
+    useEffect(() => {
+        const handlePersonalMessage = (data) => {
+            userState.addIncomingPersonalMessage(data);
+        };
+        PersonalWSService.on('personalMessage', handlePersonalMessage);
+        return () => PersonalWSService.off('personalMessage', handlePersonalMessage);
+    }, []);
+
+    // Запасной слушатель через комнатный WebSocket (на случай если пользователь
+    // находится в комнате и PersonalWSService временно недоступен)
     useEffect(() => {
         const handlePersonalMessage = (data) => {
             userState.addIncomingPersonalMessage(data);

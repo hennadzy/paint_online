@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
-import WebSocketService from '../services/WebSocketService';
+import PersonalWSService from '../services/PersonalWSService';
 import { API_URL } from '../store/canvasState';
 import axios from 'axios';
 import '../styles/personal-messages.scss';
@@ -21,7 +21,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const messagesEndRef = useRef(null);
   const searchInputRef = useRef(null);
-  const wsSubscribedRef = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
@@ -89,7 +88,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     loadAllHistory();
   }, [isOpen]);
 
-  // Обработчик входящих сообщений через WebSocket
+  // Обработчик входящих сообщений
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
 
@@ -108,48 +107,16 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     });
   }, []);
 
-  // Обрабатываем входящие сообщения из глобального хранилища.
-  // Глобальный слушатель в App.jsx накапливает сообщения даже когда модалка закрыта.
-  // Этот эффект срабатывает при открытии модалки и при каждом новом входящем сообщении.
+  // Потребляем сообщения, накопленные в глобальном хранилище пока модалка была закрыта,
+  // а также мгновенно отображаем новые сообщения пока модалка открыта.
+  // App.jsx добавляет все входящие сообщения в userState.incomingPersonalMessages через
+  // PersonalWSService, поэтому здесь достаточно следить за длиной массива.
   useEffect(() => {
     if (!isOpen) return;
-    // Если есть живая подписка на WS — не дублируем обработку из store
-    if (wsSubscribedRef.current) return;
     if (userState.incomingPersonalMessages.length === 0) return;
     const incoming = userState.consumeIncomingPersonalMessages();
     incoming.forEach(data => handleReceiveMessage(data));
   }, [isOpen, userState.incomingPersonalMessages.length, handleReceiveMessage]);
-
-  // Локальная WS‑подписка на личные сообщения при открытой модалке — мгновенное обновление UI
-  useEffect(() => {
-    if (!isOpen) return;
-    
-    // Убедимся, что WebSocket соединение активно
-    if (!WebSocketService.isConnected) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        // Если нет активного соединения, но есть токен - пробуем подключиться
-        WebSocketService.connect(window.location.hostname === 'localhost' 
-          ? 'ws://localhost:5000' 
-          : 'wss://paint-online-back.onrender.com', 
-          'personal', userState.user?.username || 'guest', token)
-          .catch(err => console.error('Error connecting to WebSocket:', err));
-      }
-    }
-    
-    const wsHandler = (data) => {
-      console.log('Received personal message:', data);
-      handleReceiveMessage(data);
-    };
-    
-    WebSocketService.on('personalMessage', wsHandler);
-    wsSubscribedRef.current = true;
-    
-    return () => {
-      WebSocketService.off('personalMessage', wsHandler);
-      wsSubscribedRef.current = false;
-    };
-  }, [isOpen, handleReceiveMessage]);
 
   // Загружаем историю при выборе контакта
   useEffect(() => {
@@ -235,7 +202,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setSearchQuery('');
   };
 
-  // Отправка через HTTP API и WebSocket (Issue #2) — мгновенная доставка
+  // Отправка через PersonalWSService (мгновенная доставка) + HTTP API (сохранение в БД)
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
 
@@ -253,26 +220,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setMessage('');
 
     try {
-      // Проверяем WebSocket соединение
-      if (!WebSocketService.isConnected) {
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            // Если нет активного соединения, но есть токен - пробуем подключиться
-            await WebSocketService.connect(window.location.hostname === 'localhost' 
-              ? 'ws://localhost:5000' 
-              : 'wss://paint-online-back.onrender.com', 
-              'personal', userState.user?.username || 'guest', token);
-          } catch (wsError) {
-            console.error('Failed to establish WebSocket connection:', wsError);
-          }
-        }
-      }
-      
-      // Отправляем через WebSocket для мгновенной доставки
-      WebSocketService.sendPersonalMessage(selectedUser.id, trimmed, timestamp);
-      
-      // Дублируем через HTTP API для надежности и сохранения в БД
+      // Отправляем через PersonalWSService для мгновенной доставки получателю
+      PersonalWSService.sendPersonalMessage(selectedUser.id, trimmed, timestamp);
+
+      // Сохраняем через HTTP API для надёжности и персистентности в БД
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/api/users/messages`,
