@@ -7,6 +7,8 @@ const { verifyToken } = require('../utils/jwt');
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
+    // Глобальный реестр: userId -> ws (для маршрутизации личных сообщений)
+    this.userSockets = new Map();
   }
 
   checkRateLimit(ws) {
@@ -82,6 +84,13 @@ async handleConnection(ws, msg) {
     }
 
     const userId = payload.userId || null;
+
+    // Регистрируем соединение пользователя глобально для личных сообщений
+    if (userId) {
+      this.userSockets.set(userId, ws);
+      // Доставляем накопленные сообщения
+      this.deliverPendingMessages(ws, userId).catch(() => {});
+    }
     
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
@@ -196,6 +205,67 @@ async handleChat(ws, msg) {
     await RoomManager.updateUserActivity(ws);
   }
 
+  async handlePersonalMessage(ws, msg) {
+    const userInfo = await RoomManager.getUserInfo(ws);
+    if (!userInfo) return;
+    const { userId } = userInfo;
+    if (!userId) return;
+
+    const { toUserId, message, timestamp } = msg;
+    if (!toUserId || !message) return;
+
+    const sanitizedMessage = sanitizeChatMessage(message);
+    if (!sanitizedMessage || sanitizedMessage.trim().length === 0) return;
+
+    const PersonalMessageStore = require('./PersonalMessageStore');
+    const ts = timestamp || Date.now();
+
+    // Сохраняем в БД (delivered=false по умолчанию)
+    const msgId = await PersonalMessageStore.saveMessage(userId, toUserId, sanitizedMessage, ts);
+
+    // Если получатель онлайн — доставляем сразу
+    const recipientWs = this.userSockets.get(toUserId);
+    if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+      recipientWs.send(JSON.stringify({
+        method: 'personalMessage',
+        from: userId,
+        message: sanitizedMessage,
+        timestamp: ts
+      }));
+      // Помечаем как доставленное
+      if (msgId) {
+        await PersonalMessageStore.markDelivered([msgId]);
+      }
+    }
+  }
+
+  async deliverPendingMessages(ws, userId) {
+    try {
+      const PersonalMessageStore = require('./PersonalMessageStore');
+      const pending = await PersonalMessageStore.getPendingMessages(userId);
+      if (!pending || pending.length === 0) return;
+
+      const ids = [];
+      for (const msg of pending) {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            method: 'personalMessage',
+            from: msg.from_user_id,
+            fromUsername: msg.from_username,
+            message: msg.message,
+            timestamp: msg.timestamp
+          }));
+          ids.push(msg.id);
+        }
+      }
+      if (ids.length > 0) {
+        await PersonalMessageStore.markDelivered(ids);
+      }
+    } catch (error) {
+      console.error('Error delivering pending messages:', error);
+    }
+  }
+
   handleMessage(ws, msgStr) {
     try {
       if (!this.checkRateLimit(ws)) {
@@ -216,13 +286,24 @@ async handleChat(ws, msg) {
         case "chat":
           this.handleChat(ws, msg);
           break;
+        case "personalMessage":
+          this.handlePersonalMessage(ws, msg);
+          break;
       }
     } catch (error) {
     }
   }
 
-async handleClose(ws) {
+  async handleClose(ws) {
     this.wsMessageLimits.delete(ws);
+
+    // Удаляем из глобального реестра
+    for (const [uid, userWs] of this.userSockets.entries()) {
+      if (userWs === ws) {
+        this.userSockets.delete(uid);
+        break;
+      }
+    }
 
     const userInfo = await RoomManager.removeUser(ws);
     if (userInfo) {

@@ -300,6 +300,23 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
     } catch (_) { }
 
+    // Таблица личных сообщений
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS personal_messages (
+          id SERIAL PRIMARY KEY,
+          from_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+          to_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+          message TEXT NOT NULL,
+          timestamp BIGINT NOT NULL,
+          delivered BOOLEAN DEFAULT false,
+          created_at BIGINT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_pm_to_user ON personal_messages(to_user_id, delivered);
+        CREATE INDEX IF NOT EXISTS idx_pm_conversation ON personal_messages(from_user_id, to_user_id);
+      `);
+    } catch (_) { }
+
     const bcrypt = require('bcrypt');
     const { hashPassword } = require('./utils/auth');
     

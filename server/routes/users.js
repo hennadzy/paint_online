@@ -223,6 +223,17 @@ router.get('/search', authenticate, async (req, res) => {
   }
 });
 
+router.get('/messages/:userId', authenticate, async (req, res) => {
+  try {
+    const PersonalMessageStore = require('../services/PersonalMessageStore');
+    const history = await PersonalMessageStore.getHistory(req.user.userId, req.params.userId);
+    res.json(history);
+  } catch (error) {
+    console.error('Get message history error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
   try {
     const { roomId } = req.params;

@@ -127,6 +127,15 @@ connect(wsUrl, roomId, username, token) {
     });
   }
 
+  sendPersonalMessage(toUserId, message, timestamp) {
+    return this.send({
+      method: "personalMessage",
+      toUserId,
+      message,
+      timestamp: timestamp || Date.now()
+    });
+  }
+
   handleMessage(message) {
     this.emit('message', message);
     
@@ -151,6 +160,14 @@ connect(wsUrl, roomId, username, token) {
         break;
       case 'chat':
         this.emit('chatReceived', { username: message.username, message: message.message, isVerified: message.isVerified });
+        break;
+      case 'personalMessage':
+        this.emit('personalMessage', {
+          from: message.from,
+          fromUsername: message.fromUsername,
+          message: message.message,
+          timestamp: message.timestamp
+        });
         break;
       case 'syncCancelled':
         this.emit('syncCancelled', { cancelledStrokeIds: message.cancelledStrokeIds });
