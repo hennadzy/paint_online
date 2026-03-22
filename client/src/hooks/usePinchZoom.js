@@ -90,13 +90,27 @@ export function usePinchZoom(containerRef) {
 
           // Убедимся, что прокрутка работает корректно на мобильных устройствах
           requestAnimationFrame(() => {
-            // Вычисляем новые координаты прокрутки без ограничений на минимальные значения
-            // Это позволит прокручивать холст к левому краю (Issue #5)
-            const newScrollLeft = canvasPointX * newZoom - viewportX;
-            const newScrollTop = canvasPointY * newZoom - viewportY;
+            // Вычисляем новые координаты прокрутки и ограничиваем в допустимых пределах,
+            // чтобы гарантировать доступность всех краёв (включая левый) и корректную работу ползунков.
+            const rawScrollLeft = canvasPointX * newZoom - viewportX;
+            const rawScrollTop = canvasPointY * newZoom - viewportY;
 
-            container.scrollLeft = newScrollLeft;
-            container.scrollTop = newScrollTop;
+            const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+            const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+
+            const clampedLeft = Math.max(0, Math.min(maxScrollLeft, rawScrollLeft));
+            const clampedTop = Math.max(0, Math.min(maxScrollTop, rawScrollTop));
+
+            container.scrollLeft = clampedLeft;
+            container.scrollTop = clampedTop;
+
+            // Повторная корректировка после возможной перерисовки контента
+            requestAnimationFrame(() => {
+              const maxL = Math.max(0, container.scrollWidth - container.clientWidth);
+              const maxT = Math.max(0, container.scrollHeight - container.clientHeight);
+              container.scrollLeft = Math.max(0, Math.min(maxL, container.scrollLeft));
+              container.scrollTop = Math.max(0, Math.min(maxT, container.scrollTop));
+            });
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);

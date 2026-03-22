@@ -21,6 +21,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const messagesEndRef = useRef(null);
   const searchInputRef = useRef(null);
+  const wsSubscribedRef = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
@@ -112,10 +113,24 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   // Этот эффект срабатывает при открытии модалки и при каждом новом входящем сообщении.
   useEffect(() => {
     if (!isOpen) return;
+    // Если есть живая подписка на WS — не дублируем обработку из store
+    if (wsSubscribedRef.current) return;
     if (userState.incomingPersonalMessages.length === 0) return;
     const incoming = userState.consumeIncomingPersonalMessages();
     incoming.forEach(data => handleReceiveMessage(data));
   }, [isOpen, userState.incomingPersonalMessages.length, handleReceiveMessage]);
+
+  // Локальная WS‑подписка на личные сообщения при открытой модалке — мгновенное обновление UI
+  useEffect(() => {
+    if (!isOpen) return;
+    const wsHandler = (data) => handleReceiveMessage(data);
+    WebSocketService.on('personalMessage', wsHandler);
+    wsSubscribedRef.current = true;
+    return () => {
+      WebSocketService.off('personalMessage', wsHandler);
+      wsSubscribedRef.current = false;
+    };
+  }, [isOpen, handleReceiveMessage]);
 
   // Загружаем историю при выборе контакта
   useEffect(() => {
