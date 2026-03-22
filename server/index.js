@@ -289,6 +289,17 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`);
     } catch (_) { }
 
+    // Добавляем недостающие колонки в таблицу users
+    try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT false`);
+    } catch (_) { }
+    try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`);
+    } catch (_) { }
+    try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+    } catch (_) { }
+
     const bcrypt = require('bcrypt');
     const { hashPassword } = require('./utils/auth');
     
