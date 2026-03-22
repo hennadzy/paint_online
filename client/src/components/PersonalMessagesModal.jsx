@@ -217,7 +217,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   return (
     <div className="room-interface-overlay" onClick={onClose} data-nosnippet>
       <div className="room-interface personal-messages-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="room-close-btn" onClick={onClose}>×</button>
+        {isMobileView ? (
+          <div className="pm-mobile-header">
+            <span className="pm-mobile-title">Личные сообщения</span>
+            <button className="pm-close-btn" onClick={onClose}>×</button>
+          </div>
+        ) : (
+          <button className="room-close-btn" onClick={onClose}>×</button>
+        )}
         
         <div className={`personal-messages-container ${isMobileView && selectedUser ? 'show-chat' : 'show-contacts'}`}>
           <div className={`sidebar ${isMobileView && selectedUser ? '' : 'active'}`}>
@@ -243,7 +250,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
             {isSearching ? (
               <div className="search-results">
                 <div className="section-header">
-                  <h3>Результаты поиска</h3>
+                  <h3 className="section-title">Результаты поиска</h3>
                   <button 
                     className="back-btn"
                     onClick={() => {
@@ -289,7 +296,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
               </div>
             ) : (
               <div className="contacts">
-                <h3>Контакты</h3>
+                <h3 className="contacts-title">Контакты</h3>
                 {users.length === 0 ? (
                   <div className="empty-state">
                     <span className="empty-icon">👥</span>

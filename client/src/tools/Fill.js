@@ -63,9 +63,23 @@ export default class Fill extends Tool {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const fillR = parseInt(fillColor.slice(1, 3), 16);
-    const fillG = parseInt(fillColor.slice(3, 5), 16);
-    const fillB = parseInt(fillColor.slice(5, 7), 16);
+    // Парсим цвет заливки (поддержка hex и rgb)
+    let fillR, fillG, fillB;
+    if (fillColor.startsWith('#')) {
+      const hex = fillColor.replace('#', '');
+      if (hex.length === 3) {
+        fillR = parseInt(hex[0] + hex[0], 16);
+        fillG = parseInt(hex[1] + hex[1], 16);
+        fillB = parseInt(hex[2] + hex[2], 16);
+      } else {
+        fillR = parseInt(hex.slice(0, 2), 16);
+        fillG = parseInt(hex.slice(2, 4), 16);
+        fillB = parseInt(hex.slice(4, 6), 16);
+      }
+    } else {
+      // Fallback: чёрный
+      fillR = 0; fillG = 0; fillB = 0;
+    }
 
     const startPos = (y * width + x) * 4;
     const startR = data[startPos];
@@ -73,160 +87,83 @@ export default class Fill extends Tool {
     const startB = data[startPos + 2];
     const startA = data[startPos + 3];
 
-    // Don't fill if the target color is the same as the fill color
-    if (startR === fillR && startG === fillG && startB === fillB) {
-        return;
+    // Не заливаем, если цвет уже совпадает
+    if (startR === fillR && startG === fillG && startB === fillB && startA === 255) {
+      return;
     }
 
-    // Color similarity threshold (0-255) - увеличиваем для более точной заливки
-    const threshold = 10;
+    // Порог схожести цветов — для захвата антиалиасированных пикселей на границах
+    const threshold = 32;
 
-    // Check if a pixel matches the start color within the threshold
+    // Быстрая проверка совпадения цвета с начальным (без sqrt для скорости)
     const matchesStartColor = (pos) => {
-        const r = data[pos];
-        const g = data[pos + 1];
-        const b = data[pos + 2];
-        const a = data[pos + 3];
-        
-        // Check alpha separately - we only want to fill fully opaque or transparent areas
-        if (Math.abs(a - startA) > threshold) {
-            return false;
-        }
-        
-        // Calculate color distance using a simple Euclidean distance
-        const colorDist = Math.sqrt(
-            Math.pow(r - startR, 2) + 
-            Math.pow(g - startG, 2) + 
-            Math.pow(b - startB, 2)
-        );
-        
-        return colorDist <= threshold;
+      const dr = data[pos]     - startR;
+      const dg = data[pos + 1] - startG;
+      const db = data[pos + 2] - startB;
+      const da = data[pos + 3] - startA;
+      return (dr * dr + dg * dg + db * db + da * da) <= threshold * threshold * 4;
     };
 
-    // Set the color with anti-aliasing at edges
-    const setColor = (pos, strength = 1) => {
-        // Full strength fill
-        if (strength >= 0.99) {
-            data[pos] = fillR;
-            data[pos + 1] = fillG;
-            data[pos + 2] = fillB;
-            data[pos + 3] = 255;
-            return;
-        }
-        
-        // Blend with existing color for anti-aliasing
-        data[pos] = Math.round(data[pos] * (1 - strength) + fillR * strength);
-        data[pos + 1] = Math.round(data[pos + 1] * (1 - strength) + fillG * strength);
-        data[pos + 2] = Math.round(data[pos + 2] * (1 - strength) + fillB * strength);
-        data[pos + 3] = Math.max(data[pos + 3], Math.round(255 * strength));
+    // Установка цвета пикселя (без блендинга — чистая заливка как в Paint)
+    const setColor = (pos) => {
+      data[pos]     = fillR;
+      data[pos + 1] = fillG;
+      data[pos + 2] = fillB;
+      data[pos + 3] = 255;
     };
 
-    // Use a queue for breadth-first fill (more efficient for large areas)
-    const pixelStack = [[x, y]];
-    // Keep track of visited pixels to avoid revisiting
-    const visited = new Set();
-    const getKey = (nx, ny) => `${nx},${ny}`;
+    // Используем Uint8Array для отслеживания посещённых пикселей — O(1) доступ
+    const visited = new Uint8Array(width * height);
 
-    // Проверяем диагональные соседи для более точной заливки
-    const checkDiagonals = true;
-    // Сила сглаживания краев
-    const edgeAntiAlias = 0.7;
+    // Scanline flood fill (стек вместо очереди — pop() O(1), не shift() O(n))
+    // Каждый элемент стека: [x, y]
+    const stack = [[x, y]];
 
-    while (pixelStack.length) {
-        const [nx, ny] = pixelStack.shift();
-        const key = getKey(nx, ny);
-        
-        if (visited.has(key)) {
-            continue;
+    while (stack.length > 0) {
+      const [nx, ny] = stack.pop();
+
+      if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+      if (visited[ny * width + nx]) continue;
+
+      const pos = (ny * width + nx) * 4;
+      if (!matchesStartColor(pos)) continue;
+
+      // Сканируем влево до границы
+      let west = nx;
+      while (west > 0 && !visited[ny * width + (west - 1)] && matchesStartColor((ny * width + (west - 1)) * 4)) {
+        west--;
+      }
+
+      // Сканируем вправо до границы
+      let east = nx;
+      while (east < width - 1 && !visited[ny * width + (east + 1)] && matchesStartColor((ny * width + (east + 1)) * 4)) {
+        east++;
+      }
+
+      // Заливаем всю горизонтальную линию от west до east
+      for (let i = west; i <= east; i++) {
+        const idx = ny * width + i;
+        if (!visited[idx]) {
+          visited[idx] = 1;
+          setColor(idx * 4);
         }
-        
-        let currentPos = (ny * width + nx) * 4;
+      }
 
-        if (ny < 0 || ny >= height || nx < 0 || nx >= width || !matchesStartColor(currentPos)) {
-            continue;
+      // Добавляем строки выше и ниже в стек
+      for (let i = west; i <= east; i++) {
+        if (ny > 0 && !visited[(ny - 1) * width + i]) {
+          const upPos = ((ny - 1) * width + i) * 4;
+          if (matchesStartColor(upPos)) {
+            stack.push([i, ny - 1]);
+          }
         }
-
-        visited.add(key);
-        
-        // Fill current pixel
-        setColor(currentPos);
-
-        // Scan west and east to fill and find boundaries
-        let west = nx;
-        while (west > 0 && matchesStartColor((ny * width + (west - 1)) * 4)) {
-            west--;
-            const westPos = (ny * width + west) * 4;
-            setColor(westPos);
-            visited.add(getKey(west, ny));
+        if (ny < height - 1 && !visited[(ny + 1) * width + i]) {
+          const downPos = ((ny + 1) * width + i) * 4;
+          if (matchesStartColor(downPos)) {
+            stack.push([i, ny + 1]);
+          }
         }
-
-        let east = nx;
-        while (east < width - 1 && matchesStartColor((ny * width + (east + 1)) * 4)) {
-            east++;
-            const eastPos = (ny * width + east) * 4;
-            setColor(eastPos);
-            visited.add(getKey(east, ny));
-        }
-
-        // Check pixels above and below the filled line
-        for (let i = west; i <= east; i++) {
-            // Check pixel above
-            if (ny > 0) {
-                const upPos = ((ny - 1) * width + i) * 4;
-                if (matchesStartColor(upPos) && !visited.has(getKey(i, ny - 1))) {
-                    pixelStack.push([i, ny - 1]);
-                } else if (!visited.has(getKey(i, ny - 1))) {
-                    // Add anti-aliasing at the edge
-                    setColor(upPos, edgeAntiAlias);
-                }
-            }
-            
-            // Check pixel below
-            if (ny < height - 1) {
-                const downPos = ((ny + 1) * width + i) * 4;
-                if (matchesStartColor(downPos) && !visited.has(getKey(i, ny + 1))) {
-                    pixelStack.push([i, ny + 1]);
-                } else if (!visited.has(getKey(i, ny + 1))) {
-                    // Add anti-aliasing at the edge
-                    setColor(downPos, edgeAntiAlias);
-                }
-            }
-            
-            // Проверяем диагональные соседи для более точной заливки
-            if (checkDiagonals) {
-                // Верхний левый
-                if (ny > 0 && i > west) {
-                    const diagPos = ((ny - 1) * width + (i - 1)) * 4;
-                    if (matchesStartColor(diagPos) && !visited.has(getKey(i - 1, ny - 1))) {
-                        pixelStack.push([i - 1, ny - 1]);
-                    }
-                }
-                
-                // Верхний правый
-                if (ny > 0 && i < east) {
-                    const diagPos = ((ny - 1) * width + (i + 1)) * 4;
-                    if (matchesStartColor(diagPos) && !visited.has(getKey(i + 1, ny - 1))) {
-                        pixelStack.push([i + 1, ny - 1]);
-                    }
-                }
-                
-                // Нижний левый
-                if (ny < height - 1 && i > west) {
-                    const diagPos = ((ny + 1) * width + (i - 1)) * 4;
-                    if (matchesStartColor(diagPos) && !visited.has(getKey(i - 1, ny + 1))) {
-                        pixelStack.push([i - 1, ny + 1]);
-                    }
-                }
-                
-                // Нижний правый
-                if (ny < height - 1 && i < east) {
-                    const diagPos = ((ny + 1) * width + (i + 1)) * 4;
-                    if (matchesStartColor(diagPos) && !visited.has(getKey(i + 1, ny + 1))) {
-                        pixelStack.push([i + 1, ny + 1]);
-                    }
-                }
-            }
-        }
+      }
     }
 
     ctx.putImageData(imageData, 0, 0);
