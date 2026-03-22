@@ -865,8 +865,9 @@
 
   .room-item .room-item-with-actions .room-actions-dropdown {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
   }
 
   .room-item .room-item-with-actions .room-btn-join {

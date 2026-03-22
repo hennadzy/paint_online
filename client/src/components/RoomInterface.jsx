@@ -22,7 +22,7 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-const validateUsername = (username) => {
+const validateUsername = (username, isPrivileged = false) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
   }
@@ -50,15 +50,18 @@ const validateUsername = (username) => {
     };
   }
 
-  const dangerousWords = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
-  const lowerUsername = trimmed.toLowerCase();
+  // Skip dangerous words check for privileged users (admins)
+  if (!isPrivileged) {
+    const dangerousWords = ['admin', 'moderator', 'system', 'bot', 'null', 'undefined'];
+    const lowerUsername = trimmed.toLowerCase();
 
-  for (const word of dangerousWords) {
-    if (lowerUsername.includes(word)) {
-      return {
-        valid: false,
-        error: `Слово "${word}" запрещено в имени`
-      };
+    for (const word of dangerousWords) {
+      if (lowerUsername.includes(word)) {
+        return {
+          valid: false,
+          error: `Слово "${word}" запрещено в имени`
+        };
+      }
     }
   }
 
@@ -219,7 +222,7 @@ const RoomInterface = observer(({ roomId }) => {
   }, [roomId, canvasState.isConnected, navigate, isPrivilegedUser]);
 
   const handleJoinRoom = async () => {
-    const validation = validateUsername(username);
+    const validation = validateUsername(username, isPrivilegedUser);
     if (!validation.valid) {
       setError(validation.error);
       return;
