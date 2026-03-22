@@ -108,85 +108,101 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content personal-messages-modal">
-        <div className="modal-header">
-          <h2>Личные сообщения</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
+    <div className="room-interface-overlay" onClick={onClose} data-nosnippet>
+      <div className="room-interface" onClick={(e) => e.stopPropagation()}>
+        <button className="room-close-btn" onClick={onClose}>×</button>
         
-        <div className="personal-messages-container">
-          <div className="users-list">
-            <h3>Пользователи</h3>
-            {users.length === 0 ? (
-              <p className="empty-message">Нет доступных пользователей</p>
-            ) : (
-              <ul>
-                {users.map(user => (
-                  <li 
-                    key={user} 
-                    className={`user-item ${selectedUser === user ? 'selected' : ''}`}
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    {user}
-                    {conversations[user] && conversations[user].length > 0 && (
-                      <span className="message-count">{conversations[user].length}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+        <div className="room-card">
+          <div className="room-card-header">
+            <h2>Личные сообщения</h2>
+            <p>Общайтесь с другими пользователями</p>
           </div>
           
-          <div className="messages-area">
-            {selectedUser ? (
-              <>
-                <div className="messages-header">
-                  <h3>{selectedUser}</h3>
+          <div className="room-card-body personal-messages-container">
+            <div className="users-list">
+              <h3>Пользователи</h3>
+              {users.length === 0 ? (
+                <div className="empty-state">
+                  <span className="empty-icon">👥</span>
+                  <p>Нет доступных пользователей</p>
+                  <p className="empty-hint">Посетите комнаты, чтобы найти собеседников</p>
                 </div>
-                
-                <div className="messages-list">
-                  {!conversations[selectedUser] || conversations[selectedUser].length === 0 ? (
-                    <p className="empty-message">Нет сообщений</p>
-                  ) : (
-                    conversations[selectedUser].map((msg, index) => (
-                      <div 
-                        key={index} 
-                        className={`message ${msg.sender === (userState.user?.username || 'Me') ? 'sent' : 'received'}`}
-                      >
-                        <div className="message-content">
-                          <p>{msg.text}</p>
-                          <span className="message-time">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
+              ) : (
+                <ul className="users-list-items">
+                  {users.map(user => (
+                    <li 
+                      key={user} 
+                      className={`user-item ${selectedUser === user ? 'selected' : ''}`}
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <span className="user-avatar">👤</span>
+                      <span className="user-name">{user}</span>
+                      {conversations[user] && conversations[user].length > 0 && (
+                        <span className="message-count">{conversations[user].length}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            
+            <div className="messages-area">
+              {selectedUser ? (
+                <>
+                  <div className="messages-header">
+                    <h3>{selectedUser}</h3>
+                  </div>
+                  
+                  <div className="messages-list">
+                    {!conversations[selectedUser] || conversations[selectedUser].length === 0 ? (
+                      <div className="empty-state">
+                        <span className="empty-icon">💬</span>
+                        <p>Нет сообщений</p>
+                        <p className="empty-hint">Начните общение прямо сейчас</p>
                       </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
+                    ) : (
+                      conversations[selectedUser].map((msg, index) => (
+                        <div 
+                          key={index} 
+                          className={`message ${msg.sender === (userState.user?.username || 'Me') ? 'sent' : 'received'}`}
+                        >
+                          <div className="message-content">
+                            <p>{msg.text}</p>
+                            <span className="message-time">
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                  
+                  <div className="message-input-container">
+                    <input
+                      type="text"
+                      className="room-input"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Введите сообщение..."
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    <button 
+                      className="room-btn room-btn-primary"
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || loading}
+                    >
+                      Отправить
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <span className="empty-icon">👈</span>
+                  <p>Выберите пользователя для начала общения</p>
                 </div>
-                
-                <div className="message-input-container">
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Введите сообщение..."
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <button 
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || loading}
-                  >
-                    Отправить
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="no-user-selected">
-                <p>Выберите пользователя для начала общения</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

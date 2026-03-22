@@ -356,6 +356,20 @@
     .tooltip {
       display: none !important;
     }
+    
+    /* Отключаем анимацию для кнопок, кроме инструментов рисования */
+    &:not(.brush):not(.rect):not(.circle):not(.eraser):not(.line):not(.text):not(.fill):not(.pipette):not(.polygon):not(.arrow) {
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+      
+      &:hover::before,
+      &.active::before {
+        opacity: 0;
+        animation: none;
+      }
+    }
   }
 
   .setting-bar {

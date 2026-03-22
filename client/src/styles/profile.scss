@@ -781,32 +781,31 @@
 }
 
 .profile-action-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  cursor: pointer;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   color: #fff;
-}
-
-.profile-action-btn:hover {
-  background: rgba(255, 204, 0, 0.2);
-}
-
-.profile-action-btn svg {
-  margin-bottom: 5px;
-  width: 24px;
-  height: 24px;
-}
-
-.profile-action-btn span {
-  font-size: 0.9rem;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  
+  svg {
+    flex-shrink: 0;
+  }
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .profile-loading {
