@@ -91,29 +91,12 @@ export function usePinchZoom(containerRef) {
           // Убедимся, что прокрутка работает корректно на мобильных устройствах
           requestAnimationFrame(() => {
             // Вычисляем новые координаты прокрутки
-            const newScrollLeft = canvasPointX * newZoom - viewportX;
-            const newScrollTop = canvasPointY * newZoom - viewportY;
-            
-            // Применяем прокрутку
+            // Вычисляем новые координаты прокрутки, не допуская отрицательных значений (Issue #5)
+            const newScrollLeft = Math.max(0, canvasPointX * newZoom - viewportX);
+            const newScrollTop = Math.max(0, canvasPointY * newZoom - viewportY);
+
             container.scrollLeft = newScrollLeft;
             container.scrollTop = newScrollTop;
-            
-            // Проверяем, что левая и верхняя стороны холста доступны для прокрутки
-            const canvas = document.querySelector('.main-canvas');
-            if (canvas) {
-              const canvasRect = canvas.getBoundingClientRect();
-              const containerRect = container.getBoundingClientRect();
-              
-              // Если левая сторона холста не видна, корректируем прокрутку по горизонтали
-              if (canvasRect.left > containerRect.left) {
-                container.scrollLeft = Math.max(0, container.scrollLeft - (canvasRect.left - containerRect.left));
-              }
-              
-              // Если верхняя сторона холста не видна, корректируем прокрутку по вертикали
-              if (canvasRect.top > containerRect.top) {
-                container.scrollTop = Math.max(0, container.scrollTop - (canvasRect.top - containerRect.top));
-              }
-            }
           });
         } else if (touchCount === 2 && initialDistance === 0) {
           initialDistance = getDistance(e.touches[0], e.touches[1]);

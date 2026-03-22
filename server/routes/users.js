@@ -234,6 +234,60 @@ router.get('/messages/:userId', authenticate, async (req, res) => {
   }
 });
 
+// Отправка личного сообщения через HTTP (работает без WebSocket / вне комнаты)
+router.post('/messages', authenticate, async (req, res) => {
+  try {
+    const { toUserId, message, timestamp } = req.body;
+    if (!toUserId || !message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'toUserId and message are required' });
+    }
+
+    const { sanitizeChatMessage } = require('../utils/security');
+    const sanitized = sanitizeChatMessage(message);
+    if (!sanitized || sanitized.trim().length === 0) {
+      return res.status(400).json({ error: 'Message is empty after sanitization' });
+    }
+
+    // Проверяем, что получатель существует
+    const { pgPool } = require('../config/db');
+    const recipientCheck = await pgPool.query(
+      'SELECT id, username FROM users WHERE id = $1 AND is_deleted IS NOT TRUE',
+      [toUserId]
+    );
+    if (recipientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Recipient not found' });
+    }
+
+    const PersonalMessageStore = require('../services/PersonalMessageStore');
+    const ts = timestamp || Date.now();
+    const fromUserId = req.user.userId;
+
+    // Получаем username отправителя
+    const senderRow = await pgPool.query('SELECT username FROM users WHERE id = $1', [fromUserId]);
+    const fromUsername = senderRow.rows[0]?.username || fromUserId;
+
+    // Сохраняем в БД
+    const msgId = await PersonalMessageStore.saveMessage(fromUserId, toUserId, sanitized, ts);
+
+    // Пытаемся доставить через WebSocket если получатель онлайн
+    const WebSocketHandler = require('../services/WebSocketHandler');
+    await WebSocketHandler.deliverPersonalMessageToUser(
+      toUserId, fromUserId, fromUsername, sanitized, ts, msgId
+    );
+
+    res.json({
+      id: msgId,
+      from_user_id: fromUserId,
+      to_user_id: toUserId,
+      message: sanitized,
+      timestamp: ts
+    });
+  } catch (error) {
+    console.error('Send personal message error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
   try {
     const { roomId } = req.params;

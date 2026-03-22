@@ -85,6 +85,10 @@ async handleConnection(ws, msg) {
 
     const userId = payload.userId || null;
 
+    // Сохраняем userId и username прямо на объекте ws для доступа без RoomManager
+    ws._userId = userId;
+    ws._username = username;
+
     // Регистрируем соединение пользователя глобально для личных сообщений
     if (userId) {
       this.userSockets.set(userId, ws);
@@ -206,9 +210,9 @@ async handleChat(ws, msg) {
   }
 
   async handlePersonalMessage(ws, msg) {
-    const userInfo = await RoomManager.getUserInfo(ws);
-    if (!userInfo) return;
-    const { userId } = userInfo;
+    // Используем userId прямо с ws объекта (не требует нахождения в комнате)
+    const userId = ws._userId;
+    const senderUsername = ws._username;
     if (!userId) return;
 
     const { toUserId, message, timestamp } = msg;
@@ -223,12 +227,13 @@ async handleChat(ws, msg) {
     // Сохраняем в БД (delivered=false по умолчанию)
     const msgId = await PersonalMessageStore.saveMessage(userId, toUserId, sanitizedMessage, ts);
 
-    // Если получатель онлайн — доставляем сразу
+    // Если получатель онлайн — доставляем сразу с fromUsername
     const recipientWs = this.userSockets.get(toUserId);
     if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
       recipientWs.send(JSON.stringify({
         method: 'personalMessage',
         from: userId,
+        fromUsername: senderUsername || userId,
         message: sanitizedMessage,
         timestamp: ts
       }));
@@ -237,6 +242,29 @@ async handleChat(ws, msg) {
         await PersonalMessageStore.markDelivered([msgId]);
       }
     }
+  }
+
+  /**
+   * Публичный метод для доставки личного сообщения через WebSocket
+   * (используется из HTTP-эндпоинта)
+   */
+  async deliverPersonalMessageToUser(toUserId, fromUserId, fromUsername, message, timestamp, msgId) {
+    const recipientWs = this.userSockets.get(toUserId);
+    if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+      recipientWs.send(JSON.stringify({
+        method: 'personalMessage',
+        from: fromUserId,
+        fromUsername: fromUsername || fromUserId,
+        message,
+        timestamp
+      }));
+      if (msgId) {
+        const PersonalMessageStore = require('./PersonalMessageStore');
+        await PersonalMessageStore.markDelivered([msgId]);
+      }
+      return true;
+    }
+    return false;
   }
 
   async deliverPendingMessages(ws, userId) {

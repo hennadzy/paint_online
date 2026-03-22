@@ -29,6 +29,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Загружаем контакты из localStorage при открытии
   useEffect(() => {
     if (!isOpen) return;
 
@@ -44,6 +45,50 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Загружаем историю для всех контактов при открытии модалки (Issue #4)
+  useEffect(() => {
+    if (!isOpen) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const loadAllHistory = async () => {
+      try {
+        const savedContacts = localStorage.getItem(getContactsKey());
+        if (!savedContacts) return;
+        const contactList = JSON.parse(savedContacts);
+        if (!contactList || contactList.length === 0) return;
+
+        const myId = userState.user?.id;
+        const newConversations = {};
+
+        await Promise.all(contactList.map(async (contact) => {
+          try {
+            const response = await axios.get(
+              `${API_URL}/api/users/messages/${contact.id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (Array.isArray(response.data) && response.data.length > 0) {
+              newConversations[contact.id] = response.data.map(m => ({
+                sender: m.from_user_id === myId ? myId : m.from_user_id,
+                text: m.message,
+                timestamp: m.timestamp
+              }));
+            }
+          } catch (_) {}
+        }));
+
+        if (Object.keys(newConversations).length > 0) {
+          setConversations(prev => ({ ...prev, ...newConversations }));
+        }
+      } catch (error) {
+        console.error('Error loading all history:', error);
+      }
+    };
+
+    loadAllHistory();
+  }, [isOpen]);
+
+  // Обработчик входящих сообщений через WebSocket
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
 
@@ -68,6 +113,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     return () => WebSocketService.off('personalMessage', handleReceiveMessage);
   }, [isOpen, handleReceiveMessage]);
 
+  // Загружаем историю при выборе контакта
   useEffect(() => {
     if (!selectedUser) return;
 
@@ -119,12 +165,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      const response = await axios.get(`${API_URL}/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await axios.get(
+        `${API_URL}/api/users/search?q=${encodeURIComponent(searchQuery)}`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
 
       if (Array.isArray(response.data)) {
-        const filtered = response.data.filter(user => user.id !== userState.user?.id && user.is_active !== false);
+        const filtered = response.data.filter(
+          user => user.id !== userState.user?.id && user.is_active !== false
+        );
         setSearchResults(filtered);
       }
     } catch (error) {
@@ -148,24 +197,44 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setSearchQuery('');
   };
 
-  const handleSendMessage = () => {
-    if (!selectedUser || !message.trim()) return;
+  // Отправка через HTTP API (Issue #3) — работает всегда, не зависит от WebSocket
+  const handleSendMessage = async () => {
+    if (!selectedUser || !message.trim() || loading) return;
 
+    const trimmed = message.trim();
     const timestamp = Date.now();
     const myId = userState.user?.id || 'me';
 
-    if (WebSocketService.isConnected) {
-      WebSocketService.sendPersonalMessage(selectedUser.id, message.trim(), timestamp);
-    }
-
+    // Оптимистично добавляем в UI
     setConversations(prev => {
       const next = { ...prev };
       if (!next[selectedUser.id]) next[selectedUser.id] = [];
-      next[selectedUser.id] = [...next[selectedUser.id], { sender: myId, text: message.trim(), timestamp }];
+      next[selectedUser.id] = [...next[selectedUser.id], { sender: myId, text: trimmed, timestamp }];
       return next;
     });
-
     setMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/api/users/messages`,
+        { toUserId: selectedUser.id, message: trimmed, timestamp },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Откатываем оптимистичное обновление при ошибке
+      setConversations(prev => {
+        const next = { ...prev };
+        if (next[selectedUser.id]) {
+          next[selectedUser.id] = next[selectedUser.id].filter(
+            m => !(m.sender === myId && m.timestamp === timestamp && m.text === trimmed)
+          );
+        }
+        return next;
+      });
+      setMessage(trimmed);
+    }
   };
 
   if (!isOpen) return null;
@@ -174,9 +243,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const currentMessages = selectedUser ? (conversations[selectedUser.id] || []) : [];
 
   return (
-    <div className="room-interface-overlay" onClick={onClose} data-nosnippet>
+    <div
+      className={`room-interface-overlay${isMobileView ? ' pm-overlay-mobile' : ''}`}
+      onClick={onClose}
+      data-nosnippet
+    >
       <div
-        className={`room-interface personal-messages-modal ${mobileShowChat ? 'mobile-chat-fullscreen' : ''}`}
+        className={`room-interface personal-messages-modal${mobileShowChat ? ' mobile-chat-fullscreen' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {isMobileView ? (
@@ -193,7 +266,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
           <button className="room-close-btn" onClick={onClose}>×</button>
         )}
 
-        <div className={`personal-messages-container ${mobileShowChat ? 'mobile-chat-only' : ''}`}>
+        <div className={`personal-messages-container${mobileShowChat ? ' mobile-chat-only' : ''}`}>
           {!mobileShowChat && (
             <div className="sidebar active">
               <div className="search-container">
@@ -230,7 +303,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                       {searchResults.map(user => (
                         <li key={user.id} className="user-item" onClick={() => addUserToContacts(user)}>
                           <div className="user-avatar">
-                            {user.avatar_url ? <img src={user.avatar_url} alt={user.username} /> : <span>{user.username.charAt(0).toUpperCase()}</span>}
+                            {user.avatar_url
+                              ? <img src={user.avatar_url} alt={user.username} />
+                              : <span>{user.username.charAt(0).toUpperCase()}</span>}
                           </div>
                           <div className="user-info">
                             <span className="user-name">{user.username}</span>
@@ -258,11 +333,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                         return (
                           <li
                             key={user.id}
-                            className={`user-item ${selectedUser?.id === user.id ? 'selected' : ''}`}
+                            className={`user-item${selectedUser?.id === user.id ? ' selected' : ''}`}
                             onClick={() => setSelectedUser(user)}
                           >
                             <div className="user-avatar">
-                              {user.avatar_url ? <img src={user.avatar_url} alt={user.username} /> : <span>{user.username.charAt(0).toUpperCase()}</span>}
+                              {user.avatar_url
+                                ? <img src={user.avatar_url} alt={user.username} />
+                                : <span>{user.username.charAt(0).toUpperCase()}</span>}
                             </div>
                             <div className="user-info">
                               <span className="user-name">{user.username}</span>
@@ -282,13 +359,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
             </div>
           )}
 
-          <div className={`chat-area ${mobileShowChat ? 'fullscreen' : ''}`}>
+          <div className={`chat-area${mobileShowChat ? ' fullscreen' : ''}`}>
             {selectedUser ? (
               <>
                 {!isMobileView && (
                   <div className="chat-header">
                     <div className="user-avatar">
-                      {selectedUser.avatar_url ? <img src={selectedUser.avatar_url} alt={selectedUser.username} /> : <span>{selectedUser.username.charAt(0).toUpperCase()}</span>}
+                      {selectedUser.avatar_url
+                        ? <img src={selectedUser.avatar_url} alt={selectedUser.username} />
+                        : <span>{selectedUser.username.charAt(0).toUpperCase()}</span>}
                     </div>
                     <div className="user-info">
                       <h3>{selectedUser.username}</h3>
@@ -334,7 +413,11 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                     placeholder="Введите сообщение..."
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   />
-                  <button className="send-btn" onClick={handleSendMessage} disabled={!message.trim() || loading}>
+                  <button
+                    className="send-btn"
+                    onClick={handleSendMessage}
+                    disabled={!message.trim() || loading}
+                  >
                     Отправить
                   </button>
                 </div>

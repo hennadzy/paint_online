@@ -382,9 +382,7 @@ button:active {
     min-width: 100%;
     height: max-content;
     min-height: 100%;
-    /* margin: auto центрирует когда контент меньше контейнера,
-       и не блокирует прокрутку когда контент больше */
-    margin: auto;
+    /* margin: auto убран — он блокирует прокрутку к левому/верхнему краю при зуме (Issue #5) */
   }
 
   .canvas-wrapper {
