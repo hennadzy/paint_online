@@ -123,9 +123,28 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   // Локальная WS‑подписка на личные сообщения при открытой модалке — мгновенное обновление UI
   useEffect(() => {
     if (!isOpen) return;
-    const wsHandler = (data) => handleReceiveMessage(data);
+    
+    // Убедимся, что WebSocket соединение активно
+    if (!WebSocketService.isConnected) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Если нет активного соединения, но есть токен - пробуем подключиться
+        WebSocketService.connect(window.location.hostname === 'localhost' 
+          ? 'ws://localhost:5000' 
+          : 'wss://paint-online-back.onrender.com', 
+          'personal', userState.user?.username || 'guest', token)
+          .catch(err => console.error('Error connecting to WebSocket:', err));
+      }
+    }
+    
+    const wsHandler = (data) => {
+      console.log('Received personal message:', data);
+      handleReceiveMessage(data);
+    };
+    
     WebSocketService.on('personalMessage', wsHandler);
     wsSubscribedRef.current = true;
+    
     return () => {
       WebSocketService.off('personalMessage', wsHandler);
       wsSubscribedRef.current = false;
@@ -234,6 +253,22 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setMessage('');
 
     try {
+      // Проверяем WebSocket соединение
+      if (!WebSocketService.isConnected) {
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            // Если нет активного соединения, но есть токен - пробуем подключиться
+            await WebSocketService.connect(window.location.hostname === 'localhost' 
+              ? 'ws://localhost:5000' 
+              : 'wss://paint-online-back.onrender.com', 
+              'personal', userState.user?.username || 'guest', token);
+          } catch (wsError) {
+            console.error('Failed to establish WebSocket connection:', wsError);
+          }
+        }
+      }
+      
       // Отправляем через WebSocket для мгновенной доставки
       WebSocketService.sendPersonalMessage(selectedUser.id, trimmed, timestamp);
       
@@ -275,19 +310,21 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
         className={`room-interface personal-messages-modal${mobileShowChat ? ' mobile-chat-fullscreen' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {isMobileView ? (
-          <div className="pm-mobile-header">
-            {mobileShowChat ? (
-              <button className="back-to-contacts" onClick={() => setSelectedUser(null)}>←</button>
-            ) : (
-              <span className="pm-mobile-title">Личные сообщения</span>
-            )}
-            {mobileShowChat && <span className="pm-mobile-title">{selectedUser.username}</span>}
-            <button className="pm-close-btn" onClick={onClose}>×</button>
-          </div>
-        ) : (
-          <button className="room-close-btn" onClick={onClose}>×</button>
-        )}
+        <div className="pm-header">
+          {isMobileView ? (
+            <>
+              {mobileShowChat ? (
+                <button className="back-to-contacts" onClick={() => setSelectedUser(null)}>←</button>
+              ) : (
+                <span className="pm-mobile-title">Личные сообщения</span>
+              )}
+              {mobileShowChat && <span className="pm-mobile-title">{selectedUser.username}</span>}
+            </>
+          ) : (
+            <span className="pm-title">Личные сообщения</span>
+          )}
+          <button className="pm-close-btn" onClick={onClose}>×</button>
+        </div>
 
         <div className={`personal-messages-container${mobileShowChat ? ' mobile-chat-only' : ''}${selectedUser ? ' has-selected' : ''}`}>
           {!mobileShowChat && (

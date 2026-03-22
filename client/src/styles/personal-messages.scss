@@ -428,8 +428,8 @@
   color: #aaa;
 }
 
-// Мобильный заголовок
-.pm-mobile-header {
+// Заголовок для всех версий
+.pm-header {
   display: flex;
   align-items: center;
   padding: 10px 15px;
@@ -438,7 +438,7 @@
   min-height: 48px;
 }
 
-.pm-mobile-title {
+.pm-title, .pm-mobile-title {
   flex: 1;
   font-weight: 600;
   font-size: 16px;
@@ -651,11 +651,11 @@
         color: #777;
       }
 
-      .pm-mobile-header {
+      .pm-header {
         border-bottom-color: #444;
       }
 
-      .pm-mobile-title {
+      .pm-title, .pm-mobile-title {
         color: #eee;
       }
 
