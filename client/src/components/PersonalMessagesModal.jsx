@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
-import PersonalWSService from '../services/PersonalWSService';
 import { API_URL } from '../store/canvasState';
 import axios from 'axios';
 import '../styles/personal-messages.scss';
@@ -202,7 +201,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setSearchQuery('');
   };
 
-  // Отправка через PersonalWSService (мгновенная доставка) + HTTP API (сохранение в БД)
+  // Отправка через HTTP API (сохранение в БД + доставка получателю через WebSocket)
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
 
@@ -220,10 +219,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setMessage('');
 
     try {
-      // Отправляем через PersonalWSService для мгновенной доставки получателю
-      PersonalWSService.sendPersonalMessage(selectedUser.id, trimmed, timestamp);
-
-      // Сохраняем через HTTP API для надёжности и персистентности в БД
+      // Сохраняем через HTTP API — он же доставляет получателю через WebSocket
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/api/users/messages`,
