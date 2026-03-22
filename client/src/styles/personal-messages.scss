@@ -10,6 +10,90 @@
   overflow: hidden;
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
+  // Темная тема
+  &.dark-theme {
+    background-color: #222;
+    color: #eee;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    
+    .sidebar {
+      border-right-color: #444;
+    }
+    
+    .search-container {
+      border-bottom-color: #444;
+    }
+    
+    .search-input {
+      background-color: #333;
+      border-color: #555;
+      color: #eee;
+    }
+    
+    .search-btn {
+      background-color: #555;
+    }
+    
+    .back-btn {
+      background-color: #444;
+      color: #eee;
+    }
+    
+    .user-item:hover {
+      background-color: #333;
+    }
+    
+    .user-item.selected {
+      background-color: #444;
+    }
+    
+    .user-avatar {
+      background-color: #555;
+    }
+    
+    .user-name {
+      color: #eee;
+    }
+    
+    .last-message, .user-status {
+      color: #aaa;
+    }
+    
+    .chat-header {
+      border-bottom-color: #444;
+    }
+    
+    .message.sent .message-content {
+      background-color: #2a4d69;
+    }
+    
+    .message.received .message-content {
+      background-color: #444;
+    }
+    
+    .message-time {
+      color: #aaa;
+    }
+    
+    .message-input-container {
+      border-top-color: #444;
+    }
+    
+    .message-input {
+      background-color: #333;
+      border-color: #555;
+      color: #eee;
+    }
+    
+    .empty-state {
+      color: #aaa;
+    }
+    
+    .empty-hint {
+      color: #777;
+    }
+  }
 }
 
 .personal-messages-container {
@@ -339,5 +423,105 @@
   
   .personal-messages-container.show-chat .chat-area {
     display: flex;
+  }
+  
+  /* Исправление наложения крестика на кнопку поиска */
+  .room-close-btn {
+    z-index: 10;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+  
+  .search-container {
+    padding-right: 30px; /* Добавляем отступ справа, чтобы кнопка поиска не перекрывалась крестиком */
+  }
+}
+
+/* Автоматическое применение темной темы при наличии системных настроек */
+@media (prefers-color-scheme: dark) {
+  .personal-messages-modal {
+    &:not(.light-theme) {
+      background-color: #222;
+      color: #eee;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      
+      .sidebar {
+        border-right-color: #444;
+      }
+      
+      .search-container {
+        border-bottom-color: #444;
+      }
+      
+      .search-input {
+        background-color: #333;
+        border-color: #555;
+        color: #eee;
+      }
+      
+      .search-btn {
+        background-color: #555;
+      }
+      
+      .back-btn {
+        background-color: #444;
+        color: #eee;
+      }
+      
+      .user-item:hover {
+        background-color: #333;
+      }
+      
+      .user-item.selected {
+        background-color: #444;
+      }
+      
+      .user-avatar {
+        background-color: #555;
+      }
+      
+      .user-name {
+        color: #eee;
+      }
+      
+      .last-message, .user-status {
+        color: #aaa;
+      }
+      
+      .chat-header {
+        border-bottom-color: #444;
+      }
+      
+      .message.sent .message-content {
+        background-color: #2a4d69;
+      }
+      
+      .message.received .message-content {
+        background-color: #444;
+      }
+      
+      .message-time {
+        color: #aaa;
+      }
+      
+      .message-input-container {
+        border-top-color: #444;
+      }
+      
+      .message-input {
+        background-color: #333;
+        border-color: #555;
+        color: #eee;
+      }
+      
+      .empty-state {
+        color: #aaa;
+      }
+      
+      .empty-hint {
+        color: #777;
+      }
+    }
   }
 }

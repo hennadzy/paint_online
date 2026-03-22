@@ -80,6 +80,13 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       // Очищаем существующие штрихи, чтобы предотвратить дублирование
       HistoryService.clearStrokes();
       
+      // Очищаем буфер холста
+      if (CanvasService.bufferCtx) {
+        CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
+        CanvasService.bufferCtx.fillStyle = 'white';
+        CanvasService.bufferCtx.fillRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
+      }
+      
       // Обновляем отмененные ID штрихов
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
@@ -87,8 +94,17 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         this.cancelledStrokeIds = [];
       }
       
-      // Фильтруем отмененные штрихи
-      const filteredStrokes = strokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
+      // Фильтруем отмененные штрихи и удаляем дубликаты
+      const uniqueStrokeIds = new Set();
+      const filteredStrokes = strokes
+        .filter(s => !this.cancelledStrokeIds.includes(s.id))
+        .filter(s => {
+          if (uniqueStrokeIds.has(s.id)) {
+            return false;
+          }
+          uniqueStrokeIds.add(s.id);
+          return true;
+        });
       
       // Устанавливаем отфильтрованные штрихи
       HistoryService.setStrokes(filteredStrokes);

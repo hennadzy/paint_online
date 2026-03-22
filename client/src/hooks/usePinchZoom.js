@@ -98,15 +98,20 @@ export function usePinchZoom(containerRef) {
             container.scrollLeft = newScrollLeft;
             container.scrollTop = newScrollTop;
             
-            // Проверяем, что левая сторона холста доступна для прокрутки
+            // Проверяем, что левая и верхняя стороны холста доступны для прокрутки
             const canvas = document.querySelector('.main-canvas');
             if (canvas) {
               const canvasRect = canvas.getBoundingClientRect();
               const containerRect = container.getBoundingClientRect();
               
-              // Если левая сторона холста не видна, корректируем прокрутку
+              // Если левая сторона холста не видна, корректируем прокрутку по горизонтали
               if (canvasRect.left > containerRect.left) {
                 container.scrollLeft = Math.max(0, container.scrollLeft - (canvasRect.left - containerRect.left));
+              }
+              
+              // Если верхняя сторона холста не видна, корректируем прокрутку по вертикали
+              if (canvasRect.top > containerRect.top) {
+                container.scrollTop = Math.max(0, container.scrollTop - (canvasRect.top - containerRect.top));
               }
             }
           });

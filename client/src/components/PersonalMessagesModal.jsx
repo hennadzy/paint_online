@@ -63,7 +63,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setLoading(true);
     try {
       // Fetch active users from the server
-      const response = await axios.get(`${API_URL}/users/active`, {
+      const response = await axios.get(`${API_URL}/api/users/active`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -115,7 +115,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     setLoading(true);
     
     try {
-      const response = await axios.get(`${API_URL}/users/search?q=${encodeURIComponent(searchQuery)}`, {
+      const response = await axios.get(`${API_URL}/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
