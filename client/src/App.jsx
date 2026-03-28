@@ -85,13 +85,14 @@ const App = observer(() => {
     }
 
     const isAdminPage = location.pathname === '/admin';
+    const isColoringPage = location.pathname === '/coloring';
     
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''}`}>
                 <Routes>
                     <Route path='/' element={<Canvas />} />
                     <Route path='/login' element={<AuthPage />} />

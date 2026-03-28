@@ -40,7 +40,7 @@ const ColoringPage = () => {
       setIsLoading(true);
       setFetchError('');
       try {
-        const res = await fetch(`${API_URL}/api/coloring-pages`);
+        const res = await fetch(`${API_URL}/coloring-pages`);
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
         setColoringPages(data);

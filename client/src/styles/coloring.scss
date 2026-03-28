@@ -1,5 +1,23 @@
 @import "./variables";
 
+// ─── Full-screen reset for main-content wrapper ───────────────────────────────
+
+.main-content--coloring {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #1a1a2e !important;
+  z-index: 1 !important;
+}
+
 // ─── Page Shell ──────────────────────────────────────────────────────────────
 
 .coloring-page {
