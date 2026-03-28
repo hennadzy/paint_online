@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Fill from '../tools/Fill';
 import { API_URL } from '../store/canvasState';
 import '../styles/coloring.scss';
+import '../styles/modal.scss';
 
 // Локальная история для undo/redo раскрасок
 class ColoringHistory {
@@ -102,6 +103,20 @@ const ColoringPage = () => {
  // Состояние для zoom
  const [zoom, setZoom] = useState(1);
  const [isPinching, setIsPinching] = useState(false);
+ 
+ // Состояние для undo/redo
+ const [canUndo, setCanUndo] = useState(false);
+ const [canRedo, setCanRedo] = useState(false);
+ 
+ // Состояние для диалога сохранения
+ const [showSaveModal, setShowSaveModal] = useState(false);
+ const [saveFilename, setSaveFilename] = useState('coloring');
+ const [saveFormat, setSaveFormat] = useState('png');
+ 
+ // Refs для pinch-to-zoom
+ const zoomRef = useRef(1);
+ const initialZoomRef = useRef(1);
+ const initialDistanceRef = useRef(0);
 
   // Fetch available coloring pages on mount
   useEffect(() => {
@@ -130,6 +145,9 @@ const ColoringPage = () => {
  setImageLoaded(false);
  coloringHistory.clear();
  setZoom(1);
+ zoomRef.current = 1;
+ setCanUndo(false);
+ setCanRedo(false);
  const ctx = canvas.getContext('2d');
  const img = new Image();
  img.crossOrigin = 'anonymous';
@@ -166,9 +184,6 @@ const ColoringPage = () => {
  const wrapper = wrapperRef.current;
  if (!wrapper) return;
 
- let initialDistance =0;
- let initialZoom =1;
-
  const getDistance = (t1, t2) => {
  const dx = t2.clientX - t1.clientX;
  const dy = t2.clientY - t1.clientY;
@@ -176,26 +191,28 @@ const ColoringPage = () => {
  };
 
  const handleTouchStart = (e) => {
- if (e.touches.length ===2) {
+ if (e.touches.length === 2) {
  e.preventDefault();
- initialDistance = getDistance(e.touches[0], e.touches[1]);
- initialZoom = zoom;
+ initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
+ initialZoomRef.current = zoomRef.current;
  setIsPinching(true);
  }
  };
 
  const handleTouchMove = (e) => {
- if (e.touches.length ===2 && initialDistance >0) {
+ if (e.touches.length === 2 && initialDistanceRef.current > 0) {
  e.preventDefault();
  const currentDistance = getDistance(e.touches[0], e.touches[1]);
- const scale = currentDistance / initialDistance;
- setZoom(prev => Math.max(0.5, Math.min(3, initialZoom * scale)));
+ const scale = currentDistance / initialDistanceRef.current;
+ const newZoom = Math.max(0.5, Math.min(3, initialZoomRef.current * scale));
+ zoomRef.current = newZoom;
+ setZoom(newZoom);
  }
  };
 
  const handleTouchEnd = (e) => {
- if (e.touches.length< 2) {
- initialDistance =0;
+ if (e.touches.length < 2) {
+ initialDistanceRef.current = 0;
  setIsPinching(false);
  }
  };
@@ -211,7 +228,7 @@ const ColoringPage = () => {
  wrapper.removeEventListener('touchend', handleTouchEnd);
  wrapper.removeEventListener('touchcancel', handleTouchEnd);
  };
- }, [zoom]);
+ }, []);
 
   const handleSelectPage = (page) => {
     setSelectedPage(page);
@@ -235,6 +252,10 @@ const ColoringPage = () => {
  // Сохраняем состояние в историю перед заливкой
  const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
  coloringHistory.push(imageData);
+ 
+ // Обновляем состояние undo/redo
+ setCanUndo(coloringHistory.canUndo());
+ setCanRedo(coloringHistory.canRedo());
 
  Fill.staticDraw(ctx, x, y, selectedColor);
  }, [imageLoaded, selectedColor, isPinching]);
@@ -250,6 +271,9 @@ const ColoringPage = () => {
  
  if (prevImageData) {
  ctx.putImageData(prevImageData,0,0);
+ // Обновляем состояние undo/redo
+ setCanUndo(coloringHistory.canUndo());
+ setCanRedo(coloringHistory.canRedo());
  }
  }, []);
 
@@ -263,19 +287,59 @@ const ColoringPage = () => {
  
  if (nextImageData) {
  ctx.putImageData(nextImageData,0,0);
+ // Обновляем состояние undo/redo
+ setCanUndo(coloringHistory.canUndo());
+ setCanRedo(coloringHistory.canRedo());
  }
  }, []);
 
  // Сохранение раскраски
  const handleSave = useCallback(() => {
+ const defaultName = `coloring-${selectedPage?.title || 'image'}`;
+ setSaveFilename(defaultName);
+ setSaveFormat('png');
+ setShowSaveModal(true);
+ }, [selectedPage]);
+
+ const performExport = useCallback(() => {
  const canvas = canvasRef.current;
  if (!canvas) return;
 
- const link = document.createElement('a');
- link.download = `coloring-${selectedPage?.title || 'image'}-${Date.now()}.png`;
- link.href = canvas.toDataURL('image/png');
- link.click();
- }, [selectedPage]);
+ const filename = (saveFilename || '').trim() || `coloring-${selectedPage?.title || 'image'}`;
+ let href, downloadName;
+
+ if (saveFormat === 'png') {
+ href = canvas.toDataURL('image/png');
+ downloadName = `${filename}.png`;
+ } else if (saveFormat === 'jpg') {
+ href = canvas.toDataURL('image/jpeg', 0.95);
+ downloadName = `${filename}.jpg`;
+ } else if (saveFormat === 'svg') {
+ const pngData = canvas.toDataURL('image/png');
+ const svgContent =
+ `<?xml version="1.0" encoding="UTF-8"?>\n` +
+ `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+ `width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">\n` +
+ `<image href="${pngData}" width="${canvas.width}" height="${canvas.height}"/>\n` +
+ `</svg>`;
+ const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+ href = URL.createObjectURL(blob);
+ downloadName = `${filename}.svg`;
+ }
+
+ const a = document.createElement('a');
+ a.href = href;
+ a.download = downloadName;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+
+ if (saveFormat === 'svg') {
+ setTimeout(() => URL.revokeObjectURL(href), 1000);
+ }
+
+ setShowSaveModal(false);
+ }, [saveFilename, saveFormat, selectedPage]);
 
   const handleBackToSelector = () => {
     setSelectedPage(null);
@@ -377,25 +441,25 @@ const ColoringPage = () => {
 </div>
 
  {/* Actions Panel */}
-<div className="coloring-actions">
-<button 
- className="coloring-action-btn" 
+ <div className="coloring-actions">
+ <button
+ className="coloring-action-btn"
  onClick={handleUndo}
- disabled={!coloringHistory.canUndo()}
+ disabled={!canUndo}
  title="Отменить"
  >
-<span className="coloring-action-icon">↩</span>
-<span>Отменить</span>
-</button>
-<button 
- className="coloring-action-btn" 
+ <span className="coloring-action-icon">↩</span>
+ <span>Отменить</span>
+ </button>
+ <button
+ className="coloring-action-btn"
  onClick={handleRedo}
- disabled={!coloringHistory.canRedo()}
+ disabled={!canRedo}
  title="Вернуть"
  >
-<span className="coloring-action-icon">↪</span>
-<span>Вернуть</span>
-</button>
+ <span className="coloring-action-icon">↪</span>
+ <span>Вернуть</span>
+ </button>
 <button 
  className="coloring-action-btn coloring-action-btn--save" 
  onClick={handleSave}
@@ -442,8 +506,65 @@ const ColoringPage = () => {
 </label>
 </div>
 </div>
-</div>
-</div>
+ </div>
+ </div>
+
+ {/* Save Modal */}
+ {showSaveModal && (
+   <div className="export-modal-overlay" onClick={() => setShowSaveModal(false)}>
+     <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+       <h3 className="export-modal__title">Сохранить изображение</h3>
+
+       <div className="export-modal__field">
+         <label className="export-modal__label">Имя файла</label>
+         <input
+           className="export-modal__input"
+           type="text"
+           value={saveFilename}
+           onChange={(e) => setSaveFilename(e.target.value)}
+           onKeyDown={(e) => { if (e.key === 'Enter') performExport(); if (e.key === 'Escape') setShowSaveModal(false); }}
+           placeholder="Имя файла"
+           autoFocus
+         />
+       </div>
+
+       <div className="export-modal__field">
+         <label className="export-modal__label">Формат</label>
+         <div className="export-format-options">
+           {[
+             { value: 'png', label: 'PNG', desc: 'Без потерь' },
+             { value: 'jpg', label: 'JPG', desc: 'Меньше размер' },
+             { value: 'svg', label: 'SVG', desc: 'Векторный' }
+           ].map(({ value, label, desc }) => (
+             <label
+               key={value}
+               className={`export-format-option ${saveFormat === value ? 'active' : ''}`}
+             >
+               <input
+                 type="radio"
+                 name="saveFormat"
+                 value={value}
+                 checked={saveFormat === value}
+                 onChange={() => setSaveFormat(value)}
+               />
+               <span className="export-format-name">{label}</span>
+               <span className="export-format-desc">{desc}</span>
+             </label>
+           ))}
+         </div>
+       </div>
+
+       <div className="export-modal__actions">
+         <button className="export-btn export-btn-primary" onClick={performExport}>
+           💾 Сохранить
+         </button>
+         <button className="export-btn export-btn-secondary" onClick={() => setShowSaveModal(false)}>
+           Отмена
+         </button>
+       </div>
+     </div>
+   </div>
+ )}
  );
 };
 
