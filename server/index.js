@@ -107,7 +107,45 @@ function send404Page(res) {
 }
 
 app.get('/404', (req, res) => {
-  send404Page(res);
+ send404Page(res);
+});
+
+// Legacy coloring page URL compatibility - serve old /files/coloring_XXX.jpg/.png from DB
+app.get('/files/coloring_:id.:ext', async (req, res) => {
+ const id = req.params.id;
+ const ext = req.params.ext;
+ // Only allow common image extensions
+ if (!id || !/^\d+$/.test(id) || !['jpg','jpeg','png','gif','webp'].includes(ext)) {
+ return res.status(404).send('Not found');
+ }
+
+ try {
+ const result = await pgPool.query(
+ 'SELECT image_data FROM coloring_pages WHERE id = $1',
+ [parseInt(id,10)]
+ );
+
+ if (result.rows.length ===0 || !result.rows[0].image_data) {
+ return res.status(404).send('Image not found');
+ }
+
+ const imageData = result.rows[0].image_data;
+ const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+ if (!match) {
+ return res.status(500).send('Invalid image data');
+ }
+
+ const mimeType = match[1];
+ const buffer = Buffer.from(match[2], 'base64');
+
+ res.setHeader('Content-Type', mimeType);
+ res.setHeader('Cache-Control', 'public, max-age=86400');
+ res.setHeader('Access-Control-Allow-Origin', '*');
+ res.send(buffer);
+ } catch (error) {
+ console.error('Legacy coloring image error:', error);
+ res.status(500).send('Server error');
+ }
 });
 
 app.use('/files', (req, res, next) => {
