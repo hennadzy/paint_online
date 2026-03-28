@@ -35,26 +35,29 @@ const ProfilePage = observer(() => {
  const navigate = useNavigate();
  const location = useLocation();
  const [editMode, setEditMode] = useState(false);
-  const [username, setUsername] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [uploadError, setUploadError] = useState('');
-  const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
-  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
-  const fileInputRef = useRef(null);
+ const [username, setUsername] = useState('');
+ const [currentPassword, setCurrentPassword] = useState('');
+ const [newPassword, setNewPassword] = useState('');
+ const [showNewPassword, setShowNewPassword] = useState(false);
+ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+ const [passwordError, setPasswordError] = useState('');
+ const [avatarFile, setAvatarFile] = useState(null);
+ const [previewUrl, setPreviewUrl] = useState(null);
+ const [uploadError, setUploadError] = useState('');
+ const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
+ const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
+ const fileInputRef = useRef(null);
+ const [fromRoom, setFromRoom] = useState(null);
 
- useEffect(() => {
+useEffect(() => {
  // Сохраняем предыдущий путь для корректного выхода
  const referrer = document.referrer;
+ let fromRoomPath = null;
  if (referrer && !referrer.includes('/profile') && !referrer.includes('/login') && !referrer.includes('/register')) {
  try {
  const url = new URL(referrer);
  if (url.pathname.match(/^\/[a-zA-Z0-9]{9}$/)) {
+ fromRoomPath = url.pathname;
  sessionStorage.setItem('profileFromRoom', url.pathname);
  } else if (url.pathname === '/') {
  sessionStorage.setItem('profileFromRoom', '/');
@@ -63,6 +66,7 @@ const ProfilePage = observer(() => {
  // ignore parse errors
  }
  }
+ setFromRoom(fromRoomPath);
 
  if (!userState.isAuthenticated) {
  navigate('/login');
@@ -142,13 +146,17 @@ const ProfilePage = observer(() => {
   return (
     <div className="profile-page">
       <div className="profile-container">
-        <div className="profile-header">
-          <h1>Личный кабинет</h1>
-          <button className="profile-btn profile-btn-secondary" onClick={() => navigate('/')} aria-label="На главную">
-            <span className="profile-back-icon" aria-hidden="true">×</span>
-            <span className="profile-back-text">← На главную</span>
-          </button>
-        </div>
+<div className="profile-header">
+<h1>Личный кабинет</h1>
+<button 
+ className="profile-btn profile-btn-secondary" 
+ onClick={() => navigate(fromRoom || '/')} 
+ aria-label={fromRoom ? 'В комнату' : 'На главную'}
+ >
+<span className="profile-back-icon" aria-hidden="true">×</span>
+<span className="profile-back-text">{fromRoom ? '← В комнату' : '← На главную'}</span>
+</button>
+</div>
 
         <div className="profile-content">
           <div className="profile-left">
@@ -327,11 +335,11 @@ const ProfilePage = observer(() => {
               )}
             </div>
 
-            <div className="profile-logout">
-              <button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
-                Выйти из аккаунта
-              </button>
-            </div>
+<div className="profile-logout">
+<button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
+{fromRoom ? 'Выйти в комнату' : 'Выйти на главную'}
+</button>
+</div>
           </div>
         </div>
       </div>
