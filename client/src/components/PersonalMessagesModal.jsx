@@ -7,6 +7,19 @@ import '../styles/personal-messages.scss';
 
 const getContactsKey = () => `personalContacts_${userState.user?.id || 'guest'}`;
 
+// Декодирует HTML-сущности (&#x2F; → /, &amp; → & и т.д.)
+// Нужно для корректного отображения старых сообщений, сохранённых с validator.escape()
+const decodeHtmlEntities = (text) => {
+  if (typeof text !== 'string') return '';
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  } catch (_) {
+    return text;
+  }
+};
+
 const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [message, setMessage] = useState('');
@@ -393,7 +406,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                       return (
                         <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
                           <div className="message-content">
-                            <p>{msg.text}</p>
+                            <p>{decodeHtmlEntities(msg.text)}</p>
                             <span className="message-time">
                               {formattedTime}
                             </span>

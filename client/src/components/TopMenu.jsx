@@ -292,7 +292,7 @@ const TopMenu = observer(() => {
                 <button
                   type="button"
                   className="toolbar__btn"
-                  onClick={() => navigate('/profile')}
+                  onClick={() => { sessionStorage.setItem('profileFromRoom', '/'); navigate('/profile'); }}
                   onMouseDown={(e) => e.target.blur()}
                   title="Профиль"
                 >
@@ -378,7 +378,7 @@ const TopMenu = observer(() => {
 <button
  type="button"
  className="toolbar__btn"
- onClick={() => navigate('/profile')}
+ onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
  onMouseDown={(e) => e.target.blur()}
  title="Профиль"
  >

@@ -196,6 +196,21 @@ class UserState {
     }
   }
 
+  async fetchCurrentUser() {
+    try {
+      const response = await axios.get(`${API_URL}/api/users/me`);
+      runInAction(() => {
+        if (response.data.user) {
+          // Обновляем данные пользователя в памяти (не сохраняем в localStorage,
+          // чтобы не потерять avatar_url при следующей загрузке)
+          this.user = { ...this.user, ...response.data.user };
+        }
+      });
+    } catch (error) {
+      console.error('Fetch current user error:', error);
+    }
+  }
+
   async fetchUserRooms() {
     try {
       const response = await axios.get(`${API_URL}/api/users/me/rooms`);

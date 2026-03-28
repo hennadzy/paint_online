@@ -78,13 +78,11 @@ const sanitizeChatMessage = (text) => {
     KEEP_CONTENT: true
   });
   
-  sanitized = xss(sanitized, {
-    whiteList: {},
-    stripIgnoreTag: true,
-    stripIgnoreTagBody: ['script', 'style']
-  });
-  
-  sanitized = validator.escape(sanitized);
+  // xss с пустым whiteList удаляет все HTML-теги, оставляя чистый текст.
+  // validator.escape() намеренно убран: он HTML-кодирует / → &#x2F; и & → &amp;,
+  // что ломает отображение ссылок при рендере как plain text в React.
+  // DOMPurify + xss уже достаточно для безопасности.
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
   
   return sanitized;
 };

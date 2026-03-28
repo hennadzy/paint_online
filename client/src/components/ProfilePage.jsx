@@ -50,40 +50,17 @@ const ProfilePage = observer(() => {
  const [fromRoom, setFromRoom] = useState(null);
 
 useEffect(() => {
- // Проверяем sessionStorage сначала (при обновлении страницы)
- let fromRoomPath = sessionStorage.getItem('profileFromRoom');
- 
- // Если нет в sessionStorage, проверяем document.referrer
- if (!fromRoomPath) {
- const referrer = document.referrer;
- if (referrer && !referrer.includes('/profile') && !referrer.includes('/login') && !referrer.includes('/register')) {
- try {
- const url = new URL(referrer);
- if (url.pathname.match(/^\/[a-zA-Z0-9]{9}$/)) {
- fromRoomPath = url.pathname;
- sessionStorage.setItem('profileFromRoom', url.pathname);
- } else if (url.pathname === '/') {
- sessionStorage.setItem('profileFromRoom', '/');
- }
- } catch (e) {
- // ignore parse errors
- }
- }
- }
- 
- // Если текущий путь - это комната, сохраняем его
- const currentPath = window.location.pathname;
- if (currentPath.match(/^\/[a-zA-Z0-9]{9}$/)) {
- fromRoomPath = currentPath;
- sessionStorage.setItem('profileFromRoom', currentPath);
- }
- 
+ // Читаем откуда пришёл пользователь из sessionStorage
+ // (TopMenu устанавливает это значение перед navigate('/profile'))
+ const fromRoomPath = sessionStorage.getItem('profileFromRoom');
  setFromRoom(fromRoomPath);
 
  if (!userState.isAuthenticated) {
  navigate('/login');
  } else {
  setUsername(userState.user?.username || '');
+ // Обновляем данные пользователя с сервера (в т.ч. аватар)
+ userState.fetchCurrentUser();
  userState.fetchUserRooms();
  userState.fetchActivityRooms();
  }
@@ -166,10 +143,10 @@ useEffect(() => {
    sessionStorage.removeItem('profileFromRoom');
    navigate(fromRoom || '/');
  }}
- aria-label={fromRoom ? 'В комнату' : 'На главную'}
+ aria-label={/^\/[a-zA-Z0-9]{9}$/.test(fromRoom) ? 'В комнату' : 'На главную'}
  >
 <span className="profile-back-icon" aria-hidden="true">×</span>
-<span className="profile-back-text">{fromRoom ? '← В комнату' : '← На главную'}</span>
+<span className="profile-back-text">{/^\/[a-zA-Z0-9]{9}$/.test(fromRoom) ? '← В комнату' : '← На главную'}</span>
 </button>
 </div>
 
