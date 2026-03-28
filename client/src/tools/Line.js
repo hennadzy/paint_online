@@ -35,7 +35,7 @@ export default class Line extends Tool {
 
   listen() {
    
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
@@ -72,7 +72,7 @@ export default class Line extends Tool {
     this.endX = x;
     this.endY = y;
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     canvasState.redrawCanvas();
     Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
@@ -111,7 +111,7 @@ export default class Line extends Tool {
     this.endX = x;
     this.endY = y;
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     canvasState.redrawCanvas();
     Line.staticDraw(ctx, this.startX, this.startY, this.endX, this.endY, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }

@@ -68,7 +68,7 @@ class ToolState {
     this.tool.setLineWidth?.(this.lineWidths[this.toolName] ?? 1);
 
     if (this.tool.canvas) {
-      const ctx = this.tool.canvas.getContext("2d");
+      const ctx = this.tool.canvas.getContext("2d", { willReadFrequently: true });
       ctx.globalCompositeOperation = "source-over";
       this.tool.canvas.style.pointerEvents = "auto";
       

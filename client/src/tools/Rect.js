@@ -34,7 +34,7 @@ export default class Rect extends Tool {
   }
 
   listen() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
@@ -71,7 +71,7 @@ export default class Rect extends Tool {
     this.width = x - this.startX;
     this.height = y - this.startY;
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     canvasState.redrawCanvas();
     Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }
@@ -109,7 +109,7 @@ export default class Rect extends Tool {
     this.width = x - this.startX;
     this.height = y - this.startY;
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     canvasState.redrawCanvas();
     Rect.staticDraw(ctx, this.startX, this.startY, this.width, this.height, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }

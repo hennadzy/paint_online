@@ -8,7 +8,7 @@ export default class Tool {
     this.socket = socket;
     this.id = id;
     this.username = username;
-    this.ctx = canvas.getContext("2d");
+    this.ctx = canvas.getContext("2d", { willReadFrequently: true });
     this.strokeColor = toolState.strokeColor;
     this.fillColor = toolState.fillColor;
     const toolName = this.constructor.name.toLowerCase();

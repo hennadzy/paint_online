@@ -34,7 +34,7 @@ export default class Eraser extends Tool {
     this.canvas.removeEventListener("pointerenter", this.pointerEnterHandlerBound);
     this.removeGlobalEndEvents();
     
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
   }
 
@@ -76,7 +76,7 @@ export default class Eraser extends Tool {
     this.points.push({ x, y });
     this.drawSegment();
     
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
   }
 
@@ -85,7 +85,7 @@ export default class Eraser extends Tool {
       this.commitStroke();
       this.mouseDown = false;
       
-      const ctx = this.canvas.getContext("2d");
+      const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
       ctx.globalCompositeOperation = "source-over";
     }
   }
@@ -102,7 +102,7 @@ export default class Eraser extends Tool {
   }
 
   drawSegment() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     const len = this.points.length;
     if (len < 2) return;
 
@@ -120,7 +120,7 @@ export default class Eraser extends Tool {
   }
 
   drawStroke() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
 
     ctx.save();
     ctx.lineWidth = this.lineWidth;
@@ -165,7 +165,7 @@ export default class Eraser extends Tool {
       figure: stroke
     }));
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
     canvasState.redrawCanvas();
     

@@ -34,7 +34,7 @@ export default class Circle extends Tool {
       this.pointerUpHandlerBound = this.pointerUpHandler.bind(this);
     }
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
@@ -81,7 +81,7 @@ export default class Circle extends Tool {
     const { x, y } = this.getCanvasCoordinates(e);
     this.radius = Math.sqrt((x - this.startX) ** 2 + (y - this.startY) ** 2);
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     canvasState.redrawCanvas();
     Circle.staticDraw(ctx, this.startX, this.startY, this.radius, this.hexToRgba(this.strokeStyle, this.strokeOpacity), this.lineWidth);
   }

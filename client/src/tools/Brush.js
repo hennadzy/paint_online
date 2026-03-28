@@ -32,7 +32,7 @@ export default class Brush extends Tool {
       this.pointerUpHandlerBound = this.pointerUpHandler.bind(this);
     }
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
@@ -110,7 +110,7 @@ export default class Brush extends Tool {
   }
 
   drawDot() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.save();
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
@@ -122,7 +122,7 @@ export default class Brush extends Tool {
   }
 
   drawSegment() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     const len = this.points.length;
     if (len < 2) return;
 
@@ -143,7 +143,7 @@ export default class Brush extends Tool {
   }
 
   drawStroke() {
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
 
     ctx.save();
     ctx.lineWidth = this.lineWidth;

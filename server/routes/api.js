@@ -422,6 +422,7 @@ router.get('/coloring-pages/image/:id', async (req, res) => {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(buffer);
   } catch (error) {
     console.error('Get coloring page image error:', error);
