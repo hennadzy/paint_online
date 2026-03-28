@@ -67,7 +67,7 @@ class ColoringHistory {
  }
 }
 
-const coloringHistory = new ColoringHistory();
+const coloringHistoryRef = { current: new ColoringHistory() };
 
 const PRESET_COLORS = [
   // Row 1 — warm / primary
@@ -143,7 +143,7 @@ const ColoringPage = () => {
  if (!canvas) return;
 
  setImageLoaded(false);
- coloringHistory.clear();
+ coloringHistoryRef.current.clear();
  setZoom(1);
  zoomRef.current = 1;
  setCanUndo(false);
@@ -172,7 +172,12 @@ const ColoringPage = () => {
 
  // Обработчик pinch-to-zoom
  const handleWheel = useCallback((e) => {
- if (e.ctrlKey || e.metaKey) {
+ // Разрешаем масштабирование на всех устройствах
+ // На мобильных deltaY обычно больше, поэтому используем более чувствительный порог
+ const isMobile = window.innerWidth <= 768;
+ const threshold = isMobile ? 5 : 0;
+ 
+ if (Math.abs(e.deltaY) > threshold) {
  e.preventDefault();
  const delta = e.deltaY >0 ? -0.1 :0.1;
  setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
@@ -251,11 +256,11 @@ const ColoringPage = () => {
 
  // Сохраняем состояние в историю перед заливкой
  const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
- coloringHistory.push(imageData);
+ coloringHistoryRef.current.push(imageData);
  
  // Обновляем состояние undo/redo
- setCanUndo(coloringHistory.canUndo());
- setCanRedo(coloringHistory.canRedo());
+ setCanUndo(coloringHistoryRef.current.canUndo());
+ setCanRedo(coloringHistoryRef.current.canRedo());
 
  Fill.staticDraw(ctx, x, y, selectedColor);
  }, [imageLoaded, selectedColor, isPinching]);
@@ -263,33 +268,33 @@ const ColoringPage = () => {
  // Обработчики undo/redo
  const handleUndo = useCallback(() => {
  const canvas = canvasRef.current;
- if (!canvas || !coloringHistory.canUndo()) return;
+ if (!canvas || !coloringHistoryRef.current.canUndo()) return;
 
  const ctx = canvas.getContext('2d');
  const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
- const prevImageData = coloringHistory.undo(currentImageData);
+ const prevImageData = coloringHistoryRef.current.undo(currentImageData);
  
  if (prevImageData) {
  ctx.putImageData(prevImageData,0,0);
  // Обновляем состояние undo/redo
- setCanUndo(coloringHistory.canUndo());
- setCanRedo(coloringHistory.canRedo());
+ setCanUndo(coloringHistoryRef.current.canUndo());
+ setCanRedo(coloringHistoryRef.current.canRedo());
  }
  }, []);
 
  const handleRedo = useCallback(() => {
  const canvas = canvasRef.current;
- if (!canvas || !coloringHistory.canRedo()) return;
+ if (!canvas || !coloringHistoryRef.current.canRedo()) return;
 
  const ctx = canvas.getContext('2d');
  const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
- const nextImageData = coloringHistory.redo(currentImageData);
+ const nextImageData = coloringHistoryRef.current.redo(currentImageData);
  
  if (nextImageData) {
  ctx.putImageData(nextImageData,0,0);
  // Обновляем состояние undo/redo
- setCanUndo(coloringHistory.canUndo());
- setCanRedo(coloringHistory.canRedo());
+ setCanUndo(coloringHistoryRef.current.canUndo());
+ setCanRedo(coloringHistoryRef.current.canRedo());
  }
  }, []);
 
@@ -507,7 +512,6 @@ const ColoringPage = () => {
 </div>
 </div>
  </div>
- </div>
 
  {/* Save Modal */}
  {showSaveModal && (
@@ -565,7 +569,8 @@ const ColoringPage = () => {
      </div>
    </div>
  )}
- );
+ </div>
+);
 };
 
 export default ColoringPage;
