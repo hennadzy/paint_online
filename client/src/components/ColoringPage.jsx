@@ -170,24 +170,28 @@ const ColoringPage = () => {
  img.src = `${API_URL}${page.image_url}`;
  }, []);
 
- // Обработчик pinch-to-zoom
+ // Синхронизируем zoomRef с состоянием zoom
+ useEffect(() => {
+ zoomRef.current = zoom;
+ }, [zoom]);
+
+ // Обработчик колёсика мыши (десктоп)
  const handleWheel = useCallback((e) => {
- // Разрешаем масштабирование на всех устройствах
- // На мобильных deltaY обычно больше, поэтому используем более чувствительный порог
- const isMobile = window.innerWidth <= 768;
- const threshold = isMobile ? 5 : 0;
- 
- if (Math.abs(e.deltaY) > threshold) {
+ if (Math.abs(e.deltaY) > 0) {
  e.preventDefault();
- const delta = e.deltaY >0 ? -0.1 :0.1;
- setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+ const delta = e.deltaY > 0 ? -0.1 : 0.1;
+ setZoom(prev => {
+ const next = Math.max(0.5, Math.min(3, prev + delta));
+ zoomRef.current = next;
+ return next;
+ });
  }
  }, []);
 
- // Touch handlers для pinch-zoom
+ // Touch handlers для pinch-zoom — вешаем на containerRef (workspace)
  useEffect(() => {
- const wrapper = wrapperRef.current;
- if (!wrapper) return;
+ const container = containerRef.current;
+ if (!container) return;
 
  const getDistance = (t1, t2) => {
  const dx = t2.clientX - t1.clientX;
@@ -205,8 +209,14 @@ const ColoringPage = () => {
  };
 
  const handleTouchMove = (e) => {
- if (e.touches.length === 2 && initialDistanceRef.current > 0) {
+ if (e.touches.length === 2) {
  e.preventDefault();
+ if (initialDistanceRef.current === 0) {
+ // Инициализируем, если не было touchstart с 2 пальцами
+ initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
+ initialZoomRef.current = zoomRef.current;
+ return;
+ }
  const currentDistance = getDistance(e.touches[0], e.touches[1]);
  const scale = currentDistance / initialDistanceRef.current;
  const newZoom = Math.max(0.5, Math.min(3, initialZoomRef.current * scale));
@@ -218,21 +228,39 @@ const ColoringPage = () => {
  const handleTouchEnd = (e) => {
  if (e.touches.length < 2) {
  initialDistanceRef.current = 0;
- setIsPinching(false);
+ // Небольшая задержка, чтобы click-обработчик успел проверить isPinching
+ setTimeout(() => setIsPinching(false), 150);
  }
  };
 
- wrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
- wrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
- wrapper.addEventListener('touchend', handleTouchEnd);
- wrapper.addEventListener('touchcancel', handleTouchEnd);
+ container.addEventListener('touchstart', handleTouchStart, { passive: false });
+ container.addEventListener('touchmove', handleTouchMove, { passive: false });
+ container.addEventListener('touchend', handleTouchEnd);
+ container.addEventListener('touchcancel', handleTouchEnd);
 
  return () => {
- wrapper.removeEventListener('touchstart', handleTouchStart);
- wrapper.removeEventListener('touchmove', handleTouchMove);
- wrapper.removeEventListener('touchend', handleTouchEnd);
- wrapper.removeEventListener('touchcancel', handleTouchEnd);
+ container.removeEventListener('touchstart', handleTouchStart);
+ container.removeEventListener('touchmove', handleTouchMove);
+ container.removeEventListener('touchend', handleTouchEnd);
+ container.removeEventListener('touchcancel', handleTouchEnd);
  };
+ }, []);
+
+ // Кнопки +/− масштаба
+ const handleZoomIn = useCallback(() => {
+ setZoom(prev => {
+ const next = Math.min(3, prev + 0.25);
+ zoomRef.current = next;
+ return next;
+ });
+ }, []);
+
+ const handleZoomOut = useCallback(() => {
+ setZoom(prev => {
+ const next = Math.max(0.5, prev - 0.25);
+ zoomRef.current = next;
+ return next;
+ });
  }, []);
 
   const handleSelectPage = (page) => {
@@ -473,9 +501,27 @@ const ColoringPage = () => {
 <span className="coloring-action-icon">💾</span>
 <span>Сохранить</span>
 </button>
+<button
+ className="coloring-action-btn coloring-zoom-btn"
+ onClick={handleZoomOut}
+ disabled={zoom <= 0.5}
+ title="Уменьшить масштаб"
+ aria-label="Уменьшить масштаб"
+>
+ <span className="coloring-action-icon">−</span>
+</button>
 <div className="coloring-zoom-info">
- {Math.round(zoom *100)}%
+ {Math.round(zoom * 100)}%
 </div>
+<button
+ className="coloring-action-btn coloring-zoom-btn"
+ onClick={handleZoomIn}
+ disabled={zoom >= 3}
+ title="Увеличить масштаб"
+ aria-label="Увеличить масштаб"
+>
+ <span className="coloring-action-icon">+</span>
+</button>
 </div>
 
  {/* Color Palette */}

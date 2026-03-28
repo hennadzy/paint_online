@@ -231,14 +231,16 @@
 // ─── Workspace (canvas area) ─────────────────────────────────────────────────
 
 .coloring-workspace {
- flex:1;
+ flex: 1;
  overflow: auto;
  display: flex;
  align-items: flex-start;
  justify-content: center;
- padding:16px;
+ padding: 16px;
  background: #111827;
- min-height:0;
+ min-height: 0;
+ // Разрешаем прокрутку одним пальцем, но отдаём pinch-zoom нашему JS
+ touch-action: pan-x pan-y;
 }
 
 .coloring-canvas-wrapper {
@@ -337,13 +339,29 @@
 }
 
 .coloring-zoom-info {
- margin-left: auto;
- padding:6px12px;
+ padding: 6px 10px;
  background: rgba(0,0,0,0.3);
- border-radius:6px;
- font-size:12px;
+ border-radius: 6px;
+ font-size: 12px;
  color: #aaa;
- font-weight:500;
+ font-weight: 500;
+ min-width: 44px;
+ text-align: center;
+ user-select: none;
+}
+
+.coloring-zoom-btn {
+ padding: 8px 14px;
+ min-width: 38px;
+ font-size: 20px;
+ font-weight: 700;
+ line-height: 1;
+ justify-content: center;
+
+ .coloring-action-icon {
+ font-size: 20px;
+ line-height: 1;
+ }
 }
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
