@@ -5,6 +5,7 @@ import "./styles/room-interface.scss"
 import "./styles/not-found.scss"
 import "./styles/admin.scss"
 import "./styles/coloring.scss"
+import "./styles/gallery.scss"
 import SettingBar from "./components/SettingBar";
 import Toolbar from "./components/Toolbar";
 import TopMenu from "./components/TopMenu";
@@ -14,6 +15,7 @@ import ProfilePage from "./components/ProfilePage";
 import AuthPage from "./components/AuthPage";
 import AdminPage from "./components/AdminPage";
 import ColoringPage from "./components/ColoringPage";
+import GalleryPage from "./components/GalleryPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 import userState from "./store/userState";
@@ -33,7 +35,7 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
-    const hideGlobalUI = ['/profile', '/login', '/register', '/admin', '/coloring'].includes(location.pathname);
+    const hideGlobalUI = ['/profile', '/login', '/register', '/admin', '/coloring', '/gallery'].includes(location.pathname);
 
     useEffect(() => {
         if (userState.isAuthenticated) {
@@ -86,13 +88,14 @@ const App = observer(() => {
 
     const isAdminPage = location.pathname === '/admin';
     const isColoringPage = location.pathname === '/coloring';
+    const isGalleryPage = location.pathname === '/gallery';
 
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''}`}>
                 <Routes>
                     <Route path='/' element={<Canvas />} />
                     <Route path='/login' element={<AuthPage />} />
@@ -100,6 +103,7 @@ const App = observer(() => {
                     <Route path='/profile' element={<ProfilePage />} />
                     <Route path='/admin' element={<AdminPage />} />
                     <Route path='/coloring' element={<ColoringPage />} />
+                    <Route path='/gallery' element={<GalleryPage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>

@@ -10,6 +10,7 @@ import logoutIcon from '../assets/img/logout.png';
 import registerIcon from '../assets/img/register.png';
 import helpIcon from '../assets/img/help.png';
 import exitIcon from '../assets/img/exit.png';
+import galleryIcon from '../assets/img/gallery.png';
 
 const TopMenu = observer(() => {
   const navigate = useNavigate();
@@ -22,6 +23,13 @@ const TopMenu = observer(() => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState('drawing');
   const [exportFormat, setExportFormat] = useState('png');
+
+  // Gallery submit state
+  const [showGallerySubmit, setShowGallerySubmit] = useState(false);
+  const [galleryTitle, setGalleryTitle] = useState('');
+  const [gallerySubmitting, setGallerySubmitting] = useState(false);
+  const [galleryError, setGalleryError] = useState('');
+  const [gallerySuccess, setGallerySuccess] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -273,6 +281,24 @@ const TopMenu = observer(() => {
             <span className="tooltip">Поделиться</span>
           </button>
 
+          {userState.isAuthenticated && (
+            <button
+              type="button"
+              className="toolbar__btn"
+              onClick={() => {
+                setGalleryTitle('');
+                setGalleryError('');
+                setGallerySuccess(false);
+                setShowGallerySubmit(true);
+              }}
+              onMouseDown={(e) => e.target.blur()}
+              title="Добавить в галерею"
+            >
+              <span className="icon" style={{ backgroundImage: `url(${galleryIcon})` }} />
+              <span className="tooltip">В галерею</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="toolbar__btn"
@@ -369,6 +395,15 @@ const TopMenu = observer(() => {
             </button>
           )}
 
+          {(isHome && !canvasState.isConnected && !canvasState.currentRoomId) && (
+            <button
+              className="create-room-btn about-btn"
+              onClick={() => navigate('/gallery')}
+            >
+              Галерея работ
+            </button>
+          )}
+
 {canvasState.isConnected && (
  <>
  {userState.isAuthenticated && (
@@ -432,6 +467,106 @@ const TopMenu = observer(() => {
           />
         </div>
       </div>
+
+      {showGallerySubmit && (
+        <div className="export-modal-overlay" onClick={() => { if (!gallerySubmitting) { setShowGallerySubmit(false); setGallerySuccess(false); } }}>
+          <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="export-modal__title">Добавить в галерею</h3>
+
+            {gallerySuccess ? (
+              <div style={{
+                background: 'rgba(40,167,69,0.12)',
+                border: '1px solid rgba(40,167,69,0.3)',
+                borderRadius: '8px',
+                color: '#5cb85c',
+                fontSize: '14px',
+                padding: '16px',
+                textAlign: 'center',
+                lineHeight: '1.6'
+              }}>
+                ✅ Рисунок отправлен на рассмотрение.<br />
+                Он будет добавлен в галерею после одобрения администрацией.
+              </div>
+            ) : (
+              <>
+                <div className="export-modal__field">
+                  <label className="export-modal__label">Название рисунка</label>
+                  <input
+                    className="export-modal__input"
+                    type="text"
+                    value={galleryTitle}
+                    maxLength={20}
+                    onChange={(e) => { setGalleryTitle(e.target.value); setGalleryError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setShowGallerySubmit(false); }}
+                    placeholder="Введите название (макс. 20 символов)"
+                    autoFocus
+                  />
+                  <div style={{ fontSize: '12px', color: galleryTitle.length >= 20 ? '#ff4444' : galleryTitle.length >= 16 ? '#ff9500' : '#666', textAlign: 'right', marginTop: '4px' }}>
+                    {galleryTitle.length}/20
+                  </div>
+                </div>
+
+                {galleryError && (
+                  <div style={{ background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.3)', borderRadius: '8px', color: '#ff6b6b', fontSize: '13px', padding: '10px 14px', textAlign: 'center' }}>
+                    {galleryError}
+                  </div>
+                )}
+
+                <div className="export-modal__actions">
+                  <button
+                    className="export-btn export-btn-primary"
+                    disabled={gallerySubmitting || !galleryTitle.trim()}
+                    onClick={async () => {
+                      if (!galleryTitle.trim()) {
+                        setGalleryError('Введите название рисунка');
+                        return;
+                      }
+                      const canvas = canvasState.canvas;
+                      if (!canvas) {
+                        setGalleryError('Холст недоступен');
+                        return;
+                      }
+                      setGallerySubmitting(true);
+                      setGalleryError('');
+                      try {
+                        const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                        const token = localStorage.getItem('token');
+                        await axios.post(
+                          `${API_URL}/api/gallery/submit`,
+                          { title: galleryTitle.trim(), imageData },
+                          { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        setGallerySuccess(true);
+                      } catch (err) {
+                        setGalleryError(err.response?.data?.error || 'Ошибка отправки');
+                      } finally {
+                        setGallerySubmitting(false);
+                      }
+                    }}
+                  >
+                    {gallerySubmitting ? 'Отправка...' : '🖼️ Отправить'}
+                  </button>
+                  <button
+                    className="export-btn export-btn-secondary"
+                    onClick={() => setShowGallerySubmit(false)}
+                    disabled={gallerySubmitting}
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </>
+            )}
+
+            {gallerySuccess && (
+              <div className="export-modal__actions">
+                <button className="export-btn export-btn-secondary" onClick={() => { setShowGallerySubmit(false); setGallerySuccess(false); }}>
+                  Закрыть
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {showExportModal && (
         <div className="export-modal-overlay" onClick={() => setShowExportModal(false)}>

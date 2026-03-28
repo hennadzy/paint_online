@@ -10,6 +10,7 @@ class UserState {
  activityRooms = [];
  userRooms = [];
  incomingPersonalMessages = [];
+ galleryDrawings = [];
 
  constructor() {
  makeAutoObservable(this);
@@ -239,6 +240,17 @@ class UserState {
     const msgs = [...this.incomingPersonalMessages];
     this.incomingPersonalMessages = [];
     return msgs;
+  }
+
+  async fetchGalleryDrawings() {
+    try {
+      const response = await axios.get(`${API_URL}/api/gallery/user/me`);
+      runInAction(() => {
+        this.galleryDrawings = response.data.drawings || [];
+      });
+    } catch (error) {
+      console.error('Fetch gallery drawings error:', error);
+    }
   }
 
   async deleteRoom(roomId) {

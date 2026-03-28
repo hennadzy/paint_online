@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import RoomActionsDropdown from './RoomActionsDropdown';
 import CreateRoomModal from './CreateRoomModal';
 import PersonalMessagesModal from './PersonalMessagesModal';
+import { API_URL } from '../store/canvasState';
 import '../styles/profile.scss';
 
 const EyeIcon = ({ visible, onClick }) => (
@@ -59,6 +60,7 @@ useEffect(() => {
  setUsername(userState.user?.username || '');
  userState.fetchCurrentUser();
  userState.fetchUserRooms();
+ userState.fetchGalleryDrawings();
  userState.fetchActivityRooms();
  }
  }, [userState.isAuthenticated, navigate]);
@@ -320,6 +322,35 @@ useEffect(() => {
                     </li>
                   ))}
                 </ul>
+              )}
+            </div>
+
+            <div className="profile-section">
+              <h2>Рисунки в галерее</h2>
+              {userState.galleryDrawings.length === 0 ? (
+                <p className="profile-empty">У вас пока нет рисунков в галерее</p>
+              ) : (
+                <div className="profile-gallery-list">
+                  {userState.galleryDrawings.map(drawing => (
+                    <div key={drawing.id} className="profile-gallery-card">
+                      <div className="profile-gallery-card__img-wrap">
+                        <img
+                          src={`${API_URL}/api/gallery/image/${drawing.id}`}
+                          alt={drawing.title}
+                          className="profile-gallery-card__img"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <div className="profile-gallery-card__info">
+                        <div className="profile-gallery-card__title">{drawing.title}</div>
+                        <div className="profile-gallery-card__likes">
+                          <span className="profile-gallery-card__heart">❤️</span>
+                          {drawing.likes_count}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 

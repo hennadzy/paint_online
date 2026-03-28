@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
 import Brush from '../tools/Brush';
@@ -27,6 +27,7 @@ const Canvas = observer(() => {
   const layoutRef = useRef();
   const params = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
 
   useCanvasResize(canvasRef, cursorRef, containerRef);
@@ -190,6 +191,12 @@ const Canvas = observer(() => {
               onClick={() => canvasState.setShowGamesModal(true)}
             >
               Игровые режимы
+            </button>
+            <button
+              className="about-btn-mobile"
+              onClick={() => navigate('/gallery')}
+            >
+              Галерея работ
             </button>
           </div>
         )}

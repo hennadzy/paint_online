@@ -9,6 +9,7 @@ const apiRouter = require('./routes/api');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const adminRouter = require('./routes/admin');
+const galleryRouter = require('./routes/gallery');
 const { pgPool } = require('./config/db');
 
 const app = express();
@@ -184,8 +185,9 @@ app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/gallery', galleryRouter);
 
-const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring'];
+const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring', '/gallery'];
 
 app.get('*', (req, res) => {
   const pathname = req.path;
@@ -333,6 +335,31 @@ async function initDb() {
           is_active BOOLEAN DEFAULT true
         );
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_active ON coloring_pages(is_active);
+      `);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS gallery_drawings (
+          id SERIAL PRIMARY KEY,
+          user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(20) NOT NULL,
+          image_data TEXT NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending',
+          likes_count INTEGER DEFAULT 0,
+          created_at BIGINT NOT NULL,
+          approved_at BIGINT
+        );
+        CREATE TABLE IF NOT EXISTS gallery_likes (
+          user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+          drawing_id INTEGER REFERENCES gallery_drawings(id) ON DELETE CASCADE,
+          created_at BIGINT NOT NULL,
+          PRIMARY KEY (user_id, drawing_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_gallery_drawings_status ON gallery_drawings(status);
+        CREATE INDEX IF NOT EXISTS idx_gallery_drawings_user ON gallery_drawings(user_id);
+        CREATE INDEX IF NOT EXISTS idx_gallery_drawings_likes ON gallery_drawings(likes_count DESC);
+        CREATE INDEX IF NOT EXISTS idx_gallery_likes_drawing ON gallery_likes(drawing_id);
       `);
     } catch (_) { }
 

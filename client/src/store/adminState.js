@@ -43,6 +43,10 @@ class AdminState {
   coloringPagesLoading = false;
   coloringPagesError = null;
 
+  galleryPending = [];
+  galleryPendingLoading = false;
+  galleryPendingError = null;
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -459,6 +463,86 @@ class AdminState {
       await axios.delete(`${API_URL}/api/admin/game-modes/coloring/${id}`);
       runInAction(() => {
         this.coloringPages = this.coloringPages.filter(p => p.id !== id);
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка удаления'
+      };
+    }
+  }
+
+  async fetchGalleryPending() {
+    this.galleryPendingLoading = true;
+    this.galleryPendingError = null;
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/gallery/pending`);
+      runInAction(() => {
+        this.galleryPending = response.data.drawings || [];
+        this.galleryPendingLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.galleryPendingError = error.response?.data?.error || 'Ошибка загрузки';
+        this.galleryPendingLoading = false;
+      });
+    }
+  }
+
+  async approveGalleryDrawing(id) {
+    try {
+      await axios.put(`${API_URL}/api/admin/gallery/${id}/approve`);
+      runInAction(() => {
+        this.galleryPending = this.galleryPending.filter(d => d.id !== id);
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка одобрения'
+      };
+    }
+  }
+
+  async rejectGalleryDrawing(id, reason = '') {
+    try {
+      await axios.put(`${API_URL}/api/admin/gallery/${id}/reject`, { reason });
+      runInAction(() => {
+        this.galleryPending = this.galleryPending.filter(d => d.id !== id);
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка отклонения'
+      };
+    }
+  }
+
+  async renameGalleryDrawing(id, title) {
+    try {
+      await axios.put(`${API_URL}/api/admin/gallery/${id}/rename`, { title });
+      runInAction(() => {
+        const idx = this.galleryPending.findIndex(d => d.id === id);
+        if (idx !== -1) {
+          this.galleryPending[idx] = { ...this.galleryPending[idx], title };
+        }
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка переименования'
+      };
+    }
+  }
+
+  async deleteGalleryDrawing(id) {
+    try {
+      await axios.delete(`${API_URL}/api/admin/gallery/${id}`);
+      runInAction(() => {
+        this.galleryPending = this.galleryPending.filter(d => d.id !== id);
       });
       return { success: true };
     } catch (error) {

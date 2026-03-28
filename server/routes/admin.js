@@ -9,6 +9,7 @@ const { validateUsername, validateEmail, validatePassword, hashPassword } = requ
 const { pgPool } = require('../config/db');
 const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt');
+const PersonalMessageStore = require('../services/PersonalMessageStore');
 
 const router = express.Router();
 
@@ -721,6 +722,220 @@ router.delete('/game-modes/coloring/:id', async (req, res) => {
     res.json({ message: 'Раскраска удалена' });
   } catch (error) {
     console.error('Delete coloring page error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== GALLERY ADMIN ROUTES ====================
+
+// GET /api/admin/gallery/pending - get pending drawings
+router.get('/gallery/pending', async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT
+         gd.id,
+         gd.title,
+         gd.status,
+         gd.likes_count,
+         gd.created_at,
+         u.username AS author_name,
+         u.id AS author_id
+       FROM gallery_drawings gd
+       JOIN users u ON u.id = gd.user_id
+       WHERE gd.status = 'pending'
+       ORDER BY gd.created_at ASC`
+    );
+    res.json({ drawings: result.rows });
+  } catch (error) {
+    console.error('Admin get pending gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/admin/gallery/image/:id - serve gallery image for admin (any status)
+router.get('/gallery/image/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const result = await pgPool.query(
+      `SELECT image_data FROM gallery_drawings WHERE id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].image_data) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const imageData = result.rows[0].image_data;
+    const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+    if (!match) {
+      return res.status(500).json({ error: 'Invalid image data' });
+    }
+
+    const mimeType = match[1];
+    const buffer = Buffer.from(match[2], 'base64');
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Admin get gallery image error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /api/admin/gallery/:id/approve - approve drawing
+router.put('/gallery/:id/approve', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const drawing = await pgPool.query(
+      `SELECT gd.id, gd.title, gd.user_id, gd.status FROM gallery_drawings gd WHERE gd.id = $1`,
+      [id]
+    );
+
+    if (drawing.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    if (drawing.rows[0].status === 'approved') {
+      return res.status(400).json({ error: 'Рисунок уже одобрен' });
+    }
+
+    await pgPool.query(
+      `UPDATE gallery_drawings SET status = 'approved', approved_at = $1 WHERE id = $2`,
+      [Date.now(), id]
+    );
+
+    // Send personal message to user
+    const adminId = req.user.userId;
+    const userId = drawing.rows[0].user_id;
+    const title = drawing.rows[0].title;
+
+    try {
+      await PersonalMessageStore.saveMessage(
+        adminId,
+        userId,
+        `✅ Ваш рисунок «${title}» одобрен и опубликован в галерее! Посмотреть его можно на странице Галерея работ.`,
+        Date.now()
+      );
+    } catch (msgErr) {
+      console.error('Failed to send approval message:', msgErr);
+    }
+
+    res.json({ message: 'Рисунок одобрен и опубликован в галерее' });
+  } catch (error) {
+    console.error('Admin approve gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /api/admin/gallery/:id/reject - reject drawing
+router.put('/gallery/:id/reject', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const { reason } = req.body;
+
+    const drawing = await pgPool.query(
+      `SELECT gd.id, gd.title, gd.user_id, gd.status FROM gallery_drawings gd WHERE gd.id = $1`,
+      [id]
+    );
+
+    if (drawing.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    await pgPool.query(
+      `UPDATE gallery_drawings SET status = 'rejected' WHERE id = $1`,
+      [id]
+    );
+
+    // Send personal message to user
+    const adminId = req.user.userId;
+    const userId = drawing.rows[0].user_id;
+    const title = drawing.rows[0].title;
+    const reasonText = reason && reason.trim() ? ` Причина: ${reason.trim()}` : '';
+
+    try {
+      await PersonalMessageStore.saveMessage(
+        adminId,
+        userId,
+        `❌ Ваш рисунок «${title}» не был допущен к публикации в галерее.${reasonText}`,
+        Date.now()
+      );
+    } catch (msgErr) {
+      console.error('Failed to send rejection message:', msgErr);
+    }
+
+    res.json({ message: 'Рисунок отклонён' });
+  } catch (error) {
+    console.error('Admin reject gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /api/admin/gallery/:id/rename - rename drawing
+router.put('/gallery/:id/rename', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const { title } = req.body;
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ error: 'Введите название' });
+    }
+
+    const trimmedTitle = title.trim().substring(0, 20);
+
+    const result = await pgPool.query(
+      `UPDATE gallery_drawings SET title = $1 WHERE id = $2 RETURNING id, title`,
+      [trimmedTitle, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    res.json({ message: 'Название обновлено', drawing: result.rows[0] });
+  } catch (error) {
+    console.error('Admin rename gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/admin/gallery/:id - delete drawing
+router.delete('/gallery/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const result = await pgPool.query(
+      `DELETE FROM gallery_drawings WHERE id = $1 RETURNING id`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    res.json({ message: 'Рисунок удалён' });
+  } catch (error) {
+    console.error('Admin delete gallery error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

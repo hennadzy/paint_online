@@ -117,12 +117,12 @@ const SortIcon = () => (
 const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
-
+  
   const [usersSortBy, setUsersSortBy] = useState('created_at');
   const [usersSortOrder, setUsersSortOrder] = useState('DESC');
   const [roomsSortBy, setRoomsSortBy] = useState('last_activity');
   const [roomsSortOrder, setRoomsSortOrder] = useState('DESC');
-
+  
   const [userFormData, setUserFormData] = useState({
     username: '',
     email: '',
@@ -143,12 +143,21 @@ const AdminPage = observer(() => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordFormError, setPasswordFormError] = useState('');
 
-
+  // Coloring pages upload state
   const [coloringUploadTitle, setColoringUploadTitle] = useState('');
   const [coloringUploadFile, setColoringUploadFile] = useState(null);
   const [coloringUploadError, setColoringUploadError] = useState('');
   const [coloringUploadLoading, setColoringUploadLoading] = useState(false);
   const [coloringUploadSuccess, setColoringUploadSuccess] = useState('');
+
+  // Gallery admin state
+  const [galleryPreviewId, setGalleryPreviewId] = useState(null);
+  const [galleryRenameId, setGalleryRenameId] = useState(null);
+  const [galleryRenameTitle, setGalleryRenameTitle] = useState('');
+  const [galleryRenameError, setGalleryRenameError] = useState('');
+  const [galleryRejectId, setGalleryRejectId] = useState(null);
+  const [galleryRejectReason, setGalleryRejectReason] = useState('');
+  const [galleryActionError, setGalleryActionError] = useState('');
 
   useEffect(() => {
     if (adminState.selectedUser) {
@@ -402,7 +411,7 @@ const AdminPage = observer(() => {
                 </select>
               </div>
               <div className="admin-filter-group">
-                <select
+                <select 
                   className="admin-filter-select"
                   value={usersFilterStatus}
                   onChange={(e) => {
@@ -434,13 +443,13 @@ const AdminPage = observer(() => {
               </button>
             </form>
             <div className="admin-toolbar__actions">
-              <button
+              <button 
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportUsers('csv')}
               >
                 <DownloadIcon /> CSV
               </button>
-              <button
+              <button 
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportUsers('json')}
               >
@@ -484,7 +493,7 @@ const AdminPage = observer(() => {
                       <td>{user.email}</td>
                       <td>
                         <span className={`admin-badge admin-badge--${user.role}`}>
-                          {user.role === 'superadmin' ? 'Super Admin' :
+                          {user.role === 'superadmin' ? 'Super Admin' : 
                            user.role === 'admin' ? 'Admin' : 'User'}
                         </span>
                       </td>
@@ -497,28 +506,28 @@ const AdminPage = observer(() => {
                       <td>{formatRelativeTime(user.last_login)}</td>
                       <td>
                         <div className="admin-actions">
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchUserDetails(user.id).then(() => adminState.openUserModal(user))}
                             title="Редактировать"
                           >
                             <EditIcon />
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={() => adminState.openPasswordModal(user)}
                             title="Сменить пароль"
                           >
                             <KeyIcon />
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={() => adminState.toggleUserActive(user.id)}
                             title={user.is_active ? 'Заблокировать' : 'Разблокировать'}
                           >
                             {user.is_active ? <BlockIcon /> : <UnlockIcon />}
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn admin-icon-btn--danger"
                             onClick={() => adminState.openDeleteConfirm({ type: 'user', id: user.id, name: user.username })}
                             title="Удалить"
@@ -598,13 +607,13 @@ const AdminPage = observer(() => {
               </button>
             </form>
             <div className="admin-toolbar__actions">
-              <button
+              <button 
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportRooms('csv')}
               >
                 <DownloadIcon /> CSV
               </button>
-              <button
+              <button 
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportRooms('json')}
               >
@@ -663,21 +672,21 @@ const AdminPage = observer(() => {
                       <td>{formatRelativeTime(room.lastActivity)}</td>
                       <td>
                         <div className="admin-actions">
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
                             title="Подробнее"
                           >
                             <EyeIcon />
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
                             title="Редактировать"
                           >
                             <EditIcon />
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn"
                             onClick={async () => {
                               const result = await adminState.joinRoom(room.id);
@@ -690,7 +699,7 @@ const AdminPage = observer(() => {
                           >
                             <UnlockIcon />
                           </button>
-                          <button
+                          <button 
                             className="admin-icon-btn admin-icon-btn--danger"
                             onClick={() => adminState.openDeleteConfirm({ type: 'room', id: room.id, name: room.name })}
                             title="Удалить"
@@ -759,7 +768,7 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setUserFormError('');
-
+      
       const result = await adminState.updateUser(user.id, userFormData);
       if (!result.success) {
         setUserFormError(result.error);
@@ -778,7 +787,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {userFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{userFormError}</div>}
-
+              
               <div className="admin-form__group">
                 <label>Имя пользователя</label>
                 <input
@@ -788,7 +797,7 @@ const AdminPage = observer(() => {
                   required
                 />
               </div>
-
+              
               <div className="admin-form__group">
                 <label>Email</label>
                 <input
@@ -798,7 +807,7 @@ const AdminPage = observer(() => {
                   required
                 />
               </div>
-
+              
               <div className="admin-form__group">
                 <label>Роль</label>
                 <select
@@ -810,7 +819,7 @@ const AdminPage = observer(() => {
                   <option value="superadmin">Супер Админ</option>
                 </select>
               </div>
-
+              
               <div className="admin-form__group">
                 <label>
                   <input
@@ -845,7 +854,7 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setRoomFormError('');
-
+      
       const result = await adminState.updateRoom(room.id, roomFormData);
       if (!result.success) {
         setRoomFormError(result.error);
@@ -864,7 +873,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {roomFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{roomFormError}</div>}
-
+              
               <div className="admin-room-details__info">
                 <div className="admin-room-details__item">
                   <label>ID</label>
@@ -903,7 +912,7 @@ const AdminPage = observer(() => {
                   <span>{formatDate(room.lastActivity)}</span>
                 </div>
               </div>
-
+              
               <div className="admin-form__group">
                 <label>Название</label>
                 <input
@@ -915,8 +924,8 @@ const AdminPage = observer(() => {
               </div>
             </div>
             <div className="admin-modal__footer">
-              <button
-                type="button"
+              <button 
+                type="button" 
                 className="admin-btn admin-btn--success"
                 onClick={async () => {
                   const result = await adminState.joinRoom(room.id);
@@ -950,12 +959,12 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setPasswordFormError('');
-
+      
       if (newPassword.length < 6) {
         setPasswordFormError('Пароль должен быть не менее 6 символов');
         return;
       }
-
+      
       const result = await adminState.changeUserPassword(user.id, newPassword);
       if (!result.success) {
         setPasswordFormError(result.error);
@@ -976,7 +985,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {passwordFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{passwordFormError}</div>}
-
+              
               <div className="admin-form__group">
                 <label>Новый пароль</label>
                 <input
@@ -1031,13 +1040,13 @@ const AdminPage = observer(() => {
                 Это действие нельзя отменить.
               </p>
               <div className="admin-confirm__actions">
-                <button
+                <button 
                   className="admin-btn admin-btn--secondary"
                   onClick={() => adminState.closeDeleteConfirm()}
                 >
                   Отмена
                 </button>
-                <button
+                <button 
                   className="admin-btn admin-btn--danger"
                   onClick={handleConfirm}
                 >
@@ -1209,6 +1218,267 @@ const AdminPage = observer(() => {
     );
   };
 
+  const renderGallery = () => {
+    const API_BASE = window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : 'https://paint-online-back.onrender.com';
+
+    const handleApprove = async (id) => {
+      setGalleryActionError('');
+      const result = await adminState.approveGalleryDrawing(id);
+      if (!result.success) setGalleryActionError(result.error);
+    };
+
+    const handleReject = async () => {
+      if (!galleryRejectId) return;
+      setGalleryActionError('');
+      const result = await adminState.rejectGalleryDrawing(galleryRejectId, galleryRejectReason);
+      if (result.success) {
+        setGalleryRejectId(null);
+        setGalleryRejectReason('');
+      } else {
+        setGalleryActionError(result.error);
+      }
+    };
+
+    const handleRename = async (id) => {
+      setGalleryRenameError('');
+      if (!galleryRenameTitle.trim()) {
+        setGalleryRenameError('Введите название');
+        return;
+      }
+      const result = await adminState.renameGalleryDrawing(id, galleryRenameTitle.trim());
+      if (result.success) {
+        setGalleryRenameId(null);
+        setGalleryRenameTitle('');
+      } else {
+        setGalleryRenameError(result.error);
+      }
+    };
+
+    const handleDelete = async (id, title) => {
+      if (!window.confirm(`Удалить рисунок «${title}»?`)) return;
+      setGalleryActionError('');
+      const result = await adminState.deleteGalleryDrawing(id);
+      if (!result.success) setGalleryActionError(result.error);
+    };
+
+    return (
+      <div>
+        <div className="admin-table-container">
+          <div className="admin-toolbar">
+            <h3 style={{ color: '#ffd700', margin: 0 }}>
+              🖼️ Рисунки на одобрение ({adminState.galleryPending.length})
+            </h3>
+            <button
+              className="admin-btn admin-btn--secondary"
+              onClick={() => adminState.fetchGalleryPending()}
+              style={{ marginLeft: 'auto' }}
+            >
+              Обновить
+            </button>
+          </div>
+
+          {galleryActionError && (
+            <div className="admin-form__error" style={{ margin: '12px 20px' }}>
+              {galleryActionError}
+            </div>
+          )}
+
+          {adminState.galleryPendingLoading ? (
+            <div className="admin-loading">
+              <div className="admin-loading__spinner"></div>
+            </div>
+          ) : adminState.galleryPending.length === 0 ? (
+            <div className="admin-empty">
+              <div className="admin-empty__text">Нет рисунков на рассмотрении</div>
+            </div>
+          ) : (
+            <div className="admin-coloring-list">
+              {adminState.galleryPending.map(drawing => (
+                <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
+                  {/* Preview */}
+                  <div
+                    className="admin-coloring-item__preview"
+                    style={{ cursor: 'pointer', flexShrink: 0 }}
+                    onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
+                    title="Нажмите для просмотра"
+                  >
+                    <img
+                      src={`${API_BASE}/api/admin/gallery/image/${drawing.id}`}
+                      alt={drawing.title}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
+                      👁 Просмотр
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="admin-coloring-item__info" style={{ flex: 1, minWidth: 0 }}>
+                    {galleryRenameId === drawing.id ? (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          value={galleryRenameTitle}
+                          onChange={(e) => { setGalleryRenameTitle(e.target.value); setGalleryRenameError(''); }}
+                          maxLength={20}
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ffd700',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            width: '160px'
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRename(drawing.id);
+                            if (e.key === 'Escape') { setGalleryRenameId(null); setGalleryRenameTitle(''); }
+                          }}
+                        />
+                        <button className="admin-btn admin-btn--primary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleRename(drawing.id)}>
+                          ✓
+                        </button>
+                        <button className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryRenameId(null); setGalleryRenameTitle(''); setGalleryRenameError(''); }}>
+                          ✕
+                        </button>
+                        {galleryRenameError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryRenameError}</span>}
+                      </div>
+                    ) : (
+                      <div className="admin-coloring-item__title">{drawing.title}</div>
+                    )}
+                    <div className="admin-coloring-item__meta" style={{ marginTop: '4px' }}>
+                      <span style={{ fontSize: '13px', color: '#aaa' }}>✏️ {drawing.author_name}</span>
+                      <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px' }}>
+                        {drawing.created_at ? new Date(Number(drawing.created_at)).toLocaleString('ru-RU') : ''}
+                      </span>
+                    </div>
+
+                    {/* Reject reason input */}
+                    {galleryRejectId === drawing.id && (
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={galleryRejectReason}
+                          onChange={(e) => setGalleryRejectReason(e.target.value)}
+                          placeholder="Причина отказа (необязательно)"
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ff6699',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '13px',
+                            outline: 'none',
+                            width: '220px'
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleReject();
+                            if (e.key === 'Escape') { setGalleryRejectId(null); setGalleryRejectReason(''); }
+                          }}
+                        />
+                        <button className="admin-btn admin-btn--danger" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={handleReject}>
+                          Отклонить
+                        </button>
+                        <button className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryRejectId(null); setGalleryRejectReason(''); }}>
+                          Отмена
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="admin-actions" style={{ flexShrink: 0 }}>
+                    <button
+                      className="admin-icon-btn admin-icon-btn--success"
+                      onClick={() => handleApprove(drawing.id)}
+                      title="Одобрить"
+                      style={{ color: '#28a745' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+                        <polyline points="20,6 9,17 4,12" />
+                      </svg>
+                    </button>
+                    <button
+                      className="admin-icon-btn"
+                      onClick={() => {
+                        setGalleryRenameId(drawing.id);
+                        setGalleryRenameTitle(drawing.title);
+                        setGalleryRenameError('');
+                      }}
+                      title="Переименовать"
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={() => {
+                        if (galleryRejectId === drawing.id) {
+                          setGalleryRejectId(null);
+                          setGalleryRejectReason('');
+                        } else {
+                          setGalleryRejectId(drawing.id);
+                          setGalleryRejectReason('');
+                        }
+                      }}
+                      title="Отклонить"
+                      style={{ color: '#ff9500' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                      </svg>
+                    </button>
+                    <button
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={() => handleDelete(drawing.id, drawing.title)}
+                      title="Удалить"
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Full-size preview modal */}
+        {galleryPreviewId && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 9999, cursor: 'pointer', padding: '20px'
+            }}
+            onClick={() => setGalleryPreviewId(null)}
+          >
+            <img
+              src={`${API_BASE}/api/admin/gallery/image/${galleryPreviewId}`}
+              alt="preview"
+              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              style={{
+                position: 'absolute', top: '16px', right: '20px',
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px', color: '#fff', fontSize: '18px', padding: '6px 14px', cursor: 'pointer'
+              }}
+              onClick={() => setGalleryPreviewId(null)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -1218,8 +1488,8 @@ const AdminPage = observer(() => {
         </div>
         <div className="admin-header__user">
           <span>{userState.user?.username}</span>
-          <button
-            className="admin-header__home"
+          <button 
+            className="admin-header__home" 
             onClick={() => navigate('/')}
             title="На главную"
           >
@@ -1232,7 +1502,7 @@ const AdminPage = observer(() => {
       </header>
 
       <nav className="admin-nav">
-        <button
+        <button 
           className={`admin-nav__item ${adminState.activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('dashboard');
@@ -1241,13 +1511,13 @@ const AdminPage = observer(() => {
         >
           Дашборд
         </button>
-        <button
+        <button 
           className={`admin-nav__item ${adminState.activeTab === 'users' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('users')}
         >
           Пользователи
         </button>
-        <button
+        <button 
           className={`admin-nav__item ${adminState.activeTab === 'rooms' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('rooms')}
         >
@@ -1262,6 +1532,28 @@ const AdminPage = observer(() => {
         >
           🎮 Игровые режимы
         </button>
+        <button
+          className={`admin-nav__item ${adminState.activeTab === 'gallery' ? 'active' : ''}`}
+          onClick={() => {
+            adminState.setActiveTab('gallery');
+            adminState.fetchGalleryPending();
+          }}
+        >
+          🖼️ Галерея
+          {adminState.galleryPending.length > 0 && (
+            <span style={{
+              marginLeft: '6px',
+              background: '#ff6699',
+              color: '#fff',
+              borderRadius: '10px',
+              padding: '1px 7px',
+              fontSize: '12px',
+              fontWeight: 700
+            }}>
+              {adminState.galleryPending.length}
+            </span>
+          )}
+        </button>
       </nav>
 
       <main className="admin-content">
@@ -1269,6 +1561,7 @@ const AdminPage = observer(() => {
         {adminState.activeTab === 'users' && renderUsers()}
         {adminState.activeTab === 'rooms' && renderRooms()}
         {adminState.activeTab === 'gameModes' && renderGameModes()}
+        {adminState.activeTab === 'gallery' && renderGallery()}
       </main>
 
       {renderUserModal()}
