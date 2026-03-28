@@ -403,13 +403,21 @@
       }
     }
 
-    .room-badge {
-      font-size: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 4px 8px;
-      border-radius: 20px;
-      color: #ccc;
-    }
+ .room-badge {
+ font-size:12px;
+ padding:4px8px;
+ border-radius:20px;
+
+ &.room-badge-public {
+ background: rgba(82,255,82,0.2);
+ color: #52ff52;
+ }
+
+ &.room-badge-private {
+ background: rgba(255,82,82,0.2);
+ color: #ff5252;
+ }
+ }
   }
 }
 

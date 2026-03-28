@@ -362,34 +362,46 @@ const TopMenu = observer(() => {
             </button>
           )}
 
-          {canvasState.isConnected && (
-            <>
-              <button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
-                Пригласить
-              </button>
-              <button
-                className="create-room-btn disconnect-room-btn"
-                onClick={() => { 
-                  canvasState.setShowRoomInterface(true); 
-                  canvasState.setShowRoomsList(true); 
-                  canvasState.returningFromRoom = true; 
-                  canvasState.disconnect(true); 
-                  navigate('/'); 
-                }}
-              >
-                <span className="icon" style={{ 
-                  backgroundImage: `url(${exitIcon})`,
-                  width: '24px',
-                  height: '24px',
-                  display: 'block',
-                  backgroundSize: 'contain',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
-                  filter: 'none'
-                }} />
-              </button>
-            </>
-          )}
+{canvasState.isConnected && (
+ <>
+ {userState.isAuthenticated && (
+<button
+ type="button"
+ className="toolbar__btn"
+ onClick={() => navigate('/profile')}
+ onMouseDown={(e) => e.target.blur()}
+ title="Профиль"
+ >
+<span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+<span className="tooltip">Профиль</span>
+</button>
+ )}
+<button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
+ Пригласить
+</button>
+<button
+ className="create-room-btn disconnect-room-btn"
+ onClick={() => { 
+ canvasState.setShowRoomInterface(true); 
+ canvasState.setShowRoomsList(true); 
+ canvasState.returningFromRoom = true; 
+ canvasState.disconnect(true); 
+ navigate('/'); 
+ }}
+ >
+<span className="icon" style={{ 
+ backgroundImage: `url(${exitIcon})`,
+ width: '24px',
+ height: '24px',
+ display: 'block',
+ backgroundSize: 'contain',
+ backgroundRepeat: 'no-repeat',
+ backgroundPosition: 'center',
+ filter: 'none'
+ }} />
+</button>
+ </>
+ )}
 
           <input
             key={fileInputKey.current}

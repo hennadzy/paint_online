@@ -273,7 +273,7 @@ const ProfilePage = observer(() => {
                     <li key={room.id} className="profile-list-item">
                       <div className="profile-list-item-with-actions">
                         <a href={`/${room.id}`} className="room-link">{room.name}</a>
-                        <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
+<span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
                         <RoomActionsDropdown
                           room={room}
                           isCreator={true}
@@ -297,7 +297,7 @@ const ProfilePage = observer(() => {
                   {userState.activityRooms.map(room => (
                     <li key={room.id} className="profile-list-item">
                       <a href={`/${room.id}`} className="room-link">{room.name}</a>
-                      <span className="room-badge">{room.isPublic ? 'публичная' : 'приватная'}</span>
+                      <span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
                     </li>
                   ))}
                 </ul>
