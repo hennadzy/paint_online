@@ -22,13 +22,13 @@ connect(wsUrl, roomId, username, token) {
         this.username = username;
         this.token = token;
         this.socket = new WebSocket(wsUrl);
-        
+
         this.socket.onopen = () => {
           this.isConnected = true;
           this.reconnectAttempts = 0;
           this.shouldReconnect = true;
           this.sessionId = this.generateSessionId();
-          
+
           this.send({
             method: "connection",
             id: roomId,
@@ -36,11 +36,11 @@ connect(wsUrl, roomId, username, token) {
             token: token,
             isVerified: userState.isAuthenticated
           });
-          
+
           this.emit('connected', { roomId, username });
           resolve();
         };
-        
+
         this.socket.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
@@ -49,16 +49,16 @@ connect(wsUrl, roomId, username, token) {
             this.emit('error', { error });
           }
         };
-        
+
         this.socket.onerror = (error) => {
           this.emit('error', { error });
           reject(error);
         };
-        
+
         this.socket.onclose = () => {
           this.isConnected = false;
           this.emit('disconnected', {});
-          
+
           if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             setTimeout(() => {
@@ -138,7 +138,7 @@ connect(wsUrl, roomId, username, token) {
 
   handleMessage(message) {
     this.emit('message', message);
-    
+
     switch (message.method) {
       case 'connection':
         this.emit('userConnected', { username: message.username });

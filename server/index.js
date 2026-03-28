@@ -75,7 +75,7 @@ app.use(cors({
 
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin;
-  if (process.env.NODE_ENV === 'production' || 
+  if (process.env.NODE_ENV === 'production' ||
       process.env.RENDER_EXTERNAL_URL ||
       origin === 'https://risovanie.online' ||
       origin === 'http://localhost:3000') {
@@ -84,7 +84,7 @@ app.use('/api', (req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
+
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
@@ -110,11 +110,11 @@ app.get('/404', (req, res) => {
  send404Page(res);
 });
 
-// Legacy coloring page URL compatibility - serve old /files/coloring_XXX.jpg/.png from DB
+
 app.get('/files/coloring_:id.:ext', async (req, res) => {
  const id = req.params.id;
  const ext = req.params.ext;
- // Only allow common image extensions
+
  if (!id || !/^\d+$/.test(id) || !['jpg','jpeg','png','gif','webp'].includes(ext)) {
  return res.status(404).send('Not found');
  }
@@ -378,11 +378,11 @@ async function initDb() {
 
     const bcrypt = require('bcrypt');
     const { hashPassword } = require('./utils/auth');
-    
+
     const adminExists = await pgPool.query(
       "SELECT id FROM users WHERE email = 'admin@admin.com'"
     );
-    
+
     if (adminExists.rows.length === 0) {
       const adminPasswordHash = await hashPassword('Hbcjdfkrf!13');
       await pgPool.query(

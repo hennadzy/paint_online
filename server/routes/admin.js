@@ -12,10 +12,10 @@ const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
 
-// Multer config — memory storage so images are persisted in DB (no ephemeral disk)
+
 const coloringUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     if (allowed.includes(file.mimetype)) {
@@ -58,7 +58,7 @@ const toEpochMs = (value) => {
 router.get('/stats', async (req, res) => {
   try {
     const userStats = await pgPool.query(`
-      SELECT 
+      SELECT
         COUNT(*) as total_users,
         COUNT(CASE WHEN is_active THEN 1 END) as active_users,
         COUNT(CASE WHEN created_at > $1 THEN 1 END) as new_users_7d
@@ -66,7 +66,7 @@ router.get('/stats', async (req, res) => {
     `, [Date.now() - 7 * 24 * 60 * 60 * 1000]);
 
     const roomStats = await pgPool.query(`
-      SELECT 
+      SELECT
         COUNT(*) as total_rooms,
         COUNT(CASE WHEN is_public THEN 1 END) as public_rooms,
         COUNT(CASE WHEN has_password THEN 1 END) as private_rooms,
@@ -79,9 +79,9 @@ router.get('/stats', async (req, res) => {
     `);
 
     const recentUsers = await pgPool.query(`
-      SELECT id, username, email, created_at 
-      FROM users 
-      ORDER BY created_at DESC 
+      SELECT id, username, email, created_at
+      FROM users
+      ORDER BY created_at DESC
       LIMIT 5
     `);
 
@@ -115,7 +115,7 @@ router.get('/users', async (req, res) => {
   try {
     const { page = 1, limit = 20, search = '', sortBy = 'created_at', sortOrder = 'DESC', role, isActive } = req.query;
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    
+
     const users = await User.getAll({
       limit: parseInt(limit, 10),
       offset,
@@ -171,7 +171,7 @@ router.put('/users/:id', async (req, res) => {
     }
 
     const updates = {};
-    
+
     if (username !== undefined) {
       const validation = validateUsername(username);
       if (!validation.valid) {
@@ -290,23 +290,23 @@ router.get('/rooms', async (req, res) => {
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     let query = `
-      SELECT 
+      SELECT
         r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity, r.weight,
         (SELECT COUNT(*) FROM strokes WHERE room_id = r.id) as stroke_count,
         (SELECT COUNT(DISTINCT username) FROM strokes WHERE room_id = r.id) as unique_users
       FROM rooms r
     `;
-    
+
     let countSubquery = '';
     if (sortBy === 'stroke_count' || sortBy === 'unique_users') {
       query = `
-        SELECT 
+        SELECT
           r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity, r.weight,
           COALESCE(s.stroke_count, 0) as stroke_count,
           COALESCE(s.unique_users, 0) as unique_users
         FROM rooms r
         LEFT JOIN (
-          SELECT 
+          SELECT
             room_id,
             COUNT(*) as stroke_count,
             COUNT(DISTINCT username) as unique_users
@@ -315,7 +315,7 @@ router.get('/rooms', async (req, res) => {
         ) s ON r.id = s.room_id
       `;
     }
-    
+
     const values = [];
     let paramIndex = 1;
 
@@ -355,7 +355,7 @@ router.get('/rooms', async (req, res) => {
     let countQuery = 'SELECT COUNT(*) as total FROM rooms';
     const countValues = [];
     let countParamIndex = 1;
-    
+
     if (isPublic !== undefined) {
       countQuery += (countParamIndex === 1 ? ' WHERE' : ' AND') + ` is_public = $${countParamIndex}`;
       countValues.push(isPublic === 'true');
@@ -370,7 +370,7 @@ router.get('/rooms', async (req, res) => {
       countQuery += (countParamIndex === 1 ? ' WHERE' : ' AND') + ` name ILIKE $${countParamIndex}`;
       countValues.push(`%${search}%`);
     }
-    
+
     const countResult = await pgPool.query(countQuery, countValues);
     const total = parseInt(countResult.rows[0].total, 10);
 
@@ -477,7 +477,7 @@ router.put('/rooms/:id', async (req, res) => {
     }
 
     const sanitizedName = name.trim().substring(0, 100);
-    
+
     await pgPool.query(
       'UPDATE rooms SET name = $1 WHERE id = $2',
       [sanitizedName, id]
@@ -520,7 +520,7 @@ router.post('/rooms/:id/join', async (req, res) => {
 
     const token = generateToken(id, username, false);
 
-    res.json({ 
+    res.json({
       token,
       roomId: id,
       roomName: room.name,
@@ -536,15 +536,15 @@ router.post('/rooms/:id/join', async (req, res) => {
 router.get('/export/users', async (req, res) => {
   try {
     const { format = 'json' } = req.query;
-    
+
     const users = await User.getAll({ limit: 10000, offset: 0 });
 
     if (format === 'csv') {
       const headers = 'ID,Username,Email,Role,Active,Created At,Last Login';
-      const rows = users.map(u => 
+      const rows = users.map(u =>
         `${u.id},"${u.username}","${u.email}",${u.role},${u.is_active},${new Date(u.created_at).toISOString()},${u.last_login ? new Date(u.last_login).toISOString() : ''}`
       );
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
       res.send([headers, ...rows].join('\n'));
@@ -564,7 +564,7 @@ router.get('/export/rooms', async (req, res) => {
     const { format = 'json' } = req.query;
 
     const rooms = await pgPool.query(`
-      SELECT 
+      SELECT
         r.id, r.name, r.is_public, r.has_password, r.created_at, r.last_activity,
         (SELECT COUNT(*) FROM strokes WHERE room_id = r.id) as stroke_count,
         (SELECT COUNT(DISTINCT username) FROM strokes WHERE room_id = r.id) as unique_users
@@ -586,10 +586,10 @@ router.get('/export/rooms', async (req, res) => {
 
     if (format === 'csv') {
       const headers = 'ID,Name,Public,Has Password,Created At,Last Activity,Stroke Count,Unique Users';
-      const rows = roomsData.map(r => 
+      const rows = roomsData.map(r =>
         `${r.id},"${r.name}",${r.isPublic},${r.hasPassword},${new Date(r.createdAt).toISOString()},${new Date(r.lastActivity).toISOString()},${r.strokeCount},${r.uniqueUsers}`
       );
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=rooms.csv');
       res.send([headers, ...rows].join('\n'));
@@ -604,7 +604,7 @@ router.get('/export/rooms', async (req, res) => {
   }
 });
 
-// ─── Game Modes: Coloring Pages ───────────────────────────────────────────────
+
 
 router.get('/game-modes/coloring', async (req, res) => {
   try {
@@ -628,10 +628,10 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
       return res.status(400).json({ error: 'Изображение обязательно' });
     }
 
-    // Store image as base64 data URI in DB — survives server restarts on Render
+
     const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-    // Insert with placeholder URL first to get the auto-generated id
+
     const insertResult = await pgPool.query(
       `INSERT INTO coloring_pages (title, image_url, thumbnail_url, image_data, created_at, is_active)
        VALUES ($1, '', '', $2, $3, true) RETURNING id`,
@@ -707,7 +707,7 @@ router.delete('/game-modes/coloring/:id', async (req, res) => {
 
     const page = existing.rows[0];
 
-    // Delete image file from disk (legacy uploads only)
+
     if (page.image_url && page.image_url.startsWith('/files/')) {
       const filename = path.basename(page.image_url);
       const filepath = path.join(__dirname, '../files', filename);

@@ -31,7 +31,7 @@ const GamesModal = observer(() => {
       canvasState.setShowGamesModal(false);
       navigate('/coloring');
     }
-    // Other modes: coming soon — no action
+
   };
 
   return ReactDOM.createPortal(
@@ -51,8 +51,8 @@ const GamesModal = observer(() => {
                 key={game.id}
                 className={`room-btn room-btn-primary game-mode-btn ${!game.available ? 'game-mode-btn--soon' : ''}`}
                 onClick={() => handleGameClick(game)}
-                style={{ 
-                  margin: '10px', 
+                style={{
+                  margin: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -80,7 +80,7 @@ const GamesModal = observer(() => {
                 )}
               </button>
             ))}
-            
+
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
               <button
                 className="room-btn room-btn-secondary"

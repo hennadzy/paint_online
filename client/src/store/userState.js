@@ -258,11 +258,11 @@ class UserState {
         isPublic,
         password: isPublic ? null : password
       });
-      
+
       runInAction(() => {
         this.loading = false;
       });
-      
+
       await this.fetchUserRooms();
       return response.data.roomId;
     } catch (error) {

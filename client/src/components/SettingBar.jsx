@@ -25,7 +25,7 @@ const SettingBar = observer(() => {
 
   const handleTouchMove = (e) => {
     if (!isDraggingRef.current) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
     const input = inputRef.current;
@@ -50,7 +50,7 @@ const SettingBar = observer(() => {
 
   const handleOpacityTouchMove = (e) => {
     if (!isOpacityDraggingRef.current) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
     const input = opacityInputRef.current;

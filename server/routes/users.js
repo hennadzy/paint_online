@@ -6,7 +6,7 @@ const { validateUsername, validateEmail, validatePassword, hashPassword, verifyP
 
 const router = express.Router();
 
-const upload = multer({ 
+const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
@@ -157,7 +157,7 @@ router.get('/me/rooms', authenticate, async (req, res) => {
   try {
     const { pgPool } = require('../config/db');
     const query = `
-      SELECT id, name, is_public AS "isPublic", has_password AS "hasPassword", 
+      SELECT id, name, is_public AS "isPublic", has_password AS "hasPassword",
              created_at AS "createdAt", last_activity AS "lastActivity"
       FROM rooms
       WHERE owner_id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)

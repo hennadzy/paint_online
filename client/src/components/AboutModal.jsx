@@ -10,7 +10,7 @@ const AboutModal = observer(() => {
     <div className="room-interface-overlay fullscreen" onClick={() => canvasState.setShowAboutModal(false)}>
       <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={() => canvasState.setShowAboutModal(false)}>×</button>
-        
+
         <div className="room-welcome">
           <h1 itemProp="name">Рисование онлайн - Бесплатный графический редактор</h1>
           <p itemProp="description">Рисуйте онлайн в браузере бесплатно. Совместное рисование в реальном времени</p>
@@ -23,12 +23,12 @@ const AboutModal = observer(() => {
           <meta itemProp="offers" itemScope itemType="https://schema.org/Offer" />
           <meta itemProp="price" content="0" />
           <meta itemProp="priceCurrency" content="RUB" />
-          
+
           <div className="about-section">
             <h2>О программе</h2>
             <p itemProp="description">
-              <strong>Рисование онлайн</strong> — это бесплатный графический редактор, 
-              который работает прямо в браузере без установки. Наше веб-приложение позволяет рисовать 
+              <strong>Рисование онлайн</strong> — это бесплатный графический редактор,
+              который работает прямо в браузере без установки. Наше веб-приложение позволяет рисовать
               онлайн как в одиночку, так и совместно с друзьями в режиме реального времени.
             </p>
           </div>
@@ -88,10 +88,10 @@ const AboutModal = observer(() => {
           <div className="about-section">
             <h3>Преимущества онлайн рисования</h3>
             <p itemProp="featureList">
-              <strong>Не требует установки</strong> — работает в любом современном браузере (Chrome, Firefox, Safari, Edge). 
-              <strong> Бесплатно</strong> — все функции доступны без регистрации и оплаты. 
-              <strong> Кроссплатформенность</strong> — рисуйте на Windows, macOS, Linux, Android, iOS. 
-              <strong> Совместная работа</strong> — уникальная функция рисования вместе в реальном времени. 
+              <strong>Не требует установки</strong> — работает в любом современном браузере (Chrome, Firefox, Safari, Edge).
+              <strong> Бесплатно</strong> — все функции доступны без регистрации и оплаты.
+              <strong> Кроссплатформенность</strong> — рисуйте на Windows, macOS, Linux, Android, iOS.
+              <strong> Совместная работа</strong> — уникальная функция рисования вместе в реальном времени.
               <strong> Быстрый старт</strong> — начните рисовать за несколько секунд.
             </p>
           </div>
@@ -134,8 +134,8 @@ const AboutModal = observer(() => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-            <button 
-              className="room-btn room-btn-primary" 
+            <button
+              className="room-btn room-btn-primary"
               onClick={() => canvasState.setShowAboutModal(false)}
             >
               Начать рисовать

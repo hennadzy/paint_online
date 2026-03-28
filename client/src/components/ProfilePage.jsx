@@ -260,8 +260,8 @@ useEffect(() => {
             <hr className="profile-divider" />
 
             <div className="profile-actions">
-              <button 
-                className="profile-action-btn" 
+              <button
+                className="profile-action-btn"
                 onClick={() => setShowCreateRoomModal(true)}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -271,7 +271,7 @@ useEffect(() => {
                 </svg>
                 <span>Создать комнату</span>
               </button>
-              <button 
+              <button
                 className="profile-action-btn"
                 onClick={() => setShowPersonalMessagesModal(true)}
               >
@@ -332,14 +332,14 @@ useEffect(() => {
         </div>
       </div>
 
-      <CreateRoomModal 
-        isOpen={showCreateRoomModal} 
-        onClose={() => setShowCreateRoomModal(false)} 
+      <CreateRoomModal
+        isOpen={showCreateRoomModal}
+        onClose={() => setShowCreateRoomModal(false)}
       />
-      
-      <PersonalMessagesModal 
-        isOpen={showPersonalMessagesModal} 
-        onClose={() => setShowPersonalMessagesModal(false)} 
+
+      <PersonalMessagesModal
+        isOpen={showPersonalMessagesModal}
+        onClose={() => setShowPersonalMessagesModal(false)}
       />
     </div>
   );

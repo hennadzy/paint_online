@@ -39,13 +39,13 @@ function validateEmail(email) {
   if (!email || typeof email !== 'string') {
     return { valid: false, error: 'Email обязателен' };
   }
-  
+
   const trimmed = email.trim().toLowerCase();
-  
+
   if (!validator.isEmail(trimmed)) {
     return { valid: false, error: 'Некорректный email' };
   }
-  
+
   return { valid: true, email: trimmed };
 }
 
@@ -53,15 +53,15 @@ function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return { valid: false, error: 'Пароль обязателен' };
   }
-  
+
   if (password.length < 6) {
     return { valid: false, error: 'Пароль должен быть не менее 6 символов' };
   }
-  
+
   if (password.length > 72) {
     return { valid: false, error: 'Пароль слишком длинный' };
   }
-  
+
   return { valid: true };
 }
 
@@ -69,38 +69,38 @@ function validateUsername(username) {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
   }
-  
+
   const trimmed = username.trim();
-  
+
   if (trimmed.length === 0) {
     return { valid: false, error: 'Введите имя' };
   }
-  
+
   if (trimmed.length < 2) {
     return { valid: false, error: 'Имя должно быть не менее 2 символов' };
   }
-  
+
   if (trimmed.length > 30) {
     return { valid: false, error: 'Имя не должно превышать 30 символов' };
   }
-  
+
   if (!/^[a-zA-Zа-яА-ЯёЁ0-9\s_-]+$/.test(trimmed)) {
     return { valid: false, error: 'Имя может содержать только буквы, цифры, пробелы, _ и -' };
   }
-  
+
   const lower = trimmed.toLowerCase();
-  
+
   if (lower === 'admin') {
     return { valid: false, error: `Имя "${trimmed}" зарезервировано системой` };
   }
-  
+
   const forbidden = ['moderator', 'system', 'bot', 'null', 'undefined'];
   for (const word of forbidden) {
     if (lower.includes(word)) {
       return { valid: false, error: `Имя не может содержать "${word}"` };
     }
   }
-  
+
   return { valid: true, username: trimmed };
 }
 

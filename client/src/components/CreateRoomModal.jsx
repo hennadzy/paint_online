@@ -17,25 +17,25 @@ const CreateRoomModal = observer(({ isOpen, onClose }) => {
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
-    
+
     if (!roomName.trim()) {
       setError('Введите название комнаты');
       return;
     }
-    
+
     if (roomName.length > 20) {
       setError('Название комнаты не может превышать 20 символов');
       return;
     }
-    
+
     if (!isPublic && !password.trim()) {
       setError('Введите пароль для приватной комнаты');
       return;
     }
-    
+
     setError('');
     setIsLoading(true);
-    
+
     try {
       const roomId = await userState.createRoom(roomName, isPublic, password);
       const roomLink = window.location.origin + '/' + roomId;
@@ -73,7 +73,7 @@ const CreateRoomModal = observer(({ isOpen, onClose }) => {
     <div className="room-interface-overlay" onClick={onClose} data-nosnippet>
       <div className="room-interface" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={onClose}>×</button>
-        
+
         {createdRoom ? (
           <div className="room-card created-room">
             <div className="room-card-header">
@@ -159,8 +159,8 @@ const CreateRoomModal = observer(({ isOpen, onClose }) => {
                   <span className="privacy-desc">Вход по паролю</span>
                 </label>
               </div>
-              <button 
-                className="room-btn room-btn-primary" 
+              <button
+                className="room-btn room-btn-primary"
                 onClick={handleCreateRoom}
                 disabled={isLoading}
               >

@@ -23,7 +23,7 @@ export default class Text extends Tool {
     this.startMoveY = 0;
     this.originalLeft = 0;
     this.originalTop = 0;
-    this._isCommitted = false; 
+    this._isCommitted = false;
   }
 
   setLineWidth(width) {
@@ -101,7 +101,7 @@ export default class Text extends Tool {
 
   createInput(clientX, clientY) {
     this.removeInput();
-    this._isCommitted = false; 
+    this._isCommitted = false;
     toolState.textInputActive = true;
     const rect = this.canvas.getBoundingClientRect();
     const container = this.canvas.parentElement;
@@ -110,7 +110,7 @@ export default class Text extends Tool {
 
     const scaleX = rect.width / this.canvas.width;
     const scaleY = rect.height / this.canvas.height;
-    const displayFontSize = this.fontSize * scaleX; 
+    const displayFontSize = this.fontSize * scaleX;
 
     this.input = document.createElement('textarea');
     const textBaselineOffset = displayFontSize * 0.8;
@@ -130,7 +130,7 @@ export default class Text extends Tool {
     this.input.style.outlineOffset = '-2px';
     this.input.style.zIndex = '1000';
     this.input.style.padding = '2px 4px';
-    this.input.style.width = `${200 * scaleX}px`; 
+    this.input.style.width = `${200 * scaleX}px`;
     this.input.style.minHeight = `${displayFontSize + 4}px`;
     this.input.style.resize = 'none';
     this.input.style.overflow = 'hidden';
@@ -227,18 +227,18 @@ export default class Text extends Tool {
   }
 
   confirmText() {
-    if (this.input && !this._isCommitted) { 
+    if (this.input && !this._isCommitted) {
       this._isCommitted = true;
       this.text = this.input.value;
       const computedStyle = window.getComputedStyle(this.input);
       const paddingLeft = parseFloat(computedStyle.paddingLeft) || 4;
       const paddingRight = parseFloat(computedStyle.paddingRight) || 4;
       const inputWidth = this.input.clientWidth - paddingLeft - paddingRight;
-      
+
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = rect.width / this.canvas.width;
       const logicalWidth = inputWidth / scaleX;
-      
+
       this.removeInput();
         if (this.text) {
           const stroke = {
@@ -322,11 +322,11 @@ export default class Text extends Tool {
     if (pos.includes('w')) newWidth -= dx;
     if (pos.includes('s')) newHeight += dy;
     if (pos.includes('n')) newHeight -= dy;
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = rect.width / this.canvas.width;
     const displayFontSize = this.fontSize * scaleX;
-    
+
     newWidth = Math.max(newWidth, 50 * scaleX);
     newHeight = Math.max(newHeight, displayFontSize + 4);
     this.input.style.width = newWidth + 'px';
@@ -426,7 +426,7 @@ export default class Text extends Tool {
       const isInputClick = target === this.input || this.input.contains(target);
       const isResizeHandle = target.classList && target.classList.contains('resize-handle');
       const isHandleClick = this.handles.some(handle => handle === target || handle.contains(target));
-      
+
       if (!isInputClick && !isResizeHandle && !isHandleClick) {
         this.confirmText();
       }
@@ -436,19 +436,19 @@ export default class Text extends Tool {
   static wrapText(text, maxWidth, ctx) {
     if (!text) return [];
     if (maxWidth <= 0) return [text];
-    
+
     const paragraphs = text.split('\n');
     const allLines = [];
-    
+
     for (let para of paragraphs) {
       if (para === '') {
         allLines.push('');
         continue;
       }
-      
+
       const words = para.split(/(\s+)/);
       let currentLine = '';
-      
+
       for (let i = 0; i < words.length; i++) {
         const segment = words[i];
         if (!segment) continue;
@@ -456,7 +456,7 @@ export default class Text extends Tool {
         if (/^\s+$/.test(segment)) {
           const testLine = currentLine + segment;
           const metrics = ctx.measureText(testLine);
-          
+
           if (metrics.width > maxWidth && currentLine !== '') {
             allLines.push(currentLine);
             currentLine = '';
@@ -468,13 +468,13 @@ export default class Text extends Tool {
 
         const testLine = currentLine + segment;
         const metrics = ctx.measureText(testLine);
-        
+
         if (metrics.width > maxWidth) {
           if (currentLine !== '') {
             allLines.push(currentLine.trimEnd());
             currentLine = '';
           }
-          
+
           const wordMetrics = ctx.measureText(segment);
           if (wordMetrics.width <= maxWidth) {
             currentLine = segment;
@@ -498,12 +498,12 @@ export default class Text extends Tool {
           currentLine = testLine;
         }
       }
-      
+
       if (currentLine) {
         allLines.push(currentLine);
       }
     }
-    
+
     return allLines;
   }
 

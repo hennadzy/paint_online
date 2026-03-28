@@ -36,7 +36,7 @@ const Canvas = observer(() => {
   useModalBodyClass();
   useCustomScrollbars(containerRef, canvasState.isConnected);
   const isVisible = usePageVisibility();
-  
+
   useEffect(() => {
     canvasState.setPageVisible(isVisible);
   }, [isVisible]);
@@ -50,7 +50,7 @@ const Canvas = observer(() => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     canvasState.setShowAboutModal(false);
-    
+
     if (canvasState.showRoomsList) {
       canvasState.setShowRoomInterface(true);
     } else {
@@ -62,7 +62,7 @@ const Canvas = observer(() => {
       canvasState.setUsername('local');
       canvasState.setModalOpen(false);
       toolState.setTool(new Brush(canvas, null, null, 'local'), 'brush');
-      
+
       if (canvasState.returningFromRoom) {
         canvasState.restoreAutoSave();
         canvasState.returningFromRoom = false;
@@ -76,7 +76,7 @@ const Canvas = observer(() => {
       canvasState.setCurrentRoomId(params.id);
       canvasState.setUsername('');
       canvasState.setModalOpen(false);
-      
+
       const adminToken = localStorage.getItem('adminJoinToken');
       if (adminToken) {
         localStorage.removeItem('adminJoinToken');
@@ -168,7 +168,7 @@ const Canvas = observer(() => {
   return (
     <div className={`canvas ${canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
       <div ref={layoutRef} className={`canvas-layout ${canvasState.isConnected ? 'has-chat' : 'no-chat'}`}>
-       
+
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-container-inner">
             <div className="canvas-wrapper">

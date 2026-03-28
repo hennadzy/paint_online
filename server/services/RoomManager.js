@@ -30,26 +30,26 @@ startInactivityCheck() {
 
   async checkInactiveUsers() {
     if (!this.redis) return;
-    
+
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
     const now = Date.now();
-    
+
     try {
       const keys = await this.redis.keys('ws:*');
       if (!keys || keys.length === 0) return;
-      
+
       for (const key of keys) {
         try {
           const data = await this.redis.hgetall(key);
           if (!data || !data.lastActivity) continue;
-          
+
           const lastActivity = parseInt(data.lastActivity);
           const timeSinceLastActivity = now - lastActivity;
-          
+
           if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
             const wsId = key.replace('ws:', '');
             const { roomId, username } = data;
-            
+
             if (roomId && username) {
               await this.removeUserByInfo(roomId, username);
               console.log(`Removed inactive user: ${username} from room ${roomId}`);
@@ -68,7 +68,7 @@ startInactivityCheck() {
     await this.redis.srem(`room:${roomId}:users`, username);
     await this.redis.del(`ws:${roomId}_${username}`);
     await this.redis.del(`user:${username}:room`);
-    
+
     const sockets = this.roomSockets.get(roomId);
     if (sockets) {
       const WebSocket = require('ws');
@@ -78,7 +78,7 @@ startInactivityCheck() {
           ws.send(message);
         }
       });
-      
+
       const users = await this.getRoomUsers(roomId);
       const usersMessage = JSON.stringify({ method: 'users', users });
       sockets.forEach(ws => {
@@ -111,20 +111,20 @@ async getAllRoomStrokes(roomId) {
   async getAllCancelledStrokes(roomId) {
     const users = await this.getRoomUsers(roomId);
     const allCancelled = {};
-    
+
     for (const username of users) {
       const cancelled = await this.getCancelledStrokes(roomId, username);
       if (cancelled.length > 0) {
         allCancelled[username] = cancelled;
       }
     }
-    
+
     return allCancelled;
   }
 
   async removeStrokeFromAllCancelled(roomId, strokeId) {
     const users = await this.getRoomUsers(roomId);
-    
+
     for (const username of users) {
       await this.removeCancelledStroke(roomId, username, strokeId);
     }
@@ -139,7 +139,7 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
     const onlineUsers = await this.getRoomUsers(roomId);
 
     await this.loadCancelledStrokesFromDb(roomId, username);
-    
+
     const wsId = this._getWsId(ws);
 
     const multi = redis.multi();
@@ -163,7 +163,7 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
       this.roomSockets.set(roomId, new Set());
     }
     this.roomSockets.get(roomId).add(ws);
-    
+
     let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     if (strokes.length === 0) {
       strokes = await DataStore.loadStrokes(roomId);
@@ -207,7 +207,7 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
         return parsed;
       });
     }
-    
+
     const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);
     const allCancelledStrokeIds = new Set();
 
@@ -254,17 +254,17 @@ async removeUser(ws) {
       let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
       const allCancelled = await this.getAllCancelledStrokes(roomId);
       const allCancelledIds = new Set();
-      
+
       Object.values(allCancelled).forEach(cancelledArray => {
         cancelledArray.forEach(stroke => {
           allCancelledIds.add(stroke.id);
         });
       });
-      
+
       if (strokes.length > 0) {
         const strokesObjects = strokes.map(s => JSON.parse(s));
         const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
-        
+
         if (activeStrokes.length > 0) {
           await DataStore.saveStrokes(roomId, activeStrokes);
         } else {
@@ -395,13 +395,13 @@ async addStroke(roomId, stroke) {
       }
       strokes = dbStrokes;
     }
-    
+
     if (username) {
       const userCancelled = await this.getCancelledStrokes(roomId, username);
       const userCancelledIds = new Set(userCancelled.map(s => s.id));
       strokes = strokes.filter(s => !userCancelledIds.has(s.id));
     }
-    
+
     return strokes;
   }
 

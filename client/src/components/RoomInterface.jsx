@@ -89,7 +89,7 @@ const RoomInterface = observer(({ roomId }) => {
     userState.isAuthenticated && (userState.user?.role === 'admin' || userState.user?.role === 'superadmin')
   );
   const showUsernameForm = roomId && !canvasState.isConnected && !userState.isAuthenticated;
-  
+
   const showRoomError = canvasState.roomError && roomId && !canvasState.isConnected;
 
   useEffect(() => {
@@ -272,7 +272,7 @@ const RoomInterface = observer(({ roomId }) => {
       if (error.response?.data?.error) {
         const errorMessage = error.response.data.error;
         setError(errorMessage);
-        
+
         if (errorMessage.includes('максимальное количество пользователей')) {
           setTimeout(() => {
             navigate('/');

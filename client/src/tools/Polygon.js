@@ -20,7 +20,7 @@ export default class Polygon extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
@@ -38,7 +38,7 @@ export default class Polygon extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.isDrawing || this.points.length === 0) return;
-    
+
     if (this.isPinchingActive()) {
       this.isDrawing = false;
       this.points = [];

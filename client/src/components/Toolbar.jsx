@@ -150,7 +150,7 @@ const Toolbar = observer(() => {
 
       {renderButton("eraser", Eraser, "Ластик")}
       {renderButton("text", Text, "Текст")}
-      
+
       <button
         type="button"
         className="toolbar__btn"
@@ -161,7 +161,7 @@ const Toolbar = observer(() => {
         <span className="icon grid" />
         <span className="tooltip">Сетка</span>
       </button>
-      
+
       <button
         type="button"
         className="toolbar__btn"

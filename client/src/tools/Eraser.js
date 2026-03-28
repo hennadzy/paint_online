@@ -33,7 +33,7 @@ export default class Eraser extends Tool {
     this.canvas.removeEventListener("pointerleave", this.pointerLeaveHandlerBound);
     this.canvas.removeEventListener("pointerenter", this.pointerEnterHandlerBound);
     this.removeGlobalEndEvents();
-    
+
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
   }
@@ -49,7 +49,7 @@ export default class Eraser extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
     this._hasCommitted = false;
@@ -62,7 +62,7 @@ export default class Eraser extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
-    
+
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;
@@ -75,7 +75,7 @@ export default class Eraser extends Tool {
     const { x, y } = this.getCoords(e);
     this.points.push({ x, y });
     this.drawSegment();
-    
+
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
   }
@@ -84,7 +84,7 @@ export default class Eraser extends Tool {
     if (this.mouseDown) {
       this.commitStroke();
       this.mouseDown = false;
-      
+
       const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
       ctx.globalCompositeOperation = "source-over";
     }
@@ -168,7 +168,7 @@ export default class Eraser extends Tool {
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
     canvasState.redrawCanvas();
-    
+
     this.points = [];
     canvasState.isDrawing = false;
   }

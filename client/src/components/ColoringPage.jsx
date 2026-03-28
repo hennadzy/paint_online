@@ -5,7 +5,7 @@ import { API_URL } from '../store/canvasState';
 import '../styles/coloring.scss';
 import '../styles/modal.scss';
 
-// Локальная история для undo/redo раскрасок
+
 class ColoringHistory {
  constructor() {
  this.undoStack = [];
@@ -14,7 +14,7 @@ class ColoringHistory {
  }
 
  push(imageData) {
- // Сохраняем копию imageData
+
  const copy = new ImageData(
  new Uint8ClampedArray(imageData.data),
  imageData.width,
@@ -29,27 +29,27 @@ class ColoringHistory {
 
  undo(currentImageData) {
  if (this.undoStack.length ===0) return null;
-    
+
  const copy = new ImageData(
  new Uint8ClampedArray(currentImageData.data),
  currentImageData.width,
  currentImageData.height
  );
  this.redoStack.push(copy);
-    
+
  return this.undoStack.pop();
  }
 
  redo(currentImageData) {
  if (this.redoStack.length ===0) return null;
-    
+
  const copy = new ImageData(
  new Uint8ClampedArray(currentImageData.data),
  currentImageData.width,
  currentImageData.height
  );
  this.undoStack.push(copy);
-    
+
  return this.redoStack.pop();
  }
 
@@ -70,19 +70,19 @@ class ColoringHistory {
 const coloringHistoryRef = { current: new ColoringHistory() };
 
 const PRESET_COLORS = [
-  // Row 1 — warm / primary
+
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700',
   '#ADFF2F', '#00CC44', '#00BFFF', '#0044FF',
-  // Row 2 — cool / secondary
+
   '#8A2BE2', '#FF1493', '#FF69B4', '#FF6347',
   '#20B2AA', '#4169E1', '#9370DB', '#DA70D6',
-  // Row 3 — light / pastel
+
   '#FFB3B3', '#FFD9B3', '#FFFACD', '#B3FFB3',
   '#B3E5FF', '#D4B3FF', '#FFB3E6', '#C8A882',
-  // Row 4 — dark / neutral
+
   '#8B0000', '#4B2800', '#556B2F', '#2F4F4F',
   '#1C1C8A', '#4B0082', '#333333', '#000000',
-  // Row 5 — grays / whites
+
   '#FFFFFF', '#F5F5F5', '#DCDCDC', '#A9A9A9',
   '#696969', '#808080', '#F5DEB3', '#FFDAB9',
 ];
@@ -99,26 +99,26 @@ const ColoringPage = () => {
  const [isLoading, setIsLoading] = useState(true);
  const [imageLoaded, setImageLoaded] = useState(false);
  const [fetchError, setFetchError] = useState('');
-  
- // Состояние для zoom
+
+
  const [zoom, setZoom] = useState(1);
  const [isPinching, setIsPinching] = useState(false);
- 
- // Состояние для undo/redo
+
+
  const [canUndo, setCanUndo] = useState(false);
  const [canRedo, setCanRedo] = useState(false);
- 
- // Состояние для диалога сохранения
+
+
  const [showSaveModal, setShowSaveModal] = useState(false);
  const [saveFilename, setSaveFilename] = useState('coloring');
  const [saveFormat, setSaveFormat] = useState('png');
- 
- // Refs для pinch-to-zoom
+
+
  const zoomRef = useRef(1);
  const initialZoomRef = useRef(1);
  const initialDistanceRef = useRef(0);
 
-  // Fetch available coloring pages on mount
+
   useEffect(() => {
     const fetchPages = async () => {
       setIsLoading(true);
@@ -137,7 +137,7 @@ const ColoringPage = () => {
     fetchPages();
   }, []);
 
- // Load selected image onto canvas
+
  const loadImageToCanvas = useCallback((page) => {
  const canvas = canvasRef.current;
  if (!canvas) return;
@@ -153,10 +153,10 @@ const ColoringPage = () => {
  img.crossOrigin = 'anonymous';
 
  img.onload = () => {
- // Set canvas to natural image size
+
  canvas.width = img.naturalWidth;
  canvas.height = img.naturalHeight;
- // Fill white background first so flood fill works on transparent PNGs
+
  ctx.fillStyle = '#FFFFFF';
  ctx.fillRect(0,0, canvas.width, canvas.height);
  ctx.drawImage(img,0,0);
@@ -170,12 +170,12 @@ const ColoringPage = () => {
  img.src = `${API_URL}${page.image_url}`;
  }, []);
 
- // Синхронизируем zoomRef с состоянием zoom
+
  useEffect(() => {
  zoomRef.current = zoom;
  }, [zoom]);
 
- // Обработчик колёсика мыши (десктоп)
+
  const handleWheel = useCallback((e) => {
  if (Math.abs(e.deltaY) > 0) {
  e.preventDefault();
@@ -188,7 +188,7 @@ const ColoringPage = () => {
  }
  }, []);
 
- // Touch handlers для pinch-zoom — вешаем на containerRef (workspace)
+
  useEffect(() => {
  const container = containerRef.current;
  if (!container) return;
@@ -212,7 +212,7 @@ const ColoringPage = () => {
  if (e.touches.length === 2) {
  e.preventDefault();
  if (initialDistanceRef.current === 0) {
- // Инициализируем, если не было touchstart с 2 пальцами
+
  initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
  initialZoomRef.current = zoomRef.current;
  return;
@@ -228,7 +228,7 @@ const ColoringPage = () => {
  const handleTouchEnd = (e) => {
  if (e.touches.length < 2) {
  initialDistanceRef.current = 0;
- // Небольшая задержка, чтобы click-обработчик успел проверить isPinching
+
  setTimeout(() => setIsPinching(false), 150);
  }
  };
@@ -246,7 +246,7 @@ const ColoringPage = () => {
  };
  }, []);
 
- // Кнопки +/− масштаба
+
  const handleZoomIn = useCallback(() => {
  setZoom(prev => {
  const next = Math.min(3, prev + 0.25);
@@ -265,7 +265,7 @@ const ColoringPage = () => {
 
   const handleSelectPage = (page) => {
     setSelectedPage(page);
-    // Give React a tick to render the canvas before drawing
+
     setTimeout(() => loadImageToCanvas(page), 50);
   };
 
@@ -282,18 +282,18 @@ const ColoringPage = () => {
  const x = Math.floor((e.clientX - rect.left) * scaleX);
  const y = Math.floor((e.clientY - rect.top) * scaleY);
 
- // Сохраняем состояние в историю перед заливкой
+
  const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
  coloringHistoryRef.current.push(imageData);
- 
- // Обновляем состояние undo/redo
+
+
  setCanUndo(coloringHistoryRef.current.canUndo());
  setCanRedo(coloringHistoryRef.current.canRedo());
 
  Fill.staticDraw(ctx, x, y, selectedColor);
  }, [imageLoaded, selectedColor, isPinching]);
 
- // Обработчики undo/redo
+
  const handleUndo = useCallback(() => {
  const canvas = canvasRef.current;
  if (!canvas || !coloringHistoryRef.current.canUndo()) return;
@@ -301,10 +301,10 @@ const ColoringPage = () => {
  const ctx = canvas.getContext('2d');
  const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
  const prevImageData = coloringHistoryRef.current.undo(currentImageData);
- 
+
  if (prevImageData) {
  ctx.putImageData(prevImageData,0,0);
- // Обновляем состояние undo/redo
+
  setCanUndo(coloringHistoryRef.current.canUndo());
  setCanRedo(coloringHistoryRef.current.canRedo());
  }
@@ -317,16 +317,16 @@ const ColoringPage = () => {
  const ctx = canvas.getContext('2d');
  const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
  const nextImageData = coloringHistoryRef.current.redo(currentImageData);
- 
+
  if (nextImageData) {
  ctx.putImageData(nextImageData,0,0);
- // Обновляем состояние undo/redo
+
  setCanUndo(coloringHistoryRef.current.canUndo());
  setCanRedo(coloringHistoryRef.current.canRedo());
  }
  }, []);
 
- // Сохранение раскраски
+
  const handleSave = useCallback(() => {
  const defaultName = `coloring-${selectedPage?.title || 'image'}`;
  setSaveFilename(defaultName);
@@ -379,7 +379,7 @@ const ColoringPage = () => {
     setImageLoaded(false);
   };
 
-  // ─── Selector View ────────────────────────────────────────────────────────
+
   if (!selectedPage) {
     return (
       <div className="coloring-page">
@@ -442,7 +442,7 @@ const ColoringPage = () => {
     );
   }
 
- // ─── Coloring View ────────────────────────────────────────────────────────
+
  return (
 <div className="coloring-page coloring-page--active">
 <div className="coloring-header">
@@ -464,7 +464,7 @@ const ColoringPage = () => {
  ref={canvasRef}
  className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''}`}
  onClick={handleCanvasClick}
- style={{ 
+ style={{
  cursor: imageLoaded ? 'crosshair' : 'wait',
  transform: `scale(${zoom})`,
  transformOrigin: 'center center'
@@ -493,8 +493,8 @@ const ColoringPage = () => {
  <span className="coloring-action-icon">↪</span>
  <span>Вернуть</span>
  </button>
-<button 
- className="coloring-action-btn coloring-action-btn--save" 
+<button
+ className="coloring-action-btn coloring-action-btn--save"
  onClick={handleSave}
  title="Сохранить"
  >

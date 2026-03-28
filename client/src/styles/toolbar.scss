@@ -175,7 +175,7 @@
   font-size: 14px;
   z-index: 1002;
   min-height: 50px;
-  
+
   @media (max-width: 768px) {
     top: calc(100px + env(safe-area-inset-top, 0px));
   }
@@ -310,7 +310,7 @@
     border-radius: 8px;
     padding: 0;
     box-shadow: none;
-    
+
     &.show {
       display: flex;
     }
@@ -356,13 +356,13 @@
     .tooltip {
       display: none !important;
     }
-    
+
     &:not(.brush):not(.rect):not(.circle):not(.eraser):not(.line):not(.text):not(.fill):not(.pipette):not(.polygon):not(.arrow) {
       &:hover {
         transform: none;
         box-shadow: none;
       }
-      
+
       &:hover::before,
       &.active::before {
         opacity: 0;

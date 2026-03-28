@@ -4,15 +4,15 @@ class User {
   static async create(userData) {
     const { username, email, passwordHash } = userData;
     const now = Date.now();
-    
+
     const query = `
       INSERT INTO users (username, email, password_hash, created_at, last_login, settings)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, username, email, role, created_at, avatar_url, settings
     `;
-    
+
     const values = [username, email, passwordHash, now, now, JSON.stringify({})];
-    
+
     try {
       const result = await pgPool.query(query, values);
       return result.rows[0];
@@ -101,7 +101,7 @@ class User {
 
   static async getAll(options = {}) {
     const { limit = 20, offset = 0, search = '', sortBy = 'created_at', sortOrder = 'DESC', role, isActive } = options;
-    
+
     let query = `
       SELECT id, username, email, role, created_at, last_login, avatar_url, settings, is_active
       FROM users
@@ -140,7 +140,7 @@ class User {
 
   static async count(search = '', filters = {}) {
     const { role, isActive } = filters;
-    
+
     let query = 'SELECT COUNT(*) as total FROM users';
     const values = [];
     let paramIndex = 1;

@@ -9,31 +9,31 @@ const DOMPurify = createDOMPurify(window);
 
 const sanitizeInput = (input, maxLength) => {
   if (typeof input !== 'string') return '';
-  
+
   let sanitized = input.trim().slice(0, maxLength);
   sanitized = validator.escape(sanitized);
-  
+
   sanitized = sanitized.replace(/javascript:/gi, '')
                        .replace(/on\w+\s*=/gi, '')
                        .replace(/<script/gi, '')
                        .replace(/<\/script>/gi, '');
-  
+
   return sanitized;
 };
 
 const sanitizeChatMessage = (text) => {
   if (typeof text !== 'string') return '';
-  
+
   let sanitized = text.trim();
-  
+
   if (sanitized.length > 1000) {
     sanitized = sanitized.slice(0, 1000);
   }
-  
+
   sanitized = sanitized.normalize('NFKC');
-  
+
   sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-  
+
   const dangerousPatterns = [
     /javascript:/gi,
     /data:/gi,
@@ -67,50 +67,50 @@ const sanitizeChatMessage = (text) => {
     /<%/gi,
     /%>/gi
   ];
-  
+
   dangerousPatterns.forEach(pattern => {
     sanitized = sanitized.replace(pattern, '');
   });
-  
+
  sanitized = DOMPurify.sanitize(sanitized, {
  ALLOWED_TAGS: [],
  ALLOWED_ATTR: [],
  KEEP_CONTENT: true
  });
-  
+
  sanitized = sanitized.replace(/<[^>]*>/g, '');
-  
+
   return sanitized;
 };
 
 const checkSpam = (text, username, messageHistory = []) => {
   if (typeof text !== 'string') return { isSpam: false };
-  
+
   const upperCaseCount = (text.match(/[A-ZА-ЯЁ]/g) || []).length;
   const totalLetters = (text.match(/[A-Za-zА-Яа-яЁё]/g) || []).length;
   if (totalLetters > 0 && (upperCaseCount / totalLetters) > 0.7) {
     return { isSpam: true, reason: 'Слишком много заглавных букв' };
   }
-  
+
   const repeatingPattern = /(.)\1{9,}/;
   if (repeatingPattern.test(text)) {
     return { isSpam: true, reason: 'Повторяющиеся символы' };
   }
-  
+
   const emojiPattern = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
   const emojiCount = (text.match(emojiPattern) || []).length;
   if (emojiCount > 10) {
     return { isSpam: true, reason: 'Слишком много эмодзи' };
   }
-  
+
   const now = Date.now();
-  const recentMessages = messageHistory.filter(msg => 
+  const recentMessages = messageHistory.filter(msg =>
     msg.username === username && (now - msg.timestamp) < 3000
   );
   if (recentMessages.length >= 3) {
     return { isSpam: true, reason: 'Слишком частые сообщения' };
   }
-  
+
   return { isSpam: false };
 };
 
@@ -118,30 +118,30 @@ const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
   }
-  
+
   const trimmed = username.trim();
-  
+
   if (trimmed.length === 0) {
     return { valid: false, error: 'Введите ваше имя' };
   }
-  
+
   if (trimmed.length < 2) {
     return { valid: false, error: 'Имя должно содержать минимум 2 символа' };
   }
-  
+
   if (trimmed.length > 30) {
     return { valid: false, error: 'Имя не должно превышать 30 символов' };
   }
-  
+
   const invalidChars = trimmed.match(/[^a-zA-Zа-яА-ЯёЁ0-9\s]/g);
   if (invalidChars) {
     const uniqueChars = [...new Set(invalidChars)].join(', ');
-    return { 
-      valid: false, 
-      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы` 
+    return {
+      valid: false,
+      error: `Недопустимые символы: ${uniqueChars}. Используйте только буквы, цифры и пробелы`
     };
   }
-  
+
   const dangerousWords = [
     { pattern: /admin/gi, word: 'admin' },
     { pattern: /moderator/gi, word: 'moderator' },
@@ -150,34 +150,34 @@ const validateUsername = (username) => {
     { pattern: /null/gi, word: 'null' },
     { pattern: /undefined/gi, word: 'undefined' }
   ];
-  
+
   for (const { pattern, word } of dangerousWords) {
     if (pattern.test(trimmed)) {
-      return { 
-        valid: false, 
-        error: `Слово "${word}" запрещено в имени` 
+      return {
+        valid: false,
+        error: `Слово "${word}" запрещено в имени`
       };
     }
   }
-  
+
   return { valid: true, username: trimmed };
 };
 
 const sanitizeUsername = (username, isPrivileged = false) => {
   if (typeof username !== 'string') return '';
-  
+
   let sanitized = username.trim();
-  
+
   if (sanitized.length > 30) {
     sanitized = sanitized.slice(0, 30);
   }
-  
+
   sanitized = sanitized.normalize('NFKC');
-  
+
   sanitized = sanitized.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s]/g, '');
-  
+
   sanitized = sanitized.replace(/\s+/g, ' ');
-  
+
   if (!isPrivileged) {
     const dangerousPatterns = [
       /admin/gi,
@@ -187,14 +187,14 @@ const sanitizeUsername = (username, isPrivileged = false) => {
       /null/gi,
       /undefined/gi
     ];
-    
+
     dangerousPatterns.forEach(pattern => {
       sanitized = sanitized.replace(pattern, '');
     });
   }
-  
+
   sanitized = validator.escape(sanitized);
-  
+
   return sanitized.trim();
 };
 

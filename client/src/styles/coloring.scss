@@ -1,6 +1,6 @@
 @import "./variables";
 
-// ─── Full-screen reset for main-content wrapper ───────────────────────────────
+
 
 .main-content--coloring {
  position: fixed !important;
@@ -18,7 +18,7 @@
  z-index:1 !important;
 }
 
-// ─── Page Shell ──────────────────────────────────────────────────────────────
+
 
 .coloring-page {
  min-height:100vh;
@@ -36,7 +36,7 @@
  }
 }
 
-// ─── Header ──────────────────────────────────────────────────────────────────
+
 
 .coloring-header {
  display: flex;
@@ -84,7 +84,7 @@
  }
 }
 
-// ─── Selector ────────────────────────────────────────────────────────────────
+
 
 .coloring-selector {
  flex:1;
@@ -179,7 +179,7 @@
  }
 }
 
-// ─── Loading / Empty ─────────────────────────────────────────────────────────
+
 
 .coloring-loading {
  display: flex;
@@ -228,7 +228,7 @@
  }
 }
 
-// ─── Workspace (canvas area) ─────────────────────────────────────────────────
+
 
 .coloring-workspace {
  flex: 1;
@@ -239,7 +239,7 @@
  padding: 16px;
  background: #111827;
  min-height: 0;
- // Разрешаем прокрутку одним пальцем, но отдаём pinch-zoom нашему JS
+
  touch-action: pan-x pan-y;
 }
 
@@ -281,7 +281,7 @@
  }
 }
 
-// ─── Actions Panel ───────────────────────────────────────────────────────────
+
 
 .coloring-actions {
  flex-shrink:0;
@@ -307,26 +307,26 @@
  font-weight:500;
  cursor: pointer;
  transition: all 0.2s ease;
-  
+
  &:hover:not(:disabled) {
  background: rgba(255,255,255,0.15);
  border-color: rgba(255,255,255,0.3);
  transform: translateY(-1px);
  }
-  
+
  &:active:not(:disabled) {
  transform: translateY(0);
  }
-  
+
  &:disabled {
  opacity:0.4;
  cursor: not-allowed;
  }
-  
+
  &--save {
  background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
  border-color: #e94560;
-    
+
  &:hover:not(:disabled) {
  background: linear-gradient(135deg, #ff5577 0%, #e94560 100%);
  border-color: #ff5577;
@@ -364,7 +364,7 @@
  }
 }
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
+
 
 .coloring-palette {
  flex-shrink:0;
@@ -466,7 +466,7 @@
  }
 }
 
-// ─── Responsive ──────────────────────────────────────────────────────────────
+
 
 @media (max-width:600px) {
  .coloring-header {
@@ -514,7 +514,7 @@
  height:30px;
  }
 
- // Мобильные кнопки действий — одна высота и в одну строку
+
  .coloring-actions {
  display: flex;
  flex-wrap: nowrap;
@@ -572,7 +572,7 @@
  height:22px;
  }
 
- // Ещё меньшие экраны — кнопки без текста, только иконки
+
  .coloring-actions {
  gap:4px;
  padding:6px8px;

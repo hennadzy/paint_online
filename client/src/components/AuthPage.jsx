@@ -29,9 +29,9 @@ const EyeIcon = ({ visible, onClick }) => (
 const AuthPage = observer(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const isLogin = location.pathname !== '/register';
-  
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -92,7 +92,7 @@ const AuthPage = observer(() => {
           <div className="about-section">
             {userState.error && <div className="room-error">{userState.error}</div>}
             {localError && <div className="room-error">{localError}</div>}
-            
+
             <form onSubmit={handleSubmit}>
               {!isLogin && (
                 <div className="form-group">
@@ -108,7 +108,7 @@ const AuthPage = observer(() => {
                   />
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label>Email</label>
                 <input
@@ -121,7 +121,7 @@ const AuthPage = observer(() => {
                   required
                 />
               </div>
-              
+
               <div className="form-group password-input-group">
                 <label>Пароль</label>
                 <div className="password-input-wrapper">
@@ -137,7 +137,7 @@ const AuthPage = observer(() => {
                   <EyeIcon visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
                 </div>
               </div>
-              
+
               <button
                 type="submit"
                 className="room-btn room-btn-primary"
@@ -147,7 +147,7 @@ const AuthPage = observer(() => {
                 {userState.loading ? 'Подождите...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
               </button>
             </form>
-            
+
             <p className="switch-link" style={{ textAlign: 'center', marginTop: '20px' }}>
               {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
               <button

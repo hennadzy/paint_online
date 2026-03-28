@@ -6,13 +6,13 @@ class Session {
     const id = crypto.randomUUID();
     const now = Date.now();
     const expiresAt = now + (7 * 24 * 60 * 60 * 1000);
-    
+
     const query = `
       INSERT INTO sessions (id, user_id, token, expires_at, created_at, ip_address, user_agent)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `;
-    
+
     const result = await pgPool.query(query, [id, userId, token, expiresAt, now, ipAddress, userAgent]);
     return result.rows[0].id;
   }

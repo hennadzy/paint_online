@@ -263,17 +263,17 @@
     .link-container {
       flex-direction: column;
       gap: 10px;
-      
+
       .room-input {
         width: 100%;
       }
-      
+
       .room-btn {
         width: 100%;
         margin: 0;
       }
     }
-    
+
     .room-btn-primary {
       width: 100%;
     }
@@ -874,7 +874,7 @@
     right: 5px;
     z-index: 10;
   }
-  
+
   .room-item .room-item-with-actions .room-actions-dropdown .room-actions-trigger {
     width: 24px;
     height: 24px;
@@ -1179,12 +1179,12 @@
 
 .game-mode-btn {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  
+
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(255, 102, 153, 0.6);
   }
-  
+
   &:active {
     transform: translateY(-1px);
   }

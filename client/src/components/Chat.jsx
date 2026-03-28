@@ -5,17 +5,17 @@ import userState from "../store/userState";
 
 const sanitizeMessage = (text) => {
   if (typeof text !== 'string') return '';
-  
+
   let sanitized = text.trim();
-  
+
   if (sanitized.length > 1000) {
     sanitized = sanitized.slice(0, 1000);
   }
-  
+
   sanitized = sanitized.normalize('NFKC');
-  
+
   sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-  
+
   const dangerousPatterns = [
     /<script/gi,
     /<\/script>/gi,
@@ -23,11 +23,11 @@ const sanitizeMessage = (text) => {
     /onerror/gi,
     /onload/gi
   ];
-  
+
   dangerousPatterns.forEach(pattern => {
     sanitized = sanitized.replace(pattern, '');
   });
-  
+
   return sanitized;
 };
 
@@ -130,7 +130,7 @@ const Chat = observer(() => {
             placeholder="Введите сообщение"
             onKeyDown={sendMessage}
           />
-          <button 
+          <button
             className="chat-send-btn"
             onClick={handleSend}
             title="Отправить"

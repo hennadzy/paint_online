@@ -23,7 +23,7 @@ export default class Pipette extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
 

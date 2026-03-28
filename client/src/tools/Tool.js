@@ -28,7 +28,7 @@ export default class Tool {
   }
 
   setStrokeColor(color) {
-    this.strokeColor = color; 
+    this.strokeColor = color;
   }
 
   setFillColor(color) {
@@ -69,10 +69,10 @@ export default class Tool {
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
-    
+
     const x = Math.round((e.clientX - rect.left) * scaleX);
     const y = Math.round((e.clientY - rect.top) * scaleY);
-    
+
     return { x, y };
   }
 

@@ -41,41 +41,41 @@ class WebSocketHandler {
 async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
-    
+
     const payload = verifyToken(token);
     const isPrivileged = payload && (payload.role === 'admin' || payload.role === 'superadmin');
-    
+
     let username = sanitizeUsername(msg.username, isPrivileged);
     const isVerified = Boolean(msg.isVerified);
-    
+
     if (!token || !roomId || !username) {
       ws.close(1008, 'Invalid request');
       return;
     }
-    
+
     if (username.length < 2) {
       ws.close(1008, 'Username too short');
       return;
     }
-    
+
     if (!payload) {
       ws.close(1008, 'Invalid or expired token');
       return;
     }
-    
+
     const sanitizedPayloadUsername = sanitizeUsername(payload.username, isPrivileged);
     if (payload.roomId !== roomId || sanitizedPayloadUsername !== username) {
       ws.close(1008, 'Token mismatch');
       return;
     }
-    
+
     const roomInfo = await DataStore.getRoomInfo(roomId);
-    
+
     if (!roomInfo) {
       ws.close(1008, 'Room not found');
       return;
     }
-    
+
     if (!roomInfo.isPublic && payload.isPublic) {
       ws.close(1008, 'Invalid token for private room');
       return;
@@ -85,24 +85,24 @@ async handleConnection(ws, msg) {
 
     ws._userId = userId;
     ws._username = username;
-    
+
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
 
-      ws.send(JSON.stringify({ 
-        method: "draws", 
+      ws.send(JSON.stringify({
+        method: "draws",
         strokes,
         cancelledStrokeIds
       }));
-      
+
       this.broadcast(roomId, { method: 'connection', username, isVerified });
 
       const users = await RoomManager.getRoomUsers(roomId);
-      this.broadcast(roomId, { 
-        method: "users", 
-        users 
+      this.broadcast(roomId, {
+        method: "users",
+        users
       });
-      
+
     } catch (error) {
       ws.send(JSON.stringify({
         method: "error",
@@ -116,52 +116,52 @@ async handleConnection(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username, userId } = userInfo;
-    
+
     if (userId) {
       await DataStore.recordUserRoomActivity(userId, roomId);
     }
-    
+
     if (msg.figure) {
       if (msg.figure.type === "undo") {
         const strokes = await RoomManager.getAllRoomStrokes(roomId);
         const undoneStroke = strokes.find(s => s.id === msg.figure.strokeId);
-        
+
         if (undoneStroke) {
           await RoomManager.addCancelledStroke(roomId, username, undoneStroke);
           await RoomManager.removeStrokeById(roomId, msg.figure.strokeId);
-          
-          this.broadcast(roomId, { 
+
+          this.broadcast(roomId, {
             method: "draw",
             username,
             figure: { type: "undo", strokeId: msg.figure.strokeId }
           }, null);
         }
-        
+
         await RoomManager.updateUserActivity(ws);
         return;
-      } 
+      }
       else if (msg.figure.type === "redo") {
         const stroke = msg.figure.stroke;
         if (!stroke) return;
-        
+
         await RoomManager.addStroke(roomId, stroke);
         await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
-        
-        this.broadcast(roomId, { 
+
+        this.broadcast(roomId, {
           method: "draw",
           username,
           figure: { type: "redo", stroke }
         }, null);
-        
+
         await RoomManager.updateUserActivity(ws);
         return;
-      } 
+      }
       else {
         await RoomManager.addStroke(roomId, msg.figure);
         this.broadcast(roomId, { ...msg, username }, ws);
       }
     }
-    
+
     await RoomManager.updateUserActivity(ws);
   }
 
@@ -169,7 +169,7 @@ async handleConnection(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
     const { roomId, username } = userInfo;
-    
+
     await RoomManager.clearStrokes(roomId);
     this.broadcast(roomId, { method: "clear", username }, ws);
     await RoomManager.updateUserActivity(ws);
@@ -183,15 +183,15 @@ async handleChat(ws, msg) {
     if (userId) {
       await DataStore.recordUserRoomActivity(userId, roomId);
     }
-    
+
     const room = RoomManager.getRoomSockets(roomId);
-    
+
     const message = sanitizeChatMessage(msg.message);
-    
+
     if (!message || message.trim().length === 0) {
       return;
     }
-    
+
     const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     const isVerified = verifiedUsers.includes(username);
 
@@ -319,16 +319,16 @@ async handleChat(ws, msg) {
       const { roomId, username } = userInfo;
       this.broadcast(roomId, { method: 'disconnection', username });
       const users = await RoomManager.getRoomUsers(roomId);
-      this.broadcast(roomId, { 
-        method: "users", 
-        users 
+      this.broadcast(roomId, {
+        method: "users",
+        users
       });
     }
   }
 
   setupConnection(ws) {
     ws._id = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));
     ws.on('close', () => this.handleClose(ws));
     ws.on('error', () => {});

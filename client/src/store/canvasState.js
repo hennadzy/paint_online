@@ -76,21 +76,21 @@ WebSocketService.on('usersList', ({ users }) => {
     });
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
-      
+
       HistoryService.clearStrokes();
-      
+
       if (CanvasService.bufferCtx) {
         CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
         CanvasService.bufferCtx.fillStyle = 'white';
         CanvasService.bufferCtx.fillRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
       }
-      
+
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
       } else {
         this.cancelledStrokeIds = [];
       }
-      
+
       const uniqueStrokeIds = new Set();
       const filteredStrokes = strokes
         .filter(s => !this.cancelledStrokeIds.includes(s.id))
@@ -101,29 +101,29 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
           uniqueStrokeIds.add(s.id);
           return true;
         });
-      
+
       HistoryService.setStrokes(filteredStrokes);
-      
+
       CanvasService.rebuildBuffer(filteredStrokes, () => {
         if (this.zoom === 1) {
           setTimeout(() => this.saveThumbnail(), 500);
         }
       });
     });
-    
+
     WebSocketService.on('syncCancelled', ({ cancelledStrokeIds }) => {
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
         this.cancelledStrokeIds = cancelledStrokeIds;
-        
+
         const currentStrokes = HistoryService.getStrokes();
         const filteredStrokes = currentStrokes.filter(s => !this.cancelledStrokeIds.includes(s.id));
-        
+
         HistoryService.setStrokes(filteredStrokes);
         CanvasService.rebuildBuffer(filteredStrokes);
         CanvasService.redraw();
       }
     });
-    
+
     WebSocketService.on('drawReceived', ({ username, figure }) => {
       if (username === this.username) return;
       if (!figure) return;
@@ -133,11 +133,11 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
             if (!this.cancelledStrokeIds.includes(figure.strokeId)) {
               this.cancelledStrokeIds.push(figure.strokeId);
             }
-            
+
             HistoryService.undoById(figure.strokeId, username);
             CanvasService.rebuildBuffer(HistoryService.getStrokes());
             CanvasService.redraw();
-            
+
             if (!this.pageVisible) {
               this.notifyUser('Действие отменено', `${username} отменил(а) действие`);
             }
@@ -146,14 +146,14 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         case "redo":
           if (figure.stroke && figure.stroke.id) {
             this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== figure.stroke.id);
-            
+
             const currentStrokes = HistoryService.getStrokes();
             if (!currentStrokes.some(s => s.id === figure.stroke.id)) {
               HistoryService.redoStroke(figure.stroke);
               CanvasService.rebuildBuffer(HistoryService.getStrokes());
               CanvasService.redraw();
             }
-            
+
             if (!this.pageVisible) {
               this.notifyUser('Действие возвращено', `${username} вернул(а) действие`);
             }
@@ -166,7 +166,7 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
           this.pushStroke(figure);
           break;
       }
-      
+
       if (!this.pageVisible && figure.type !== 'undo' && figure.type !== 'redo') {
         this.notifyUser('Новый рисунок', `${username} нарисовал(а)`);
       }
@@ -178,7 +178,7 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         CanvasService.redraw();
         this.addChatMessage({ type: "system", username, message: `очистил холст` });
         this.scheduleThumbnailSave();
-        
+
         if (!this.pageVisible) {
           this.notifyUser('Холст очищен', `${username} очистил(а) холст`);
         }
@@ -290,11 +290,11 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
       if (!this.cancelledStrokeIds.includes(removed.id)) {
         this.cancelledStrokeIds.push(removed.id);
       }
-      
+
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw({ type: "undo", strokeId: removed.id });
       }
-      
+
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
     }
@@ -304,14 +304,14 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
     const restored = HistoryService.redo(this.username);
     if (restored) {
       this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== restored.id);
-      
+
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw({ type: "redo", stroke: restored });
       } else {
         await CanvasService.drawStroke(CanvasService.bufferCtx, restored);
         CanvasService.redraw();
       }
-      
+
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
     }
@@ -322,12 +322,12 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
       if (!this.cancelledStrokeIds.includes(strokeId)) {
         this.cancelledStrokeIds.push(strokeId);
       }
-      
+
       HistoryService.undoById(strokeId, fromUsername);
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
     }
-    
+
     this.scheduleThumbnailSave();
   }
 
@@ -339,11 +339,11 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
     if (!stroke.username && fromUsername) {
       stroke.username = fromUsername;
     }
-    
+
     if (stroke.id) {
       this.cancelledStrokeIds = this.cancelledStrokeIds.filter(id => id !== stroke.id);
     }
-    
+
     const added = HistoryService.redoStroke(stroke);
     if (added) {
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
@@ -401,7 +401,7 @@ sendChatMessage(message) {
     this.setUsername(username);
     this.setupThumbnailInterval();
     setTimeout(() => this.saveThumbnail(), 1500);
-    
+
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -463,19 +463,19 @@ setupThumbnailInterval() {
 
   disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
-    
+
     if (this.titleInterval) {
       clearInterval(this.titleInterval);
       this.titleInterval = null;
       document.title = 'Рисование онлайн';
       this.setFaviconBadge(false);
     }
-    
+
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
       this.performAutoSave();
       this.returningFromRoom = true;
     }
-    
+
     this.saveThumbnail();
     WebSocketService.disconnect();
     this.isConnected = false;
@@ -512,7 +512,7 @@ setupThumbnailInterval() {
   setShowRoomsList(val) {
     this.showRoomsList = val;
   }
-  
+
   setPageVisible(visible) {
     this.pageVisible = visible;
     if (visible) {
@@ -712,11 +712,11 @@ setupThumbnailInterval() {
   setShowRestoreDialog(val) {
     this.showRestoreDialog = val;
   }
-  
+
   setRoomError(val) {
     this.roomError = val;
   }
-  
+
   clearRoomError() {
     this.roomError = null;
   }

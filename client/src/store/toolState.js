@@ -71,7 +71,7 @@ class ToolState {
       const ctx = this.tool.canvas.getContext("2d", { willReadFrequently: true });
       ctx.globalCompositeOperation = "source-over";
       this.tool.canvas.style.pointerEvents = "auto";
-      
+
       if (canvasState.bufferCtx) {
         canvasState.bufferCtx.globalCompositeOperation = "source-over";
       }

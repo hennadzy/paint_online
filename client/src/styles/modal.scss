@@ -7,8 +7,8 @@
   @media (max-width: 768px) {
     margin: 0.5rem;
     min-height: calc(100% - 0.5rem);
-    align-items: flex-start; 
-    padding-top: 15vh; 
+    align-items: flex-start;
+    padding-top: 15vh;
     transition: padding-top 0.3s ease-out;
   }
 }
@@ -93,7 +93,7 @@
 
     @media (max-width: 480px) {
       flex-direction: column-reverse;
-      
+
       button {
         width: 100%;
       }

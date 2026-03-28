@@ -8,7 +8,7 @@ export default class Fill extends Tool {
   }
 
   listen() {
-  
+
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
@@ -22,7 +22,7 @@ export default class Fill extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
 

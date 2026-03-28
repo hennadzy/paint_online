@@ -4,33 +4,33 @@ import { API_URL } from './canvasState';
 
 class AdminState {
   stats = null;
-  
+
   users = [];
   usersPagination = { page: 1, limit: 20, total: 0, totalPages: 0 };
   usersLoading = false;
   usersError = null;
-  
+
   rooms = [];
   roomsPagination = { page: 1, limit: 20, total: 0, totalPages: 0 };
   roomsLoading = false;
   roomsError = null;
-  
+
   selectedRoom = null;
   roomDetailsLoading = false;
-  
+
   selectedUser = null;
   userDetailsLoading = false;
-  
+
   activeTab = 'dashboard';
   searchQuery = '';
-  
+
   usersSortBy = 'created_at';
   usersSortOrder = 'DESC';
   roomsSortBy = 'last_activity';
   roomsSortOrder = 'DESC';
-  
+
   filters = {};
-  
+
   showUserModal = false;
   showRoomModal = false;
   showDeleteConfirm = false;
@@ -38,11 +38,11 @@ class AdminState {
   deleteTarget = null;
   modalMode = 'edit';
 
-  // Game Modes — Coloring Pages
+
   coloringPages = [];
   coloringPagesLoading = false;
   coloringPagesError = null;
-  
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -140,9 +140,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to update user' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update user'
       };
     }
   }
@@ -157,9 +157,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to delete user' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to delete user'
       };
     }
   }
@@ -175,9 +175,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to toggle user status' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to toggle user status'
       };
     }
   }
@@ -192,9 +192,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to change password' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to change password'
       };
     }
   }
@@ -254,9 +254,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to update room' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update room'
       };
     }
   }
@@ -271,9 +271,9 @@ class AdminState {
       });
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to delete room' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to delete room'
       };
     }
   }
@@ -283,14 +283,14 @@ class AdminState {
       const response = await axios.post(`${API_URL}/api/admin/rooms/${roomId}/join`, {
         username: 'Admin'
       });
-      return { 
-        success: true, 
-        data: response.data 
+      return {
+        success: true,
+        data: response.data
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to join room' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to join room'
       };
     }
   }
@@ -301,7 +301,7 @@ class AdminState {
         params: { format },
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -310,12 +310,12 @@ class AdminState {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to export users' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to export users'
       };
     }
   }
@@ -326,7 +326,7 @@ class AdminState {
         params: { format },
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -335,12 +335,12 @@ class AdminState {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to export rooms' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to export rooms'
       };
     }
   }
@@ -395,7 +395,7 @@ class AdminState {
     }
   }
 
-  // ─── Coloring Pages ───────────────────────────────────────────────────────
+
 
   async fetchColoringPages() {
     this.coloringPagesLoading = true;

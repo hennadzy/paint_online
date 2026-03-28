@@ -34,7 +34,7 @@ export default class Line extends Tool {
   }
 
   listen() {
-   
+
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
@@ -86,7 +86,7 @@ export default class Line extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.preventDefault();
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
@@ -100,7 +100,7 @@ export default class Line extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
-    
+
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;

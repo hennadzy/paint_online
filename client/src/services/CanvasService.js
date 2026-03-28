@@ -20,39 +20,39 @@ class CanvasService {
   initialize(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { willReadFrequently: true });
-    
+
     this.bufferCanvas = document.createElement('canvas');
     this.bufferCanvas.width = canvas.width;
     this.bufferCanvas.height = canvas.height;
     this.bufferCtx = this.bufferCanvas.getContext('2d', { willReadFrequently: true });
     this.bufferCtx.fillStyle = "white";
     this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
-    
+
     this.emit('initialized', { canvas });
   }
 
 drawStroke(ctx, stroke) {
   if (!stroke) return Promise.resolve();
-  
+
   ctx.save();
   ctx.globalAlpha = 1;
-  
+
   let lineWidth = stroke.lineWidth;
-  
+
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
     lineWidth = (stroke.type === 'eraser' ? 20 :
                  stroke.type === 'text' ? 20 :
                  stroke.type === 'fill' ? 1 : 5);
   }
-  
+
   if (stroke.type === 'brush' && lineWidth < 1) {
     lineWidth = 1;
   }
-  
+
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  
+
   switch (stroke.type) {
     case "image_placeholder":
     case "fill_image":
@@ -85,38 +85,38 @@ drawStroke(ctx, stroke) {
       this.drawFillStroke(ctx, stroke);
       break;
   }
-  
+
   ctx.restore();
   return Promise.resolve();
 }
 
 drawImagePlaceholder(ctx, stroke) {
   const { x, y, width, height, imageData } = stroke;
-  
+
   if (!imageData) return Promise.resolve();
-  
+
 
   if (typeof imageData === 'string' && imageData.startsWith('data:')) {
 
     return this.loadImageForStroke(stroke, ctx);
   }
-  
-  
+
+
   if (imageData && imageData.data) {
-    const data = imageData.data instanceof Uint8ClampedArray 
-      ? imageData.data 
+    const data = imageData.data instanceof Uint8ClampedArray
+      ? imageData.data
       : new Uint8ClampedArray(imageData.data);
-    
+
     const imgData = new ImageData(data, imageData.width, imageData.height);
-    
+
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = imageData.width;
     tempCanvas.height = imageData.height;
     tempCanvas.getContext('2d').putImageData(imgData, 0, 0);
-    
+
     ctx.drawImage(tempCanvas, 0, 0, imageData.width, imageData.height, x, y, width, height);
   }
-  
+
   return Promise.resolve();
 }
 
@@ -130,13 +130,13 @@ loadImageForStroke(stroke, ctx) {
     const img = this.imageCache.get(dataUrl);
     if (img.complete && img.naturalWidth !== 0) {
       ctx.drawImage(img, x, y, width, height);
-      this.redraw(); 
+      this.redraw();
       return Promise.resolve();
     } else {
       return new Promise((resolve) => {
         img.onload = () => {
           ctx.drawImage(img, x, y, width, height);
-          this.redraw(); 
+          this.redraw();
           resolve();
         };
         img.onerror = () => resolve();
@@ -149,7 +149,7 @@ loadImageForStroke(stroke, ctx) {
     img.onload = () => {
       this.imageCache.set(dataUrl, img);
       ctx.drawImage(img, x, y, width, height);
-      this.redraw(); 
+      this.redraw();
       resolve();
     };
     img.onerror = () => {
@@ -157,7 +157,7 @@ loadImageForStroke(stroke, ctx) {
       ctx.fillRect(x, y, width, height);
       ctx.strokeStyle = '#999999';
       ctx.strokeRect(x, y, width, height);
-      this.redraw(); 
+      this.redraw();
       resolve();
     };
     img.src = dataUrl;
@@ -170,9 +170,9 @@ clearImageCache() {
 
 renderBrushStroke(ctx, stroke, isEraser = false) {
   if (!stroke || !stroke.points || stroke.points.length === 0) return;
-  
+
   const { strokeStyle = '#000000', strokeOpacity = 1, points } = stroke;
-  
+
   let lineWidth = stroke.lineWidth;
   if (lineWidth === undefined || lineWidth === null || lineWidth <= 0) {
     lineWidth = isEraser ? 20 : 5;
@@ -180,9 +180,9 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   if (!isEraser && lineWidth < 1) {
     lineWidth = 1;
   }
-  
+
   const color = this.hexToRgba(strokeStyle, strokeOpacity);
-  
+
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = lineWidth;
@@ -209,7 +209,7 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
 drawRectStroke(ctx, stroke) {
     const { x, y, width, height, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
-    
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
@@ -226,7 +226,7 @@ drawRectStroke(ctx, stroke) {
   drawCircleStroke(ctx, stroke) {
     const { x, y, radius, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
-    
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
@@ -241,7 +241,7 @@ drawRectStroke(ctx, stroke) {
   drawLineStroke(ctx, stroke) {
     const { x1, y1, x2, y2, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
     const color = this.hexToRgba(strokeStyle, strokeOpacity);
-    
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
@@ -315,7 +315,7 @@ drawPolygonStroke(ctx, stroke) {
     ctx.globalAlpha = opacity;
     ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.fillStyle = strokeStyle;
-    
+
     const lines = this.wrapText(text, width, ctx);
     for (let i = 0; i < lines.length; i++) {
       ctx.fillText(lines[i], x, y + i * fontSize);
@@ -326,7 +326,7 @@ drawPolygonStroke(ctx, stroke) {
   drawFillStroke(ctx, stroke) {
     const { x, y, fillColor } = stroke;
     if (fillColor === undefined || fillColor === null) return;
-    
+
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
     const imageData = ctx.getImageData(0, 0, width, height);
@@ -338,7 +338,7 @@ drawPolygonStroke(ctx, stroke) {
 
     const startPos = (y * width + x) * 4;
     if (startPos < 0 || startPos >= data.length) return;
-    
+
     const startR = data[startPos];
     const startG = data[startPos + 1];
     const startB = data[startPos + 2];
@@ -355,17 +355,17 @@ drawPolygonStroke(ctx, stroke) {
         const g = data[pos + 1];
         const b = data[pos + 2];
         const a = data[pos + 3];
-        
+
         if (Math.abs(a - startA) > threshold) {
             return false;
         }
-        
+
         const colorDist = Math.sqrt(
-            Math.pow(r - startR, 2) + 
-            Math.pow(g - startG, 2) + 
+            Math.pow(r - startR, 2) +
+            Math.pow(g - startG, 2) +
             Math.pow(b - startB, 2)
         );
-        
+
         return colorDist <= threshold;
     };
 
@@ -377,7 +377,7 @@ drawPolygonStroke(ctx, stroke) {
             data[pos + 3] = 255;
             return;
         }
-        
+
         data[pos] = Math.round(data[pos] * (1 - strength) + fillR * strength);
         data[pos + 1] = Math.round(data[pos + 1] * (1 - strength) + fillG * strength);
         data[pos + 2] = Math.round(data[pos + 2] * (1 - strength) + fillB * strength);
@@ -391,11 +391,11 @@ drawPolygonStroke(ctx, stroke) {
     while (pixelStack.length) {
         const [nx, ny] = pixelStack.shift();
         const key = getKey(nx, ny);
-        
+
         if (visited.has(key)) {
             continue;
         }
-        
+
         let currentPos = (ny * width + nx) * 4;
 
         if (ny < 0 || ny >= height || nx < 0 || nx >= width || !matchesStartColor(currentPos)) {
@@ -403,7 +403,7 @@ drawPolygonStroke(ctx, stroke) {
         }
 
         visited.add(key);
-        
+
         setColor(currentPos);
 
         let west = nx;
@@ -431,7 +431,7 @@ drawPolygonStroke(ctx, stroke) {
                     setColor(upPos, 0.5);
                 }
             }
-            
+
             if (ny < height - 1) {
                 const downPos = ((ny + 1) * width + i) * 4;
                 if (matchesStartColor(downPos) && !visited.has(getKey(i, ny + 1))) {
@@ -449,19 +449,19 @@ drawPolygonStroke(ctx, stroke) {
   wrapText(text, maxWidth, ctx) {
     if (!text) return [];
     if (maxWidth <= 0) return [text];
-    
+
     const paragraphs = text.split('\n');
     const allLines = [];
-    
+
     for (let para of paragraphs) {
       if (para === '') {
         allLines.push('');
         continue;
       }
-      
+
       const words = para.split(/(\s+)/);
       let currentLine = '';
-      
+
       for (let i = 0; i < words.length; i++) {
         const segment = words[i];
         if (!segment) continue;
@@ -469,7 +469,7 @@ drawPolygonStroke(ctx, stroke) {
         if (/^\s+$/.test(segment)) {
           const testLine = currentLine + segment;
           const metrics = ctx.measureText(testLine);
-          
+
           if (metrics.width > maxWidth && currentLine !== '') {
             allLines.push(currentLine);
             currentLine = '';
@@ -481,13 +481,13 @@ drawPolygonStroke(ctx, stroke) {
 
         const testLine = currentLine + segment;
         const metrics = ctx.measureText(testLine);
-        
+
         if (metrics.width > maxWidth) {
           if (currentLine !== '') {
             allLines.push(currentLine.trimEnd());
             currentLine = '';
           }
-          
+
           const wordMetrics = ctx.measureText(segment);
           if (wordMetrics.width <= maxWidth) {
             currentLine = segment;
@@ -515,7 +515,7 @@ drawPolygonStroke(ctx, stroke) {
         allLines.push(currentLine);
       }
     }
-    
+
     return allLines;
   }
 
@@ -544,7 +544,7 @@ drawPolygonStroke(ctx, stroke) {
         otherStrokes.push(stroke);
       }
     }
-      
+
     const preloadImage = (dataUrl) => {
       if (this.imageCache.has(dataUrl)) {
         const img = this.imageCache.get(dataUrl);
@@ -606,11 +606,11 @@ drawPolygonStroke(ctx, stroke) {
 
   redraw() {
     if (!this.ctx || !this.bufferCanvas) return;
-    
+
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.drawImage(this.bufferCanvas, 0, 0);
-    
+
     if (this.showGrid) {
       this.drawGrid();
     }
@@ -618,28 +618,28 @@ drawPolygonStroke(ctx, stroke) {
 
   drawGrid() {
     if (!this.ctx) return;
-    
+
     const ctx = this.ctx;
     const gridSize = 20;
-    
+
     ctx.save();
     ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
     ctx.lineWidth = 1;
-    
+
     for (let x = 0; x <= this.canvas.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.canvas.height);
       ctx.stroke();
     }
-    
+
     for (let y = 0; y <= this.canvas.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(this.canvas.width, y);
       ctx.stroke();
     }
-    
+
     ctx.restore();
   }
 
@@ -651,11 +651,11 @@ drawPolygonStroke(ctx, stroke) {
 
   setZoom(zoom) {
     this.zoom = Math.max(0.5, Math.min(3, zoom));
-    
+
     if (this.canvas) {
       const aspectRatio = 720 / 480;
       let baseWidth, baseHeight;
-      
+
       if (window.innerWidth < 768) {
         baseWidth = window.innerWidth;
         baseHeight = baseWidth / aspectRatio;
@@ -663,20 +663,20 @@ drawPolygonStroke(ctx, stroke) {
         baseWidth = 720;
         baseHeight = 480;
       }
-      
+
       const newWidth = baseWidth * this.zoom;
       const newHeight = baseHeight * this.zoom;
-      
+
       this.canvas.style.width = `${newWidth}px`;
       this.canvas.style.height = `${newHeight}px`;
-      
+
       const cursorOverlay = document.querySelector('.cursor-overlay');
       if (cursorOverlay) {
         cursorOverlay.style.width = `${newWidth}px`;
         cursorOverlay.style.height = `${newHeight}px`;
       }
     }
-    
+
     this.emit('zoomChanged', { zoom: this.zoom });
   }
 

@@ -58,7 +58,7 @@ export default class Circle extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
     this._hasCommitted = false;
@@ -71,7 +71,7 @@ export default class Circle extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
-    
+
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;

@@ -16,14 +16,14 @@ export default class Arrow extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
     this.startX = Math.floor((e.clientX - rect.left) * scaleX);
     this.startY = Math.floor((e.clientY - rect.top) * scaleY);
     this.saveImage();
-    
+
     this.canvas.onpointermove = this.pointerMoveHandler.bind(this);
     this.canvas.onpointerup = this.pointerUpHandler.bind(this);
   }
@@ -35,7 +35,7 @@ export default class Arrow extends Tool {
       canvasState.redrawCanvas();
       return;
     }
-    
+
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
@@ -48,7 +48,7 @@ export default class Arrow extends Tool {
   pointerUpHandler(e) {
     this.canvas.onpointermove = null;
     this.canvas.onpointerup = null;
-    
+
     const stroke = {
       type: "arrow",
       x1: this.startX,

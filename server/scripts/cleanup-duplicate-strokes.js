@@ -8,7 +8,7 @@ const { pgPool } = require('../config/db');
 async function cleanupDuplicateStrokes() {
  console.log('Начинаем очистку дубликатов штрихов...\n');
 
- // Получаем все комнаты
+
  const roomsResult = await pgPool.query('SELECT id, name FROM rooms');
  const rooms = roomsResult.rows;
 
@@ -18,7 +18,7 @@ async function cleanupDuplicateStrokes() {
  let totalUnique =0;
 
  for (const room of rooms) {
- // Получаем все штрихи комнаты с их ID
+
  const strokesResult = await pgPool.query(
  `SELECT id, stroke_data, created_at FROM strokes WHERE room_id = $1 ORDER BY created_at`,
  [room.id]
@@ -29,15 +29,15 @@ async function cleanupDuplicateStrokes() {
  continue;
  }
 
- // Группируем по ID штриха (из stroke_data->>'id')
+
  const strokeIds = new Map();
  for (const row of strokesResult.rows) {
  try {
- const strokeData = typeof row.stroke_data === 'string' 
- ? JSON.parse(row.stroke_data) 
+ const strokeData = typeof row.stroke_data === 'string'
+ ? JSON.parse(row.stroke_data)
  : row.stroke_data;
  const strokeId = strokeData?.id;
-        
+
  if (!strokeId) continue;
 
  if (!strokeIds.has(strokeId)) {
@@ -45,15 +45,15 @@ async function cleanupDuplicateStrokes() {
  }
  strokeIds.get(strokeId).push(row.id);
  } catch (e) {
- // Пропускаем некорректные данные
+
  }
  }
 
- // Находим дубликаты
+
  const duplicateIds = [];
  for (const [strokeId, ids] of strokeIds) {
  if (ids.length >1) {
- // Оставляем первый, остальные удаляем
+
  duplicateIds.push(...ids.slice(1));
  }
  }
@@ -62,12 +62,12 @@ async function cleanupDuplicateStrokes() {
  totalUnique += uniqueCount;
 
  if (duplicateIds.length >0) {
- // Удаляем дубликаты
+
  await pgPool.query(
  'DELETE FROM strokes WHERE id = ANY($1)',
  [duplicateIds]
  );
-      
+
  totalDeleted += duplicateIds.length;
  console.log(`[${room.id}] ${room.name || 'Без имени'}: удалено ${duplicateIds.length} дублей, уникальных: ${uniqueCount}`);
  } else {

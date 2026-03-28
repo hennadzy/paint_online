@@ -86,7 +86,7 @@ const App = observer(() => {
 
     const isAdminPage = location.pathname === '/admin';
     const isColoringPage = location.pathname === '/coloring';
-    
+
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
             {!hideGlobalUI && <TopMenu />}

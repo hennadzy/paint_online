@@ -4,17 +4,17 @@ class DataStore {
   async getRoomInfo(roomId) {
     try {
       const res = await pgPool.query(
-        `SELECT 
-          id, 
-          name, 
-          is_public AS "isPublic", 
-          has_password AS "hasPassword", 
-          password_hash AS "passwordHash", 
-          created_at AS "createdAt", 
+        `SELECT
+          id,
+          name,
+          is_public AS "isPublic",
+          has_password AS "hasPassword",
+          password_hash AS "passwordHash",
+          created_at AS "createdAt",
           last_activity AS "lastActivity",
           weight,
           owner_id AS "ownerId"
-         FROM rooms 
+         FROM rooms
          WHERE id = $1`,
         [roomId]
       );
@@ -30,7 +30,7 @@ class DataStore {
     const now = Date.now();
     try {
       await pgPool.query(
-        `INSERT INTO rooms 
+        `INSERT INTO rooms
          (id, name, is_public, has_password, password_hash, created_at, last_activity, owner_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [roomId, name, isPublic, hasPassword, passwordHash, now, now, ownerId || null]
@@ -148,8 +148,8 @@ async deleteRoom(roomId) {
   async calculateRoomWeight(roomId) {
     try {
       const result = await pgPool.query(
-        `SELECT SUM(LENGTH(stroke_data::text)) as total_weight 
-         FROM strokes 
+        `SELECT SUM(LENGTH(stroke_data::text)) as total_weight
+         FROM strokes
          WHERE room_id = $1`,
         [roomId]
       );
@@ -180,16 +180,16 @@ async deleteRoom(roomId) {
  try {
  const existingIds = new Set();
  const newStrokes = [];
-      
+
  for (const s of strokes) {
  if (s.id && !existingIds.has(s.id)) {
  existingIds.add(s.id);
  newStrokes.push(s);
  }
  }
-      
+
  if (newStrokes.length ===0) return true;
-      
+
  const values = newStrokes.map(s => [
  roomId,
  s,
@@ -239,7 +239,7 @@ async loadStrokes(roomId) {
         'DELETE FROM cancelled_strokes WHERE room_id = $1 AND username = $2',
         [roomId, username]
       );
-      
+
       const values = strokes.map(s => [
         roomId,
         s,
@@ -296,14 +296,14 @@ async loadCancelledStrokes(roomId, username) {
   async getAllRooms() {
     try {
       const res = await pgPool.query(
-        `SELECT 
-          id, 
-          name, 
-          is_public AS "isPublic", 
-          has_password AS "hasPassword", 
+        `SELECT
+          id,
+          name,
+          is_public AS "isPublic",
+          has_password AS "hasPassword",
           last_activity AS "lastActivity",
           owner_id AS "ownerId"
-         FROM rooms 
+         FROM rooms
          WHERE (is_deleted IS NOT TRUE OR is_deleted IS NULL)
          ORDER BY last_activity DESC`
       );

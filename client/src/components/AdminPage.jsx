@@ -117,12 +117,12 @@ const SortIcon = () => (
 const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
-  
+
   const [usersSortBy, setUsersSortBy] = useState('created_at');
   const [usersSortOrder, setUsersSortOrder] = useState('DESC');
   const [roomsSortBy, setRoomsSortBy] = useState('last_activity');
   const [roomsSortOrder, setRoomsSortOrder] = useState('DESC');
-  
+
   const [userFormData, setUserFormData] = useState({
     username: '',
     email: '',
@@ -143,7 +143,7 @@ const AdminPage = observer(() => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordFormError, setPasswordFormError] = useState('');
 
-  // Game Modes — Coloring Pages upload state
+
   const [coloringUploadTitle, setColoringUploadTitle] = useState('');
   const [coloringUploadFile, setColoringUploadFile] = useState(null);
   const [coloringUploadError, setColoringUploadError] = useState('');
@@ -402,7 +402,7 @@ const AdminPage = observer(() => {
                 </select>
               </div>
               <div className="admin-filter-group">
-                <select 
+                <select
                   className="admin-filter-select"
                   value={usersFilterStatus}
                   onChange={(e) => {
@@ -434,13 +434,13 @@ const AdminPage = observer(() => {
               </button>
             </form>
             <div className="admin-toolbar__actions">
-              <button 
+              <button
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportUsers('csv')}
               >
                 <DownloadIcon /> CSV
               </button>
-              <button 
+              <button
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportUsers('json')}
               >
@@ -484,7 +484,7 @@ const AdminPage = observer(() => {
                       <td>{user.email}</td>
                       <td>
                         <span className={`admin-badge admin-badge--${user.role}`}>
-                          {user.role === 'superadmin' ? 'Super Admin' : 
+                          {user.role === 'superadmin' ? 'Super Admin' :
                            user.role === 'admin' ? 'Admin' : 'User'}
                         </span>
                       </td>
@@ -497,28 +497,28 @@ const AdminPage = observer(() => {
                       <td>{formatRelativeTime(user.last_login)}</td>
                       <td>
                         <div className="admin-actions">
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchUserDetails(user.id).then(() => adminState.openUserModal(user))}
                             title="Редактировать"
                           >
                             <EditIcon />
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={() => adminState.openPasswordModal(user)}
                             title="Сменить пароль"
                           >
                             <KeyIcon />
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={() => adminState.toggleUserActive(user.id)}
                             title={user.is_active ? 'Заблокировать' : 'Разблокировать'}
                           >
                             {user.is_active ? <BlockIcon /> : <UnlockIcon />}
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn admin-icon-btn--danger"
                             onClick={() => adminState.openDeleteConfirm({ type: 'user', id: user.id, name: user.username })}
                             title="Удалить"
@@ -598,13 +598,13 @@ const AdminPage = observer(() => {
               </button>
             </form>
             <div className="admin-toolbar__actions">
-              <button 
+              <button
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportRooms('csv')}
               >
                 <DownloadIcon /> CSV
               </button>
-              <button 
+              <button
                 className="admin-btn admin-btn--secondary"
                 onClick={() => adminState.exportRooms('json')}
               >
@@ -663,21 +663,21 @@ const AdminPage = observer(() => {
                       <td>{formatRelativeTime(room.lastActivity)}</td>
                       <td>
                         <div className="admin-actions">
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
                             title="Подробнее"
                           >
                             <EyeIcon />
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
                             title="Редактировать"
                           >
                             <EditIcon />
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn"
                             onClick={async () => {
                               const result = await adminState.joinRoom(room.id);
@@ -690,7 +690,7 @@ const AdminPage = observer(() => {
                           >
                             <UnlockIcon />
                           </button>
-                          <button 
+                          <button
                             className="admin-icon-btn admin-icon-btn--danger"
                             onClick={() => adminState.openDeleteConfirm({ type: 'room', id: room.id, name: room.name })}
                             title="Удалить"
@@ -759,7 +759,7 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setUserFormError('');
-      
+
       const result = await adminState.updateUser(user.id, userFormData);
       if (!result.success) {
         setUserFormError(result.error);
@@ -778,7 +778,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {userFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{userFormError}</div>}
-              
+
               <div className="admin-form__group">
                 <label>Имя пользователя</label>
                 <input
@@ -788,7 +788,7 @@ const AdminPage = observer(() => {
                   required
                 />
               </div>
-              
+
               <div className="admin-form__group">
                 <label>Email</label>
                 <input
@@ -798,7 +798,7 @@ const AdminPage = observer(() => {
                   required
                 />
               </div>
-              
+
               <div className="admin-form__group">
                 <label>Роль</label>
                 <select
@@ -810,7 +810,7 @@ const AdminPage = observer(() => {
                   <option value="superadmin">Супер Админ</option>
                 </select>
               </div>
-              
+
               <div className="admin-form__group">
                 <label>
                   <input
@@ -845,7 +845,7 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setRoomFormError('');
-      
+
       const result = await adminState.updateRoom(room.id, roomFormData);
       if (!result.success) {
         setRoomFormError(result.error);
@@ -864,7 +864,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {roomFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{roomFormError}</div>}
-              
+
               <div className="admin-room-details__info">
                 <div className="admin-room-details__item">
                   <label>ID</label>
@@ -903,7 +903,7 @@ const AdminPage = observer(() => {
                   <span>{formatDate(room.lastActivity)}</span>
                 </div>
               </div>
-              
+
               <div className="admin-form__group">
                 <label>Название</label>
                 <input
@@ -915,8 +915,8 @@ const AdminPage = observer(() => {
               </div>
             </div>
             <div className="admin-modal__footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="admin-btn admin-btn--success"
                 onClick={async () => {
                   const result = await adminState.joinRoom(room.id);
@@ -950,12 +950,12 @@ const AdminPage = observer(() => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setPasswordFormError('');
-      
+
       if (newPassword.length < 6) {
         setPasswordFormError('Пароль должен быть не менее 6 символов');
         return;
       }
-      
+
       const result = await adminState.changeUserPassword(user.id, newPassword);
       if (!result.success) {
         setPasswordFormError(result.error);
@@ -976,7 +976,7 @@ const AdminPage = observer(() => {
           <form onSubmit={handleSubmit}>
             <div className="admin-modal__body">
               {passwordFormError && <div className="admin-form__error" style={{marginBottom: '15px'}}>{passwordFormError}</div>}
-              
+
               <div className="admin-form__group">
                 <label>Новый пароль</label>
                 <input
@@ -1031,13 +1031,13 @@ const AdminPage = observer(() => {
                 Это действие нельзя отменить.
               </p>
               <div className="admin-confirm__actions">
-                <button 
+                <button
                   className="admin-btn admin-btn--secondary"
                   onClick={() => adminState.closeDeleteConfirm()}
                 >
                   Отмена
                 </button>
-                <button 
+                <button
                   className="admin-btn admin-btn--danger"
                   onClick={handleConfirm}
                 >
@@ -1218,8 +1218,8 @@ const AdminPage = observer(() => {
         </div>
         <div className="admin-header__user">
           <span>{userState.user?.username}</span>
-          <button 
-            className="admin-header__home" 
+          <button
+            className="admin-header__home"
             onClick={() => navigate('/')}
             title="На главную"
           >
@@ -1232,7 +1232,7 @@ const AdminPage = observer(() => {
       </header>
 
       <nav className="admin-nav">
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('dashboard');
@@ -1241,19 +1241,19 @@ const AdminPage = observer(() => {
         >
           Дашборд
         </button>
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'users' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('users')}
         >
           Пользователи
         </button>
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'rooms' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('rooms')}
         >
           Комнаты
         </button>
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'gameModes' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('gameModes');

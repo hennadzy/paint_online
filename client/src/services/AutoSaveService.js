@@ -38,7 +38,7 @@ class AutoSaveService {
 
     try {
       const key = this.getStorageKey(roomId);
-      
+
       const existing = localStorage.getItem(key);
       if (existing) {
         this.rotateBackups(roomId);
@@ -47,7 +47,7 @@ class AutoSaveService {
       localStorage.setItem(key, JSON.stringify(saveData));
       this.hasChanges = false;
       this.lastSaveTime = Date.now();
-      
+
       return true;
     } catch (error) {
       if (error.name === 'QuotaExceededError') {
@@ -68,21 +68,21 @@ class AutoSaveService {
     try {
       const key = this.getStorageKey(roomId);
       const data = localStorage.getItem(key);
-      
+
       if (!data) return null;
-      
+
       const parsed = JSON.parse(data);
-      
+
       if (!parsed.version || parsed.version !== this.version) {
         return null;
       }
-      
+
       const age = Date.now() - parsed.timestamp;
       if (age > this.maxAge) {
         this.clear(roomId);
         return null;
       }
-      
+
       return parsed;
     } catch (error) {
       return null;
@@ -93,11 +93,11 @@ class AutoSaveService {
     try {
       const key = this.getStorageKey(roomId);
       localStorage.removeItem(key);
-      
+
       for (let i = 0; i < this.maxBackups; i++) {
         localStorage.removeItem(this.getBackupKey(roomId, i));
       }
-      
+
       this.hasChanges = false;
     } catch (error) {}
   }
@@ -108,15 +108,15 @@ class AutoSaveService {
         const currentKey = this.getBackupKey(roomId, i - 1);
         const nextKey = this.getBackupKey(roomId, i);
         const data = localStorage.getItem(currentKey);
-        
+
         if (data) {
           localStorage.setItem(nextKey, data);
         }
       }
-      
+
       const mainKey = this.getStorageKey(roomId);
       const mainData = localStorage.getItem(mainKey);
-      
+
       if (mainData) {
         localStorage.setItem(this.getBackupKey(roomId, 0), mainData);
       }
@@ -127,9 +127,9 @@ class AutoSaveService {
     try {
       const backupKey = this.getBackupKey(roomId, backupIndex);
       const data = localStorage.getItem(backupKey);
-      
+
       if (!data) return null;
-      
+
       return JSON.parse(data);
     } catch (error) {
       return null;
@@ -141,11 +141,11 @@ class AutoSaveService {
       for (let i = 0; i < this.maxBackups; i++) {
         const backupKey = this.getBackupKey(roomId, i);
         const data = localStorage.getItem(backupKey);
-        
+
         if (data) {
           const parsed = JSON.parse(data);
           const age = Date.now() - parsed.timestamp;
-          
+
           if (age > this.maxAge) {
             localStorage.removeItem(backupKey);
           }
@@ -158,7 +158,7 @@ class AutoSaveService {
     try {
       const keys = Object.keys(localStorage);
       const now = Date.now();
-      
+
       keys.forEach(key => {
         if (key.startsWith('paint_autosave_')) {
           try {
@@ -166,7 +166,7 @@ class AutoSaveService {
             if (data) {
               const parsed = JSON.parse(data);
               const age = now - parsed.timestamp;
-              
+
               if (age > this.maxAge) {
                 localStorage.removeItem(key);
               }
@@ -183,7 +183,7 @@ class AutoSaveService {
 
   shouldSave() {
     if (!this.hasChanges) return false;
-    
+
     const timeSinceLastSave = Date.now() - this.lastSaveTime;
     return timeSinceLastSave >= this.saveDelay;
   }
@@ -196,24 +196,24 @@ class AutoSaveService {
     const date = new Date(timestamp);
     const today = new Date();
     const isToday = date.toDateString() === today.toDateString();
-    
-    const timeStr = date.toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+
+    const timeStr = date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
-    
+
     if (isToday) {
       return `сегодня в ${timeStr}`;
     }
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const isYesterday = date.toDateString() === yesterday.toDateString();
-    
+
     if (isYesterday) {
       return `вчера в ${timeStr}`;
     }
-    
+
     return date.toLocaleDateString('ru-RU', {
       day: 'numeric',
       month: 'long',

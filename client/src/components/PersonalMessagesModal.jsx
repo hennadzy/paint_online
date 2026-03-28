@@ -396,11 +396,11 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
                       const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
                       const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
                       const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
-                      
-                      const formattedTime = messageDate instanceof Date && !isNaN(messageDate) 
+
+                      const formattedTime = messageDate instanceof Date && !isNaN(messageDate)
                         ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         : '00:00';
-                      
+
                       return (
                         <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
                           <div className="message-content">

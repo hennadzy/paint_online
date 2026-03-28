@@ -50,7 +50,7 @@ export default class Brush extends Tool {
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
-    
+
     e.preventDefault();
     e.target.setPointerCapture(e.pointerId);
     this.mouseDown = true;
@@ -67,7 +67,7 @@ export default class Brush extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
-    
+
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;
@@ -198,4 +198,4 @@ export default class Brush extends Tool {
     canvasState.redrawCanvas();
     canvasState.isDrawing = false;
   }
-} 
+}

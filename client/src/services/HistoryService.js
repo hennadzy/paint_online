@@ -12,14 +12,14 @@ class HistoryService {
     if (this.strokes.some(s => s.id === stroke.id)) {
       return false;
     }
-    
+
     if (!stroke.username || stroke.username === 'local') {
       stroke.username = username;
     }
-    
+
     this.strokes.push(stroke);
     this.redoStacks.set(username, []);
-    
+
     this.emit('strokeAdded', { stroke });
     return true;
   }
@@ -41,55 +41,55 @@ class HistoryService {
 
   undo(username = 'local') {
     const index = [...this.strokes].reverse().findIndex(s => s.username === username);
-    
+
     if (index === -1) {
       return null;
     }
-    
+
     const actualIndex = this.strokes.length - 1 - index;
     const removed = this.strokes.splice(actualIndex, 1)[0];
-    
+
     if (!this.redoStacks.has(username)) {
       this.redoStacks.set(username, []);
     }
     this.redoStacks.get(username).push(removed);
-    
+
     this.emit('strokeUndone', { stroke: removed, username });
     return removed;
   }
 
   redo(username = 'local') {
     const stack = this.redoStacks.get(username);
-    
+
     if (!stack || stack.length === 0) {
       return null;
     }
-    
+
     const restored = stack.pop();
     this.strokes.push(restored);
-    
+
     this.emit('strokeRedone', { stroke: restored, username });
     return restored;
   }
 
   undoById(strokeId, fromUsername) {
     const index = this.strokes.findIndex(s => s.id === strokeId);
-    
+
     if (index === -1) {
       return null;
     }
-    
+
     const stroke = this.strokes[index];
     if (fromUsername && stroke.username && stroke.username !== fromUsername) {
       return null;
     }
-    
+
     const removed = this.strokes.splice(index, 1)[0];
     const username = removed.username || 'local';
     const stack = this.redoStacks.get(username) || [];
     stack.push(removed);
     this.redoStacks.set(username, stack);
-    
+
     this.emit('strokeUndone', { stroke: removed, username });
     return removed;
   }

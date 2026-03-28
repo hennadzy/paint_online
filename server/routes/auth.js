@@ -40,7 +40,7 @@ router.post('/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: passwordValidation.error });
     }
 
-    const existingUser = await User.findByEmail(emailValidation.email) || 
+    const existingUser = await User.findByEmail(emailValidation.email) ||
                         await User.findByUsername(usernameValidation.username);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
