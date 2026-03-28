@@ -337,7 +337,7 @@ useEffect(() => {
 
 <div className="profile-logout">
 <button className="profile-btn profile-btn-secondary" onClick={handleLogout}>
-{fromRoom ? 'Выйти в комнату' : 'Выйти на главную'}
+Выйти из профиля
 </button>
 </div>
           </div>
