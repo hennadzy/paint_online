@@ -50,9 +50,12 @@ const ProfilePage = observer(() => {
  const [fromRoom, setFromRoom] = useState(null);
 
 useEffect(() => {
- // Сохраняем предыдущий путь для корректного выхода
+ // Проверяем sessionStorage сначала (при обновлении страницы)
+ let fromRoomPath = sessionStorage.getItem('profileFromRoom');
+ 
+ // Если нет в sessionStorage, проверяем document.referrer
+ if (!fromRoomPath) {
  const referrer = document.referrer;
- let fromRoomPath = null;
  if (referrer && !referrer.includes('/profile') && !referrer.includes('/login') && !referrer.includes('/register')) {
  try {
  const url = new URL(referrer);
@@ -66,6 +69,15 @@ useEffect(() => {
  // ignore parse errors
  }
  }
+ }
+ 
+ // Если текущий путь - это комната, сохраняем его
+ const currentPath = window.location.pathname;
+ if (currentPath.match(/^\/[a-zA-Z0-9]{9}$/)) {
+ fromRoomPath = currentPath;
+ sessionStorage.setItem('profileFromRoom', currentPath);
+ }
+ 
  setFromRoom(fromRoomPath);
 
  if (!userState.isAuthenticated) {
