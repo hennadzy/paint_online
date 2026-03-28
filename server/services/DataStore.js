@@ -175,27 +175,40 @@ async deleteRoom(roomId) {
     }
   }
 
-  async saveStrokes(roomId, strokes) {
-    if (!strokes.length) return true;
-    try {
-      const values = strokes.map(s => [
-        roomId,
-        s,
-        s.username || 'unknown',
-        Date.now()
-      ]);
-      const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
-      const flatValues = values.flat();
-      await pgPool.query(
-        `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
-        flatValues
-      );
-      return true;
-    } catch (error) {
-      console.error('saveStrokes error:', error);
-      return false;
-    }
-  }
+ async saveStrokes(roomId, strokes) {
+ if (!strokes.length) return true;
+ try {
+ // Фильтруем дубликаты по ID штриха
+ const existingIds = new Set();
+ const newStrokes = [];
+      
+ for (const s of strokes) {
+ if (s.id && !existingIds.has(s.id)) {
+ existingIds.add(s.id);
+ newStrokes.push(s);
+ }
+ }
+      
+ if (newStrokes.length ===0) return true;
+      
+ const values = newStrokes.map(s => [
+ roomId,
+ s,
+ s.username || 'unknown',
+ Date.now()
+ ]);
+ const placeholders = values.map((_, i) => `($$i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+ const flatValues = values.flat();
+ await pgPool.query(
+ `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
+ flatValues
+ );
+ return true;
+ } catch (error) {
+ console.error('saveStrokes error:', error);
+ return false;
+ }
+ }
 
 async loadStrokes(roomId) {
     try {
