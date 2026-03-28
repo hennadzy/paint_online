@@ -7,8 +7,6 @@ import '../styles/personal-messages.scss';
 
 const getContactsKey = () => `personalContacts_${userState.user?.id || 'guest'}`;
 
-// Декодирует HTML-сущности (&#x2F; → /, &amp; → & и т.д.)
-// Нужно для корректного отображения старых сообщений, сохранённых с validator.escape()
 const decodeHtmlEntities = (text) => {
   if (typeof text !== 'string') return '';
   try {

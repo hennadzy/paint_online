@@ -50,8 +50,6 @@ const ProfilePage = observer(() => {
  const [fromRoom, setFromRoom] = useState(null);
 
 useEffect(() => {
- // Читаем откуда пришёл пользователь из sessionStorage
- // (TopMenu устанавливает это значение перед navigate('/profile'))
  const fromRoomPath = sessionStorage.getItem('profileFromRoom');
  setFromRoom(fromRoomPath);
 
@@ -59,7 +57,6 @@ useEffect(() => {
  navigate('/login');
  } else {
  setUsername(userState.user?.username || '');
- // Обновляем данные пользователя с сервера (в т.ч. аватар)
  userState.fetchCurrentUser();
  userState.fetchUserRooms();
  userState.fetchActivityRooms();
@@ -116,7 +113,6 @@ useEffect(() => {
 
  const handleLogout = () => {
  userState.logout();
- // Проверяем, откуда пришёл пользователь
  const fromRoom = sessionStorage.getItem('profileFromRoom');
  sessionStorage.removeItem('profileFromRoom');
  if (fromRoom) {

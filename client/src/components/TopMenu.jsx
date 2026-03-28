@@ -194,11 +194,9 @@ const TopMenu = observer(() => {
 
  const handleLogout = useCallback(() => {
  userState.logout();
- // Если не в комнате - переходим на главную
  if (!canvasState.isConnected) {
- navigate('/'); 
+ navigate('/');
  }
- // Если в комнате - остаёмся в комнате (просто выходим из профиля)
  }, [navigate]);
 
  const performExport = () => {

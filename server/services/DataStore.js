@@ -178,7 +178,6 @@ async deleteRoom(roomId) {
  async saveStrokes(roomId, strokes) {
  if (!strokes.length) return true;
  try {
- // Фильтруем дубликаты по ID штриха
  const existingIds = new Set();
  const newStrokes = [];
       
