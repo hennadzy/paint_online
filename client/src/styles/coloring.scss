@@ -43,7 +43,7 @@
  align-items: center;
  gap:16px;
  padding:12px20px;
- background: linear-gradient(135deg, #16213e0%, #0f3460100%);
+ background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
  border-bottom:2px solid #e94560;
  flex-shrink:0;
  min-height:54px;
@@ -288,7 +288,7 @@
  justify-content: center;
  gap:12px;
  padding:10px16px;
- background: linear-gradient(135deg, #1a27440%, #0f2847100%);
+ background: linear-gradient(135deg, #1a2744 0%, #0f2847 100%);
  border-top:1px solid #0f3460;
 }
 
@@ -322,11 +322,11 @@
  }
   
  &--save {
- background: linear-gradient(135deg, #e945600%, #c73e54100%);
+ background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
  border-color: #e94560;
     
  &:hover:not(:disabled) {
- background: linear-gradient(135deg, #ff55770%, #e94560100%);
+ background: linear-gradient(135deg, #ff5577 0%, #e94560 100%);
  border-color: #ff5577;
  }
  }
@@ -350,7 +350,7 @@
 
 .coloring-palette {
  flex-shrink:0;
- background: linear-gradient(135deg, #16213e0%, #0f3460100%);
+ background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
  border-top:2px solid #e94560;
  padding:10px16px12px;
 }
