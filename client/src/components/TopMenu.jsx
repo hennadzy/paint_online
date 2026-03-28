@@ -192,45 +192,54 @@ const TopMenu = observer(() => {
     }
   }, []);
 
-  const performExport = () => {
-    const canvas = canvasState.canvas;
-    if (!canvas) return;
+ const handleLogout = useCallback(() => {
+ userState.logout();
+ // Если не в комнате - переходим на главную
+ if (!canvasState.isConnected) {
+ navigate('/'); 
+ }
+ // Если в комнате - остаёмся в комнате (просто выходим из профиля)
+ }, [navigate]);
 
-    const filename = (exportFilename || '').trim() || canvasState.sessionId || 'drawing';
-    let href, downloadName;
+ const performExport = () => {
+ const canvas = canvasState.canvas;
+ if (!canvas) return;
 
-    if (exportFormat === 'png') {
-      href = canvas.toDataURL('image/png');
-      downloadName = `${filename}.png`;
-    } else if (exportFormat === 'jpg') {
-      href = canvas.toDataURL('image/jpeg', 0.95);
-      downloadName = `${filename}.jpg`;
-    } else if (exportFormat === 'svg') {
-      const pngData = canvas.toDataURL('image/png');
-      const svgContent =
-        `<?xml version="1.0" encoding="UTF-8"?>\n` +
-        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-        `width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">\n` +
-        `  <image href="${pngData}" width="${canvas.width}" height="${canvas.height}"/>\n` +
-        `</svg>`;
-      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-      href = URL.createObjectURL(blob);
-      downloadName = `${filename}.svg`;
-    }
+ const filename = (exportFilename || '').trim() || canvasState.sessionId || 'drawing';
+ let href, downloadName;
 
-    const a = document.createElement('a');
-    a.href = href;
-    a.download = downloadName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+ if (exportFormat === 'png') {
+ href = canvas.toDataURL('image/png');
+ downloadName = `${filename}.png`;
+ } else if (exportFormat === 'jpg') {
+ href = canvas.toDataURL('image/jpeg',0.95);
+ downloadName = `${filename}.jpg`;
+ } else if (exportFormat === 'svg') {
+ const pngData = canvas.toDataURL('image/png');
+ const svgContent =
+ `<?xml version="1.0" encoding="UTF-8"?>\n` +
+ `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
+ `width="${canvas.width}" height="${canvas.height}" viewBox="00 ${canvas.width} ${canvas.height}">\n` +
+ `<image href="${pngData}" width="${canvas.width}" height="${canvas.height}"/>\n` +
+ `</svg>`;
+ const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+ href = URL.createObjectURL(blob);
+ downloadName = `${filename}.svg`;
+ }
 
-    if (exportFormat === 'svg') {
-      setTimeout(() => URL.revokeObjectURL(href), 1000);
-    }
+ const a = document.createElement('a');
+ a.href = href;
+ a.download = downloadName;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
 
-    setShowExportModal(false);
-  };
+ if (exportFormat === 'svg') {
+ setTimeout(() => URL.revokeObjectURL(href),1000);
+ }
+
+ setShowExportModal(false);
+ };
 
   return (
     <>
@@ -307,16 +316,16 @@ const TopMenu = observer(() => {
                     <span className="tooltip">Админ-панель</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="toolbar__btn"
-                  onClick={() => userState.logout()}
-                  onMouseDown={(e) => e.target.blur()}
-                  title="Выйти"
-                >
-                  <span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
-                  <span className="tooltip">Выйти</span>
-                </button>
+<button
+ type="button"
+ className="toolbar__btn"
+ onClick={handleLogout}
+ onMouseDown={(e) => e.target.blur()}
+ title="Выйти"
+ >
+<span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
+<span className="tooltip">Выйти</span>
+</button>
               </>
             ) : (
               <>
@@ -365,6 +374,7 @@ const TopMenu = observer(() => {
 {canvasState.isConnected && (
  <>
  {userState.isAuthenticated && (
+<>
 <button
  type="button"
  className="toolbar__btn"
@@ -375,6 +385,17 @@ const TopMenu = observer(() => {
 <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
 <span className="tooltip">Профиль</span>
 </button>
+<button
+ type="button"
+ className="toolbar__btn"
+ onClick={handleLogout}
+ onMouseDown={(e) => e.target.blur()}
+ title="Выйти"
+ >
+<span className="icon" style={{ backgroundImage: `url(${logoutIcon})` }} />
+<span className="tooltip">Выйти</span>
+</button>
+</>
  )}
 <button className="create-room-btn invite-btn-desktop" onClick={handleInvite} style={{ display: 'none' }}>
  Пригласить

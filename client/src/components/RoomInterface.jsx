@@ -660,9 +660,9 @@ const RoomInterface = observer(({ roomId }) => {
                                 <div className="room-item-details">
                                   <h3>{room.name}</h3>
                                   <div className="room-item-meta">
-                                    <span className="room-item-status">
-                                      {room.isPublic ? 'Публичная' : 'Приватная'}
-                                    </span>
+<span className={`room-item-status ${room.isPublic ? '' : 'private'}`}>
+ {room.isPublic ? 'Публичная' : 'Приватная'}
+</span>
                                     {room.onlineCount !== undefined && (
                                       <span className={`room-item-online ${room.onlineCount > 0 ? 'online-active' : 'online-empty'}`}>
                                         {room.onlineCount > 0 ? '🟢' : '⚪'} {room.onlineCount} онлайн

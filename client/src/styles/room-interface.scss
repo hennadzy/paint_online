@@ -680,12 +680,17 @@
 }
 
 .room-item-status {
-  font-size: 12px;
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.2);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 600;
+ font-size:12px;
+ color: #4ade80;
+ background: rgba(74,222,128,0.2);
+ padding:4px10px;
+ border-radius:20px;
+ font-weight:600;
+
+ &.private {
+ color: #ff5252;
+ background: rgba(255,82,82,0.2);
+ }
 }
 
 .room-item-online {

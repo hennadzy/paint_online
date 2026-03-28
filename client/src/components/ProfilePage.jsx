@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import RoomActionsDropdown from './RoomActionsDropdown';
 import CreateRoomModal from './CreateRoomModal';
 import PersonalMessagesModal from './PersonalMessagesModal';
@@ -32,8 +32,9 @@ const EyeIcon = ({ visible, onClick }) => (
 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='80' r='40' fill='%23cccccc'/%3E%3Cpath d='M30 170 Q100 130, 170 170' stroke='%23cccccc' stroke-width='10' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
 
 const ProfilePage = observer(() => {
-  const navigate = useNavigate();
-  const [editMode, setEditMode] = useState(false);
+ const navigate = useNavigate();
+ const location = useLocation();
+ const [editMode, setEditMode] = useState(false);
   const [username, setUsername] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -47,15 +48,30 @@ const ProfilePage = observer(() => {
   const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (!userState.isAuthenticated) {
-      navigate('/login');
-    } else {
-      setUsername(userState.user?.username || '');
-      userState.fetchUserRooms();
-      userState.fetchActivityRooms();
-    }
-  }, [userState.isAuthenticated, navigate]);
+ useEffect(() => {
+ // Сохраняем предыдущий путь для корректного выхода
+ const referrer = document.referrer;
+ if (referrer && !referrer.includes('/profile') && !referrer.includes('/login') && !referrer.includes('/register')) {
+ try {
+ const url = new URL(referrer);
+ if (url.pathname.match(/^\/[a-zA-Z0-9]{9}$/)) {
+ sessionStorage.setItem('profileFromRoom', url.pathname);
+ } else if (url.pathname === '/') {
+ sessionStorage.setItem('profileFromRoom', '/');
+ }
+ } catch (e) {
+ // ignore parse errors
+ }
+ }
+
+ if (!userState.isAuthenticated) {
+ navigate('/login');
+ } else {
+ setUsername(userState.user?.username || '');
+ userState.fetchUserRooms();
+ userState.fetchActivityRooms();
+ }
+ }, [userState.isAuthenticated, navigate]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -105,10 +121,17 @@ const ProfilePage = observer(() => {
     }
   };
 
-  const handleLogout = () => {
-    userState.logout();
-    navigate('/');
-  };
+ const handleLogout = () => {
+ userState.logout();
+ // Проверяем, откуда пришёл пользователь
+ const fromRoom = sessionStorage.getItem('profileFromRoom');
+ sessionStorage.removeItem('profileFromRoom');
+ if (fromRoom) {
+ navigate(fromRoom);
+ } else {
+ navigate('/');
+ }
+ };
 
   if (!userState.user) return (
     <div className="profile-loading">
