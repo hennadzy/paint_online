@@ -393,6 +393,42 @@ router.get('/coloring-pages', apiLimiter, async (req, res) => {
   }
 });
 
+// Public endpoint: serve coloring page image from DB (persistent across restarts)
+router.get('/coloring-pages/image/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const result = await pgPool.query(
+      `SELECT image_data FROM coloring_pages WHERE id = $1`,
+      [id]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].image_data) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const imageData = result.rows[0].image_data;
+    const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+    if (!match) {
+      return res.status(500).json({ error: 'Invalid image data' });
+    }
+
+    const mimeType = match[1];
+    const buffer = Buffer.from(match[2], 'base64');
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Get coloring page image error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.delete('/rooms/:id', authenticate, async (req, res) => {
   try {
     const roomId = sanitizeInput(req.params.id, 20);

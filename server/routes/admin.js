@@ -12,23 +12,9 @@ const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
 
-// Multer config for coloring page image uploads
-const coloringStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const filesDir = path.join(__dirname, '../files');
-    if (!fs.existsSync(filesDir)) {
-      fs.mkdirSync(filesDir, { recursive: true });
-    }
-    cb(null, filesDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `coloring_${Date.now()}${ext}`);
-  }
-});
-
+// Multer config — memory storage so images are persisted in DB (no ephemeral disk)
 const coloringUpload = multer({
-  storage: coloringStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
@@ -636,27 +622,33 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
   try {
     const { title } = req.body;
     if (!title || !title.trim()) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Название обязательно' });
     }
     if (!req.file) {
       return res.status(400).json({ error: 'Изображение обязательно' });
     }
 
-    const imageUrl = `/files/${req.file.filename}`;
+    // Store image as base64 data URI in DB — survives server restarts on Render
+    const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-    const result = await pgPool.query(
-      `INSERT INTO coloring_pages (title, image_url, thumbnail_url, created_at, is_active)
-       VALUES ($1, $2, $3, $4, true) RETURNING *`,
-      [title.trim().substring(0, 100), imageUrl, imageUrl, Date.now()]
+    // Insert with placeholder URL first to get the auto-generated id
+    const insertResult = await pgPool.query(
+      `INSERT INTO coloring_pages (title, image_url, thumbnail_url, image_data, created_at, is_active)
+       VALUES ($1, '', '', $2, $3, true) RETURNING id`,
+      [title.trim().substring(0, 100), imageData, Date.now()]
     );
 
-    res.json({ page: result.rows[0] });
+    const id = insertResult.rows[0].id;
+    const imageUrl = `/coloring-pages/image/${id}`;
+
+    const finalResult = await pgPool.query(
+      `UPDATE coloring_pages SET image_url = $1, thumbnail_url = $2 WHERE id = $3 RETURNING *`,
+      [imageUrl, imageUrl, id]
+    );
+
+    res.json({ page: finalResult.rows[0] });
   } catch (error) {
     console.error('Upload coloring page error:', error);
-    if (req.file) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
-    }
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -715,8 +707,8 @@ router.delete('/game-modes/coloring/:id', async (req, res) => {
 
     const page = existing.rows[0];
 
-    // Delete image file from disk
-    if (page.image_url) {
+    // Delete image file from disk (legacy uploads only)
+    if (page.image_url && page.image_url.startsWith('/files/')) {
       const filename = path.basename(page.image_url);
       const filepath = path.join(__dirname, '../files', filename);
       if (fs.existsSync(filepath)) {

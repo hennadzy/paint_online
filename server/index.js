@@ -290,11 +290,16 @@ async function initDb() {
           title VARCHAR(100) NOT NULL,
           image_url TEXT NOT NULL,
           thumbnail_url TEXT,
+          image_data TEXT,
           created_at BIGINT NOT NULL,
           is_active BOOLEAN DEFAULT true
         );
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_active ON coloring_pages(is_active);
       `);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS image_data TEXT`);
     } catch (_) { }
 
     try {
