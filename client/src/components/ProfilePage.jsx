@@ -160,9 +160,12 @@ useEffect(() => {
       <div className="profile-container">
 <div className="profile-header">
 <h1>Личный кабинет</h1>
-<button 
- className="profile-btn profile-btn-secondary" 
- onClick={() => navigate(fromRoom || '/')} 
+<button
+ className="profile-btn profile-btn-secondary"
+ onClick={() => {
+   sessionStorage.removeItem('profileFromRoom');
+   navigate(fromRoom || '/');
+ }}
  aria-label={fromRoom ? 'В комнату' : 'На главную'}
  >
 <span className="profile-back-icon" aria-hidden="true">×</span>
