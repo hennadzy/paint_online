@@ -147,7 +147,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
 
-const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404'];
+const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring'];
 
 app.get('*', (req, res) => {
   const pathname = req.path;
@@ -282,6 +282,20 @@ async function initDb() {
       );
     `);
     console.log('Database tables ready');
+
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS coloring_pages (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(100) NOT NULL,
+          image_url TEXT NOT NULL,
+          thumbnail_url TEXT,
+          created_at BIGINT NOT NULL,
+          is_active BOOLEAN DEFAULT true
+        );
+        CREATE INDEX IF NOT EXISTS idx_coloring_pages_active ON coloring_pages(is_active);
+      `);
+    } catch (_) { }
 
     try {
       await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS weight INTEGER DEFAULT 0`);

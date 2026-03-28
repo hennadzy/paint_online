@@ -37,6 +37,11 @@ class AdminState {
   showPasswordModal = false;
   deleteTarget = null;
   modalMode = 'edit';
+
+  // Game Modes — Coloring Pages
+  coloringPages = [];
+  coloringPagesLoading = false;
+  coloringPagesError = null;
   
   constructor() {
     makeAutoObservable(this);
@@ -387,6 +392,80 @@ class AdminState {
       this.fetchUsers(page);
     } else if (type === 'rooms') {
       this.fetchRooms(page);
+    }
+  }
+
+  // ─── Coloring Pages ───────────────────────────────────────────────────────
+
+  async fetchColoringPages() {
+    this.coloringPagesLoading = true;
+    this.coloringPagesError = null;
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/game-modes/coloring`);
+      runInAction(() => {
+        this.coloringPages = response.data.pages;
+        this.coloringPagesLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.coloringPagesError = error.response?.data?.error || 'Ошибка загрузки';
+        this.coloringPagesLoading = false;
+      });
+    }
+  }
+
+  async uploadColoringPage(formData) {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/admin/game-modes/coloring`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      runInAction(() => {
+        this.coloringPages.unshift(response.data.page);
+      });
+      return { success: true, page: response.data.page };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка загрузки'
+      };
+    }
+  }
+
+  async updateColoringPage(id, data) {
+    try {
+      const response = await axios.put(
+        `${API_URL}/api/admin/game-modes/coloring/${id}`,
+        data
+      );
+      runInAction(() => {
+        const idx = this.coloringPages.findIndex(p => p.id === id);
+        if (idx !== -1) {
+          this.coloringPages[idx] = response.data.page;
+        }
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка обновления'
+      };
+    }
+  }
+
+  async deleteColoringPage(id) {
+    try {
+      await axios.delete(`${API_URL}/api/admin/game-modes/coloring/${id}`);
+      runInAction(() => {
+        this.coloringPages = this.coloringPages.filter(p => p.id !== id);
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка удаления'
+      };
     }
   }
 }

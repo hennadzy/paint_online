@@ -8,6 +8,7 @@ const RoomManager = require('../services/RoomManager');
 const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
 const { generateToken } = require('../utils/jwt');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
+const { pgPool } = require('../config/db');
 
 const router = express.Router();
 
@@ -372,6 +373,22 @@ router.patch('/rooms/:id', authenticate, async (req, res) => {
     res.json({ room: updated });
   } catch (err) {
     console.error('Update room error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Public endpoint: list active coloring pages
+router.get('/coloring-pages', apiLimiter, async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT id, title, image_url, thumbnail_url, created_at
+       FROM coloring_pages
+       WHERE is_active = true
+       ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get coloring pages error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

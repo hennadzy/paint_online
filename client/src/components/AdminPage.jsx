@@ -143,6 +143,13 @@ const AdminPage = observer(() => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordFormError, setPasswordFormError] = useState('');
 
+  // Game Modes — Coloring Pages upload state
+  const [coloringUploadTitle, setColoringUploadTitle] = useState('');
+  const [coloringUploadFile, setColoringUploadFile] = useState(null);
+  const [coloringUploadError, setColoringUploadError] = useState('');
+  const [coloringUploadLoading, setColoringUploadLoading] = useState(false);
+  const [coloringUploadSuccess, setColoringUploadSuccess] = useState('');
+
   useEffect(() => {
     if (adminState.selectedUser) {
       const user = adminState.selectedUser;
@@ -1044,6 +1051,164 @@ const AdminPage = observer(() => {
     );
   };
 
+  const renderGameModes = () => {
+    const handleColoringUpload = async (e) => {
+      e.preventDefault();
+      setColoringUploadError('');
+      setColoringUploadSuccess('');
+
+      if (!coloringUploadTitle.trim()) {
+        setColoringUploadError('Введите название раскраски');
+        return;
+      }
+      if (!coloringUploadFile) {
+        setColoringUploadError('Выберите изображение');
+        return;
+      }
+
+      setColoringUploadLoading(true);
+      const formData = new FormData();
+      formData.append('title', coloringUploadTitle.trim());
+      formData.append('image', coloringUploadFile);
+
+      const result = await adminState.uploadColoringPage(formData);
+      setColoringUploadLoading(false);
+
+      if (result.success) {
+        setColoringUploadTitle('');
+        setColoringUploadFile(null);
+        setColoringUploadSuccess('Раскраска успешно добавлена!');
+        setTimeout(() => setColoringUploadSuccess(''), 3000);
+      } else {
+        setColoringUploadError(result.error);
+      }
+    };
+
+    const handleToggleActive = async (page) => {
+      await adminState.updateColoringPage(page.id, { isActive: !page.is_active });
+    };
+
+    const handleDelete = async (page) => {
+      if (!window.confirm(`Удалить раскраску "${page.title}"?`)) return;
+      await adminState.deleteColoringPage(page.id);
+    };
+
+    return (
+      <div>
+        {/* Upload Form */}
+        <div className="admin-table-container" style={{ marginBottom: '24px' }}>
+          <div className="admin-toolbar">
+            <h3 style={{ color: '#ffd700', margin: 0 }}>🎨 Раскраски — добавить новую</h3>
+          </div>
+          <div style={{ padding: '20px' }}>
+            <form onSubmit={handleColoringUpload} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px' }}>
+              {coloringUploadError && (
+                <div className="admin-form__error">{coloringUploadError}</div>
+              )}
+              {coloringUploadSuccess && (
+                <div style={{ color: '#28a745', fontSize: '14px', padding: '8px 12px', background: 'rgba(40,167,69,0.1)', borderRadius: '6px', border: '1px solid rgba(40,167,69,0.3)' }}>
+                  {coloringUploadSuccess}
+                </div>
+              )}
+              <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                <label>Название раскраски</label>
+                <input
+                  type="text"
+                  value={coloringUploadTitle}
+                  onChange={(e) => setColoringUploadTitle(e.target.value)}
+                  placeholder="Например: Котик, Замок, Цветы..."
+                  maxLength={100}
+                />
+              </div>
+              <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                <label>Изображение (PNG, JPG, WebP — до 15 МБ)</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                  onChange={(e) => setColoringUploadFile(e.target.files[0] || null)}
+                  style={{ color: '#e0e0e0', padding: '8px 0' }}
+                />
+                {coloringUploadFile && (
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    Выбрано: {coloringUploadFile.name} ({(coloringUploadFile.size / 1024).toFixed(0)} КБ)
+                  </div>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="admin-btn admin-btn--primary"
+                disabled={coloringUploadLoading}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {coloringUploadLoading ? 'Загрузка...' : '+ Добавить раскраску'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Coloring Pages List */}
+        <div className="admin-table-container">
+          <div className="admin-toolbar">
+            <h3 style={{ color: '#ffd700', margin: 0 }}>
+              Список раскрасок ({adminState.coloringPages.length})
+            </h3>
+          </div>
+
+          {adminState.coloringPagesLoading ? (
+            <div className="admin-loading">
+              <div className="admin-loading__spinner"></div>
+            </div>
+          ) : adminState.coloringPages.length === 0 ? (
+            <div className="admin-empty">
+              <div className="admin-empty__text">Раскраски не добавлены</div>
+            </div>
+          ) : (
+            <div className="admin-coloring-list">
+              {adminState.coloringPages.map(page => (
+                <div key={page.id} className="admin-coloring-item">
+                  <div className="admin-coloring-item__preview">
+                    <img
+                      src={`${window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com'}${page.thumbnail_url || page.image_url}`}
+                      alt={page.title}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                  <div className="admin-coloring-item__info">
+                    <div className="admin-coloring-item__title">{page.title}</div>
+                    <div className="admin-coloring-item__meta">
+                      <span className={`admin-badge admin-badge--${page.is_active ? 'active' : 'inactive'}`}>
+                        {page.is_active ? 'Активна' : 'Скрыта'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#666' }}>
+                        ID: {page.id}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="admin-actions">
+                    <button
+                      className="admin-icon-btn"
+                      onClick={() => handleToggleActive(page)}
+                      title={page.is_active ? 'Скрыть' : 'Показать'}
+                    >
+                      {page.is_active ? <BlockIcon /> : <UnlockIcon />}
+                    </button>
+                    <button
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={() => handleDelete(page)}
+                      title="Удалить"
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -1088,12 +1253,22 @@ const AdminPage = observer(() => {
         >
           Комнаты
         </button>
+        <button 
+          className={`admin-nav__item ${adminState.activeTab === 'gameModes' ? 'active' : ''}`}
+          onClick={() => {
+            adminState.setActiveTab('gameModes');
+            adminState.fetchColoringPages();
+          }}
+        >
+          🎮 Игровые режимы
+        </button>
       </nav>
 
       <main className="admin-content">
         {adminState.activeTab === 'dashboard' && renderDashboard()}
         {adminState.activeTab === 'users' && renderUsers()}
         {adminState.activeTab === 'rooms' && renderRooms()}
+        {adminState.activeTab === 'gameModes' && renderGameModes()}
       </main>
 
       {renderUserModal()}

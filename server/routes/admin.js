@@ -1,4 +1,7 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const User = require('../models/User');
 const DataStore = require('../services/DataStore');
 const { authenticate, requireSuperAdmin } = require('../middleware/auth');
@@ -8,6 +11,34 @@ const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt');
 
 const router = express.Router();
+
+// Multer config for coloring page image uploads
+const coloringStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const filesDir = path.join(__dirname, '../files');
+    if (!fs.existsSync(filesDir)) {
+      fs.mkdirSync(filesDir, { recursive: true });
+    }
+    cb(null, filesDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    cb(null, `coloring_${Date.now()}${ext}`);
+  }
+});
+
+const coloringUpload = multer({
+  storage: coloringStorage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 router.use(authenticate);
 router.use(requireSuperAdmin);
@@ -583,6 +614,121 @@ router.get('/export/rooms', async (req, res) => {
     }
   } catch (error) {
     console.error('Admin export rooms error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── Game Modes: Coloring Pages ───────────────────────────────────────────────
+
+router.get('/game-modes/coloring', async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      'SELECT * FROM coloring_pages ORDER BY created_at DESC'
+    );
+    res.json({ pages: result.rows });
+  } catch (error) {
+    console.error('Get coloring pages error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Название обязательно' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'Изображение обязательно' });
+    }
+
+    const imageUrl = `/files/${req.file.filename}`;
+
+    const result = await pgPool.query(
+      `INSERT INTO coloring_pages (title, image_url, thumbnail_url, created_at, is_active)
+       VALUES ($1, $2, $3, $4, true) RETURNING *`,
+      [title.trim().substring(0, 100), imageUrl, imageUrl, Date.now()]
+    );
+
+    res.json({ page: result.rows[0] });
+  } catch (error) {
+    console.error('Upload coloring page error:', error);
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/game-modes/coloring/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { title, isActive } = req.body;
+
+    const setClauses = [];
+    const values = [];
+    let idx = 1;
+
+    if (title !== undefined) {
+      setClauses.push(`title = $${idx++}`);
+      values.push(title.trim().substring(0, 100));
+    }
+    if (isActive !== undefined) {
+      setClauses.push(`is_active = $${idx++}`);
+      values.push(Boolean(isActive));
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ error: 'Нет полей для обновления' });
+    }
+
+    values.push(id);
+    const result = await pgPool.query(
+      `UPDATE coloring_pages SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Раскраска не найдена' });
+    }
+
+    res.json({ page: result.rows[0] });
+  } catch (error) {
+    console.error('Update coloring page error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/game-modes/coloring/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+
+    const existing = await pgPool.query(
+      'SELECT * FROM coloring_pages WHERE id = $1',
+      [id]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Раскраска не найдена' });
+    }
+
+    const page = existing.rows[0];
+
+    // Delete image file from disk
+    if (page.image_url) {
+      const filename = path.basename(page.image_url);
+      const filepath = path.join(__dirname, '../files', filename);
+      if (fs.existsSync(filepath)) {
+        try { fs.unlinkSync(filepath); } catch (_) {}
+      }
+    }
+
+    await pgPool.query('DELETE FROM coloring_pages WHERE id = $1', [id]);
+
+    res.json({ message: 'Раскраска удалена' });
+  } catch (error) {
+    console.error('Delete coloring page error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
