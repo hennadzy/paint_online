@@ -4,6 +4,70 @@ import Fill from '../tools/Fill';
 import { API_URL } from '../store/canvasState';
 import '../styles/coloring.scss';
 
+// Локальная история для undo/redo раскрасок
+class ColoringHistory {
+ constructor() {
+ this.undoStack = [];
+ this.redoStack = [];
+ this.maxHistory =50;
+ }
+
+ push(imageData) {
+ // Сохраняем копию imageData
+ const copy = new ImageData(
+ new Uint8ClampedArray(imageData.data),
+ imageData.width,
+ imageData.height
+ );
+ this.undoStack.push(copy);
+ if (this.undoStack.length > this.maxHistory) {
+ this.undoStack.shift();
+ }
+ this.redoStack = [];
+ }
+
+ undo(currentImageData) {
+ if (this.undoStack.length ===0) return null;
+    
+ const copy = new ImageData(
+ new Uint8ClampedArray(currentImageData.data),
+ currentImageData.width,
+ currentImageData.height
+ );
+ this.redoStack.push(copy);
+    
+ return this.undoStack.pop();
+ }
+
+ redo(currentImageData) {
+ if (this.redoStack.length ===0) return null;
+    
+ const copy = new ImageData(
+ new Uint8ClampedArray(currentImageData.data),
+ currentImageData.width,
+ currentImageData.height
+ );
+ this.undoStack.push(copy);
+    
+ return this.redoStack.pop();
+ }
+
+ canUndo() {
+ return this.undoStack.length >0;
+ }
+
+ canRedo() {
+ return this.redoStack.length >0;
+ }
+
+ clear() {
+ this.undoStack = [];
+ this.redoStack = [];
+ }
+}
+
+const coloringHistory = new ColoringHistory();
+
 const PRESET_COLORS = [
   // Row 1 — warm / primary
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700',
@@ -23,16 +87,21 @@ const PRESET_COLORS = [
 ];
 
 const ColoringPage = () => {
-  const navigate = useNavigate();
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+ const navigate = useNavigate();
+ const canvasRef = useRef(null);
+ const containerRef = useRef(null);
+ const wrapperRef = useRef(null);
 
-  const [coloringPages, setColoringPages] = useState([]);
-  const [selectedPage, setSelectedPage] = useState(null);
-  const [selectedColor, setSelectedColor] = useState('#FF0000');
-  const [isLoading, setIsLoading] = useState(true);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [fetchError, setFetchError] = useState('');
+ const [coloringPages, setColoringPages] = useState([]);
+ const [selectedPage, setSelectedPage] = useState(null);
+ const [selectedColor, setSelectedColor] = useState('#FF0000');
+ const [isLoading, setIsLoading] = useState(true);
+ const [imageLoaded, setImageLoaded] = useState(false);
+ const [fetchError, setFetchError] = useState('');
+  
+ // Состояние для zoom
+ const [zoom, setZoom] = useState(1);
+ const [isPinching, setIsPinching] = useState(false);
 
   // Fetch available coloring pages on mount
   useEffect(() => {
@@ -53,33 +122,96 @@ const ColoringPage = () => {
     fetchPages();
   }, []);
 
-  // Load selected image onto canvas
-  const loadImageToCanvas = useCallback((page) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+ // Load selected image onto canvas
+ const loadImageToCanvas = useCallback((page) => {
+ const canvas = canvasRef.current;
+ if (!canvas) return;
 
-    setImageLoaded(false);
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+ setImageLoaded(false);
+ coloringHistory.clear();
+ setZoom(1);
+ const ctx = canvas.getContext('2d');
+ const img = new Image();
+ img.crossOrigin = 'anonymous';
 
-    img.onload = () => {
-      // Set canvas to natural image size
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      // Fill white background first so flood fill works on transparent PNGs
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      setImageLoaded(true);
-    };
+ img.onload = () => {
+ // Set canvas to natural image size
+ canvas.width = img.naturalWidth;
+ canvas.height = img.naturalHeight;
+ // Fill white background first so flood fill works on transparent PNGs
+ ctx.fillStyle = '#FFFFFF';
+ ctx.fillRect(0,0, canvas.width, canvas.height);
+ ctx.drawImage(img,0,0);
+ setImageLoaded(true);
+ };
 
-    img.onerror = () => {
-      console.error('Failed to load coloring image');
-    };
+ img.onerror = () => {
+ console.error('Failed to load coloring image');
+ };
 
-    img.src = `${API_URL}${page.image_url}`;
-  }, []);
+ img.src = `${API_URL}${page.image_url}`;
+ }, []);
+
+ // Обработчик pinch-to-zoom
+ const handleWheel = useCallback((e) => {
+ if (e.ctrlKey || e.metaKey) {
+ e.preventDefault();
+ const delta = e.deltaY >0 ? -0.1 :0.1;
+ setZoom(prev => Math.max(0.5, Math.min(3, prev + delta)));
+ }
+ }, []);
+
+ // Touch handlers для pinch-zoom
+ useEffect(() => {
+ const wrapper = wrapperRef.current;
+ if (!wrapper) return;
+
+ let initialDistance =0;
+ let initialZoom =1;
+
+ const getDistance = (t1, t2) => {
+ const dx = t2.clientX - t1.clientX;
+ const dy = t2.clientY - t1.clientY;
+ return Math.sqrt(dx * dx + dy * dy);
+ };
+
+ const handleTouchStart = (e) => {
+ if (e.touches.length ===2) {
+ e.preventDefault();
+ initialDistance = getDistance(e.touches[0], e.touches[1]);
+ initialZoom = zoom;
+ setIsPinching(true);
+ }
+ };
+
+ const handleTouchMove = (e) => {
+ if (e.touches.length ===2 && initialDistance >0) {
+ e.preventDefault();
+ const currentDistance = getDistance(e.touches[0], e.touches[1]);
+ const scale = currentDistance / initialDistance;
+ setZoom(prev => Math.max(0.5, Math.min(3, initialZoom * scale)));
+ }
+ };
+
+ const handleTouchEnd = (e) => {
+ if (e.touches.length< 2) {
+ initialDistance =0;
+ setIsPinching(false);
+ }
+ };
+
+ wrapper.addEventListener('touchstart', handleTouchStart, { passive: false });
+ wrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+ wrapper.addEventListener('touchend', handleTouchEnd);
+ wrapper.addEventListener('touchcancel', handleTouchEnd);
+
+ return () => {
+ wrapper.removeEventListener('touchstart', handleTouchStart);
+ wrapper.removeEventListener('touchmove', handleTouchMove);
+ wrapper.removeEventListener('touchend', handleTouchEnd);
+ wrapper.removeEventListener('touchcancel', handleTouchEnd);
+ };
+ }, [zoom]);
 
   const handleSelectPage = (page) => {
     setSelectedPage(page);
@@ -87,21 +219,63 @@ const ColoringPage = () => {
     setTimeout(() => loadImageToCanvas(page), 50);
   };
 
-  const handleCanvasClick = useCallback((e) => {
-    if (!imageLoaded) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+ const handleCanvasClick = useCallback((e) => {
+ if (!imageLoaded || isPinching) return;
+ const canvas = canvasRef.current;
+ if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+ const ctx = canvas.getContext('2d');
+ const rect = canvas.getBoundingClientRect();
+ const scaleX = canvas.width / rect.width;
+ const scaleY = canvas.height / rect.height;
 
-    const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top) * scaleY);
+ const x = Math.floor((e.clientX - rect.left) * scaleX);
+ const y = Math.floor((e.clientY - rect.top) * scaleY);
 
-    Fill.staticDraw(ctx, x, y, selectedColor);
-  }, [imageLoaded, selectedColor]);
+ // Сохраняем состояние в историю перед заливкой
+ const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
+ coloringHistory.push(imageData);
+
+ Fill.staticDraw(ctx, x, y, selectedColor);
+ }, [imageLoaded, selectedColor, isPinching]);
+
+ // Обработчики undo/redo
+ const handleUndo = useCallback(() => {
+ const canvas = canvasRef.current;
+ if (!canvas || !coloringHistory.canUndo()) return;
+
+ const ctx = canvas.getContext('2d');
+ const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
+ const prevImageData = coloringHistory.undo(currentImageData);
+ 
+ if (prevImageData) {
+ ctx.putImageData(prevImageData,0,0);
+ }
+ }, []);
+
+ const handleRedo = useCallback(() => {
+ const canvas = canvasRef.current;
+ if (!canvas || !coloringHistory.canRedo()) return;
+
+ const ctx = canvas.getContext('2d');
+ const currentImageData = ctx.getImageData(0,0, canvas.width, canvas.height);
+ const nextImageData = coloringHistory.redo(currentImageData);
+ 
+ if (nextImageData) {
+ ctx.putImageData(nextImageData,0,0);
+ }
+ }, []);
+
+ // Сохранение раскраски
+ const handleSave = useCallback(() => {
+ const canvas = canvasRef.current;
+ if (!canvas) return;
+
+ const link = document.createElement('a');
+ link.download = `coloring-${selectedPage?.title || 'image'}-${Date.now()}.png`;
+ link.href = canvas.toDataURL('image/png');
+ link.click();
+ }, [selectedPage]);
 
   const handleBackToSelector = () => {
     setSelectedPage(null);
@@ -171,69 +345,106 @@ const ColoringPage = () => {
     );
   }
 
-  // ─── Coloring View ────────────────────────────────────────────────────────
-  return (
-    <div className="coloring-page coloring-page--active">
-      <div className="coloring-header">
-        <button className="coloring-back-btn" onClick={handleBackToSelector}>
-          ← К списку
-        </button>
-        <h2 className="coloring-header__title">{selectedPage.title}</h2>
-      </div>
+ // ─── Coloring View ────────────────────────────────────────────────────────
+ return (
+<div className="coloring-page coloring-page--active">
+<div className="coloring-header">
+<button className="coloring-back-btn" onClick={handleBackToSelector}>
+ ← К списку
+</button>
+<h2 className="coloring-header__title">{selectedPage.title}</h2>
+</div>
 
-      <div className="coloring-workspace" ref={containerRef}>
-        <div className="coloring-canvas-wrapper">
-          {!imageLoaded && (
-            <div className="coloring-canvas-loading">
-              <div className="coloring-spinner" />
-              <span>Загрузка изображения...</span>
-            </div>
-          )}
-          <canvas
-            ref={canvasRef}
-            className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''}`}
-            onClick={handleCanvasClick}
-            style={{ cursor: imageLoaded ? 'crosshair' : 'wait' }}
-          />
-        </div>
-      </div>
+<div className="coloring-workspace" ref={containerRef} onWheel={handleWheel}>
+<div className="coloring-canvas-wrapper" ref={wrapperRef}>
+ {!imageLoaded && (
+<div className="coloring-canvas-loading">
+<div className="coloring-spinner" />
+<span>Загрузка изображения...</span>
+</div>
+ )}
+<canvas
+ ref={canvasRef}
+ className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''}`}
+ onClick={handleCanvasClick}
+ style={{ 
+ cursor: imageLoaded ? 'crosshair' : 'wait',
+ transform: `scale(${zoom})`,
+ transformOrigin: 'center center'
+ }}
+ />
+</div>
+</div>
 
-      {/* Color Palette */}
-      <div className="coloring-palette">
-        <div className="coloring-palette__inner">
-          <div className="coloring-palette__swatches">
-            {PRESET_COLORS.map(color => (
-              <button
-                key={color}
-                className={`coloring-swatch ${selectedColor === color ? 'coloring-swatch--selected' : ''}`}
-                style={{ backgroundColor: color }}
-                onClick={() => setSelectedColor(color)}
-                title={color}
-                aria-label={`Цвет ${color}`}
-              />
-            ))}
-          </div>
+ {/* Actions Panel */}
+<div className="coloring-actions">
+<button 
+ className="coloring-action-btn" 
+ onClick={handleUndo}
+ disabled={!coloringHistory.canUndo()}
+ title="Отменить"
+ >
+<span className="coloring-action-icon">↩</span>
+<span>Отменить</span>
+</button>
+<button 
+ className="coloring-action-btn" 
+ onClick={handleRedo}
+ disabled={!coloringHistory.canRedo()}
+ title="Вернуть"
+ >
+<span className="coloring-action-icon">↪</span>
+<span>Вернуть</span>
+</button>
+<button 
+ className="coloring-action-btn coloring-action-btn--save" 
+ onClick={handleSave}
+ title="Сохранить"
+ >
+<span className="coloring-action-icon">💾</span>
+<span>Сохранить</span>
+</button>
+<div className="coloring-zoom-info">
+ {Math.round(zoom *100)}%
+</div>
+</div>
 
-          <div className="coloring-palette__custom">
-            <div
-              className="coloring-selected-preview"
-              style={{ backgroundColor: selectedColor }}
-              title={`Выбранный цвет: ${selectedColor}`}
-            />
-            <label className="coloring-custom-label" title="Выбрать любой цвет">
-              <span>Другой цвет</span>
-              <input
-                type="color"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="coloring-custom-input"
-              />
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+ {/* Color Palette */}
+<div className="coloring-palette">
+<div className="coloring-palette__inner">
+<div className="coloring-palette__swatches">
+ {PRESET_COLORS.map(color => (
+<button
+ key={color}
+ className={`coloring-swatch ${selectedColor === color ? 'coloring-swatch--selected' : ''}`}
+ style={{ backgroundColor: color }}
+ onClick={() => setSelectedColor(color)}
+ title={color}
+ aria-label={`Цвет ${color}`}
+ />
+ ))}
+</div>
+
+<div className="coloring-palette__custom">
+<div
+ className="coloring-selected-preview"
+ style={{ backgroundColor: selectedColor }}
+ title={`Выбранный цвет: ${selectedColor}`}
+ />
+<label className="coloring-custom-label" title="Выбрать любой цвет">
+<span>Другой цвет</span>
+<input
+ type="color"
+ value={selectedColor}
+ onChange={(e) => setSelectedColor(e.target.value)}
+ className="coloring-custom-input"
+ />
+</label>
+</div>
+</div>
+</div>
+</div>
+ );
 };
 
 export default ColoringPage;
