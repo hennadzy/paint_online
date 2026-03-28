@@ -513,11 +513,99 @@
  width:30px;
  height:30px;
  }
+
+ // Мобильные кнопки действий — одна высота и в одну строку
+ .coloring-actions {
+ display: flex;
+ flex-wrap: nowrap;
+ justify-content: space-between;
+ gap:6px;
+ padding:8px10px;
+ }
+
+ .coloring-action-btn {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ padding:8px10px;
+ font-size:12px;
+ min-height:36px;
+ flex-shrink:1;
+ flex-grow:1;
+ gap:4px;
+
+ .coloring-action-icon {
+ font-size:14px;
+ }
+ }
+
+ .coloring-action-btn--save {
+ flex-grow:1.2;
+ }
+
+ .coloring-zoom-info {
+ padding:4px6px;
+ font-size:11px;
+ min-width:32px;
+ min-height:36px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ }
+
+ .coloring-zoom-btn {
+ padding:8px;
+ min-width:36px;
+ min-height:36px;
+ flex-shrink:1;
+
+ .coloring-action-icon {
+ font-size:18px;
+ line-height:1;
+ }
+ }
 }
 
 @media (max-width:400px) {
  .coloring-swatch {
  width:22px;
  height:22px;
+ }
+
+ // Ещё меньшие экраны — кнопки без текста, только иконки
+ .coloring-actions {
+ gap:4px;
+ padding:6px8px;
+ }
+
+ .coloring-action-btn {
+ padding:6px8px;
+ font-size:0;
+
+ .coloring-action-icon {
+ font-size:16px;
+ }
+ }
+
+ .coloring-action-btn--save {
+ .coloring-action-icon {
+ font-size:16px;
+ }
+ }
+
+ .coloring-zoom-info {
+ font-size:10px;
+ min-width:28px;
+ padding:4px;
+ }
+
+ .coloring-zoom-btn {
+ padding:6px;
+ min-width:32px;
+ min-height:32px;
+
+ .coloring-action-icon {
+ font-size:16px;
+ }
  }
 }
