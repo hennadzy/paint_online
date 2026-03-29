@@ -137,7 +137,7 @@ router.get('/rooms/public', apiLimiter, async (req, res) => {
   try {
     const allRooms = await DataStore.getAllRooms();
     const filesDir = path.join(__dirname, '../files');
-
+    
     const result = await Promise.all(allRooms.map(async room => {
       const onlineUsers = await RoomManager.getRoomUsers(room.id);
       const onlineCount = onlineUsers.length;
@@ -377,7 +377,6 @@ router.patch('/rooms/:id', authenticate, async (req, res) => {
   }
 });
 
-
 router.get('/coloring-pages', apiLimiter, async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -393,7 +392,7 @@ router.get('/coloring-pages', apiLimiter, async (req, res) => {
   }
 });
 
-
+// Public endpoint: serve coloring page image from DB (persistent across restarts)
 router.get('/coloring-pages/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

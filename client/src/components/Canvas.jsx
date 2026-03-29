@@ -173,7 +173,7 @@ const Canvas = observer(() => {
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-container-inner">
             <div className="canvas-wrapper">
-              <canvas ref={canvasRef} tabIndex={0} className="main-canvas" />
+              <canvas ref={canvasRef} tabIndex={0} className="main-canvas" willReadFrequently={true} />
               <canvas ref={cursorRef} className="cursor-overlay" />
             </div>
           </div>

@@ -176,7 +176,11 @@ const ColoringPage = () => {
  }, [zoom]);
 
 
- const handleWheel = useCallback((e) => {
+ useEffect(() => {
+ const container = containerRef.current;
+ if (!container) return;
+
+ const handleWheel = (e) => {
  if (Math.abs(e.deltaY) > 0) {
  e.preventDefault();
  const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -186,12 +190,7 @@ const ColoringPage = () => {
  return next;
  });
  }
- }, []);
-
-
- useEffect(() => {
- const container = containerRef.current;
- if (!container) return;
+ };
 
  const getDistance = (t1, t2) => {
  const dx = t2.clientX - t1.clientX;
@@ -233,12 +232,14 @@ const ColoringPage = () => {
  }
  };
 
+ container.addEventListener('wheel', handleWheel, { passive: false });
  container.addEventListener('touchstart', handleTouchStart, { passive: false });
  container.addEventListener('touchmove', handleTouchMove, { passive: false });
  container.addEventListener('touchend', handleTouchEnd);
  container.addEventListener('touchcancel', handleTouchEnd);
 
  return () => {
+ container.removeEventListener('wheel', handleWheel);
  container.removeEventListener('touchstart', handleTouchStart);
  container.removeEventListener('touchmove', handleTouchMove);
  container.removeEventListener('touchend', handleTouchEnd);
@@ -452,7 +453,7 @@ const ColoringPage = () => {
 <h2 className="coloring-header__title">{selectedPage.title}</h2>
 </div>
 
-<div className="coloring-workspace" ref={containerRef} onWheel={handleWheel}>
+<div className="coloring-workspace" ref={containerRef}>
 <div className="coloring-canvas-wrapper" ref={wrapperRef}>
  {!imageLoaded && (
 <div className="coloring-canvas-loading">
@@ -464,6 +465,7 @@ const ColoringPage = () => {
  ref={canvasRef}
  className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''}`}
  onClick={handleCanvasClick}
+ willReadFrequently={true}
  style={{
  cursor: imageLoaded ? 'crosshair' : 'wait',
  transform: `scale(${zoom})`,

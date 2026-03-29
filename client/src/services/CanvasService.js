@@ -24,6 +24,7 @@ class CanvasService {
     this.bufferCanvas = document.createElement('canvas');
     this.bufferCanvas.width = canvas.width;
     this.bufferCanvas.height = canvas.height;
+    this.bufferCanvas.willReadFrequently = true;
     this.bufferCtx = this.bufferCanvas.getContext('2d', { willReadFrequently: true });
     this.bufferCtx.fillStyle = "white";
     this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
