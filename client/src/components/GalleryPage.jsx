@@ -28,6 +28,7 @@ const GalleryPage = observer(() => {
   const [error, setError] = useState('');
   const [likingId, setLikingId] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const fetchDrawings = useCallback(async () => {
     setLoading(true);
@@ -85,6 +86,20 @@ const GalleryPage = observer(() => {
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  const handleImageClick = (drawing) => {
+    setSelectedImage(drawing);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedImage(null);
+  };
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setSelectedImage(null);
+    }
+  };
+
   return (
     <div className="gallery-page">
       <header className="gallery-header">
@@ -138,7 +153,11 @@ const GalleryPage = observer(() => {
         {!loading && !error && drawings.length > 0 && (
           <div className="gallery-feed">
             {drawings.map(drawing => (
-              <div key={drawing.id} className="gallery-card">
+              <div 
+                key={drawing.id} 
+                className="gallery-card"
+                onClick={() => handleImageClick(drawing)}
+              >
                 <div className="gallery-card__image-wrap">
                   {imageErrors[drawing.id] ? (
                     <div className="gallery-card__image-fallback">
@@ -151,6 +170,10 @@ const GalleryPage = observer(() => {
                       className="gallery-card__image"
                       loading="lazy"
                       onError={() => handleImageError(drawing.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleImageClick(drawing);
+                      }}
                     />
                   )}
                 </div>
@@ -172,6 +195,33 @@ const GalleryPage = observer(() => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {selectedImage && (
+          <div className="gallery-image-modal" onClick={handleOverlayClick}>
+            <div className="gallery-image-modal__content">
+              <button 
+                className="gallery-image-modal__close"
+                onClick={handleCloseModal}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+              <img 
+                src={`${API_URL}/api/gallery/image/${selectedImage.id}`}
+                alt={selectedImage.title}
+                className="gallery-image-modal__image"
+              />
+              <div className="gallery-image-modal__info">
+                <h3>{selectedImage.title}</h3>
+                <p>✏️ {selectedImage.author_name}</p>
+                <p>{formatDate(selectedImage.approved_at || selectedImage.created_at)}</p>
+                <div className="gallery-image-modal__likes">
+                  <span>❤️ {selectedImage.likes_count}</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
