@@ -613,6 +613,82 @@
   }
 }
 
+.profile-join-btn {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #ffcc00, #ff6699);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(255, 204, 0, 0.4);
+  }
+
+  @media (max-width: 480px) {
+    order: 10;
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+.profile-password-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.profile-password-modal {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  .profile-password-header {
+    margin-bottom: 20px;
+    text-align: center;
+
+    h3 {
+      margin: 0 0 8px 0;
+      color: #ffcc00;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+      color: #aaa;
+      font-size: 14px;
+    }
+  }
+
+  .profile-password-body {
+    .profile-input {
+      margin-bottom: 16px;
+    }
+  }
+
+  .profile-password-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+}
+
 .profile-logout {
   margin-top: 20px;
   display: flex;
