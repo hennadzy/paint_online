@@ -47,6 +47,10 @@ class AdminState {
   galleryPendingLoading = false;
   galleryPendingError = null;
 
+  galleryApproved = [];
+  galleryApprovedLoading = false;
+  galleryApprovedError = null;
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -57,6 +61,8 @@ class AdminState {
       this.fetchUsers();
     } else if (tab === 'rooms') {
       this.fetchRooms();
+    } else if (tab === 'gallery') {
+      this.fetchGalleryAll();
     }
   }
 
@@ -490,12 +496,34 @@ class AdminState {
     }
   }
 
+  async fetchGalleryApproved() {
+    this.galleryApprovedLoading = true;
+    this.galleryApprovedError = null;
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/gallery/approved`);
+      runInAction(() => {
+        this.galleryApproved = response.data.drawings || [];
+        this.galleryApprovedLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.galleryApprovedError = error.response?.data?.error || 'Ошибка загрузки';
+        this.galleryApprovedLoading = false;
+      });
+    }
+  }
+
+  async fetchGalleryAll() {
+    await Promise.all([this.fetchGalleryPending(), this.fetchGalleryApproved()]);
+  }
+
   async approveGalleryDrawing(id) {
     try {
       await axios.put(`${API_URL}/api/admin/gallery/${id}/approve`);
       runInAction(() => {
         this.galleryPending = this.galleryPending.filter(d => d.id !== id);
       });
+      await this.fetchGalleryApproved();
       return { success: true };
     } catch (error) {
       return {
@@ -510,6 +538,7 @@ class AdminState {
       await axios.put(`${API_URL}/api/admin/gallery/${id}/reject`, { reason });
       runInAction(() => {
         this.galleryPending = this.galleryPending.filter(d => d.id !== id);
+        this.galleryApproved = this.galleryApproved.filter(d => d.id !== id);
       });
       return { success: true };
     } catch (error) {
@@ -522,12 +551,12 @@ class AdminState {
 
   async renameGalleryDrawing(id, title) {
     try {
-      await axios.put(`${API_URL}/api/admin/gallery/${id}/rename`, { title });
+      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/rename`, { title });
+      const newTitle = response.data.drawing?.title ?? title;
       runInAction(() => {
-        const idx = this.galleryPending.findIndex(d => d.id === id);
-        if (idx !== -1) {
-          this.galleryPending[idx] = { ...this.galleryPending[idx], title };
-        }
+        const apply = (arr) => arr.map(d => (d.id === id ? { ...d, title: newTitle } : d));
+        this.galleryPending = apply(this.galleryPending);
+        this.galleryApproved = apply(this.galleryApproved);
       });
       return { success: true };
     } catch (error) {
@@ -543,6 +572,7 @@ class AdminState {
       await axios.delete(`${API_URL}/api/admin/gallery/${id}`);
       runInAction(() => {
         this.galleryPending = this.galleryPending.filter(d => d.id !== id);
+        this.galleryApproved = this.galleryApproved.filter(d => d.id !== id);
       });
       return { success: true };
     } catch (error) {

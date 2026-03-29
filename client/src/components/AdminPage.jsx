@@ -1325,10 +1325,10 @@ const AdminPage = observer(() => {
             </h3>
             <button
               className="admin-btn admin-btn--secondary"
-              onClick={() => adminState.fetchGalleryPending()}
+              onClick={() => adminState.fetchGalleryAll()}
               style={{ marginLeft: 'auto' }}
             >
-              Обновить
+              Обновить всё
             </button>
           </div>
 
@@ -1496,6 +1496,189 @@ const AdminPage = observer(() => {
           )}
         </div>
 
+        <div
+          className="admin-gallery-section-divider"
+          style={{
+            margin: '28px 0 24px',
+            border: 'none',
+            borderTop: '1px solid rgba(255, 215, 0, 0.25)',
+            background: 'transparent',
+          }}
+          role="separator"
+        />
+
+        <div className="admin-table-container">
+          <div className="admin-toolbar">
+            <h3 style={{ color: '#ffd700', margin: 0 }}>
+              🎨 В галерее ({adminState.galleryApproved.length})
+            </h3>
+            <button
+              type="button"
+              className="admin-btn admin-btn--secondary"
+              onClick={() => adminState.fetchGalleryApproved()}
+              style={{ marginLeft: 'auto' }}
+            >
+              Обновить список
+            </button>
+          </div>
+
+          {adminState.galleryApprovedError && (
+            <div className="admin-form__error" style={{ margin: '12px 20px' }}>
+              {adminState.galleryApprovedError}
+            </div>
+          )}
+
+          {adminState.galleryApprovedLoading ? (
+            <div className="admin-loading">
+              <div className="admin-loading__spinner" />
+            </div>
+          ) : adminState.galleryApproved.length === 0 ? (
+            <div className="admin-empty">
+              <div className="admin-empty__text">Нет опубликованных работ</div>
+            </div>
+          ) : (
+            <div className="admin-coloring-list">
+              {adminState.galleryApproved.map(drawing => (
+                <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
+                  <div
+                    className="admin-coloring-item__preview"
+                    style={{ cursor: 'pointer', flexShrink: 0 }}
+                    onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
+                    title="Нажмите для просмотра"
+                  >
+                    <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
+                    <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
+                      👁 Просмотр
+                    </div>
+                  </div>
+
+                  <div className="admin-coloring-item__info" style={{ flex: 1, minWidth: 0 }}>
+                    {galleryRenameId === drawing.id ? (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          value={galleryRenameTitle}
+                          onChange={(e) => { setGalleryRenameTitle(e.target.value); setGalleryRenameError(''); }}
+                          maxLength={20}
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ffd700',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            width: '160px',
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRename(drawing.id);
+                            if (e.key === 'Escape') { setGalleryRenameId(null); setGalleryRenameTitle(''); }
+                          }}
+                        />
+                        <button type="button" className="admin-btn admin-btn--primary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleRename(drawing.id)}>
+                          ✓
+                        </button>
+                        <button type="button" className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryRenameId(null); setGalleryRenameTitle(''); setGalleryRenameError(''); }}>
+                          ✕
+                        </button>
+                        {galleryRenameError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryRenameError}</span>}
+                      </div>
+                    ) : (
+                      <div className="admin-coloring-item__title">{drawing.title}</div>
+                    )}
+                    <div className="admin-coloring-item__meta" style={{ marginTop: '4px' }}>
+                      <span style={{ fontSize: '13px', color: '#aaa' }}>✏️ {drawing.author_name}</span>
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '10px' }}>
+                        ❤️ {drawing.likes_count ?? 0}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px', display: 'block', marginTop: '4px' }}>
+                        Опубликовано:{' '}
+                        {drawing.approved_at ? new Date(Number(drawing.approved_at)).toLocaleString('ru-RU') : '—'}
+                      </span>
+                    </div>
+
+                    {galleryRejectId === drawing.id && (
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={galleryRejectReason}
+                          onChange={(e) => setGalleryRejectReason(e.target.value)}
+                          placeholder="Причина снятия с публикации (необязательно)"
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ff6699',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '13px',
+                            outline: 'none',
+                            width: '220px',
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleReject();
+                            if (e.key === 'Escape') { setGalleryRejectId(null); setGalleryRejectReason(''); }
+                          }}
+                        />
+                        <button type="button" className="admin-btn admin-btn--danger" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={handleReject}>
+                          Снять с публикации
+                        </button>
+                        <button type="button" className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryRejectId(null); setGalleryRejectReason(''); }}>
+                          Отмена
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="admin-actions" style={{ flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      className="admin-icon-btn"
+                      onClick={() => {
+                        setGalleryRenameId(drawing.id);
+                        setGalleryRenameTitle(drawing.title);
+                        setGalleryRenameError('');
+                      }}
+                      title="Переименовать"
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={() => {
+                        if (galleryRejectId === drawing.id) {
+                          setGalleryRejectId(null);
+                          setGalleryRejectReason('');
+                        } else {
+                          setGalleryRejectId(drawing.id);
+                          setGalleryRejectReason('');
+                        }
+                      }}
+                      title="Снять с публикации"
+                      style={{ color: '#ff9500' }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={() => handleDelete(drawing.id, drawing.title)}
+                      title="Удалить"
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Full-size preview modal */}
         {galleryPreviewId && (
           <div
@@ -1591,7 +1774,6 @@ const AdminPage = observer(() => {
           className={`admin-nav__item ${adminState.activeTab === 'gallery' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('gallery');
-            adminState.fetchGalleryPending();
           }}
         >
           🖼️ Галерея

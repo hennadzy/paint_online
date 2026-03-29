@@ -32,6 +32,12 @@ body.modal-open {
   background-color: $background-color !important;
   display: flex;
   flex-direction: column;
+
+  &:has(.main-content--gallery) {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #1a1a2e !important;
+  }
 }
 
 .top-menu {
@@ -343,6 +349,21 @@ body.modal-open {
     height: 100vh;
     overflow: auto;
   }
+
+  &--gallery {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin: 0 !important;
+    width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #1a1a2e;
+    box-sizing: border-box;
+  }
 }
 
 @media (min-width: 769px) {
@@ -365,6 +386,16 @@ body.modal-open {
       min-height: 100vh !important;
       overflow: auto !important;
     }
+
+    &--gallery {
+      padding-top: 0 !important;
+      padding-left: 0 !important;
+      width: 100vw !important;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      flex: 1;
+      background: #1a1a2e;
+    }
   }
 }
 
@@ -379,6 +410,16 @@ body.modal-open {
       height: 100vh !important;
       min-height: 100vh !important;
       overflow: auto !important;
+    }
+
+    &--gallery {
+      padding-top: 0 !important;
+      padding-left: 0 !important;
+      width: 100vw !important;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      flex: 1;
+      background: #1a1a2e;
     }
   }
 
@@ -760,6 +801,11 @@ body.modal-open {
     padding-left: 60px;
   }
 
+  .main-content--gallery {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+  }
+
   .top-menu__actions .toolbar__btn {
     width: 28px;
     height: 28px;
@@ -813,6 +859,17 @@ body.modal-open {
     align-items: flex-start;
     justify-content: center;
     box-sizing: border-box;
+  }
+
+  .main-content--gallery {
+    margin-left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    padding: 0 !important;
+    background: #1a1a2e;
   }
 
   .main-content .canvas {

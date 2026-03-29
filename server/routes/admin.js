@@ -752,6 +752,31 @@ router.get('/gallery/pending', async (req, res) => {
   }
 });
 
+// GET /api/admin/gallery/approved — published works (same moderation actions as pending, minus approve)
+router.get('/gallery/approved', async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT
+         gd.id,
+         gd.title,
+         gd.status,
+         gd.likes_count,
+         gd.created_at,
+         gd.approved_at,
+         u.username AS author_name,
+         u.id AS author_id
+       FROM gallery_drawings gd
+       JOIN users u ON u.id = gd.user_id
+       WHERE gd.status = 'approved'
+       ORDER BY gd.approved_at DESC NULLS LAST, gd.created_at DESC`
+    );
+    res.json({ drawings: result.rows });
+  } catch (error) {
+    console.error('Admin get approved gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/admin/gallery/image/:id - serve gallery image for admin (any status)
 router.get('/gallery/image/:id', async (req, res) => {
   try {

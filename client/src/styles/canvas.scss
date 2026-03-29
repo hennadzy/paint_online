@@ -283,7 +283,7 @@ button:active {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 12px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -297,7 +297,7 @@ button:active {
 
   .canvas.canvas--has-chat {
     top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
-    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 40px)) !important;
+    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 28px)) !important;
   }
 
   .canvas-container {
@@ -330,8 +330,8 @@ button:active {
   .canvas-layout:not(.has-chat) {
     justify-content: flex-start;
     align-items: center;
-    padding-top: 4px;
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 12px));
+    padding-top: 0;
+    padding-bottom: calc(2px + env(safe-area-inset-bottom, 6px));
     overflow-y: auto;
   }
 
@@ -362,8 +362,8 @@ button:active {
     align-items: flex-start;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 4px;
-    padding-bottom: 10px;
+    padding: 2px;
+    padding-bottom: 6px;
     box-sizing: border-box;
 
     scrollbar-width: none;
@@ -381,7 +381,7 @@ button:active {
     min-width: 100%;
     height: max-content;
     min-height: 100%;
-    padding: 8px;
+    padding: 4px;
   }
 
   .canvas-wrapper {
@@ -456,7 +456,7 @@ button:active {
 
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 12px));
+    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px));
   }
 
   .canvas-layout.has-chat .canvas-container {
