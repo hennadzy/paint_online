@@ -1,25 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
-import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import canvasState from '../store/canvasState';
+import { useNavigate } from 'react-router-dom';
 import RoomActionsDropdown from './RoomActionsDropdown';
-import CreateRoomModal from './CreateRoomModal';
 import PersonalMessagesModal from './PersonalMessagesModal';
 import { API_URL } from '../store/canvasState';
 import '../styles/profile.scss';
-
-const axiosInstance = axios.create({ timeout: 10000 });
-axiosInstance.interceptors.request.use((config) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (_) {}
-  return config;
-});
 
 const EyeIcon = ({ visible, onClick }) => (
   <button
@@ -47,7 +34,6 @@ const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 
 const ProfilePage = observer(() => {
  const navigate = useNavigate();
- const location = useLocation();
  const [editMode, setEditMode] = useState(false);
  const [username, setUsername] = useState('');
  const [currentPassword, setCurrentPassword] = useState('');
@@ -58,11 +44,7 @@ const ProfilePage = observer(() => {
  const [avatarFile, setAvatarFile] = useState(null);
  const [previewUrl, setPreviewUrl] = useState(null);
  const [uploadError, setUploadError] = useState('');
- const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
- const [passwordPrompt, setPasswordPrompt] = useState(null);
- const [roomPassword, setRoomPassword] = useState('');
- const [joinError, setJoinError] = useState('');
  const fileInputRef = useRef(null);
  const [fromRoom, setFromRoom] = useState(null);
 
@@ -140,51 +122,8 @@ useEffect(() => {
  }
  };
 
- const handleJoinRoom = async (room) => {
-   if (room.isPublic) {
-     navigate('/' + room.id);
-     return;
-   }
-
-   const savedPassword = localStorage.getItem(`room_password_verified_${room.id}`);
-   if (savedPassword) {
-     navigate('/' + room.id);
-     return;
-   }
-
-   setPasswordPrompt({ id: room.id, name: room.name });
-   setJoinError('');
- };
-
- const verifyPasswordAndJoin = async () => {
-   if (!roomPassword.trim()) {
-     setJoinError('Введите пароль');
-     return;
-   }
-
-   try {
-     const response = await axiosInstance.post(
-       `${API_URL}/rooms/${passwordPrompt.id}/verify-password`,
-       { password: roomPassword }
-     );
-
-     if (response.data.valid) {
-       localStorage.setItem(`temp_room_password_${passwordPrompt.id}`, roomPassword);
-       localStorage.setItem(`room_password_verified_${passwordPrompt.id}`, 'true');
-       setPasswordPrompt(null);
-       setRoomPassword('');
-       setJoinError('');
-       navigate('/' + passwordPrompt.id);
-     } else {
-       setJoinError('Неверный пароль');
-     }
-   } catch (error) {
-     if (error.response?.status === 401) {
-       setJoinError('Неверный пароль');
-     } else {
-       setJoinError('Ошибка проверки пароля');
-     }
-   }
+ const handleCreateRoom = () => {
+   canvasState.setShowRoomInterface(true);
  };
 
   if (!userState.user) return (
@@ -327,7 +266,7 @@ useEffect(() => {
             <div className="profile-actions">
               <button
                 className="profile-action-btn"
-                onClick={() => setShowCreateRoomModal(true)}
+                onClick={handleCreateRoom}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -356,24 +295,8 @@ useEffect(() => {
                   {userState.userRooms.map(room => (
                     <li key={room.id} className="profile-list-item">
                       <div className="profile-list-item-with-actions">
-                        <a 
-                          href={`/${room.id}`} 
-                          className="room-link"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleJoinRoom(room);
-                          }}
-                        >
-                          {room.name}
-                        </a>
-                        <span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
-                        <button
-                          className="profile-join-btn"
-                          onClick={() => handleJoinRoom(room)}
-                          title={room.isPublic ? 'Войти в комнату' : 'Войти (может потребоваться пароль)'}
-                        >
-                          Войти
-                        </button>
+                        <a href={`/${room.id}`} className="room-link">{room.name}</a>
+<span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
                         <RoomActionsDropdown
                           room={room}
                           isCreator={true}
@@ -396,26 +319,8 @@ useEffect(() => {
                 <ul className="profile-list">
                   {userState.activityRooms.map(room => (
                     <li key={room.id} className="profile-list-item">
-                      <div className="profile-list-item-with-actions">
-                        <a 
-                          href={`/${room.id}`} 
-                          className="room-link"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleJoinRoom(room);
-                          }}
-                        >
-                          {room.name}
-                        </a>
-                        <span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
-                        <button
-                          className="profile-join-btn"
-                          onClick={() => handleJoinRoom(room)}
-                          title={room.isPublic ? 'Войти в комнату' : 'Войти (может потребоваться пароль)'}
-                        >
-                          Войти
-                        </button>
-                      </div>
+                      <a href={`/${room.id}`} className="room-link">{room.name}</a>
+                      <span className={`room-badge ${room.isPublic ? 'room-badge-public' : 'room-badge-private'}`}>{room.isPublic ? 'публичная' : 'приватная'}</span>
                     </li>
                   ))}
                 </ul>
@@ -459,48 +364,6 @@ useEffect(() => {
           </div>
         </div>
       </div>
-
-      {passwordPrompt && (
-        <div className="profile-password-overlay" onClick={() => { setPasswordPrompt(null); setRoomPassword(''); setJoinError(''); }}>
-          <div className="profile-password-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-password-header">
-              <h3>Вход в комнату "{passwordPrompt.name}"</h3>
-              <p>Эта комната защищена паролем</p>
-            </div>
-            <div className="profile-password-body">
-              {joinError && <div className="profile-error">{joinError}</div>}
-              <input
-                type="password"
-                className="profile-input"
-                placeholder="Введите пароль"
-                value={roomPassword}
-                onChange={(e) => { setRoomPassword(e.target.value); setJoinError(''); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') verifyPasswordAndJoin();
-                  if (e.key === 'Escape') { setPasswordPrompt(null); setRoomPassword(''); setJoinError(''); }
-                }}
-                autoFocus
-              />
-              <div className="profile-password-actions">
-                <button className="profile-btn profile-btn-primary" onClick={verifyPasswordAndJoin}>
-                  Войти
-                </button>
-                <button 
-                  className="profile-btn profile-btn-secondary" 
-                  onClick={() => { setPasswordPrompt(null); setRoomPassword(''); setJoinError(''); }}
-                >
-                  Отмена
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <CreateRoomModal
-        isOpen={showCreateRoomModal}
-        onClose={() => setShowCreateRoomModal(false)}
-      />
 
       <PersonalMessagesModal
         isOpen={showPersonalMessagesModal}
