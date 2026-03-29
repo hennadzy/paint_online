@@ -35,24 +35,6 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
     const userId = req.user ? req.user.userId : null;
 
     const result = await pgPool.query(
-      `SELECT
-         gd.id,
-         gd.title,
-         gd.likes_count,
-         gd.created_at,
-         gd.approved_at,
-         u.username AS author_name,
-         u.id AS author_id
-         ${userId ? ', EXISTS(SELECT 1 FROM gallery_likes gl WHERE gl.drawing_id = gd.id AND gl.user_id = $2) AS user_liked' : ', false AS user_liked'}
-       FROM gallery_drawings gd
-       JOIN users u ON u.id = gd.user_id
-       WHERE gd.status = 'approved'
-       ORDER BY gd.likes_count DESC, gd.approved_at DESC`,
-      userId ? [null, userId] : []
-    );
-
-    // Fix: remove the null param for non-authenticated
-    const result2 = await pgPool.query(
       userId
         ? `SELECT
              gd.id,
@@ -83,7 +65,7 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
       userId ? [userId] : []
     );
 
-    res.json({ drawings: result2.rows });
+    res.json({ drawings: result.rows });
   } catch (error) {
     console.error('Get gallery error:', error);
     res.status(500).json({ error: 'Server error' });

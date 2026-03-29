@@ -69,7 +69,7 @@ const App = observer(() => {
         if (fallback) fallback.hidden = true;
 
         const path = location.pathname;
-        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404', '/admin', '/coloring'];
+        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404', '/admin', '/coloring', '/gallery'];
         if (allowedClientPaths.includes(path)) return;
 
         const segments = path.slice(1).split('/').filter(Boolean);

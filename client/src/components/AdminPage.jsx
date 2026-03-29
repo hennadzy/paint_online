@@ -1,9 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import adminState from '../store/adminState';
 import userState from '../store/userState';
 import '../styles/admin.scss';
+
+const getAdminApiBase = () => (window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
+  : 'https://paint-online-back.onrender.com');
+
+/** Admin gallery images require Authorization; a plain img URL cannot send the Bearer token. */
+function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, onImageClick }) {
+  const [src, setSrc] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let objUrl = null;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setFailed(true);
+      return () => {};
+    }
+    const API_BASE = getAdminApiBase();
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/admin/gallery/image/${drawingId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob',
+        });
+        if (cancelled) return;
+        objUrl = URL.createObjectURL(res.data);
+        setSrc(objUrl);
+        setFailed(false);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (objUrl) URL.revokeObjectURL(objUrl);
+    };
+  }, [drawingId]);
+
+  const wrapStyle = {
+    minHeight: 72,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#888',
+    fontSize: 11,
+    ...wrapperStyle,
+  };
+  if (failed) {
+    return <div className={className} style={wrapStyle}>Не удалось загрузить</div>;
+  }
+  if (!src) {
+    return <div className={className} style={wrapStyle}>…</div>;
+  }
+  return <img src={src} alt={alt} className={className} style={imgStyle} onClick={onImageClick} />;
+}
 
 const DashboardIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1219,10 +1276,6 @@ const AdminPage = observer(() => {
   };
 
   const renderGallery = () => {
-    const API_BASE = window.location.hostname === 'localhost'
-      ? 'http://localhost:5000'
-      : 'https://paint-online-back.onrender.com';
-
     const handleApprove = async (id) => {
       setGalleryActionError('');
       const result = await adminState.approveGalleryDrawing(id);
@@ -1304,11 +1357,7 @@ const AdminPage = observer(() => {
                     onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
                     title="Нажмите для просмотра"
                   >
-                    <img
-                      src={`${API_BASE}/api/admin/gallery/image/${drawing.id}`}
-                      alt={drawing.title}
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
+                    <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
                       👁 Просмотр
                     </div>
@@ -1457,11 +1506,17 @@ const AdminPage = observer(() => {
             }}
             onClick={() => setGalleryPreviewId(null)}
           >
-            <img
-              src={`${API_BASE}/api/admin/gallery/image/${galleryPreviewId}`}
+            <AdminGalleryImage
+              drawingId={galleryPreviewId}
               alt="preview"
-              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
-              onClick={(e) => e.stopPropagation()}
+              wrapperStyle={{ minHeight: 120 }}
+              imgStyle={{
+                maxWidth: '90vw',
+                maxHeight: '85vh',
+                borderRadius: '12px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+              }}
+              onImageClick={(e) => e.stopPropagation()}
             />
             <button
               style={{
