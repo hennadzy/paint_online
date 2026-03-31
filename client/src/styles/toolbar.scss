@@ -370,8 +370,8 @@
 
       &:hover::before,
       &.active::before {
-        opacity: 1;
-        animation: glowing 10s linear infinite !important;
+        opacity: 0;
+        animation: none !important;
       }
 
       &.click-animation::before {
