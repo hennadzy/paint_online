@@ -358,6 +358,10 @@
 
 @media (max-width: 768px) {
   .toolbar__btn {
+    // Добавляем видимый фон и рамку по умолчанию
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
     .tooltip {
       display: none !important;
     }
@@ -370,7 +374,7 @@
 
       &:hover::before,
       &.active::before {
-        opacity: 0;
+        opacity: 1;
       }
 
       &.click-animation::before {
@@ -382,6 +386,17 @@
         opacity: 0;
         transition: opacity 0.3s ease-in-out !important;
         animation: none !important;
+      }
+
+      // Исправляем проблему с фокусом на мобильных - сохраняем фон
+      &:focus {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      &:active {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
     }
   }

@@ -425,9 +425,23 @@ body.modal-open {
 
   .top-menu__actions .toolbar__btn {
     overflow: hidden;
+    // Добавляем видимый фон и рамку по умолчанию
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 
     .tooltip {
       display: none !important;
+    }
+
+    // Исправляем проблему с фокусом на мобильных - сохраняем фон
+    &:focus {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    &:active {
+      background-color: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
   }
 
