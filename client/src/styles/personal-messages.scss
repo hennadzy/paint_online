@@ -65,11 +65,11 @@
     }
 
     .message.sent .message-content {
-      background-color: #3a3a3a;
+      background-color: #4a4a4a;
     }
 
     .message.received .message-content {
-      background-color: #444;
+      background-color: #505050;
     }
 
     .message-time {
@@ -321,7 +321,7 @@
     align-self: flex-end;
 
     .message-content {
-      background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
+      background: linear-gradient(135deg, #b8a000 0%, #b34d7a 100%);
       color: white;
       border-radius: 12px 12px 2px 12px;
     }
