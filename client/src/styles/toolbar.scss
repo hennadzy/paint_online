@@ -358,76 +358,42 @@
 
 @media (max-width: 768px) {
   .toolbar__btn {
-    // Добавляем видимый фон и рамку по умолчанию
+    // Видимый фон и рамка по умолчанию
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 
     .tooltip {
       display: none !important;
     }
 
-    // Стили для инструментов рисования (eraser, text, brush и т.д.)
-    &.brush, &.rect, &.circle, &.eraser, &.line, &.text, &.fill, &.pipette, &.polygon, &.arrow {
-      &:hover {
-        transform: none;
-        box-shadow: none;
-      }
-
-      // Анимация градиента при активном инструменте
-      &.active::before {
-        opacity: 1;
-        animation: glowing 10s linear infinite;
-      }
-
-      &:not(.active)::before {
-        opacity: 0;
-        animation: none;
-      }
-
-      &:focus {
-        background-color: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      &:active {
-        background-color: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
+    // Градиент показывается при active (для инструментов) или click-animation (для действий)
+    &.active::before,
+    &.click-animation::before {
+      opacity: 1;
+      animation: glowing 10s linear infinite;
     }
 
-    &:not(.brush):not(.rect):not(.circle):not(.eraser):not(.line):not(.text):not(.fill):not(.pipette):not(.polygon):not(.arrow) {
-      &:hover {
-        transform: none;
-        box-shadow: none;
-      }
+    // Градиент скрыт когда нет active или click-animation
+    &:not(.active):not(.click-animation)::before {
+      opacity: 0;
+      animation: none;
+    }
 
-      &:hover::before,
-      &.active::before {
-        opacity: 1;
-      }
+    // Анимация пульсации при клике
+    &.click-animation {
+      animation: clickPulse 1s ease-out;
+    }
 
-      &.click-animation::before {
-        opacity: 1 !important;
-        animation: glowing 10s linear infinite, clickPulse 1s ease-out !important;
-      }
+    // Фокус и активное состояние сохраняют видимость
+    &:focus {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
 
-      // Сбрасываем градиент когда нет анимации клика
-      &:not(.click-animation)::before {
-        opacity: 0 !important;
-        transition: opacity 0.3s ease-in-out !important;
-        animation: none !important;
-      }
-
-      // Исправляем проблему с фокусом на мобильных - сохраняем фон
-      &:focus {
-        background-color: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      &:active {
-        background-color: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
+    &:active {
+      background-color: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
   }
 
