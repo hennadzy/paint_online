@@ -366,6 +366,35 @@
       display: none !important;
     }
 
+    // Стили для инструментов рисования (eraser, text, brush и т.д.)
+    &.brush, &.rect, &.circle, &.eraser, &.line, &.text, &.fill, &.pipette, &.polygon, &.arrow {
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      // Анимация градиента при активном инструменте
+      &.active::before {
+        opacity: 1;
+        animation: glowing 10s linear infinite;
+      }
+
+      &:not(.active)::before {
+        opacity: 0;
+        animation: none;
+      }
+
+      &:focus {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      &:active {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+    }
+
     &:not(.brush):not(.rect):not(.circle):not(.eraser):not(.line):not(.text):not(.fill):not(.pipette):not(.polygon):not(.arrow) {
       &:hover {
         transform: none;
@@ -378,12 +407,13 @@
       }
 
       &.click-animation::before {
-        opacity: 1;
+        opacity: 1 !important;
         animation: glowing 10s linear infinite, clickPulse 1s ease-out !important;
       }
 
-      &::before {
-        opacity: 0;
+      // Сбрасываем градиент когда нет анимации клика
+      &:not(.click-animation)::before {
+        opacity: 0 !important;
         transition: opacity 0.3s ease-in-out !important;
         animation: none !important;
       }

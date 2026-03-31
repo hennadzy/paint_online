@@ -433,6 +433,19 @@ body.modal-open {
       display: none !important;
     }
 
+    // Анимация клика - показываем градиент
+    &.click-animation::before {
+      opacity: 1 !important;
+      animation: glowing 10s linear infinite, clickPulse 1s ease-out !important;
+    }
+
+    // Сбрасываем градиент когда нет анимации клика
+    &:not(.click-animation)::before {
+      opacity: 0 !important;
+      transition: opacity 0.3s ease-in-out !important;
+      animation: none !important;
+    }
+
     // Исправляем проблему с фокусом на мобильных - сохраняем фон
     &:focus {
       background-color: rgba(255, 255, 255, 0.1);
