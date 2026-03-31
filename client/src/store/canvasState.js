@@ -19,7 +19,7 @@ class CanvasState {
   isDrawing = false;
   users = []; 
   chatMessages = [];
-  modalOpen = false;
+  modalOpen = false; 
   showRoomInterface = false;
   showAboutModal = false;
   showGamesModal = false;
