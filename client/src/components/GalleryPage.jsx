@@ -184,7 +184,7 @@ const GalleryPage = observer(() => {
                   <div className="gallery-card__footer">
                     <button
                       className={`gallery-like-btn ${drawing.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
-                      onClick={() => userState.isAuthenticated && handleLike(drawing.id)}
+                      onClick={(e) => { e.stopPropagation(); userState.isAuthenticated && handleLike(drawing.id); }}
                       disabled={likingId === drawing.id || !userState.isAuthenticated}
                       title={userState.isAuthenticated ? (drawing.user_liked ? 'Убрать лайк' : 'Поставить лайк') : 'Войдите, чтобы ставить лайки'}
                     >

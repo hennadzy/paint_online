@@ -373,6 +373,11 @@
         opacity: 0;
         animation: none;
       }
+
+      &.click-animation::before {
+        opacity: 1;
+        animation: glowing 10s linear infinite, clickPulse 1s ease-out;
+      }
     }
   }
 
