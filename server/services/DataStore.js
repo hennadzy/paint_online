@@ -196,7 +196,7 @@ async deleteRoom(roomId) {
  s.username || 'unknown',
  Date.now()
  ]);
- const placeholders = values.map((_, i) => `($$i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+ const placeholders = values.map((_, i) => `(${i*4+1}, ${i*4+2}, ${i*4+3}, ${i*4+4})`).join(',');
  const flatValues = values.flat();
  await pgPool.query(
  `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,

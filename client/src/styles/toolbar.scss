@@ -52,6 +52,11 @@
     animation: glowing 10s linear infinite;
   }
 
+  &.click-animation::before {
+    opacity: 1;
+    animation: glowing 10s linear infinite, clickPulse 1s ease-out;
+  }
+
   .icon {
     position: relative;
     width:24px;
@@ -491,6 +496,21 @@ canvas.eraser-cursor {
   }
   100% {
     background-position: 0% 0%;
+  }
+}
+
+@keyframes clickPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 10px rgba(255, 204, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
   }
 }
 

@@ -358,8 +358,8 @@ button:active {
     width: 100%;
     position: relative;
     display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     padding: 2px;
@@ -377,7 +377,7 @@ button:active {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: max-content;
+    width: 100%;
     min-width: 100%;
     height: max-content;
     min-height: 100%;

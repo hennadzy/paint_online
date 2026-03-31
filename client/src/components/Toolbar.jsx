@@ -16,6 +16,7 @@ import Arrow from "../tools/Arrow";
 
 const Toolbar = observer(() => {
   const [activeGroup, setActiveGroup] = useState(null);
+  const [clickAnimation, setClickAnimation] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -90,6 +91,12 @@ const Toolbar = observer(() => {
     </button>
   );
 
+  const handleActionClick = (action, buttonId) => {
+    action();
+    setClickAnimation(buttonId);
+    setTimeout(() => setClickAnimation(null), 1000);
+  };
+
   return (
     <div className="toolbar" data-nosnippet>
       <div className="toolbar__group">
@@ -153,8 +160,8 @@ const Toolbar = observer(() => {
 
       <button
         type="button"
-        className="toolbar__btn"
-        onClick={() => canvasState.toggleGrid()}
+        className={`toolbar__btn ${clickAnimation === "grid" ? "click-animation" : ""}`}
+        onClick={() => handleActionClick(() => canvasState.toggleGrid(), "grid")}
         onMouseDown={(e) => e.target.blur()}
         title="Сетка"
       >
@@ -164,8 +171,8 @@ const Toolbar = observer(() => {
 
       <button
         type="button"
-        className="toolbar__btn"
-        onClick={() => canvasState.clearCanvas()}
+        className={`toolbar__btn ${clickAnimation === "clear" ? "click-animation" : ""}`}
+        onClick={() => handleActionClick(() => canvasState.clearCanvas(), "clear")}
         onMouseDown={(e) => e.target.blur()}
         title="Очистить холст"
       >
@@ -175,8 +182,8 @@ const Toolbar = observer(() => {
 
       <button
         type="button"
-        className="toolbar__btn zoom-btn"
-        onClick={() => canvasState.zoomOut()}
+        className={`toolbar__btn zoom-btn ${clickAnimation === "zoomOut" ? "click-animation" : ""}`}
+        onClick={() => handleActionClick(() => canvasState.zoomOut(), "zoomOut")}
         onMouseDown={(e) => e.target.blur()}
         title="Уменьшить (Ctrl+-)"
       >
@@ -186,8 +193,8 @@ const Toolbar = observer(() => {
 
       <button
         type="button"
-        className="toolbar__btn zoom-btn"
-        onClick={() => canvasState.zoomIn()}
+        className={`toolbar__btn zoom-btn ${clickAnimation === "zoomIn" ? "click-animation" : ""}`}
+        onClick={() => handleActionClick(() => canvasState.zoomIn(), "zoomIn")}
         onMouseDown={(e) => e.target.blur()}
         title="Увеличить (Ctrl++)"
       >
