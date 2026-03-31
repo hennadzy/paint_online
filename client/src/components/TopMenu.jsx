@@ -20,7 +20,6 @@ const TopMenu = observer(() => {
   const fileInputKey = useRef(0);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [clickAnimation, setClickAnimation] = useState(null);
-  const [clickedButtons, setClickedButtons] = useState(new Set());
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState('drawing');
@@ -212,7 +211,6 @@ const TopMenu = observer(() => {
  const handleActionClick = useCallback((action, buttonId) => {
    action();
    setClickAnimation(buttonId);
-   setClickedButtons(prev => new Set(prev).add(buttonId));
    setTimeout(() => setClickAnimation(null), 1000);
  }, []);
 
@@ -260,23 +258,23 @@ const TopMenu = observer(() => {
     <>
       <div className="top-menu" data-nosnippet>
         <div className="top-menu__actions">
-          <button type="button" className={`toolbar__btn ${clickAnimation === "undo" ? "click-animation" : ""} ${clickedButtons.has("undo") ? "clicked" : ""}`} onClick={() => handleActionClick(() => canvasState.undo(), "undo")} onMouseDown={(e) => e.target.blur()} title="Отменить (Ctrl+Z)">
+          <button type="button" className={`toolbar__btn ${clickAnimation === "undo" ? "click-animation" : ""}`} onClick={() => handleActionClick(() => canvasState.undo(), "undo")} onMouseDown={(e) => e.target.blur()} title="Отменить (Ctrl+Z)">
             <span className="icon undo"></span>
             <span className="tooltip">Отменить (Ctrl+Z)</span>
           </button>
-          <button type="button" className={`toolbar__btn ${clickAnimation === "redo" ? "click-animation" : ""} ${clickedButtons.has("redo") ? "clicked" : ""}`} onClick={() => handleActionClick(() => canvasState.redo(), "redo")} onMouseDown={(e) => e.target.blur()} title="Повторить (Ctrl+Y)">
+          <button type="button" className={`toolbar__btn ${clickAnimation === "redo" ? "click-animation" : ""}`} onClick={() => handleActionClick(() => canvasState.redo(), "redo")} onMouseDown={(e) => e.target.blur()} title="Повторить (Ctrl+Y)">
             <span className="icon redo"></span>
             <span className="tooltip">Повторить (Ctrl+Y)</span>
           </button>
 
-          <button type="button" className={`toolbar__btn ${clickAnimation === "save" ? "click-animation" : ""} ${clickedButtons.has("save") ? "clicked" : ""}`} onClick={() => handleActionClick(openExportModal, "save")} onMouseDown={(e) => e.target.blur()} title="Сохранить">
+          <button type="button" className={`toolbar__btn ${clickAnimation === "save" ? "click-animation" : ""}`} onClick={() => handleActionClick(openExportModal, "save")} onMouseDown={(e) => e.target.blur()} title="Сохранить">
             <span className="icon save"></span>
             <span className="tooltip">Сохранить</span>
           </button>
 
           <button
             type="button"
-            className={`toolbar__btn ${clickAnimation === "load" ? "click-animation" : ""} ${clickedButtons.has("load") ? "clicked" : ""}`}
+            className={`toolbar__btn ${clickAnimation === "load" ? "click-animation" : ""}`}
             onClick={() => handleActionClick(handleUploadButtonClick, "load")}
             onMouseDown={(e) => e.target.blur()}
             title="Загрузить картинку"
@@ -285,7 +283,7 @@ const TopMenu = observer(() => {
             <span className="tooltip">Загрузить картинку</span>
           </button>
 
-          <button type="button" className={`toolbar__btn ${clickAnimation === "share" ? "click-animation" : ""} ${clickedButtons.has("share") ? "clicked" : ""}`} onClick={() => handleActionClick(handleShareImage, "share")} onMouseDown={(e) => e.target.blur()} title="Поделиться рисунком">
+          <button type="button" className={`toolbar__btn ${clickAnimation === "share" ? "click-animation" : ""}`} onClick={() => handleActionClick(handleShareImage, "share")} onMouseDown={(e) => e.target.blur()} title="Поделиться рисунком">
             <span className="icon share"></span>
             <span className="tooltip">Поделиться</span>
           </button>
@@ -293,7 +291,7 @@ const TopMenu = observer(() => {
           {userState.isAuthenticated && (
             <button
               type="button"
-              className={`toolbar__btn ${clickAnimation === "gallery" ? "click-animation" : ""} ${clickedButtons.has("gallery") ? "clicked" : ""}`}
+              className={`toolbar__btn ${clickAnimation === "gallery" ? "click-animation" : ""}`}
               onClick={() => handleActionClick(() => {
                 setGalleryTitle('');
                 setGalleryError('');
@@ -310,7 +308,7 @@ const TopMenu = observer(() => {
 
           <button
             type="button"
-            className={`toolbar__btn ${clickAnimation === "help" ? "click-animation" : ""} ${clickedButtons.has("help") ? "clicked" : ""}`}
+            className={`toolbar__btn ${clickAnimation === "help" ? "click-animation" : ""}`}
             onClick={() => handleActionClick(() => canvasState.setShowAboutModal(true), "help")}
             onMouseDown={(e) => e.target.blur()}
             title="Справка"
