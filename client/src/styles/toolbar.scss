@@ -370,7 +370,7 @@
 
       &:hover::before,
       &.active::before {
-        opacity: 0;
+        opacity: 1;
         animation: none !important;
       }
 
