@@ -371,7 +371,6 @@
       &:hover::before,
       &.active::before {
         opacity: 1;
-        animation: none !important;
       }
 
       &.click-animation::before {
