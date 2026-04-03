@@ -400,7 +400,7 @@ async addStroke(roomId, stroke) {
         await multi.exec();
       }
       strokes = dbStrokes;
-    }
+    } 
 
     if (username) {
       const userCancelled = await this.getCancelledStrokes(roomId, username);
