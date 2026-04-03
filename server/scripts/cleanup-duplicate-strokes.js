@@ -1,7 +1,4 @@
-/**
- * Скрипт для удаления дубликатов штрихов во всех комнатах
- * Запускать: node server/scripts/cleanup-duplicate-strokes.js
- */
+
 
 const { pgPool } = require('../config/db');
 

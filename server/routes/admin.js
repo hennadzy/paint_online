@@ -726,9 +726,9 @@ router.delete('/game-modes/coloring/:id', async (req, res) => {
   }
 });
 
-// ==================== GALLERY ADMIN ROUTES ====================
 
-// GET /api/admin/gallery/pending - get pending drawings
+
+
 router.get('/gallery/pending', async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -752,7 +752,7 @@ router.get('/gallery/pending', async (req, res) => {
   }
 });
 
-// GET /api/admin/gallery/approved — published works (same moderation actions as pending, minus approve)
+
 router.get('/gallery/approved', async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -777,7 +777,7 @@ router.get('/gallery/approved', async (req, res) => {
   }
 });
 
-// GET /api/admin/gallery/image/:id - serve gallery image for admin (any status)
+
 router.get('/gallery/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -813,7 +813,7 @@ router.get('/gallery/image/:id', async (req, res) => {
   }
 });
 
-// PUT /api/admin/gallery/:id/approve - approve drawing
+
 router.put('/gallery/:id/approve', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

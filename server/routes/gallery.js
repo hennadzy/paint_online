@@ -29,7 +29,7 @@ const likeLimiter = rateLimit({
   validate: { xForwardedForHeader: false }
 });
 
-// GET /api/gallery - get approved drawings sorted by likes
+
 router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   try {
     const userId = req.user ? req.user.userId : null;
@@ -72,7 +72,7 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   }
 });
 
-// GET /api/gallery/image/:id - serve gallery image
+
 router.get('/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -109,7 +109,7 @@ router.get('/image/:id', async (req, res) => {
   }
 });
 
-// POST /api/gallery/submit - submit drawing for approval (authenticated)
+
 router.post('/submit', submitLimiter, authenticate, async (req, res) => {
   try {
     const { title, imageData } = req.body;
@@ -132,7 +132,7 @@ router.post('/submit', submitLimiter, authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Неверный формат изображения' });
     }
 
-    // Check if user has too many pending drawings
+
     const pendingCount = await pgPool.query(
       `SELECT COUNT(*) FROM gallery_drawings WHERE user_id = $1 AND status = 'pending'`,
       [userId]
