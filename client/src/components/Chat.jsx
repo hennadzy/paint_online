@@ -71,11 +71,19 @@ const Chat = observer(() => {
       });
     }
   };
+  const [isSending, setIsSending] = useState(false);
+
   const handleSend = () => {
     const message = sanitizeMessage(inputRef.current.value);
-    if (message && message.trim().length > 0) {
+    if (message && message.trim().length > 0 && !isSending) {
+      setIsSending(true);
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
+      
+      // Предотвращаем повторную отправку в течение короткого времени
+      setTimeout(() => {
+        setIsSending(false);
+      }, 1000);
     }
   };
 
@@ -131,9 +139,10 @@ const Chat = observer(() => {
             onKeyDown={sendMessage}
           />
           <button
-            className="chat-send-btn"
+            className={`chat-send-btn ${isSending ? 'chat-send-btn--disabled' : ''}`}
             onClick={handleSend}
             title="Отправить"
+            disabled={isSending}
           >
             ↵
           </button>

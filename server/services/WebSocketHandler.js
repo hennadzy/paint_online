@@ -41,6 +41,7 @@ class WebSocketHandler {
 async handleConnection(ws, msg) {
     const token = msg.token;
     const roomId = sanitizeInput(msg.id, 20);
+    const isReconnecting = Boolean(msg.isReconnecting);
 
     const payload = verifyToken(token);
     const isPrivileged = payload && (payload.role === 'admin' || payload.role === 'superadmin');
@@ -85,6 +86,7 @@ async handleConnection(ws, msg) {
 
     ws._userId = userId;
     ws._username = username;
+    ws._isReconnecting = isReconnecting;
 
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
@@ -96,7 +98,13 @@ async handleConnection(ws, msg) {
       }));
 
       // Broadcast connection event to everyone except the user who just connected
-      this.broadcast(roomId, { method: 'connection', username, isVerified }, ws);
+      // Включаем флаг переподключения в сообщение
+      this.broadcast(roomId, { 
+        method: 'connection', 
+        username, 
+        isVerified,
+        isReconnecting 
+      }, ws);
 
       const users = await RoomManager.getRoomUsers(roomId);
       this.broadcast(roomId, {
@@ -191,6 +199,36 @@ async handleChat(ws, msg) {
 
     if (!message || message.trim().length === 0) {
       return;
+    }
+
+    // Проверка на спам и дублирование сообщений
+    const now = Date.now();
+    const messageKey = `${roomId}:${username}:${message}`;
+    
+    // Проверяем, не было ли такое же сообщение отправлено недавно
+    if (this._recentMessages && this._recentMessages.has(messageKey)) {
+      const lastSent = this._recentMessages.get(messageKey);
+      if (now - lastSent < 2000) { // 2 секунды
+        // Игнорируем дублирующиеся сообщения
+        return;
+      }
+    }
+    
+    // Сохраняем информацию о сообщении
+    if (!this._recentMessages) {
+      this._recentMessages = new Map();
+    }
+    this._recentMessages.set(messageKey, now);
+    
+    // Очистка старых записей
+    if (this._recentMessages.size > 100) {
+      const keysToDelete = [];
+      for (const [key, time] of this._recentMessages.entries()) {
+        if (now - time > 30000) { // 30 секунд
+          keysToDelete.push(key);
+        }
+      }
+      keysToDelete.forEach(key => this._recentMessages.delete(key));
     }
 
     const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
