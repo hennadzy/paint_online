@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { observer } from "mobx-react-lite";
 import "./styles/app.scss"
 import "./styles/room-interface.scss"
@@ -19,11 +19,9 @@ import GalleryPage from "./components/GalleryPage";
 import RoomInterface from "./components/RoomInterface";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
-import userState from "./store/userState";
-import WebSocketService from "./services/WebSocketService";
-import PersonalWSService from "./services/PersonalWSService";
-
-const isValidRoomId = (id) => /^[a-zA-Z0-9]{9}$/.test(id);
+import { isValidRoomId } from "./utils/routerUtils";
+import { usePersonalMessages } from "./hooks/usePersonalMessages";
+import { useRoomValidation } from "./hooks/useRoomValidation";
 
 const RoomRoute = () => {
     const { id } = useParams();
@@ -38,50 +36,8 @@ const App = observer(() => {
     const navigate = useNavigate();
     const hideGlobalUI = ['/profile', '/login', '/register', '/admin', '/coloring', '/gallery'].includes(location.pathname);
 
-    useEffect(() => {
-        if (userState.isAuthenticated) {
-            const token = localStorage.getItem('token');
-            if (token) {
-                PersonalWSService.connect(token);
-            }
-        } else {
-            PersonalWSService.disconnect();
-        }
-    }, [userState.isAuthenticated]);
-
-    useEffect(() => {
-        const handlePersonalMessage = (data) => {
-            userState.addIncomingPersonalMessage(data);
-        };
-        PersonalWSService.on('personalMessage', handlePersonalMessage);
-        return () => PersonalWSService.off('personalMessage', handlePersonalMessage);
-    }, []);
-
-    useEffect(() => {
-        const handlePersonalMessage = (data) => {
-            userState.addIncomingPersonalMessage(data);
-        };
-        WebSocketService.on('personalMessage', handlePersonalMessage);
-        return () => WebSocketService.off('personalMessage', handlePersonalMessage);
-    }, []);
-
-    useEffect(() => {
-        const fallback = document.getElementById('server-404-fallback');
-        if (fallback) fallback.hidden = true;
-
-        const path = location.pathname;
-        const allowedClientPaths = ['/', '/login', '/register', '/profile', '/404', '/admin', '/coloring', '/gallery'];
-        if (allowedClientPaths.includes(path)) return;
-
-        const segments = path.slice(1).split('/').filter(Boolean);
-        if (segments.length !== 1) {
-            navigate('/404', { replace: true });
-            return;
-        }
-        if (!isValidRoomId(segments[0])) {
-            navigate('/404', { replace: true });
-        }
-    }, [location.pathname, navigate]);
+  usePersonalMessages();
+  useRoomValidation(location.pathname, navigate);
 
     if (location.pathname === '/404') {
         return <NotFoundPage />;

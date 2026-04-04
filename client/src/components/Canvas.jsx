@@ -18,6 +18,7 @@ import {
   usePinchZoom,
   usePageVisibility
 } from '../hooks';
+import { useMobileCanvasFit } from '../hooks/useMobileCanvasFit';
 import '../styles/canvas.scss';
 
 const Canvas = observer(() => {
@@ -38,17 +39,60 @@ const Canvas = observer(() => {
   useCustomScrollbars(containerRef, canvasState.isConnected);
   const isVisible = usePageVisibility();
 
+  useMobileCanvasFit(containerRef, canvasState.isConnected);
+
   useEffect(() => {
     canvasState.setPageVisible(isVisible);
   }, [isVisible]);
 
-  useEffect(() => {
-    canvasState.setCanvas(canvasRef.current);
+  const initCanvasContext = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const initLocalMode = () => {
+    canvasState.setCurrentRoomId(null);
+    canvasState.setUsername('local');
+    canvasState.setModalOpen(false);
+    toolState.setTool(new Brush(canvasRef.current, null, null, 'local'), 'brush');
+
+    if (canvasState.returningFromRoom) {
+      canvasState.restoreAutoSave();
+      canvasState.returningFromRoom = false;
+      canvasState.showRestoreDialog = false;
+    } else {
+      canvasState.checkForAutoSave();
+    }
+  };
+
+  const initRoomMode = () => {
+    canvasState.setShowRestoreDialog(false);
+    canvasState.setZoom(1);
+    canvasState.setCurrentRoomId(params.id);
+    canvasState.setUsername('');
+    canvasState.setModalOpen(false);
+
+    const adminToken = localStorage.getItem('adminJoinToken');
+    if (adminToken) {
+      localStorage.removeItem('adminJoinToken');
+      canvasState.connectToRoom(params.id, 'Admin', adminToken);
+    }
+  };
+
+  const cleanup = () => {
+    if (params.id) {
+      canvasState.disconnect(true);
+    }
+    canvasState.strokeList = [];
+    canvasState.redoStacks.clear();
+  };
+
+  useEffect(() => {
+    canvasState.setCanvas(canvasRef.current);
+    initCanvasContext();
 
     canvasState.setShowAboutModal(false);
 
@@ -59,39 +103,12 @@ const Canvas = observer(() => {
     }
 
     if (!params.id) {
-      canvasState.setCurrentRoomId(null);
-      canvasState.setUsername('local');
-      canvasState.setModalOpen(false);
-      toolState.setTool(new Brush(canvas, null, null, 'local'), 'brush');
-
-      if (canvasState.returningFromRoom) {
-        canvasState.restoreAutoSave();
-        canvasState.returningFromRoom = false;
-        canvasState.showRestoreDialog = false;
-      } else {
-        canvasState.checkForAutoSave();
-      }
+      initLocalMode();
     } else {
-      canvasState.setShowRestoreDialog(false);
-      canvasState.setZoom(1);
-      canvasState.setCurrentRoomId(params.id);
-      canvasState.setUsername('');
-      canvasState.setModalOpen(false);
-
-      const adminToken = localStorage.getItem('adminJoinToken');
-      if (adminToken) {
-        localStorage.removeItem('adminJoinToken');
-        canvasState.connectToRoom(params.id, 'Admin', adminToken);
-      }
+      initRoomMode();
     }
 
-    return () => {
-      if (params.id) {
-        canvasState.disconnect(true);
-      }
-      canvasState.strokeList = [];
-      canvasState.redoStacks.clear();
-    };
+    return cleanup;
   }, [params.id]);
 
   useEffect(() => {
@@ -135,36 +152,6 @@ const Canvas = observer(() => {
     return () => clearInterval(interval);
   }, [canvasState.isConnected]);
 
-  useEffect(() => {
-    const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
-    if (!isMobilePortrait) return;
-
-    const centerContainer = (container) => {
-      const scrollX = Math.max(0, (container.scrollWidth - container.clientWidth) / 2);
-      const scrollY = Math.max(0, (container.scrollHeight - container.clientHeight) / 2);
-      container.scrollLeft = scrollX;
-      container.scrollTop = scrollY;
-    };
-
-    const apply = () => {
-      const container = containerRef.current;
-      if (container) {
-        const availableW = container.clientWidth - 20;
-        const fitZoom = Math.min(1, Math.max(0.5, availableW / window.innerWidth));
-        canvasState.setZoom(fitZoom);
-        requestAnimationFrame(() => centerContainer(container));
-      }
-    };
-    if (!canvasState.isConnected) {
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        apply();
-        setTimeout(apply, 150);
-        setTimeout(apply, 300);
-      }));
-    } else {
-      apply();
-    }
-  }, [canvasState.isConnected]);
 
   return (
     <div className={`canvas ${canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
