@@ -9,6 +9,7 @@ const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = requir
 const { generateToken } = require('../utils/jwt');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { pgPool } = require('../config/db');
+const { asyncHandler, ValidationError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
 
 const router = express.Router();
 
@@ -60,7 +61,7 @@ const imageSaveLimiter = rateLimit({
   validate: { xForwardedForHeader: false }
 });
 
-router.post('/image', imageSaveLimiter, (req, res) => {
+router.post('/image', imageSaveLimiter, asyncHandler(async (req, res) => {
   const origin = req.headers.origin;
   if (process.env.NODE_ENV === 'production' ||
       origin === 'https://risovanie.online' ||
@@ -75,271 +76,243 @@ router.post('/image', imageSaveLimiter, (req, res) => {
     return res.sendStatus(204);
   }
 
-try {
-    const id = sanitizeInput(String(req.query.id || ''), 50).replace(/[^a-zA-Z0-9_-]/g, '') || 'image';
-    const img = req.body?.img;
-    if (!img || typeof img !== 'string') {
-      return res.status(400).json({ error: 'Invalid image data' });
-    }
-    const match = img.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!match) {
-      return res.status(400).json({ error: 'Invalid image format' });
-    }
-    const ext = match[1] === 'png' ? 'png' : 'jpg';
-    const base64 = match[2];
-    const filesDir = path.join(__dirname, '../files');
-    if (!fs.existsSync(filesDir)) {
-      fs.mkdirSync(filesDir, { recursive: true });
-    }
-    const filename = `${id}.${ext}`;
-    const filepath = path.join(filesDir, filename);
-    fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
-    res.json({ ok: true });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+  const id = sanitizeInput(String(req.query.id || ''), 50).replace(/[^a-zA-Z0-9_-]/g, '') || 'image';
+  const img = req.body?.img;
+  if (!img || typeof img !== 'string') {
+    throw new ValidationError('Invalid image data');
   }
-});
-
-router.post('/rooms', createRoomLimiter, optionalAuthenticate, async (req, res) => {
-  try {
-    const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
-    const isPublic = Boolean(req.body.isPublic);
-    const password = req.body.password ? sanitizeInput(req.body.password, 50) : null;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Name required' });
-    }
-
-    const roomId = generateId();
-
-    let hashedPassword = null;
-    if (!isPublic && password) {
-      hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    }
-
-    const ownerId = req.user ? req.user.userId : null;
-
-    await DataStore.createRoom(roomId, {
-      name,
-      isPublic,
-      hasPassword: !isPublic && !!password,
-      passwordHash: hashedPassword,
-      ownerId
-    });
-
-    res.json({ roomId });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+  const match = img.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!match) {
+    throw new ValidationError('Invalid image format');
   }
-});
-
-router.get('/rooms/public', apiLimiter, async (req, res) => {
-  try {
-    const allRooms = await DataStore.getAllRooms();
-    const filesDir = path.join(__dirname, '../files');
-    
-    const result = await Promise.all(allRooms.map(async room => {
-      const onlineUsers = await RoomManager.getRoomUsers(room.id);
-      const onlineCount = onlineUsers.length;
-      let thumbnailUrl = null;
-      if (room.isPublic) {
-        const jpgPath = path.join(filesDir, `${room.id}.jpg`);
-        const pngPath = path.join(filesDir, `${room.id}.png`);
-        if (fs.existsSync(jpgPath)) {
-          thumbnailUrl = `/files/${room.id}.jpg`;
-        } else if (fs.existsSync(pngPath)) {
-          thumbnailUrl = `/files/${room.id}.png`;
-        }
-      }
-      return {
-        id: room.id,
-        name: room.name,
-        isPublic: room.isPublic,
-        hasPassword: room.hasPassword,
-        lastActivity: room.lastActivity,
-        onlineCount,
-        thumbnailUrl,
-        ownerId: room.ownerId || null
-      };
-    }));
-    res.json(result);
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+  const ext = match[1] === 'png' ? 'png' : 'jpg';
+  const base64 = match[2];
+  const filesDir = path.join(__dirname, '../files');
+  if (!fs.existsSync(filesDir)) {
+    fs.mkdirSync(filesDir, { recursive: true });
   }
-});
+  const filename = `${id}.${ext}`;
+  const filepath = path.join(filesDir, filename);
+  fs.writeFileSync(filepath, Buffer.from(base64, 'base64'));
+  res.json({ ok: true });
+}));
 
-router.get('/rooms/:id/exists', apiLimiter, async (req, res) => {
-  try {
-    const id = sanitizeInput(req.params.id, 20);
-    const room = await DataStore.getRoomInfo(id);
+router.post('/rooms', createRoomLimiter, optionalAuthenticate, asyncHandler(async (req, res) => {
+  const name = sanitizeInput(req.body.name, MAX_ROOM_NAME_LENGTH);
+  const isPublic = Boolean(req.body.isPublic);
+  const password = req.body.password ? sanitizeInput(req.body.password, 50) : null;
 
-    if (!room) {
-      return res.json({ exists: false });
-    }
-
-    res.json({
-      exists: true,
-      hasPassword: room.hasPassword || false,
-      name: room.name,
-      ownerId: room.ownerId || null
-    });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+  if (!name) {
+    throw new ValidationError('Name required');
   }
-});
 
-router.post('/rooms/:id/verify-password', passwordVerifyLimiter, async (req, res) => {
-  try {
-    const id = sanitizeInput(req.params.id, 20);
-    const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
-    const room = await DataStore.getRoomInfo(id);
+  const roomId = generateId();
 
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-
-    if (!room.hasPassword || !room.passwordHash) {
-      return res.json({ valid: true });
-    }
-
-    const isValid = await bcrypt.compare(password, room.passwordHash);
-    res.json({ valid: isValid });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+  let hashedPassword = null;
+  if (!isPublic && password) {
+    hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
   }
-});
 
-router.post('/rooms/:id/join-public', tokenRequestLimiter, async (req, res) => {
-  try {
-    const roomId = sanitizeInput(req.params.id, 20);
+  const ownerId = req.user ? req.user.userId : null;
 
-    if (!roomId) {
-      return res.status(400).json({ error: 'ID комнаты не указан' });
-    }
+  await DataStore.createRoom(roomId, {
+    name,
+    isPublic,
+    hasPassword: !isPublic && !!password,
+    passwordHash: hashedPassword,
+    ownerId
+  });
 
-    const authHeader = req.headers.authorization;
-    let isPrivileged = false;
-    let authUserId = null;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const Session = require('../models/Session');
-      const session = await Session.findByToken(token);
-      if (session) {
-        authUserId = session.user_id;
-        if (session.role === 'admin' || session.role === 'superadmin') {
-          isPrivileged = true;
-        }
-      }
-    }
+  res.json({ roomId });
+}));
 
-    let username;
-    if (isPrivileged) {
-      if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
-        username = 'Admin';
-      } else {
-        username = sanitizeUsername(req.body.username || 'Admin');
-        if (!username || username.trim().length < 2) username = 'Admin';
-      }
-    } else {
-      const validation = validateUsername(req.body.username);
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.error });
-      }
-      username = sanitizeUsername(validation.username);
-    }
-
-    const room = await DataStore.getRoomInfo(roomId);
-
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-
-    if (!room.isPublic) {
-      return res.status(403).json({ error: 'Room is private' });
-    }
-
-    const currentUsers = await RoomManager.getRoomUsers(roomId);
-    if (currentUsers.length >= 10) {
-      return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
-    }
-
-    const token = generateToken(roomId, username, true, isPrivileged ? 'admin' : 'user', authUserId);
-    res.json({ token, username });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.post('/rooms/:id/join-private', tokenRequestLimiter, async (req, res) => {
-  try {
-    const roomId = sanitizeInput(req.params.id, 20);
-    const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
-
-    const authHeader = req.headers.authorization;
-    let isPrivileged = false;
-    let authUserId = null;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const Session = require('../models/Session');
-      const session = await Session.findByToken(token);
-      if (session) {
-        authUserId = session.user_id;
-        if (session.role === 'admin' || session.role === 'superadmin') {
-          isPrivileged = true;
-        }
-      }
-    }
-
-    if (!roomId) {
-      return res.status(400).json({ error: 'ID комнаты не указан' });
-    }
-
-    const currentUsers = await RoomManager.getRoomUsers(roomId);
-    if (currentUsers.length >= 10) {
-      return res.status(403).json({ error: 'Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.' });
-    }
-
-    let username;
-    if (isPrivileged) {
-      if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
-        username = 'Admin';
-      } else {
-        username = sanitizeUsername(req.body.username || 'Admin');
-        if (!username || username.trim().length < 2) username = 'Admin';
-      }
-    } else {
-      const validation = validateUsername(req.body.username);
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.error });
-      }
-      username = sanitizeUsername(validation.username);
-    }
-
-    const room = await DataStore.getRoomInfo(roomId);
-
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-
+router.get('/rooms/public', apiLimiter, asyncHandler(async (req, res) => {
+  const allRooms = await DataStore.getAllRooms();
+  const filesDir = path.join(__dirname, '../files');
+  
+  const result = await Promise.all(allRooms.map(async room => {
+    const onlineUsers = await RoomManager.getRoomUsers(room.id);
+    const onlineCount = onlineUsers.length;
+    let thumbnailUrl = null;
     if (room.isPublic) {
-      return res.status(400).json({ error: 'Use join-public for public rooms' });
-    }
-
-    if (!isPrivileged) {
-      if (room.hasPassword && room.passwordHash) {
-        const isValid = await bcrypt.compare(password, room.passwordHash);
-        if (!isValid) {
-          return res.status(401).json({ error: 'Invalid password' });
-        }
+      const jpgPath = path.join(filesDir, `${room.id}.jpg`);
+      const pngPath = path.join(filesDir, `${room.id}.png`);
+      if (fs.existsSync(jpgPath)) {
+        thumbnailUrl = `/files/${room.id}.jpg`;
+      } else if (fs.existsSync(pngPath)) {
+        thumbnailUrl = `/files/${room.id}.png`;
       }
     }
+    return {
+      id: room.id,
+      name: room.name,
+      isPublic: room.isPublic,
+      hasPassword: room.hasPassword,
+      lastActivity: room.lastActivity,
+      onlineCount,
+      thumbnailUrl,
+      ownerId: room.ownerId || null
+    };
+  }));
+  res.json(result);
+}));
 
-    const token = generateToken(roomId, username, false, isPrivileged ? 'admin' : 'user', authUserId);
-    res.json({ token, username });
-  } catch (_) {
-    res.status(500).json({ error: 'Server error' });
+router.get('/rooms/:id/exists', apiLimiter, asyncHandler(async (req, res) => {
+  const id = sanitizeInput(req.params.id, 20);
+  const room = await DataStore.getRoomInfo(id);
+
+  if (!room) {
+    return res.json({ exists: false });
   }
-});
+
+  res.json({
+    exists: true,
+    hasPassword: room.hasPassword || false,
+    name: room.name,
+    ownerId: room.ownerId || null
+  });
+}));
+
+router.post('/rooms/:id/verify-password', passwordVerifyLimiter, asyncHandler(async (req, res) => {
+  const id = sanitizeInput(req.params.id, 20);
+  const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
+  const room = await DataStore.getRoomInfo(id);
+
+  if (!room) {
+    throw new NotFoundError('Room not found');
+  }
+
+  if (!room.hasPassword || !room.passwordHash) {
+    return res.json({ valid: true });
+  }
+
+  const isValid = await bcrypt.compare(password, room.passwordHash);
+  res.json({ valid: isValid });
+}));
+
+router.post('/rooms/:id/join-public', tokenRequestLimiter, asyncHandler(async (req, res) => {
+  const roomId = sanitizeInput(req.params.id, 20);
+
+  if (!roomId) {
+    throw new ValidationError('ID комнаты не указан');
+  }
+
+  const authHeader = req.headers.authorization;
+  let isPrivileged = false;
+  let authUserId = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const Session = require('../models/Session');
+    const session = await Session.findByToken(token);
+    if (session) {
+      authUserId = session.user_id;
+      if (session.role === 'admin' || session.role === 'superadmin') {
+        isPrivileged = true;
+      }
+    }
+  }
+
+  let username;
+  if (isPrivileged) {
+    if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
+      username = 'Admin';
+    } else {
+      username = sanitizeUsername(req.body.username || 'Admin');
+      if (!username || username.trim().length < 2) username = 'Admin';
+    }
+  } else {
+    const validation = validateUsername(req.body.username);
+    if (!validation.valid) {
+      throw new ValidationError(validation.error);
+    }
+    username = sanitizeUsername(validation.username);
+  }
+
+  const room = await DataStore.getRoomInfo(roomId);
+
+  if (!room) {
+    throw new NotFoundError('Room not found');
+  }
+
+  if (!room.isPublic) {
+    throw new ForbiddenError('Room is private');
+  }
+
+  const currentUsers = await RoomManager.getRoomUsers(roomId);
+  if (currentUsers.length >= 10) {
+    throw new ForbiddenError('Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.');
+  }
+
+  const token = generateToken(roomId, username, true, isPrivileged ? 'admin' : 'user', authUserId);
+  res.json({ token, username });
+}));
+
+router.post('/rooms/:id/join-private', tokenRequestLimiter, asyncHandler(async (req, res) => {
+  const roomId = sanitizeInput(req.params.id, 20);
+  const password = req.body.password ? sanitizeInput(req.body.password, 50) : '';
+
+  const authHeader = req.headers.authorization;
+  let isPrivileged = false;
+  let authUserId = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const Session = require('../models/Session');
+    const session = await Session.findByToken(token);
+    if (session) {
+      authUserId = session.user_id;
+      if (session.role === 'admin' || session.role === 'superadmin') {
+        isPrivileged = true;
+      }
+    }
+  }
+
+  if (!roomId) {
+    throw new ValidationError('ID комнаты не указан');
+  }
+
+  const currentUsers = await RoomManager.getRoomUsers(roomId);
+  if (currentUsers.length >= 10) {
+    throw new ForbiddenError('Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.');
+  }
+
+  let username;
+  if (isPrivileged) {
+    if (req.body.username && req.body.username.trim().toLowerCase() === 'admin') {
+      username = 'Admin';
+    } else {
+      username = sanitizeUsername(req.body.username || 'Admin');
+      if (!username || username.trim().length < 2) username = 'Admin';
+    }
+  } else {
+    const validation = validateUsername(req.body.username);
+    if (!validation.valid) {
+      throw new ValidationError(validation.error);
+    }
+    username = sanitizeUsername(validation.username);
+  }
+
+  const room = await DataStore.getRoomInfo(roomId);
+
+  if (!room) {
+    throw new NotFoundError('Room not found');
+  }
+
+  if (room.isPublic) {
+    throw new ValidationError('Use join-public for public rooms');
+  }
+
+  if (!isPrivileged) {
+    if (room.hasPassword && room.passwordHash) {
+      const isValid = await bcrypt.compare(password, room.passwordHash);
+      if (!isValid) {
+        throw new ForbiddenError('Invalid password');
+      }
+    }
+  }
+
+  const token = generateToken(roomId, username, false, isPrivileged ? 'admin' : 'user', authUserId);
+  res.json({ token, username });
+}));
 
 router.patch('/rooms/:id', authenticate, async (req, res) => {
   try {

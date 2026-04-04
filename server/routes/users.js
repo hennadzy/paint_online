@@ -62,257 +62,205 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
   res.json({ user: updatedUser });
 }));
 
-router.put('/me/password', authenticate, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Текущий и новый пароль обязательны' });
-    }
-    const pwdValidation = validatePassword(newPassword);
-    if (!pwdValidation.valid) {
-      return res.status(400).json({ error: pwdValidation.error });
-    }
-    const userId = req.user.userId;
-    const { pgPool } = require('../config/db');
-    const row = await pgPool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
-    if (!row.rows.length) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    const valid = await verifyPassword(currentPassword, row.rows[0].password_hash);
-    if (!valid) {
-      return res.status(401).json({ error: 'Неверный текущий пароль' });
-    }
-    const newHash = await hashPassword(newPassword);
-    await User.changePassword(userId, newHash);
-    res.json({ message: 'Пароль изменён' });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Server error' });
+router.put('/me/password', authenticate, asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new ValidationError('Текущий и новый пароль обязательны');
   }
-});
-
-router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const maxSize = 5 * 1024 * 1024;
-    if (req.file.size > maxSize) {
-      return res.status(400).json({ error: 'File too large (maximum 5MB)' });
-    }
-
-    const base64 = req.file.buffer.toString('base64');
-    const mimeType = req.file.mimetype;
-    const dataUrl = `data:${mimeType};base64,${base64}`;
-
-    if (dataUrl.length > 10 * 1024 * 1024) {
-      return res.status(400).json({ error: 'Image too large after encoding. Please use a smaller image.' });
-    }
-
-    const updatedUser = await User.update(req.user.userId, { avatarUrl: dataUrl });
-
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({ avatarUrl: updatedUser.avatar_url });
-  } catch (error) {
-    console.error('Avatar upload error:', error);
-    if (error instanceof multer.MulterError) {
-      return res.status(400).json({ error: error.message });
-    }
-    if (error.code === '22001') {
-      return res.status(400).json({ error: 'Image too large. Please use a smaller image (under 5MB).' });
-    }
-    res.status(500).json({ error: 'Server error' });
+  
+  const pwdValidation = validatePassword(newPassword);
+  if (!pwdValidation.valid) {
+    throw new ValidationError(pwdValidation.error);
   }
-});
-
-router.put('/me/settings', authenticate, async (req, res) => {
-  try {
-    const { settings } = req.body;
-    if (!settings || typeof settings !== 'object') {
-      return res.status(400).json({ error: 'Settings must be an object' });
-    }
-
-    const updatedUser = await User.update(req.user.userId, { settings });
-    res.json({ settings: updatedUser.settings });
-  } catch (error) {
-    console.error('Update settings error:', error);
-    res.status(500).json({ error: 'Server error' });
+  
+  const userId = req.user.userId;
+  const { pgPool } = require('../config/db');
+  const row = await pgPool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+  
+  if (!row.rows.length) {
+    throw new NotFoundError('User not found');
   }
-});
-
-router.get('/me/rooms', authenticate, async (req, res) => {
-  try {
-    const { pgPool } = require('../config/db');
-    const query = `
-      SELECT id, name, is_public AS "isPublic", has_password AS "hasPassword",
-             created_at AS "createdAt", last_activity AS "lastActivity"
-      FROM rooms
-      WHERE owner_id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)
-      ORDER BY last_activity DESC
-    `;
-    const result = await pgPool.query(query, [req.user.userId]);
-    res.json({ rooms: result.rows });
-  } catch (error) {
-    console.error('Get user rooms error:', error);
-    res.status(500).json({ error: 'Server error' });
+  
+  const valid = await verifyPassword(currentPassword, row.rows[0].password_hash);
+  if (!valid) {
+    throw new AuthError('Неверный текущий пароль');
   }
-});
+  
+  const newHash = await hashPassword(newPassword);
+  await User.changePassword(userId, newHash);
+  res.json({ message: 'Пароль изменён' });
+}));
 
-router.get('/me/activity-rooms', authenticate, async (req, res) => {
-  try {
-    const DataStore = require('../services/DataStore');
-    const rooms = await DataStore.getUserActivityRooms(req.user.userId);
-    res.json({ rooms });
-  } catch (error) {
-    console.error('Get activity rooms error:', error);
-    res.status(500).json({ error: 'Server error' });
+router.post('/me/avatar', authenticate, upload.single('avatar'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ValidationError('No file uploaded');
   }
-});
 
-router.get('/active', authenticate, async (req, res) => {
-  try {
-    const { pgPool } = require('../config/db');
-    const query = `
-      SELECT id, username, avatar_url, is_online, is_active, is_verified
-      FROM users
-      WHERE is_active IS NOT FALSE AND is_deleted IS NOT TRUE
-      ORDER BY is_online DESC, username ASC
-      LIMIT 50
-    `;
-    const result = await pgPool.query(query, []);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get active users error:', error);
-    res.status(500).json({ error: 'Server error' });
+  const maxSize = 5 * 1024 * 1024;
+  if (req.file.size > maxSize) {
+    throw new ValidationError('File too large (maximum 5MB)');
   }
-});
 
-router.get('/search', authenticate, async (req, res) => {
-  try {
-    const searchQuery = req.query.q;
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      return res.json([]);
-    }
+  const base64 = req.file.buffer.toString('base64');
+  const mimeType = req.file.mimetype;
+  const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    const { pgPool } = require('../config/db');
-    const query = `
-      SELECT id, username, avatar_url, is_online, is_active, is_verified
-      FROM users
-      WHERE username ILIKE $1 AND is_deleted IS NOT TRUE
-      ORDER BY is_online DESC, username ASC
-      LIMIT 20
-    `;
-    const result = await pgPool.query(query, [`%${searchQuery}%`]);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Search users error:', error);
-    res.status(500).json({ error: 'Server error' });
+  if (dataUrl.length > 10 * 1024 * 1024) {
+    throw new ValidationError('Image too large after encoding. Please use a smaller image.');
   }
-});
 
-router.get('/messages/:userId', authenticate, async (req, res) => {
-  try {
-    const PersonalMessageStore = require('../services/PersonalMessageStore');
-    const history = await PersonalMessageStore.getHistory(req.user.userId, req.params.userId);
-    res.json(history);
-  } catch (error) {
-    console.error('Get message history error:', error);
-    res.status(500).json({ error: 'Server error' });
+  const updatedUser = await User.update(req.user.userId, { avatarUrl: dataUrl });
+
+  if (!updatedUser) {
+    throw new NotFoundError('User not found');
   }
-});
 
-router.post('/messages', authenticate, async (req, res) => {
-  try {
-    const { toUserId, message, timestamp } = req.body;
-    if (!toUserId || !message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'toUserId and message are required' });
-    }
+  res.json({ avatarUrl: updatedUser.avatar_url });
+}));
 
-    const { sanitizeChatMessage } = require('../utils/security');
-    const sanitized = sanitizeChatMessage(message);
-    if (!sanitized || sanitized.trim().length === 0) {
-      return res.status(400).json({ error: 'Message is empty after sanitization' });
-    }
-
-    const { pgPool } = require('../config/db');
-    const recipientCheck = await pgPool.query(
-      'SELECT id, username FROM users WHERE id = $1 AND is_deleted IS NOT TRUE',
-      [toUserId]
-    );
-    if (recipientCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Recipient not found' });
-    }
-
-    const PersonalMessageStore = require('../services/PersonalMessageStore');
-    const ts = timestamp || Date.now();
-    const fromUserId = req.user.userId;
-
-    const senderRow = await pgPool.query('SELECT username FROM users WHERE id = $1', [fromUserId]);
-    const fromUsername = senderRow.rows[0]?.username || fromUserId;
-
-    const msgId = await PersonalMessageStore.saveMessage(fromUserId, toUserId, sanitized, ts);
-
-    const WebSocketHandler = require('../services/WebSocketHandler');
-    await WebSocketHandler.deliverPersonalMessageToUser(
-      toUserId, fromUserId, fromUsername, sanitized, ts, msgId
-    );
-
-    res.json({
-      id: msgId,
-      from_user_id: fromUserId,
-      to_user_id: toUserId,
-      message: sanitized,
-      timestamp: ts
-    });
-  } catch (error) {
-    console.error('Send personal message error:', error);
-    res.status(500).json({ error: 'Server error' });
+router.put('/me/settings', authenticate, asyncHandler(async (req, res) => {
+  const { settings } = req.body;
+  if (!settings || typeof settings !== 'object') {
+    throw new ValidationError('Settings must be an object');
   }
-});
 
-router.post('/me/favorites/:roomId', authenticate, async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const userId = req.user.userId;
-    const { pgPool } = require('../config/db');
-
-    const roomCheck = await pgPool.query('SELECT id FROM rooms WHERE id = $1', [roomId]);
-    if (roomCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-
-    await pgPool.query(
-      'INSERT INTO favorite_rooms (user_id, room_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
-      [userId, roomId, Date.now()]
-    );
-
-    res.json({ message: 'Added to favorites' });
-  } catch (error) {
-    console.error('Add favorite error:', error);
-    res.status(500).json({ error: 'Server error' });
+  const updatedUser = await User.update(req.user.userId, { settings });
+  if (!updatedUser) {
+    throw new NotFoundError('User not found');
   }
-});
+  
+  res.json({ settings: updatedUser.settings });
+}));
 
-router.delete('/me/favorites/:roomId', authenticate, async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const userId = req.user.userId;
-    const { pgPool } = require('../config/db');
+router.get('/me/rooms', authenticate, asyncHandler(async (req, res) => {
+  const { pgPool } = require('../config/db');
+  const query = `
+    SELECT id, name, is_public AS "isPublic", has_password AS "hasPassword",
+           created_at AS "createdAt", last_activity AS "lastActivity"
+    FROM rooms
+    WHERE owner_id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)
+    ORDER BY last_activity DESC
+  `;
+  const result = await pgPool.query(query, [req.user.userId]);
+  res.json({ rooms: result.rows });
+}));
 
-    await pgPool.query(
-      'DELETE FROM favorite_rooms WHERE user_id = $1 AND room_id = $2',
-      [userId, roomId]
-    );
+router.get('/me/activity-rooms', authenticate, asyncHandler(async (req, res) => {
+  const DataStore = require('../services/DataStore');
+  const rooms = await DataStore.getUserActivityRooms(req.user.userId);
+  res.json({ rooms });
+}));
 
-    res.json({ message: 'Removed from favorites' });
-  } catch (error) {
-    console.error('Remove favorite error:', error);
-    res.status(500).json({ error: 'Server error' });
+router.get('/active', authenticate, asyncHandler(async (req, res) => {
+  const { pgPool } = require('../config/db');
+  const query = `
+    SELECT id, username, avatar_url, is_online, is_active, is_verified
+    FROM users
+    WHERE is_active IS NOT FALSE AND is_deleted IS NOT TRUE
+    ORDER BY is_online DESC, username ASC
+    LIMIT 50
+  `;
+  const result = await pgPool.query(query, []);
+  res.json(result.rows);
+}));
+
+router.get('/search', authenticate, asyncHandler(async (req, res) => {
+  const searchQuery = req.query.q;
+  if (!searchQuery || searchQuery.trim().length < 2) {
+    return res.json([]);
   }
-});
+
+  const { pgPool } = require('../config/db');
+  const query = `
+    SELECT id, username, avatar_url, is_online, is_active, is_verified
+    FROM users
+    WHERE username ILIKE $1 AND is_deleted IS NOT TRUE
+    ORDER BY is_online DESC, username ASC
+    LIMIT 20
+  `;
+  const result = await pgPool.query(query, [`%${searchQuery}%`]);
+  res.json(result.rows);
+}));
+
+router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
+  const PersonalMessageStore = require('../services/PersonalMessageStore');
+  const history = await PersonalMessageStore.getHistory(req.user.userId, req.params.userId);
+  res.json(history);
+}));
+
+router.post('/messages', authenticate, asyncHandler(async (req, res) => {
+  const { toUserId, message, timestamp } = req.body;
+  if (!toUserId || !message || typeof message !== 'string') {
+    throw new ValidationError('toUserId and message are required');
+  }
+
+  const { sanitizeChatMessage } = require('../utils/security');
+  const sanitized = sanitizeChatMessage(message);
+  if (!sanitized || sanitized.trim().length === 0) {
+    throw new ValidationError('Message is empty after sanitization');
+  }
+
+  const { pgPool } = require('../config/db');
+  const recipientCheck = await pgPool.query(
+    'SELECT id, username FROM users WHERE id = $1 AND is_deleted IS NOT TRUE',
+    [toUserId]
+  );
+  if (recipientCheck.rows.length === 0) {
+    throw new NotFoundError('Recipient not found');
+  }
+
+  const PersonalMessageStore = require('../services/PersonalMessageStore');
+  const ts = timestamp || Date.now();
+  const fromUserId = req.user.userId;
+
+  const senderRow = await pgPool.query('SELECT username FROM users WHERE id = $1', [fromUserId]);
+  const fromUsername = senderRow.rows[0]?.username || fromUserId;
+
+  const msgId = await PersonalMessageStore.saveMessage(fromUserId, toUserId, sanitized, ts);
+
+  const WebSocketHandler = require('../services/WebSocketHandler');
+  await WebSocketHandler.deliverPersonalMessageToUser(
+    toUserId, fromUserId, fromUsername, sanitized, ts, msgId
+  );
+
+  res.json({
+    id: msgId,
+    from_user_id: fromUserId,
+    to_user_id: toUserId,
+    message: sanitized,
+    timestamp: ts
+  });
+}));
+
+router.post('/me/favorites/:roomId', authenticate, asyncHandler(async (req, res) => {
+  const { roomId } = req.params;
+  const userId = req.user.userId;
+  const { pgPool } = require('../config/db');
+
+  const roomCheck = await pgPool.query('SELECT id FROM rooms WHERE id = $1', [roomId]);
+  if (roomCheck.rows.length === 0) {
+    throw new NotFoundError('Room not found');
+  }
+
+  await pgPool.query(
+    'INSERT INTO favorite_rooms (user_id, room_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+    [userId, roomId, Date.now()]
+  );
+
+  res.json({ message: 'Added to favorites' });
+}));
+
+router.delete('/me/favorites/:roomId', authenticate, asyncHandler(async (req, res) => {
+  const { roomId } = req.params;
+  const userId = req.user.userId;
+  const { pgPool } = require('../config/db');
+
+  await pgPool.query(
+    'DELETE FROM favorite_rooms WHERE user_id = $1 AND room_id = $2',
+    [userId, roomId]
+  );
+
+  res.json({ message: 'Removed from favorites' });
+}));
 
 module.exports = router;
