@@ -7,6 +7,20 @@ const { asyncHandler, ValidationError, AuthError, NotFoundError, ForbiddenError 
 
 const router = express.Router();
 
+// Вспомогательные функции для проверки авторизации
+const validateUserId = (userId) => {
+  if (!userId || typeof userId !== 'string' && typeof userId !== 'number') {
+    throw new ValidationError('Некорректный ID пользователя');
+  }
+  
+  // Проверка формата userId (обычно это число или UUID)
+  if (typeof userId === 'string' && !/^[a-zA-Z0-9-_]+$/.test(userId)) {
+    throw new ValidationError('ID пользователя содержит недопустимые символы');
+  }
+  
+  return true;
+};
+
 const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -20,25 +34,37 @@ const upload = multer({
 router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.userId);
   if (!user) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError('Пользователь не найден');
   }
-  res.json({ user });
+  
+  // Удаляем пароль из ответа
+  const { password_hash, ...userWithoutPassword } = user;
+  res.json({ user: userWithoutPassword });
 }));
 
 router.put('/me', authenticate, asyncHandler(async (req, res) => {
   const { username, email } = req.body;
   const userId = req.user.userId;
+  validateUserId(userId);
+  
   const updates = {};
 
   if (username !== undefined) {
+    // Проверка длины username (3-20 символов)
+    if (typeof username !== 'string' || username.length < 3 || username.length > 20) {
+      throw new ValidationError('Имя пользователя должно содержать от 3 до 20 символов');
+    }
+    
     const usernameValidation = validateUsername(username);
     if (!usernameValidation.valid) {
       throw new ValidationError(usernameValidation.error);
     }
+    
     const existingUser = await User.findByUsername(usernameValidation.username);
     if (existingUser && existingUser.id !== userId) {
-      throw new ValidationError('Username already taken');
+      throw new ValidationError('Это имя пользователя уже занято');
     }
+    
     updates.username = usernameValidation.username;
   }
 
@@ -47,19 +73,24 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
     if (!emailValidation.valid) {
       throw new ValidationError(emailValidation.error);
     }
+    
     const existingUser = await User.findByEmail(emailValidation.email);
     if (existingUser && existingUser.id !== userId) {
-      throw new ValidationError('Email already registered');
+      throw new ValidationError('Этот email уже зарегистрирован');
     }
+    
     updates.email = emailValidation.email;
   }
 
   if (Object.keys(updates).length === 0) {
-    throw new ValidationError('No fields to update');
+    throw new ValidationError('Нет полей для обновления');
   }
 
   const updatedUser = await User.update(userId, updates);
-  res.json({ user: updatedUser });
+  
+  // Удаляем пароль из ответа
+  const { password_hash, ...userWithoutPassword } = updatedUser;
+  res.json({ user: userWithoutPassword });
 }));
 
 router.put('/me/password', authenticate, asyncHandler(async (req, res) => {
@@ -183,21 +214,30 @@ router.get('/search', authenticate, asyncHandler(async (req, res) => {
 }));
 
 router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
+  const targetUserId = req.params.userId;
+  validateUserId(targetUserId);
+  
   const PersonalMessageStore = require('../services/PersonalMessageStore');
-  const history = await PersonalMessageStore.getHistory(req.user.userId, req.params.userId);
+  const history = await PersonalMessageStore.getHistory(req.user.userId, targetUserId);
   res.json(history);
 }));
 
 router.post('/messages', authenticate, asyncHandler(async (req, res) => {
   const { toUserId, message, timestamp } = req.body;
-  if (!toUserId || !message || typeof message !== 'string') {
-    throw new ValidationError('toUserId and message are required');
+  
+  if (!toUserId) {
+    throw new ValidationError('ID получателя обязателен');
+  }
+  validateUserId(toUserId);
+  
+  if (!message || typeof message !== 'string') {
+    throw new ValidationError('Сообщение обязательно и должно быть строкой');
   }
 
   const { sanitizeChatMessage } = require('../utils/security');
   const sanitized = sanitizeChatMessage(message);
   if (!sanitized || sanitized.trim().length === 0) {
-    throw new ValidationError('Message is empty after sanitization');
+    throw new ValidationError('Сообщение пусто после санитизации');
   }
 
   const { pgPool } = require('../config/db');
@@ -206,7 +246,7 @@ router.post('/messages', authenticate, asyncHandler(async (req, res) => {
     [toUserId]
   );
   if (recipientCheck.rows.length === 0) {
-    throw new NotFoundError('Recipient not found');
+    throw new NotFoundError('Получатель не найден');
   }
 
   const PersonalMessageStore = require('../services/PersonalMessageStore');
@@ -234,12 +274,16 @@ router.post('/messages', authenticate, asyncHandler(async (req, res) => {
 
 router.post('/me/favorites/:roomId', authenticate, asyncHandler(async (req, res) => {
   const { roomId } = req.params;
+  if (!roomId || typeof roomId !== 'string') {
+    throw new ValidationError('Некорректный ID комнаты');
+  }
+  
   const userId = req.user.userId;
   const { pgPool } = require('../config/db');
 
   const roomCheck = await pgPool.query('SELECT id FROM rooms WHERE id = $1', [roomId]);
   if (roomCheck.rows.length === 0) {
-    throw new NotFoundError('Room not found');
+    throw new NotFoundError('Комната не найдена');
   }
 
   await pgPool.query(
@@ -247,11 +291,15 @@ router.post('/me/favorites/:roomId', authenticate, asyncHandler(async (req, res)
     [userId, roomId, Date.now()]
   );
 
-  res.json({ message: 'Added to favorites' });
+  res.json({ message: 'Добавлено в избранное' });
 }));
 
 router.delete('/me/favorites/:roomId', authenticate, asyncHandler(async (req, res) => {
   const { roomId } = req.params;
+  if (!roomId || typeof roomId !== 'string') {
+    throw new ValidationError('Некорректный ID комнаты');
+  }
+  
   const userId = req.user.userId;
   const { pgPool } = require('../config/db');
 
@@ -260,7 +308,7 @@ router.delete('/me/favorites/:roomId', authenticate, asyncHandler(async (req, re
     [userId, roomId]
   );
 
-  res.json({ message: 'Removed from favorites' });
+  res.json({ message: 'Удалено из избранного' });
 }));
 
 module.exports = router;
