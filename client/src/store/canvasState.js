@@ -19,6 +19,7 @@ class CanvasState {
   isDrawing = false;
   users = []; 
   chatMessages = [];
+  recentSystemMessages = new Map();
   modalOpen = false; 
   showRoomInterface = false;
   showAboutModal = false;
@@ -58,9 +59,11 @@ class CanvasState {
       this.roomError = message;
       this.isConnected = false;
     });
-    WebSocketService.on('userConnected', ({ username }) => {
+WebSocketService.on('userConnected', ({ username }) => {
       this.addUser(username);
-      this.addChatMessage({ type: "system", username, message: `вошел в комнату` });
+      if (username !== this.username) {
+        this.addChatMessage({ type: "system", username, message: `вошел в комнату` });
+      }
     });
     WebSocketService.on('userDisconnected', ({ username }) => {
       this.removeUser(username);
@@ -385,6 +388,21 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
     this.users = this.users.filter(u => u !== user);
   }
   addChatMessage(msg) {
+    if (msg.type === "system") {
+      const now = Date.now();
+      const key = `${msg.username}_${msg.message}`;
+      const recent = this.recentSystemMessages.get(key);
+      if (recent && now - recent < 10000) { // 10 seconds
+        return;
+      }
+      this.recentSystemMessages.set(key, now);
+      // Clean old entries
+      for (let [k, time] of this.recentSystemMessages.entries()) {
+        if (now - time > 30000) {
+          this.recentSystemMessages.delete(k);
+        }
+      }
+    }
     this.chatMessages.push(msg);
   }
 sendChatMessage(message) {
