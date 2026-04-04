@@ -95,7 +95,8 @@ async handleConnection(ws, msg) {
         cancelledStrokeIds
       }));
 
-      this.broadcast(roomId, { method: 'connection', username, isVerified });
+      // Broadcast connection event to everyone except the user who just connected
+      this.broadcast(roomId, { method: 'connection', username, isVerified }, ws);
 
       const users = await RoomManager.getRoomUsers(roomId);
       this.broadcast(roomId, {

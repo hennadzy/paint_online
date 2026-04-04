@@ -388,26 +388,43 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
     this.users = this.users.filter(u => u !== user);
   }
   addChatMessage(msg) {
-    if (msg.type === "system") {
-      const now = Date.now();
-      const key = `${msg.username}_${msg.message}`;
-      const recent = this.recentSystemMessages.get(key);
-      if (recent && now - recent < 10000) { // 10 seconds
-        return;
-      }
-      this.recentSystemMessages.set(key, now);
-      // Clean old entries
-      for (let [k, time] of this.recentSystemMessages.entries()) {
-        if (now - time > 30000) {
-          this.recentSystemMessages.delete(k);
-        }
+    const now = Date.now();
+    
+    // Create a unique key for the message
+    const key = msg.type === "system" 
+      ? `${msg.username}_${msg.message}_system` 
+      : `${msg.username}_${msg.message}_chat_${now}`;
+    
+    // Check for recent duplicate messages (both system and chat)
+    const recent = this.recentSystemMessages.get(key);
+    if (recent && now - recent < 10000) { // 10 seconds
+      return;
+    }
+    
+    // Store the message timestamp
+    this.recentSystemMessages.set(key, now);
+    
+    // Clean old entries
+    for (let [k, time] of this.recentSystemMessages.entries()) {
+      if (now - time > 30000) {
+        this.recentSystemMessages.delete(k);
       }
     }
+    
     this.chatMessages.push(msg);
   }
 sendChatMessage(message) {
     if (WebSocketService.isConnected) {
       const userState = require('./userState').default;
+      
+      // Add a debounce mechanism to prevent multiple rapid sends
+      if (this._lastSentMessage === message && Date.now() - this._lastSentTime < 2000) {
+        return; // Prevent sending the same message within 2 seconds
+      }
+      
+      this._lastSentMessage = message;
+      this._lastSentTime = Date.now();
+      
       WebSocketService.sendChat(message);
       this.addChatMessage({ type: "chat", username: this.username, message, isVerified: userState.isAuthenticated });
     }
