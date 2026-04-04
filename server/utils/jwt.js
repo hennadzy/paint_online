@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
+// TODO: В продакшене обязательно установить переменную окружения JWT_SECRET
 const JWT_EXPIRATION = '1h';
 
 function generateToken(roomId, username, isPublic, role = 'user', userId = null) {
