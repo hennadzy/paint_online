@@ -25,7 +25,6 @@ const TopMenu = observer(() => {
   const [exportFilename, setExportFilename] = useState('drawing');
   const [exportFormat, setExportFormat] = useState('png');
 
-  // Gallery submit state
   const [showGallerySubmit, setShowGallerySubmit] = useState(false);
   const [galleryTitle, setGalleryTitle] = useState('');
   const [gallerySubmitting, setGallerySubmitting] = useState(false);

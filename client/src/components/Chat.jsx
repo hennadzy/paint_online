@@ -80,7 +80,6 @@ const Chat = observer(() => {
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
       
-      // Предотвращаем повторную отправку в течение короткого времени
       setTimeout(() => {
         setIsSending(false);
       }, 1000);

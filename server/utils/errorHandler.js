@@ -2,7 +2,6 @@
  * Централизованный обработчик ошибок для Express
  */
 
-// Типы ошибок
 class AppError extends Error {
   constructor(message, statusCode = 500) {
     super(message);
@@ -41,16 +40,13 @@ class NotFoundError extends AppError {
   }
 }
 
-// Обработчик асинхронных функций для Express
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// Middleware для обработки ошибок
 const errorMiddleware = (err, req, res, next) => {
   console.error('Error:', err);
 
-  // Если ошибка операционная (ожидаемая), отправляем соответствующий статус и сообщение
   if (err.isOperational) {
     return res.status(err.statusCode).json({
       error: err.message,
@@ -58,7 +54,6 @@ const errorMiddleware = (err, req, res, next) => {
     });
   }
 
-  // Для неожиданных ошибок отправляем общее сообщение
   const isDev = process.env.NODE_ENV !== 'production';
   
   res.status(500).json({
@@ -67,7 +62,6 @@ const errorMiddleware = (err, req, res, next) => {
   });
 };
 
-// Обработчик для неперехваченных исключений и отклоненных промисов
 const setupGlobalErrorHandlers = () => {
   process.on('uncaughtException', (err) => {
     console.error('UNCAUGHT EXCEPTION:', err);

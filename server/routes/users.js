@@ -7,13 +7,11 @@ const { asyncHandler, ValidationError, AuthError, NotFoundError, ForbiddenError 
 
 const router = express.Router();
 
-// Вспомогательные функции для проверки авторизации
 const validateUserId = (userId) => {
   if (!userId || typeof userId !== 'string' && typeof userId !== 'number') {
     throw new ValidationError('Некорректный ID пользователя');
   }
   
-  // Проверка формата userId (обычно это число или UUID)
   if (typeof userId === 'string' && !/^[a-zA-Z0-9-_]+$/.test(userId)) {
     throw new ValidationError('ID пользователя содержит недопустимые символы');
   }
@@ -37,7 +35,6 @@ router.get('/me', authenticate, asyncHandler(async (req, res) => {
     throw new NotFoundError('Пользователь не найден');
   }
   
-  // Удаляем пароль из ответа
   const { password_hash, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword });
 }));
@@ -50,7 +47,6 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
   const updates = {};
 
   if (username !== undefined) {
-    // Проверка длины username (3-20 символов)
     if (typeof username !== 'string' || username.length < 3 || username.length > 20) {
       throw new ValidationError('Имя пользователя должно содержать от 3 до 20 символов');
     }
@@ -88,7 +84,6 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
 
   const updatedUser = await User.update(userId, updates);
   
-  // Удаляем пароль из ответа
   const { password_hash, ...userWithoutPassword } = updatedUser;
   res.json({ user: userWithoutPassword });
 }));

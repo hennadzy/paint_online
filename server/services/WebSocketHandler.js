@@ -97,8 +97,6 @@ async handleConnection(ws, msg) {
         cancelledStrokeIds
       }));
 
-      // Broadcast connection event to everyone except the user who just connected
-      // Включаем флаг переподключения в сообщение
       this.broadcast(roomId, { 
         method: 'connection', 
         username, 
@@ -201,26 +199,21 @@ async handleChat(ws, msg) {
       return;
     }
 
-    // Проверка на спам и дублирование сообщений
     const now = Date.now();
     const messageKey = `${roomId}:${username}:${message}`;
     
-    // Проверяем, не было ли такое же сообщение отправлено недавно
     if (this._recentMessages && this._recentMessages.has(messageKey)) {
       const lastSent = this._recentMessages.get(messageKey);
-      if (now - lastSent < 2000) { // 2 секунды
-        // Игнорируем дублирующиеся сообщения
+      if (now - lastSent < 2000) {
         return;
       }
     }
     
-    // Сохраняем информацию о сообщении
     if (!this._recentMessages) {
       this._recentMessages = new Map();
     }
     this._recentMessages.set(messageKey, now);
     
-    // Очистка старых записей
     if (this._recentMessages.size > 100) {
       const keysToDelete = [];
       for (const [key, time] of this._recentMessages.entries()) {

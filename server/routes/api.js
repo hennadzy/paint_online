@@ -365,7 +365,6 @@ router.get('/coloring-pages', apiLimiter, async (req, res) => {
   }
 });
 
-// Public endpoint: serve coloring page image from DB (persistent across restarts)
 router.get('/coloring-pages/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

@@ -29,7 +29,6 @@ const likeLimiter = rateLimit({
   validate: { xForwardedForHeader: false }
 });
 
-// GET /api/gallery - get approved drawings sorted by likes
 router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   try {
     const userId = req.user ? req.user.userId : null;
@@ -72,7 +71,6 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   }
 });
 
-// GET /api/gallery/image/:id - serve gallery image
 router.get('/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -109,7 +107,6 @@ router.get('/image/:id', async (req, res) => {
   }
 });
 
-// POST /api/gallery/submit - submit drawing for approval (authenticated)
 router.post('/submit', submitLimiter, authenticate, async (req, res) => {
   try {
     const { title, imageData } = req.body;
@@ -132,7 +129,6 @@ router.post('/submit', submitLimiter, authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Неверный формат изображения' });
     }
 
-    // Check if user has too many pending drawings
     const pendingCount = await pgPool.query(
       `SELECT COUNT(*) FROM gallery_drawings WHERE user_id = $1 AND status = 'pending'`,
       [userId]
@@ -154,7 +150,6 @@ router.post('/submit', submitLimiter, authenticate, async (req, res) => {
   }
 });
 
-// POST /api/gallery/:id/like - toggle like (authenticated)
 router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -164,7 +159,6 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid id' });
     }
 
-    // Check drawing exists and is approved
     const drawing = await pgPool.query(
       `SELECT id, likes_count FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
       [id]
@@ -174,7 +168,6 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Рисунок не найден' });
     }
 
-    // Check if already liked
     const existingLike = await pgPool.query(
       `SELECT 1 FROM gallery_likes WHERE user_id = $1 AND drawing_id = $2`,
       [userId, id]
@@ -182,7 +175,6 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
 
     let liked;
     if (existingLike.rows.length > 0) {
-      // Unlike
       await pgPool.query(
         `DELETE FROM gallery_likes WHERE user_id = $1 AND drawing_id = $2`,
         [userId, id]
@@ -193,7 +185,6 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
       );
       liked = false;
     } else {
-      // Like
       await pgPool.query(
         `INSERT INTO gallery_likes (user_id, drawing_id, created_at) VALUES ($1, $2, $3)`,
         [userId, id, Date.now()]
@@ -220,7 +211,6 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
   }
 });
 
-// GET /api/gallery/user/me - get current user's approved gallery drawings
 router.get('/user/me', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;

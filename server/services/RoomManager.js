@@ -289,7 +289,6 @@ async removeUser(ws) {
 async addStroke(roomId, stroke) {
     await redis.rpush(`room:${roomId}:strokes`, JSON.stringify(stroke));
     await redis.ltrim(`room:${roomId}:strokes`, -5000, -1);
-    // Also save to database immediately for persistence
     try {
       await DataStore.saveStroke(roomId, stroke);
     } catch (error) {

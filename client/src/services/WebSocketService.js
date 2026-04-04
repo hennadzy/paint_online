@@ -18,7 +18,6 @@ class WebSocketService {
 connect(wsUrl, roomId, username, token) {
     return new Promise((resolve, reject) => {
       try {
-        // Флаг для отслеживания, является ли это переподключением
         const isReconnecting = this.reconnectAttempts > 0;
         
         this.roomId = roomId;
@@ -26,28 +25,24 @@ connect(wsUrl, roomId, username, token) {
         this.token = token;
         this.socket = new WebSocket(wsUrl);
         
-        // Добавляем таймаут для обработки медленных соединений на мобильных устройствах
         const connectionTimeout = setTimeout(() => {
           if (this.socket && this.socket.readyState !== WebSocket.OPEN) {
             this.socket.close();
             reject(new Error('Connection timeout'));
           }
-        }, 10000); // 10 секунд таймаут
+        }, 10000);
 
         this.socket.onopen = () => {
           clearTimeout(connectionTimeout);
           this.isConnected = true;
           
-          // Сбрасываем счетчик попыток переподключения только при успешном соединении
           this.reconnectAttempts = 0;
           this.shouldReconnect = true;
           
-          // Генерируем новый sessionId только при первом подключении
           if (!this.sessionId) {
             this.sessionId = this.generateSessionId();
           }
 
-          // Добавляем флаг переподключения в сообщение
           this.send({
             method: "connection",
             id: roomId,
@@ -81,7 +76,6 @@ connect(wsUrl, roomId, username, token) {
           this.isConnected = false;
           this.emit('disconnected', {});
 
-          // Используем экспоненциальную задержку для переподключения
           if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1);
@@ -166,7 +160,6 @@ connect(wsUrl, roomId, username, token) {
 
     switch (message.method) {
       case 'connection':
-        // Игнорируем сообщения о переподключении того же пользователя
         if (message.username === this.username && message.isReconnecting) {
           return;
         }
@@ -188,7 +181,6 @@ connect(wsUrl, roomId, username, token) {
         this.emit('clearReceived', { username: message.username });
         break;
       case 'chat':
-        // Добавляем проверку на дублирование сообщений
         const lastMessage = this._lastReceivedChatMessage;
         const currentMessage = `${message.username}:${message.message}`;
         const currentTime = Date.now();
@@ -196,11 +188,9 @@ connect(wsUrl, roomId, username, token) {
         if (lastMessage && 
             lastMessage.content === currentMessage && 
             currentTime - lastMessage.time < 2000) {
-          // Игнорируем дублирующиеся сообщения, полученные в течение 2 секунд
           return;
         }
         
-        // Сохраняем информацию о последнем полученном сообщении
         this._lastReceivedChatMessage = {
           content: currentMessage,
           time: currentTime

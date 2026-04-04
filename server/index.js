@@ -13,7 +13,6 @@ const galleryRouter = require('./routes/gallery');
 const { pgPool } = require('./config/db');
 const { errorMiddleware, setupGlobalErrorHandlers } = require('./utils/errorHandler');
 
-// Настройка глобальных обработчиков ошибок
 setupGlobalErrorHandlers();
 
 const app = express();
@@ -191,7 +190,6 @@ app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/gallery', galleryRouter);
 
-// Middleware для обработки ошибок должен быть после всех маршрутов
 app.use(errorMiddleware);
 
 const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring', '/gallery'];

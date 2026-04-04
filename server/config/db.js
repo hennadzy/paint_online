@@ -4,7 +4,6 @@ const Redis = require('ioredis');
 let pgPool;
 let redis;
 
-// Приоритет: DATABASE_URL > индивидуальные переменные > значения по умолчанию
 if (process.env.DATABASE_URL) {
   pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -31,7 +30,6 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// Приоритет: REDIS_URL > индивидуальные переменные > значения по умолчанию
 if (process.env.REDIS_URL) {
   redis = new Redis(process.env.REDIS_URL);
 } else {

@@ -15,7 +15,6 @@ const { asyncHandler, ValidationError, AuthError, NotFoundError } = require('../
 
 const router = express.Router();
 
-// Улучшенные настройки rate limiting для разных типов запросов
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 минут
   max: 10, // 10 попыток
@@ -37,7 +36,6 @@ const registerLimiter = rateLimit({
 router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
-  // Валидация username
   if (!username || typeof username !== 'string') {
     throw new ValidationError('Имя пользователя обязательно');
   }
@@ -47,7 +45,6 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
     throw new ValidationError(usernameValidation.error);
   }
 
-  // Улучшенная валидация email
   if (!email || typeof email !== 'string') {
     throw new ValidationError('Email обязателен');
   }
@@ -57,7 +54,6 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
     throw new ValidationError(emailValidation.error);
   }
 
-  // Улучшенная валидация password
   if (!password || typeof password !== 'string') {
     throw new ValidationError('Пароль обязателен');
   }
@@ -67,7 +63,6 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
     throw new ValidationError(passwordValidation.error);
   }
 
-  // Проверка существующего пользователя
   const existingUser = await User.findByEmail(emailValidation.email) ||
                       await User.findByUsername(usernameValidation.username);
   if (existingUser) {
@@ -98,7 +93,6 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
 router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Улучшенная валидация email и password
   if (!email || typeof email !== 'string') {
     throw new ValidationError('Email обязателен');
   }
@@ -156,7 +150,6 @@ router.get('/me', authenticate, asyncHandler(async (req, res) => {
     throw new NotFoundError('Пользователь не найден');
   }
   
-  // Удаляем пароль из ответа
   const { password_hash, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword });
 }));

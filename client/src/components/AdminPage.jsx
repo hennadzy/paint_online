@@ -200,14 +200,12 @@ const AdminPage = observer(() => {
   const [newPassword, setNewPassword] = useState('');
   const [passwordFormError, setPasswordFormError] = useState('');
 
-  // Coloring pages upload state
   const [coloringUploadTitle, setColoringUploadTitle] = useState('');
   const [coloringUploadFile, setColoringUploadFile] = useState(null);
   const [coloringUploadError, setColoringUploadError] = useState('');
   const [coloringUploadLoading, setColoringUploadLoading] = useState(false);
   const [coloringUploadSuccess, setColoringUploadSuccess] = useState('');
 
-  // Gallery admin state
   const [galleryPreviewId, setGalleryPreviewId] = useState(null);
   const [galleryRenameId, setGalleryRenameId] = useState(null);
   const [galleryRenameTitle, setGalleryRenameTitle] = useState('');

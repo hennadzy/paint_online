@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
-// TODO: В продакшене обязательно установить переменную окружения JWT_SECRET
 const JWT_EXPIRES_IN = '7d';
 const BCRYPT_ROUNDS = 10;
 
