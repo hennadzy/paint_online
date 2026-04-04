@@ -192,6 +192,54 @@ app.use('/api/gallery', galleryRouter);
 
 app.use(errorMiddleware);
 
+// SEO: Server-rendered meta tags for bots (без JavaScript)
+const SEO_PAGES = {
+  '/coloring': {
+    title: 'Раскраски онлайн - бесплатные раскраски для детей и взрослых',
+    description: 'Раскраски онлайн бесплатно. Раскрашивайте картинки прямо в браузере без скачивания. Большая коллекция раскрасок для детей и взрослых.',
+    keywords: 'раскраски онлайн, раскраски для детей, раскраски бесплатно, раскраски для взрослых, онлайн раскраски'
+  },
+  '/gallery': {
+    title: 'Галерея рисунков - лучшие работы пользователей',
+    description: 'Галерея рисунков пользователей Рисование.Онлайн. Смотрите, оценивайте и добавляйте свои работы в галерею.',
+    keywords: 'галерея рисунков, рисунки онлайн, галерея art, рисование онлайн галерея'
+  }
+};
+
+app.get('/coloring', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  const seo = SEO_PAGES['/coloring'];
+  html = html
+    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
+    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/coloring"`);
+  
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/gallery', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  
+  const seo = SEO_PAGES['/gallery'];
+  html = html
+    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
+    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/gallery"`);
+  
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring', '/gallery'];
 
 app.get('*', (req, res) => {

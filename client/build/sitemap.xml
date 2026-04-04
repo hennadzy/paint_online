@@ -8,4 +8,18 @@
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="ru" href="https://risovanie.online/"/>
   </url>
+  <url>
+    <loc>https://risovanie.online/coloring</loc>
+    <lastmod>2026-01-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://risovanie.online/coloring"/>
+  </url>
+  <url>
+    <loc>https://risovanie.online/gallery</loc>
+    <lastmod>2026-01-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://risovanie.online/gallery"/>
+  </url>
 </urlset>

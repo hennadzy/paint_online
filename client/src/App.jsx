@@ -17,6 +17,7 @@ import AdminPage from "./components/AdminPage";
 import ColoringPage from "./components/ColoringPage";
 import GalleryPage from "./components/GalleryPage";
 import RoomInterface from "./components/RoomInterface";
+import SeoMeta from "./components/SeoMeta";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 import { isValidRoomId } from "./utils/routerUtils";
@@ -49,6 +50,7 @@ const App = observer(() => {
 
     return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
+            <SeoMeta />
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}

@@ -1,7 +1,16 @@
 User-agent: *
 Allow: /
+Allow: /coloring
+Allow: /gallery
 Disallow: /static/
 Disallow: /*.json$
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /admin
+Disallow: /ws
+Disallow: /files/
 
 Sitemap: https://risovanie.online/sitemap.xml
 
