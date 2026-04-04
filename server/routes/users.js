@@ -3,6 +3,7 @@ const multer = require('multer');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
 const { validateUsername, validateEmail, validatePassword, hashPassword, verifyPassword } = require('../utils/auth');
+const { asyncHandler, ValidationError, AuthError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
 
 const router = express.Router();
 
@@ -16,60 +17,50 @@ const upload = multer({
   }
 });
 
-router.get('/me', authenticate, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ user });
-  } catch (error) {
-    console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Server error' });
+router.get('/me', authenticate, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.userId);
+  if (!user) {
+    throw new NotFoundError('User not found');
   }
-});
+  res.json({ user });
+}));
 
-router.put('/me', authenticate, async (req, res) => {
-  try {
-    const { username, email } = req.body;
-    const userId = req.user.userId;
-    const updates = {};
+router.put('/me', authenticate, asyncHandler(async (req, res) => {
+  const { username, email } = req.body;
+  const userId = req.user.userId;
+  const updates = {};
 
-    if (username !== undefined) {
-      const usernameValidation = validateUsername(username);
-      if (!usernameValidation.valid) {
-        return res.status(400).json({ error: usernameValidation.error });
-      }
-      const existingUser = await User.findByUsername(usernameValidation.username);
-      if (existingUser && existingUser.id !== userId) {
-        return res.status(400).json({ error: 'Username already taken' });
-      }
-      updates.username = usernameValidation.username;
+  if (username !== undefined) {
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.valid) {
+      throw new ValidationError(usernameValidation.error);
     }
-
-    if (email !== undefined) {
-      const emailValidation = validateEmail(email);
-      if (!emailValidation.valid) {
-        return res.status(400).json({ error: emailValidation.error });
-      }
-      const existingUser = await User.findByEmail(emailValidation.email);
-      if (existingUser && existingUser.id !== userId) {
-        return res.status(400).json({ error: 'Email already registered' });
-      }
-      updates.email = emailValidation.email;
+    const existingUser = await User.findByUsername(usernameValidation.username);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ValidationError('Username already taken');
     }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-
-    const updatedUser = await User.update(userId, updates);
-    res.json({ user: updatedUser });
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ error: 'Server error' });
+    updates.username = usernameValidation.username;
   }
-});
+
+  if (email !== undefined) {
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      throw new ValidationError(emailValidation.error);
+    }
+    const existingUser = await User.findByEmail(emailValidation.email);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ValidationError('Email already registered');
+    }
+    updates.email = emailValidation.email;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ValidationError('No fields to update');
+  }
+
+  const updatedUser = await User.update(userId, updates);
+  res.json({ user: updatedUser });
+}));
 
 router.put('/me/password', authenticate, async (req, res) => {
   try {
