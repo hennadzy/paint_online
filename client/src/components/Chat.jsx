@@ -188,10 +188,11 @@ return (
         </div>
       </div>
 
-      {showPersonalMessages && (
+{showPersonalMessages && (
         <PersonalMessagesModal
           isOpen={showPersonalMessages}
           onClose={handleClosePersonalMessages}
+          initialUser={selectedChatUser}
         />
       )}
     </>

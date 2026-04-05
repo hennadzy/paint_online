@@ -102,7 +102,7 @@ const AuthPage = observer(() => {
 
   const verifyResetToken = async (token) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/verify-reset-token`, { token });
+      const response = await axios.post(`${API_URL}/api/auth/verify-reset-token`, { token });
       if (!response.data.valid) {
         setLocalError('Неверный или истекший токен');
       }
@@ -122,7 +122,7 @@ const AuthPage = observer(() => {
     setLocalError('');
 
     try {
-      await axios.post(`${API_URL}/auth/forgot-password`, { email: resetEmail });
+      await axios.post(`${API_URL}/api/auth/forgot-password`, { email: resetEmail });
       setResetSuccess(true);
       setShowForgotPassword(false);
     } catch (error) {
@@ -147,7 +147,7 @@ const AuthPage = observer(() => {
     setLocalError('');
 
     try {
-      await axios.post(`${API_URL}/auth/reset-password`, {
+      await axios.post(`${API_URL}/api/auth/reset-password`, {
         token: resetToken,
         newPassword: formData.password
       });

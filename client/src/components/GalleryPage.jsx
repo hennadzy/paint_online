@@ -146,11 +146,11 @@ const handleLike = async (drawingId) => {
       }));
       setNewComment(prev => ({ ...prev, [drawingId]: '' }));
 
-      // Обновляем количество комментариев в карточке
+// Обновляем количество комментариев в карточке
       setDrawings(prev =>
         prev.map(d =>
           d.id === drawingId
-            ? { ...d, comments_count: (d.comments_count || 0) + 1 }
+            ? { ...d, comments_count: Number(d.comments_count || 0) + 1 }
             : d
         )
       );
@@ -207,11 +207,11 @@ const handleLike = async (drawingId) => {
         [drawingId]: prev[drawingId].filter(c => c.id !== commentId)
       }));
 
-      // Обновляем количество комментариев в карточке
+// Обновляем количество комментариев в карточке
       setDrawings(prev =>
         prev.map(d =>
           d.id === drawingId
-            ? { ...d, comments_count: Math.max(0, (d.comments_count || 1) - 1) }
+            ? { ...d, comments_count: Math.max(0, Number(d.comments_count || 0) - 1) }
             : d
         )
       );
@@ -327,12 +327,12 @@ const handleLike = async (drawingId) => {
                   <p className="gallery-card__author">✏️ {drawing.author_name}</p>
                   <p className="gallery-card__date">{formatDate(drawing.approved_at || drawing.created_at)}</p>
                   <div className="gallery-card__footer">
-                    <button
+<button
                       className={`gallery-comments-btn ${expandedComments[drawing.id] ? 'active' : ''}`}
                       onClick={(e) => toggleComments(drawing.id, e)}
                       title="Комментарии"
                     >
-                      💬 Комментарии ({drawing.comments_count || 0})
+                      💬 Комментарии ({parseInt(drawing.comments_count, 10) || 0})
                     </button>
                     <button
                       className={`gallery-like-btn ${drawing.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
