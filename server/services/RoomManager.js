@@ -151,6 +151,9 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
     if (isVerified) {
       multi.sadd(`room:${roomId}:verified_users`, username);
     }
+    if (userId) {
+      multi.hset(`room:${roomId}:user_ids`, username, String(userId));
+    }
     await multi.exec();
 
     await DataStore.updateRoomActivity(roomId);
@@ -206,7 +209,7 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
         }
         return parsed;
       });
-    }
+    } 
 
     const allCancelledStrokes = await this.getAllCancelledStrokes(roomId);
     const allCancelledStrokeIds = new Set();
@@ -237,6 +240,7 @@ async removeUser(ws) {
     const multi = redis.multi();
     multi.srem(`room:${roomId}:users`, username);
     multi.srem(`room:${roomId}:verified_users`, username);
+    multi.hdel(`room:${roomId}:user_ids`, username);
     multi.del(`ws:${wsId}`);
     multi.del(`user:${username}:room`);
     await multi.exec();
@@ -419,9 +423,13 @@ async getRoomUsers(roomId) {
     const usernames = await redis.smembers(`room:${roomId}:users`);
     const verifiedUsers = await redis.smembers(`room:${roomId}:verified_users`);
 
+    // Получаем userId для всех пользователей
+    const userIds = await redis.hgetall(`room:${roomId}:user_ids`);
+
     return usernames.map(username => ({
       username,
-      isVerified: verifiedUsers.includes(username)
+      isVerified: verifiedUsers.includes(username),
+      userId: userIds[username] || null
     }));
   }
 
@@ -512,7 +520,7 @@ _getWsId(ws) {
     return ws._id;
   }
 
-  async cleanupStaleKeys() {
+async cleanupStaleKeys() {
     if (!this.redis) return;
 
     try {
@@ -545,6 +553,20 @@ _getWsId(ws) {
           }
         } catch (error) {
           console.error('Error cleaning user key:', error);
+        }
+      }
+
+      // Очистка устаревших хэшей user_ids
+      const roomUserIdsKeys = await this.redis.keys('room:*:user_ids');
+      for (const key of roomUserIdsKeys) {
+        try {
+          const roomId = key.split(':')[1];
+          const roomExists = await this.redis.exists(`room:${roomId}:users`);
+          if (!roomExists) {
+            await this.redis.del(key);
+          }
+        } catch (error) {
+          console.error('Error cleaning room user_ids key:', error);
         }
       }
     } catch (error) {

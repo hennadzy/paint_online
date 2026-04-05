@@ -881,20 +881,38 @@ body.modal-open {
 // Стили для кликабельных ников в чате
 .chat-user--clickable {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     color: #ffcc00 !important;
+    background-color: rgba(255, 204, 0, 0.1);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 
 .chat-message-username--clickable {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     color: #ffcc00 !important;
     text-decoration: underline;
+    background-color: rgba(255, 204, 0, 0.1);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 

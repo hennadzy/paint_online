@@ -187,9 +187,9 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         }
       }
     });
-WebSocketService.on('chatReceived', ({ username, message, isVerified }) => {
+WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) => {
       if (username !== this.username) {
-        this.addChatMessage({ type: "chat", username, message, isVerified });
+        this.addChatMessage({ type: "chat", username, message, isVerified, userId });
         if (!this.pageVisible) {
           this.notifyUser(`Сообщение от ${username}`, message);
         }
@@ -421,7 +421,13 @@ sendChatMessage(message) {
       this._lastSentTime = Date.now();
       
       WebSocketService.sendChat(message);
-      this.addChatMessage({ type: "chat", username: this.username, message, isVerified: userState.isAuthenticated });
+      this.addChatMessage({
+        type: "chat",
+        username: this.username,
+        message,
+        isVerified: userState.isAuthenticated,
+        userId: userState.isAuthenticated ? userState.user?.id : null
+      });
     }
   }
 

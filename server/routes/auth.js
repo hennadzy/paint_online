@@ -81,7 +81,9 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
     passwordHash
   });
 
-  const supportEmail = process.env.SUPPORT_EMAIL || process.env.FROM_EMAIL || 'support@paint-online.ru';
+const supportEmail = process.env.SUPPORT_EMAIL || process.env.FROM_EMAIL || 'support@paint-online.ru';
+
+  // Отправка приветственного email (без блокировки регистрации)
   try {
     await sendWelcomeEmail({
       to: user.email,
@@ -89,13 +91,11 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
       supportEmail
     });
   } catch (emailError) {
-    if (emailError?.code === 'SMTP_NOT_CONFIGURED') {
-      throw new ValidationError('Почтовый сервис не настроен. Обратитесь к администратору.');
-    }
-    console.error('Welcome email send error:', emailError);
-    throw new ValidationError('Не удалось отправить приветственное письмо. Попробуйте позже.');
+    // Не блокируем регистрацию при ошибке отправки email
+    console.error('Welcome email send error (non-blocking):', emailError);
   }
 
+  // Отправка приветственного сообщения в ЛС от admin
   try {
     const adminResult = await pgPool.query(
       `SELECT id, username

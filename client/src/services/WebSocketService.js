@@ -199,7 +199,8 @@ connect(wsUrl, roomId, username, token) {
         this.emit('chatReceived', { 
           username: message.username, 
           message: message.message, 
-          isVerified: message.isVerified 
+          isVerified: message.isVerified,
+          userId: message.userId
         });
         break;
       case 'personalMessage':
