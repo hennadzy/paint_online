@@ -20,6 +20,7 @@ const TopMenu = observer(() => {
   const fileInputKey = useRef(0);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [clickAnimation, setClickAnimation] = useState(null);
+  const [helpViewed, setHelpViewed] = useState(false);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState('drawing');
@@ -31,10 +32,20 @@ const TopMenu = observer(() => {
   const [galleryError, setGalleryError] = useState('');
   const [gallerySuccess, setGallerySuccess] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Проверка, была ли просмотрена справка
+  useEffect(() => {
+    try {
+      const viewed = localStorage.getItem('helpViewed');
+      setHelpViewed(!!viewed);
+    } catch (error) {
+      console.error('Error reading helpViewed from localStorage:', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -213,12 +224,22 @@ const TopMenu = observer(() => {
    setTimeout(() => setClickAnimation(null), 1000);
  }, []);
 
- const performExport = () => {
+const performExport = () => {
  const canvas = canvasState.canvas;
  if (!canvas) return;
 
  const filename = (exportFilename || '').trim() || canvasState.sessionId || 'drawing';
  let href, downloadName;
+
+ const handleHelpClick = () => {
+   try {
+     localStorage.setItem('helpViewed', 'true');
+     setHelpViewed(true);
+   } catch (error) {
+     console.error('Error saving helpViewed to localStorage:', error);
+   }
+   canvasState.setShowAboutModal(true);
+ };
 
  if (exportFormat === 'png') {
  href = canvas.toDataURL('image/png');
@@ -305,10 +326,13 @@ const TopMenu = observer(() => {
             </button>
           )}
 
-          <button
+<button
             type="button"
-            className={`toolbar__btn ${clickAnimation === "help" ? "click-animation" : ""}`}
-            onClick={() => handleActionClick(() => canvasState.setShowAboutModal(true), "help")}
+            className={`toolbar__btn ${clickAnimation === "help" ? "click-animation" : ""} ${!helpViewed ? "help-blinking" : ""}`}
+            onClick={() => {
+              handleHelpClick();
+              handleActionClick(() => canvasState.setShowAboutModal(true), "help");
+            }}
             onMouseDown={(e) => e.target.blur()}
             title="Справка"
           >

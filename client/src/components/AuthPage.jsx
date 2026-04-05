@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import userState from '../store/userState';
+import { API_URL } from '../store/canvasState';
+import axios from 'axios';
 import '../styles/room-interface.scss';
 
 const EyeIcon = ({ visible, onClick }) => (
@@ -29,8 +31,10 @@ const EyeIcon = ({ visible, onClick }) => (
 const AuthPage = observer(() => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const isLogin = location.pathname !== '/register';
+  const isResetPassword = location.pathname === '/reset-password';
 
   const [formData, setFormData] = useState({
     username: '',
@@ -39,6 +43,11 @@ const AuthPage = observer(() => {
   });
   const [localError, setLocalError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -78,14 +87,97 @@ const AuthPage = observer(() => {
     setLocalError('');
   };
 
+  // Проверка токена при загрузке страницы сброса пароля
+  React.useEffect(() => {
+    if (isResetPassword) {
+      const token = searchParams.get('token');
+      if (token) {
+        setResetToken(token);
+        verifyResetToken(token);
+      } else {
+        setLocalError('Отсутствует токен сброса пароля');
+      }
+    }
+  }, [isResetPassword, searchParams]);
+
+  const verifyResetToken = async (token) => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/verify-reset-token`, { token });
+      if (!response.data.valid) {
+        setLocalError('Неверный или истекший токен');
+      }
+    } catch (error) {
+      setLocalError('Неверный или истекший токен');
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      setLocalError('Введите email');
+      return;
+    }
+
+    setResetLoading(true);
+    setLocalError('');
+
+    try {
+      await axios.post(`${API_URL}/auth/forgot-password`, { email: resetEmail });
+      setResetSuccess(true);
+      setShowForgotPassword(false);
+    } catch (error) {
+      setLocalError(error.response?.data?.error || 'Ошибка отправки запроса');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!formData.password) {
+      setLocalError('Введите новый пароль');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setLocalError('Пароль должен быть не менее 6 символов');
+      return;
+    }
+
+    setResetLoading(true);
+    setLocalError('');
+
+    try {
+      await axios.post(`${API_URL}/auth/reset-password`, {
+        token: resetToken,
+        newPassword: formData.password
+      });
+      setResetSuccess(true);
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (error) {
+      setLocalError(error.response?.data?.error || 'Ошибка сброса пароля');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="room-interface-overlay fullscreen" onClick={() => navigate('/')}>
       <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
         <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
 
         <div className="room-welcome">
-          <h1>{isLogin ? 'Вход' : 'Регистрация'}</h1>
-          <p>{isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт'}</p>
+          <h1>{isResetPassword ? 'Сброс пароля' : showForgotPassword ? 'Забыли пароль?' : (isLogin ? 'Вход' : 'Регистрация')}</h1>
+          <p>
+            {isResetPassword
+              ? 'Введите новый пароль'
+              : showForgotPassword
+              ? 'Введите email для восстановления пароля'
+              : isLogin
+              ? 'Войдите в свой аккаунт'
+              : 'Создайте новый аккаунт'}
+          </p>
         </div>
 
         <div className="room-card about-content fullscreen">
@@ -93,71 +185,158 @@ const AuthPage = observer(() => {
             {userState.error && <div className="room-error">{userState.error}</div>}
             {localError && <div className="room-error">{localError}</div>}
 
-            <form onSubmit={handleSubmit}>
-              {!isLogin && (
-                <div className="form-group">
-                  <label>Имя пользователя</label>
-                  <input
-                    type="text"
-                    name="username"
-                    className="room-input"
-                    value={formData.username}
-                    onChange={handleChange}
-                    placeholder="Ваше имя"
-                    required={!isLogin}
-                  />
-                </div>
-              )}
-
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="room-input"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="your@email.com"
-                  required
-                />
+            {resetSuccess && (
+              <div className="room-success" style={{ background: 'rgba(40,167,69,0.12)', border: '1px solid rgba(40,167,69,0.3)', borderRadius: '8px', color: '#5cb85c', padding: '12px', textAlign: 'center', marginBottom: '15px' }}>
+                {isResetPassword
+                  ? 'Пароль успешно изменен! Перенаправление на страницу входа...'
+                  : 'Если пользователь с таким email существует, инструкция будет отправлена на указанный адрес.'}
               </div>
+            )}
 
-              <div className="form-group password-input-group">
-                <label>Пароль</label>
-                <div className="password-input-wrapper">
+            {isResetPassword ? (
+              <form onSubmit={handleResetPassword}>
+                <div className="form-group">
+                  <label>Новый пароль</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      className="room-input"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••"
+                      required
+                    />
+                    <EyeIcon visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="room-btn room-btn-primary"
+                  disabled={resetLoading}
+                  style={{ width: '100%', marginTop: '15px' }}
+                >
+                  {resetLoading ? 'Подождите...' : 'Изменить пароль'}
+                </button>
+              </form>
+            ) : showForgotPassword ? (
+              <form onSubmit={handleForgotPassword}>
+                <div className="form-group">
+                  <label>Email</label>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
+                    type="email"
                     className="room-input"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="••••••"
+                    value={resetEmail}
+                    onChange={(e) => { setResetEmail(e.target.value); setLocalError(''); }}
+                    placeholder="your@email.com"
                     required
                   />
-                  <EyeIcon visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="room-btn room-btn-primary"
-                disabled={userState.loading}
-                style={{ width: '100%', marginTop: '15px' }}
-              >
-                {userState.loading ? 'Подождите...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="room-btn room-btn-primary"
+                  disabled={resetLoading}
+                  style={{ width: '100%', marginTop: '15px' }}
+                >
+                  {resetLoading ? 'Подождите...' : 'Отправить'}
+                </button>
 
-            <p className="switch-link" style={{ textAlign: 'center', marginTop: '20px' }}>
-              {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
-              <button
-                onClick={switchMode}
-                className="link-button"
-                style={{ background: 'none', border: 'none', color: '#ffcc00', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }}
-              >
-                {isLogin ? 'Зарегистрироваться' : 'Войти'}
-              </button>
-            </p>
+                <button
+                  type="button"
+                  className="room-btn room-btn-ghost"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                    setLocalError('');
+                    setResetSuccess(false);
+                  }}
+                  style={{ width: '100%', marginTop: '10px' }}
+                >
+                  Отмена
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {!isLogin && (
+                  <div className="form-group">
+                    <label>Имя пользователя</label>
+                    <input
+                      type="text"
+                      name="username"
+                      className="room-input"
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="Ваше имя"
+                      required={!isLogin}
+                    />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="room-input"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+
+                <div className="form-group password-input-group">
+                  <label>Пароль</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      className="room-input"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="••••••"
+                      required
+                    />
+                    <EyeIcon visible={showPassword} onClick={() => setShowPassword(!showPassword)} />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="room-btn room-btn-primary"
+                  disabled={userState.loading}
+                  style={{ width: '100%', marginTop: '15px' }}
+                >
+                  {userState.loading ? 'Подождите...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
+                </button>
+
+                {isLogin && (
+                  <button
+                    type="button"
+                    className="room-btn room-btn-ghost"
+                    onClick={() => setShowForgotPassword(true)}
+                    style={{ width: '100%', marginTop: '10px' }}
+                  >
+                    Забыли пароль?
+                  </button>
+                )}
+              </form>
+            )}
+
+            {!showForgotPassword && !isResetPassword && (
+              <p className="switch-link" style={{ textAlign: 'center', marginTop: '20px' }}>
+                {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+                <button
+                  onClick={switchMode}
+                  className="link-button"
+                  style={{ background: 'none', border: 'none', color: '#ffcc00', textDecoration: 'underline', cursor: 'pointer', marginLeft: '5px' }}
+                >
+                  {isLogin ? 'Зарегистрироваться' : 'Войти'}
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>

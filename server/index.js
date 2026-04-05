@@ -391,7 +391,7 @@ async function initDb() {
       `);
     } catch (_) { }
 
-    try {
+try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS gallery_drawings (
           id SERIAL PRIMARY KEY,
@@ -409,10 +409,22 @@ async function initDb() {
           created_at BIGINT NOT NULL,
           PRIMARY KEY (user_id, drawing_id)
         );
+        CREATE TABLE IF NOT EXISTS gallery_comments (
+          id SERIAL PRIMARY KEY,
+          drawing_id INTEGER NOT NULL REFERENCES gallery_drawings(id) ON DELETE CASCADE,
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          comment TEXT NOT NULL,
+          created_at BIGINT NOT NULL,
+          updated_at BIGINT,
+          is_deleted BOOLEAN DEFAULT FALSE
+        );
         CREATE INDEX IF NOT EXISTS idx_gallery_drawings_status ON gallery_drawings(status);
         CREATE INDEX IF NOT EXISTS idx_gallery_drawings_user ON gallery_drawings(user_id);
         CREATE INDEX IF NOT EXISTS idx_gallery_drawings_likes ON gallery_drawings(likes_count DESC);
         CREATE INDEX IF NOT EXISTS idx_gallery_likes_drawing ON gallery_likes(drawing_id);
+        CREATE INDEX IF NOT EXISTS idx_gallery_comments_drawing_id ON gallery_comments(drawing_id);
+        CREATE INDEX IF NOT EXISTS idx_gallery_comments_user_id ON gallery_comments(user_id);
+        CREATE INDEX IF NOT EXISTS idx_gallery_comments_created_at ON gallery_comments(created_at DESC);
       `);
     } catch (_) { }
 

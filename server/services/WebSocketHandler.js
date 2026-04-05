@@ -224,10 +224,10 @@ async handleChat(ws, msg) {
       keysToDelete.forEach(key => this._recentMessages.delete(key));
     }
 
-    const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
+const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     const isVerified = verifiedUsers.includes(username);
 
-    this.broadcast(roomId, { method: "chat", username, message, isVerified }, ws);
+    this.broadcast(roomId, { method: "chat", username, message, isVerified, userId }, ws);
     await RoomManager.updateUserActivity(ws);
   }
 

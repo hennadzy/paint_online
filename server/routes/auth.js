@@ -1,7 +1,9 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Session = require('../models/Session');
+const { pgPool } = require('../config/db');
 const {
   hashPassword,
   verifyPassword,
@@ -152,6 +154,133 @@ router.get('/me', authenticate, asyncHandler(async (req, res) => {
   
   const { password_hash, ...userWithoutPassword } = user;
   res.json({ user: userWithoutPassword });
+}));
+
+const resetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 час
+  max: 3, // 3 попытки
+  message: 'Слишком много попыток сброса пароля, пожалуйста, попробуйте позже.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
+});
+
+// Запрос на восстановление пароля
+router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string') {
+    throw new ValidationError('Email обязателен');
+  }
+
+  const emailValidation = validateEmail(email);
+  if (!emailValidation.valid) {
+    throw new ValidationError(emailValidation.error);
+  }
+
+  const user = await User.findByEmail(emailValidation.email);
+  if (!user) {
+    // В целях безопасности не сообщаем, что пользователь не найден
+    return res.json({ message: 'Если пользователь с таким email существует, инструкция будет отправлена' });
+  }
+
+  // Генерируем токен восстановления
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 час
+
+  // Сохраняем токен в базе данных
+  await pgPool.query(
+    `INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at)
+     VALUES ($1, $2, $3, $4)`,
+    [user.id, resetToken, expiresAt, Date.now()]
+  );
+
+  // Отправляем email (заглушка - в реальном проекте нужно настроить отправку email)
+  console.log('Password reset link:', `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`);
+
+  res.json({ message: 'Если пользователь с таким email существует, инструкция будет отправлена' });
+}));
+
+// Сброс пароля
+router.post('/reset-password', asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    throw new ValidationError('Токен обязателен');
+  }
+
+  if (!newPassword || typeof newPassword !== 'string') {
+    throw new ValidationError('Новый пароль обязателен');
+  }
+
+  const passwordValidation = validatePassword(newPassword);
+  if (!passwordValidation.valid) {
+    throw new ValidationError(passwordValidation.error);
+  }
+
+  // Ищем токен в базе данных
+  const tokenResult = await pgPool.query(
+    `SELECT prt.*, u.id AS user_id, u.email
+     FROM password_reset_tokens prt
+     JOIN users u ON u.id = prt.user_id
+     WHERE prt.token = $1 AND prt.used = FALSE`,
+    [token]
+  );
+
+  if (tokenResult.rows.length === 0) {
+    throw new ValidationError('Неверный или истекший токен');
+  }
+
+  const tokenData = tokenResult.rows[0];
+
+  // Проверяем срок действия токена
+  if (tokenData.expires_at < Date.now()) {
+    throw new ValidationError('Токен истек');
+  }
+
+  // Хешируем новый пароль
+  const passwordHash = await hashPassword(newPassword);
+
+  // Обновляем пароль пользователя
+  await pgPool.query(
+    `UPDATE users SET password_hash = $1 WHERE id = $2`,
+    [passwordHash, tokenData.user_id]
+  );
+
+  // Помечаем токен как использованный
+  await pgPool.query(
+    `UPDATE password_reset_tokens SET used = TRUE WHERE id = $1`,
+    [tokenData.id]
+  );
+
+  // Удаляем все сессии пользователя (принудительный выход)
+  await pgPool.query(
+    `DELETE FROM sessions WHERE user_id = $1`,
+    [tokenData.user_id]
+  );
+
+  res.json({ message: 'Пароль успешно изменен' });
+}));
+
+// Проверка токена (для валидации на клиенте)
+router.post('/verify-reset-token', asyncHandler(async (req, res) => {
+  const { token } = req.body;
+
+  if (!token || typeof token !== 'string') {
+    throw new ValidationError('Токен обязателен');
+  }
+
+  const result = await pgPool.query(
+    `SELECT * FROM password_reset_tokens
+     WHERE token = $1 AND used = FALSE AND expires_at > $2`,
+    [token, Date.now()]
+  );
+
+  if (result.rows.length === 0) {
+    throw new ValidationError('Неверный или истекший токен');
+  }
+
+  res.json({ valid: true });
 }));
 
 module.exports = router;

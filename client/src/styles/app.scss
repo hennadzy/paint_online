@@ -872,9 +872,56 @@ body.modal-open {
     }
   }
 
-  .export-btn {
+.export-btn {
     padding: 8px 18px;
     font-size: 14px;
+  }
+}
+
+// Стили для кликабельных ников в чате
+.chat-user--clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #ffcc00 !important;
+  }
+}
+
+.chat-message-username--clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #ffcc00 !important;
+    text-decoration: underline;
+  }
+}
+
+// Моргание иконки справки
+.help-blinking {
+  animation: helpBlink 1.5s ease-in-out infinite;
+
+  .icon {
+    animation: helpIconPulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes helpBlink {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.6);
+  }
+}
+
+@keyframes helpIconPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.5);
   }
 }
 

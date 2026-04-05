@@ -39,6 +39,7 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
              gd.id,
              gd.title,
              gd.likes_count,
+             (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.drawing_id = gd.id AND gc.is_deleted = FALSE) AS comments_count,
              gd.created_at,
              gd.approved_at,
              u.username AS author_name,
@@ -52,6 +53,7 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
              gd.id,
              gd.title,
              gd.likes_count,
+             (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.drawing_id = gd.id AND gc.is_deleted = FALSE) AS comments_count,
              gd.created_at,
              gd.approved_at,
              u.username AS author_name,
@@ -233,6 +235,195 @@ router.get('/user/me', authenticate, async (req, res) => {
     res.json({ drawings: result.rows });
   } catch (error) {
     console.error('Get user gallery drawings error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Получение комментариев к рисунку
+router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    // Проверяем, что рисунок существует и одобрен
+    const drawing = await pgPool.query(
+      `SELECT id FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
+      [id]
+    );
+
+    if (drawing.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    const result = await pgPool.query(
+      `SELECT
+         gc.id,
+         gc.comment,
+         gc.created_at,
+         gc.updated_at,
+         u.id AS user_id,
+         u.username AS author_name,
+         u.avatar_url AS author_avatar
+       FROM gallery_comments gc
+       JOIN users u ON u.id = gc.user_id
+       WHERE gc.drawing_id = $1 AND gc.is_deleted = FALSE
+       ORDER BY gc.created_at ASC`,
+      [id]
+    );
+
+    res.json({ comments: result.rows });
+  } catch (error) {
+    console.error('Get comments error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Добавление комментария
+router.post('/:id/comments', authenticate, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const userId = req.user.userId;
+    const { comment } = req.body;
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    if (!comment || typeof comment !== 'string' || comment.trim().length === 0) {
+      return res.status(400).json({ error: 'Введите комментарий' });
+    }
+
+    const trimmedComment = comment.trim();
+    if (trimmedComment.length > 500) {
+      return res.status(400).json({ error: 'Комментарий не должен превышать 500 символов' });
+    }
+
+    // Проверяем, что рисунок существует и одобрен
+    const drawing = await pgPool.query(
+      `SELECT id FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
+      [id]
+    );
+
+    if (drawing.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    const now = Date.now();
+    const result = await pgPool.query(
+      `INSERT INTO gallery_comments (drawing_id, user_id, comment, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING
+         id,
+         comment,
+         created_at,
+         updated_at,
+         $6 AS user_id,
+         $7 AS author_name`,
+      [id, userId, trimmedComment, now, now, userId, req.user.username]
+    );
+
+    res.json({ comment: result.rows[0] });
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Редактирование комментария (админ или автор)
+router.put('/comments/:commentId', authenticate, async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.commentId, 10);
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+    const { comment } = req.body;
+
+    if (!Number.isFinite(commentId) || commentId <= 0) {
+      return res.status(400).json({ error: 'Invalid comment id' });
+    }
+
+    if (!comment || typeof comment !== 'string' || comment.trim().length === 0) {
+      return res.status(400).json({ error: 'Введите комментарий' });
+    }
+
+    const trimmedComment = comment.trim();
+    if (trimmedComment.length > 500) {
+      return res.status(400).json({ error: 'Комментарий не должен превышать 500 символов' });
+    }
+
+    // Получаем информацию о комментарии
+    const existingComment = await pgPool.query(
+      `SELECT user_id FROM gallery_comments WHERE id = $1 AND is_deleted = FALSE`,
+      [commentId]
+    );
+
+    if (existingComment.rows.length === 0) {
+      return res.status(404).json({ error: 'Комментарий не найден' });
+    }
+
+    // Проверяем права: админ или автор комментария
+    const isAuthor = existingComment.rows[0].user_id === userId;
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ error: 'Нет прав для редактирования' });
+    }
+
+    const now = Date.now();
+    const result = await pgPool.query(
+      `UPDATE gallery_comments
+       SET comment = $1, updated_at = $2
+       WHERE id = $3
+       RETURNING id, comment, created_at, updated_at`,
+      [trimmedComment, now, commentId]
+    );
+
+    res.json({ comment: result.rows[0] });
+  } catch (error) {
+    console.error('Update comment error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Удаление комментария (админ или автор)
+router.delete('/comments/:commentId', authenticate, async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.commentId, 10);
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    if (!Number.isFinite(commentId) || commentId <= 0) {
+      return res.status(400).json({ error: 'Invalid comment id' });
+    }
+
+    // Получаем информацию о комментарии
+    const existingComment = await pgPool.query(
+      `SELECT user_id FROM gallery_comments WHERE id = $1 AND is_deleted = FALSE`,
+      [commentId]
+    );
+
+    if (existingComment.rows.length === 0) {
+      return res.status(404).json({ error: 'Комментарий не найден' });
+    }
+
+    // Проверяем права: админ или автор комментария
+    const isAuthor = existingComment.rows[0].user_id === userId;
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ error: 'Нет прав для удаления' });
+    }
+
+    await pgPool.query(
+      `UPDATE gallery_comments SET is_deleted = TRUE WHERE id = $1`,
+      [commentId]
+    );
+
+    res.json({ message: 'Комментарий удален' });
+  } catch (error) {
+    console.error('Delete comment error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

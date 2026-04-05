@@ -39,7 +39,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!isOpen) return;
 
     try {
@@ -53,6 +53,19 @@ const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
       console.error('Error loading contacts:', error);
     }
   }, [isOpen]);
+
+  // Если передан выбранный пользователь (для открытия ЛС из комнаты)
+  useEffect(() => {
+    if (isOpen && selectedUser) {
+      // Добавляем пользователя в контакты, если его там нет
+      setContacts(prev => {
+        if (prev.some(c => c.id === selectedUser.id)) return prev;
+        const updated = [...prev, selectedUser];
+        localStorage.setItem(getContactsKey(), JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [isOpen, selectedUser]);
 
   useEffect(() => {
     if (!isOpen) return;
