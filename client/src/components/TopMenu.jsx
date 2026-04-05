@@ -218,10 +218,19 @@ useEffect(() => {
  }
  }, [navigate]);
 
- const handleActionClick = useCallback((action, buttonId) => {
+const handleActionClick = useCallback((action, buttonId) => {
    action();
    setClickAnimation(buttonId);
    setTimeout(() => setClickAnimation(null), 1000);
+ }, []);
+
+ const handleHelpClick = useCallback(() => {
+   try {
+     localStorage.setItem('helpViewed', 'true');
+     setHelpViewed(true);
+   } catch (error) {
+     console.error('Error saving helpViewed to localStorage:', error);
+   }
  }, []);
 
 const performExport = () => {
@@ -230,16 +239,6 @@ const performExport = () => {
 
  const filename = (exportFilename || '').trim() || canvasState.sessionId || 'drawing';
  let href, downloadName;
-
- const handleHelpClick = () => {
-   try {
-     localStorage.setItem('helpViewed', 'true');
-     setHelpViewed(true);
-   } catch (error) {
-     console.error('Error saving helpViewed to localStorage:', error);
-   }
-   canvasState.setShowAboutModal(true);
- };
 
  if (exportFormat === 'png') {
  href = canvas.toDataURL('image/png');
