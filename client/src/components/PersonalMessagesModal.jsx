@@ -18,7 +18,7 @@ const decodeHtmlEntities = (text) => {
   }
 };
 
-const PersonalMessagesModal = observer(({ isOpen, onClose }) => {
+const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [message, setMessage] = useState('');
   const [conversations, setConversations] = useState({});
