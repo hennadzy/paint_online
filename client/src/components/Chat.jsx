@@ -114,6 +114,11 @@ return (
       <div className="chat" data-nosnippet>
         <div className="chat-users">
           <h4>Пользователи:</h4>
+          {userState.isAuthenticated && (
+            <div className="chat-users-hint">
+              Нажмите на имя с ✓, чтобы открыть ЛС
+            </div>
+          )}
           <div className="chat-users-list">
             {canvasState.users.map((user, index) => {
               const isVerified = typeof user === 'object' ? user.isVerified : false;
@@ -125,7 +130,7 @@ return (
                   key={index}
                   className={`chat-user ${isVerified ? 'chat-user--verified' : ''} ${isClickable ? 'chat-user--clickable' : ''}`}
                   onClick={() => isClickable && handleUserClick(user)}
-                  title={isClickable ? `Написать ${username} личное сообщение` : 'Авторизованный пользователь'}
+                  title={isClickable ? `Открыть ЛС с ${username}` : (isVerified ? 'Авторизованный пользователь' : 'ЛС доступны только для авторизованных')}
                 >
                   {username}
                   {isVerified && (
@@ -156,7 +161,7 @@ return (
                       <strong
                         className={isClickable ? 'chat-message-username--clickable' : ''}
                         onClick={() => isClickable && handleUserClick({ id: msg.userId, username: msg.username, isVerified: msg.isVerified })}
-                        title={isClickable ? `Написать ${msg.username} личное сообщение` : ''}
+                        title={isClickable ? `Открыть ЛС с ${msg.username}` : ''}
                       >
                         {msg.username}
                       </strong>

@@ -1,25 +1,20 @@
-# TODO: Реализация задач по улучшению авторизации и чата
+# TODO
 
-## План реализации:
+- [x] Обновить `server/routes/auth.js`:
+  - [x] Подключить отправку email для восстановления пароля через `sendPasswordResetEmail`.
+  - [x] Подключить приветственное email для новых пользователей через `sendWelcomeEmail`.
+  - [x] Добавить отправку приветственного ЛС новому пользователю (с сохранением и онлайн-доставкой).
 
-### 1. Email инфраструктура (задачи 2,4)
-- [ ] Добавить nodemailer в server/package.json и установить
-- [ ] Создать server/utils/email.js (transporter, sendResetEmail, sendWelcomeEmail)
-- [ ] Обновить server/routes/auth.js:
-  - [ ] /forgot-password: отправка reset email вместо console.log
-  - [ ] /register: отправка welcome email + PM новому пользователю
-- [ ] Добавить .env vars: SMTP_HOST, SMTP_PORT=587, SMTP_USER, SMTP_PASS, FROM_EMAIL, FRONTEND_URL
+- [x] Обновить `client/src/components/Chat.jsx`:
+  - [x] Усилить визуальную подсказку, что клик по нику открывает ЛС.
+  - [x] Сохранить текущую логику открытия ЛС без выхода из комнаты.
 
-### 2. Подсветка авторизации в Справке (задача 3)
-- [ ] Обновить client/src/components/AboutModal.jsx: добавить секцию преимуществ регистрации
+- [x] Обновить стили:
+  - [x] `client/src/styles/room-interface.scss` (или релевантный файл) для кликабельных ников/подсказок.
 
-### 3. Улучшение ЛС в комнате (задача 1 - уже работает)
-- [ ] Добавить CSS polish для clickable nicks (если нужно)
+- [x] Обновить `client/src/components/AboutModal.jsx`:
+  - [x] Ярко выделить блок про авторизацию.
+  - [x] Подчеркнуть преимущества регистрации/авторизации.
 
-### 4. Тестирование
-- [ ] Проверить отправку email (register, forgot)
-- [ ] Проверить PM welcome
-- [ ] Browser: клик по нику → ЛС overlay, close → room
-- [ ] AboutModal: visible auth promo
-
-Текущее: Начинаем с email infra.
+- [x] Финальная проверка:
+  - [x] Проверить изменения поиском по ключевым местам.

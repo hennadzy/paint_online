@@ -14,6 +14,9 @@ const {
 } = require('../utils/auth');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler, ValidationError, AuthError, NotFoundError } = require('../utils/errorHandler');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../utils/email');
+const PersonalMessageStore = require('../services/PersonalMessageStore');
+const WebSocketHandler = require('../services/WebSocketHandler');
 
 const router = express.Router();
 
@@ -77,6 +80,39 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
     email: emailValidation.email,
     passwordHash
   });
+
+  const supportEmail = process.env.SUPPORT_EMAIL || process.env.FROM_EMAIL || 'support@paint-online.ru';
+  try {
+    await sendWelcomeEmail({
+      to: user.email,
+      username: user.username,
+      supportEmail
+    });
+  } catch (emailError) {
+    console.error('Welcome email send error:', emailError);
+  }
+
+  try {
+    const systemUser = await User.findByUsername('Support');
+    const fromUserId = systemUser?.id || user.id;
+    const welcomeText = `Добро пожаловать в Рисование.Онлайн, ${user.username}! 🎨\n\nРисуйте, наслаждайтесь, публикуйте работы в галерее и общайтесь с другими пользователями.\n\nЕсли есть вопросы — пишите на почту ${supportEmail} или сюда в ЛС.`;
+
+    const ts = Date.now();
+    const msgId = await PersonalMessageStore.saveMessage(fromUserId, user.id, welcomeText, ts);
+    if (msgId) {
+      const fromUsername = systemUser?.username || 'Support';
+      await WebSocketHandler.deliverPersonalMessageToUser(
+        user.id,
+        fromUserId,
+        fromUsername,
+        welcomeText,
+        ts,
+        msgId
+      );
+    }
+  } catch (pmError) {
+    console.error('Welcome personal message send error:', pmError);
+  }
 
   const token = generateToken(user.id, user.username, user.role);
 
@@ -195,8 +231,17 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
     [user.id, resetToken, expiresAt, Date.now()]
   );
 
-  // Отправляем email (заглушка - в реальном проекте нужно настроить отправку email)
-  console.log('Password reset link:', `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`);
+  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+  try {
+    await sendPasswordResetEmail({
+      to: user.email,
+      username: user.username,
+      resetLink
+    });
+  } catch (emailError) {
+    console.error('Password reset email send error:', emailError);
+  }
 
   res.json({ message: 'Если пользователь с таким email существует, инструкция будет отправлена' });
 }));

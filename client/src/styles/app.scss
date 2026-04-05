@@ -898,6 +898,14 @@ body.modal-open {
   }
 }
 
+.chat-users-hint {
+  margin: 4px 0 6px;
+  font-size: 11px;
+  color: #ffd166;
+  line-height: 1.25;
+  opacity: 0.95;
+}
+
 // Моргание иконки справки
 .help-blinking {
   animation: helpBlink 1.5s ease-in-out infinite;

@@ -1193,6 +1193,26 @@
 .about-section {
   margin-bottom: 20px;
 
+  &.auth-highlight {
+    border: 1px solid rgba(255, 204, 0, 0.45);
+    background: linear-gradient(135deg, rgba(255, 204, 0, 0.14) 0%, rgba(255, 102, 153, 0.14) 100%);
+    border-radius: 14px;
+    padding: 14px;
+
+    .auth-highlight-lead {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .auth-highlight-cta {
+      font-weight: 700;
+      color: #ffd166;
+      margin-top: 8px;
+      text-align: left;
+    }
+  }
+
   h2 {
     font-size: 22px;
     background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
