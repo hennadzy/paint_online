@@ -54,17 +54,21 @@ useEffect(() => {
     }
   }, [isOpen]);
 
-  // Если передан выбранный пользователь (для открытия ЛС из комнаты)
+  // Если передан пользователь из комнаты — сразу открываем с ним диалог
   useEffect(() => {
-    if (isOpen && selectedUser) {
-      // Добавляем пользователя в контакты, если его там нет
-      setContacts(prev => {
-        if (prev.some(c => c.id === selectedUser.id)) return prev;
-        const updated = [...prev, selectedUser];
-        localStorage.setItem(getContactsKey(), JSON.stringify(updated));
-        return updated;
-      });
-    }
+    if (!isOpen || !initialUser?.id) return;
+    setSelectedUser(initialUser);
+  }, [isOpen, initialUser]);
+
+  // Добавляем выбранного пользователя в контакты, если его там нет
+  useEffect(() => {
+    if (!isOpen || !selectedUser?.id) return;
+    setContacts(prev => {
+      if (prev.some(c => c.id === selectedUser.id)) return prev;
+      const updated = [...prev, selectedUser];
+      localStorage.setItem(getContactsKey(), JSON.stringify(updated));
+      return updated;
+    });
   }, [isOpen, selectedUser]);
 
   useEffect(() => {
