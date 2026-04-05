@@ -89,11 +89,15 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
       supportEmail
     });
   } catch (emailError) {
+    if (emailError?.code === 'SMTP_NOT_CONFIGURED') {
+      throw new ValidationError('Почтовый сервис не настроен. Обратитесь к администратору.');
+    }
     console.error('Welcome email send error:', emailError);
+    throw new ValidationError('Не удалось отправить приветственное письмо. Попробуйте позже.');
   }
 
   try {
-    const adminUser = await User.findByUsername('Admin');
+    const adminUser = await User.findByUsername('admin');
     if (adminUser?.id) {
       const fromUserId = adminUser.id;
       const welcomeText = `Добро пожаловать в Рисование.Онлайн, ${user.username}! 🎨\n\nРисуйте, наслаждайтесь, публикуйте работы в галерее и общайтесь с другими пользователями.\n\nЕсли есть вопросы — пишите на почту ${supportEmail} или сюда в ЛС.`;
@@ -241,10 +245,14 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
       resetLink
     });
   } catch (emailError) {
+    if (emailError?.code === 'SMTP_NOT_CONFIGURED') {
+      throw new ValidationError('Почтовый сервис не настроен. Восстановление пароля сейчас недоступно.');
+    }
     console.error('Password reset email send error:', emailError);
+    throw new ValidationError('Не удалось отправить письмо для восстановления пароля. Попробуйте позже.');
   }
 
-  res.json({ message: 'Если пользователь с таким email существует, инструкция будет отправлена' });
+  res.json({ message: 'Инструкция по восстановлению пароля отправлена на email' });
 }));
 
 // Сброс пароля

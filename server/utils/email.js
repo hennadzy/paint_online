@@ -22,11 +22,9 @@ const transporter = nodemailer.createTransport({
 
 async function sendMailSafe(mailOptions) {
   if (!isEmailConfigured) {
-    console.log('[EMAIL_DISABLED] SMTP не настроен. Письмо не отправлено:', {
-      to: mailOptions.to,
-      subject: mailOptions.subject
-    });
-    return { skipped: true };
+    const error = new Error('SMTP_NOT_CONFIGURED');
+    error.code = 'SMTP_NOT_CONFIGURED';
+    throw error;
   }
 
   return transporter.sendMail({
