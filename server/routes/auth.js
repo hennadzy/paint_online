@@ -93,22 +93,23 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
   }
 
   try {
-    const systemUser = await User.findByUsername('Support');
-    const fromUserId = systemUser?.id || user.id;
-    const welcomeText = `Добро пожаловать в Рисование.Онлайн, ${user.username}! 🎨\n\nРисуйте, наслаждайтесь, публикуйте работы в галерее и общайтесь с другими пользователями.\n\nЕсли есть вопросы — пишите на почту ${supportEmail} или сюда в ЛС.`;
+    const adminUser = await User.findByUsername('Admin');
+    if (adminUser?.id) {
+      const fromUserId = adminUser.id;
+      const welcomeText = `Добро пожаловать в Рисование.Онлайн, ${user.username}! 🎨\n\nРисуйте, наслаждайтесь, публикуйте работы в галерее и общайтесь с другими пользователями.\n\nЕсли есть вопросы — пишите на почту ${supportEmail} или сюда в ЛС.`;
 
-    const ts = Date.now();
-    const msgId = await PersonalMessageStore.saveMessage(fromUserId, user.id, welcomeText, ts);
-    if (msgId) {
-      const fromUsername = systemUser?.username || 'Support';
-      await WebSocketHandler.deliverPersonalMessageToUser(
-        user.id,
-        fromUserId,
-        fromUsername,
-        welcomeText,
-        ts,
-        msgId
-      );
+      const ts = Date.now();
+      const msgId = await PersonalMessageStore.saveMessage(fromUserId, user.id, welcomeText, ts);
+      if (msgId) {
+        await WebSocketHandler.deliverPersonalMessageToUser(
+          user.id,
+          fromUserId,
+          adminUser.username,
+          welcomeText,
+          ts,
+          msgId
+        );
+      }
     }
   } catch (pmError) {
     console.error('Welcome personal message send error:', pmError);

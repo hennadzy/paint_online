@@ -114,22 +114,18 @@ return (
       <div className="chat" data-nosnippet>
         <div className="chat-users">
           <h4>Пользователи:</h4>
-          {userState.isAuthenticated && (
-            <div className="chat-users-hint">
-              Нажмите на имя с ✓, чтобы открыть ЛС
-            </div>
-          )}
           <div className="chat-users-list">
             {canvasState.users.map((user, index) => {
               const isVerified = typeof user === 'object' ? user.isVerified : false;
               const username = typeof user === 'object' ? user.username : user;
-              const isClickable = userState.isAuthenticated && isVerified;
+              const userId = typeof user === 'object' ? (user.userId || user.id) : null;
+              const isClickable = userState.isAuthenticated && isVerified && Boolean(userId);
 
               return (
                 <div
                   key={index}
                   className={`chat-user ${isVerified ? 'chat-user--verified' : ''} ${isClickable ? 'chat-user--clickable' : ''}`}
-                  onClick={() => isClickable && handleUserClick(user)}
+                  onClick={() => isClickable && handleUserClick({ ...user, id: userId })}
                   title={isClickable ? `Открыть ЛС с ${username}` : (isVerified ? 'Авторизованный пользователь' : 'ЛС доступны только для авторизованных')}
                 >
                   {username}
