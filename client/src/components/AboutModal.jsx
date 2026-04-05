@@ -146,7 +146,7 @@ const AboutModal = observer(() => {
               Если у вас возникли вопросы или вы хотите сообщить о проблеме, напишите нам:
             </p>
             <p>
-              📧 <a href="mailto:admin@paint-art.ru" style={{ color: '#ffcc00' }}>admin@paint-art.ru</a>
+              📧 <a href="mailto:admin@risovanie.online" style={{ color: '#ffcc00' }}>admin@risovanie.online</a>
             </p>
             <p>
               Спасибо за понимание! ❤️
