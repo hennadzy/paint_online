@@ -10,5 +10,8 @@
   },
   "keywords": [],
   "author": "hennadz",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "nodemailer": "^8.0.4"
+  }
 }
