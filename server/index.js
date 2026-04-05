@@ -240,7 +240,7 @@ app.get('/gallery', (req, res) => {
   res.send(html);
 });
 
-const CLIENT_ROUTES = ['/', '/login', '/register', '/profile', '/404', '/coloring', '/gallery'];
+const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery'];
 
 app.get('*', (req, res) => {
   const pathname = req.path;
