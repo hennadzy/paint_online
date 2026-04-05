@@ -246,7 +246,8 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
     [user.id, resetToken, expiresAt, Date.now()]
   );
 
-  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
   try {
     await sendPasswordResetEmail({

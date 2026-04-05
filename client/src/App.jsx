@@ -36,7 +36,7 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
-    const hideGlobalUI = ['/profile', '/login', '/register', '/admin', '/coloring', '/gallery'].includes(location.pathname);
+    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring', '/gallery'].includes(location.pathname);
 
   usePersonalMessages();
   useRoomValidation(location.pathname, navigate);
@@ -60,6 +60,7 @@ return (
                     <Route path='/' element={<Canvas />} />
                     <Route path='/login' element={<AuthPage />} />
                     <Route path='/register' element={<AuthPage />} />
+                    <Route path='/reset-password' element={<AuthPage />} />
                     <Route path='/profile' element={<ProfilePage />} />
                     <Route path='/admin' element={<AdminPage />} />
                     <Route path='/coloring' element={<ColoringPage />} />
