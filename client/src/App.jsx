@@ -17,6 +17,7 @@ import AdminPage from "./components/AdminPage";
 import ColoringPage from "./components/ColoringPage";
 import GalleryPage from "./components/GalleryPage";
 import RoomInterface from "./components/RoomInterface";
+import PersonalMessagesModal from "./components/PersonalMessagesModal";
 import SeoMeta from "./components/SeoMeta";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
@@ -48,7 +49,7 @@ const App = observer(() => {
     const isColoringPage = location.pathname === '/coloring';
     const isGalleryPage = location.pathname === '/gallery';
 
-    return (
+return (
         <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
             <SeoMeta />
             {!hideGlobalUI && <TopMenu />}
@@ -68,6 +69,13 @@ const App = observer(() => {
                 </Routes>
                 {canvasState.showRoomInterface && <RoomInterface roomId={null} />}
             </div>
+            {canvasState.showPersonalMessages && (
+                <PersonalMessagesModal
+                    isOpen={canvasState.showPersonalMessages}
+                    onClose={() => canvasState.setShowPersonalMessages(false, null)}
+                    initialUser={canvasState.personalMessagesTargetUser}
+                />
+            )}
         </div>
     );
 });

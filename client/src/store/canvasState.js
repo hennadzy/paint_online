@@ -34,11 +34,13 @@ class CanvasState {
   restoreTimestamp = null;
   returningFromRoom = false;
   cancelledStrokeIds = [];
-  pageVisible = true;
+  pageVisible = false;
   lastNotificationTime = 0;
   notificationThrottle = 5000;
   titleInterval = null;
   roomError = null;
+  showPersonalMessages = false;
+  personalMessagesTargetUser = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -749,12 +751,17 @@ setupThumbnailInterval() {
     this.showRestoreDialog = val;
   }
 
-  setRoomError(val) {
+setRoomError(val) {
     this.roomError = val;
   }
 
   clearRoomError() {
     this.roomError = null;
+  }
+
+  setShowPersonalMessages(val, targetUser = null) {
+    this.showPersonalMessages = val;
+    this.personalMessagesTargetUser = targetUser;
   }
 }
 

@@ -2,7 +2,6 @@ import React, { useRef, useLayoutEffect, useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import canvasState from "../store/canvasState";
 import userState from "../store/userState";
-import PersonalMessagesModal from "./PersonalMessagesModal";
 
 const sanitizeMessage = (text) => {
   if (typeof text !== 'string') return '';
@@ -36,8 +35,6 @@ const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const [showPersonalMessages, setShowPersonalMessages] = useState(false);
-  const [selectedChatUser, setSelectedChatUser] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -75,7 +72,7 @@ const handleInvite = () => {
     }
   };
 
-  const handleUserClick = (user) => {
+const handleUserClick = (user) => {
     // Проверяем, что пользователь авторизован и клик по авторизованному пользователю
     if (!userState.isAuthenticated) return;
 
@@ -85,14 +82,12 @@ const handleInvite = () => {
     // Открываем ЛС только для авторизованных пользователей
     if (isVerified && userId) {
       const username = typeof user === 'object' ? user.username : user;
-      setSelectedChatUser({ id: userId, username, is_online: true });
-      setShowPersonalMessages(true);
+      canvasState.setShowPersonalMessages(true, { id: userId, username, is_online: true });
     }
   };
 
   const handleClosePersonalMessages = () => {
-    setShowPersonalMessages(false);
-    setSelectedChatUser(null);
+    canvasState.setShowPersonalMessages(false, null);
   };
   const [isSending, setIsSending] = useState(false);
 
@@ -110,95 +105,85 @@ const handleInvite = () => {
   };
 
 return (
-    <>
-      <div className="chat" data-nosnippet>
-        <div className="chat-users">
-          <h4>Пользователи:</h4>
-          <div className="chat-users-list">
-            {canvasState.users.map((user, index) => {
-              const isVerified = typeof user === 'object' ? user.isVerified : false;
-              const username = typeof user === 'object' ? user.username : user;
-              const userId = typeof user === 'object' ? (user.userId || user.id) : null;
-              const isClickable = userState.isAuthenticated && isVerified && Boolean(userId);
+    <div className="chat" data-nosnippet>
+      <div className="chat-users">
+        <h4>Пользователи:</h4>
+        <div className="chat-users-list">
+          {canvasState.users.map((user, index) => {
+            const isVerified = typeof user === 'object' ? user.isVerified : false;
+            const username = typeof user === 'object' ? user.username : user;
+            const userId = typeof user === 'object' ? (user.userId || user.id) : null;
+            const isClickable = userState.isAuthenticated && isVerified && Boolean(userId);
 
-              return (
-                <div
-                  key={index}
-                  className={`chat-user ${isVerified ? 'chat-user--verified' : ''} ${isClickable ? 'chat-user--clickable' : ''}`}
-                  onClick={() => isClickable && handleUserClick({ ...user, id: userId })}
-                  title={isClickable ? `Открыть ЛС с ${username}` : (isVerified ? 'Авторизованный пользователь' : 'ЛС доступны только для авторизованных')}
-                >
-                  {username}
-                  {isVerified && (
-                    <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="chat-invite-container">
-            <button className="chat-invite-btn" onClick={handleInvite}>
-              Пригласить
-            </button>
-          </div>
+            return (
+              <div
+                key={index}
+                className={`chat-user ${isVerified ? 'chat-user--verified' : ''} ${isClickable ? 'chat-user--clickable' : ''}`}
+                onClick={() => isClickable && handleUserClick({ ...user, id: userId })}
+                title={isClickable ? `Открыть ЛС с ${username}` : (isVerified ? 'Авторизованный пользователь' : 'ЛС доступны только для авторизованных')}
+              >
+                {username}
+                {isVerified && (
+                  <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <div className="chat-main">
-          <div className="chat-messages" ref={messagesRef}>
-            {canvasState.chatMessages.map((msg, index) => {
-              const msgUserId = msg.userId || msg.user_id || msg.from_user_id || null;
-              const isClickable = userState.isAuthenticated && msg.isVerified && Boolean(msgUserId);
-
-              return (
-                <div key={index} className="chat-message">
-                  {msg.type === "system" ? (
-                    <>
-                      <span style={{ color: '#ff6699' }}>{msg.username}</span> {msg.message}
-                    </>
-                  ) : (
-                    <>
-                      <strong
-                        className={isClickable ? 'chat-message-username--clickable' : ''}
-                        onClick={() => isClickable && handleUserClick({ id: msgUserId, username: msg.username, isVerified: msg.isVerified })}
-                        title={isClickable ? `Открыть ЛС с ${msg.username}` : ''}
-                      >
-                        {msg.username}
-                      </strong>
-                      {msg.isVerified && <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>}
-                      : {msg.message}
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="chat-input-container">
-            <input
-              ref={inputRef}
-              type="text"
-              className="chat-input"
-              placeholder="Введите сообщение"
-              onKeyDown={sendMessage}
-            />
-            <button
-              className={`chat-send-btn ${isSending ? 'chat-send-btn--disabled' : ''}`}
-              onClick={handleSend}
-              title="Отправить"
-              disabled={isSending}
-            >
-              ↵
-            </button>
-          </div>
+        <div className="chat-invite-container">
+          <button className="chat-invite-btn" onClick={handleInvite}>
+            Пригласить
+          </button>
         </div>
       </div>
+      <div className="chat-main">
+        <div className="chat-messages" ref={messagesRef}>
+          {canvasState.chatMessages.map((msg, index) => {
+            const msgUserId = msg.userId || msg.user_id || msg.from_user_id || null;
+            const isClickable = userState.isAuthenticated && msg.isVerified && Boolean(msgUserId);
 
-{showPersonalMessages && (
-        <PersonalMessagesModal
-          isOpen={showPersonalMessages}
-          onClose={handleClosePersonalMessages}
-          initialUser={selectedChatUser}
-        />
-      )}
-    </>
+            return (
+              <div key={index} className="chat-message">
+                {msg.type === "system" ? (
+                  <>
+                    <span style={{ color: '#ff6699' }}>{msg.username}</span> {msg.message}
+                  </>
+                ) : (
+                  <>
+                    <strong
+                      className={isClickable ? 'chat-message-username--clickable' : ''}
+                      onClick={() => isClickable && handleUserClick({ id: msgUserId, username: msg.username, isVerified: msg.isVerified })}
+                      title={isClickable ? `Открыть ЛС с ${msg.username}` : ''}
+                    >
+                      {msg.username}
+                    </strong>
+                    {msg.isVerified && <span className="chat-user-check" title="Авторизованный пользователь"> ✓</span>}
+                    : {msg.message}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="chat-input-container">
+          <input
+            ref={inputRef}
+            type="text"
+            className="chat-input"
+            placeholder="Введите сообщение"
+            onKeyDown={sendMessage}
+          />
+          <button
+            className={`chat-send-btn ${isSending ? 'chat-send-btn--disabled' : ''}`}
+            onClick={handleSend}
+            title="Отправить"
+            disabled={isSending}
+          >
+            ↵
+          </button>
+        </div>
+      </div>
+    </div>
   );
 });
 
