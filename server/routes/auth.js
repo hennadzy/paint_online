@@ -97,7 +97,15 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
   }
 
   try {
-    const adminUser = await User.findByUsername('admin');
+    const adminResult = await pgPool.query(
+      `SELECT id, username
+       FROM users
+       WHERE LOWER(username) = LOWER($1) AND is_deleted IS NOT TRUE
+       LIMIT 1`,
+      ['admin']
+    );
+
+    const adminUser = adminResult.rows[0];
     if (adminUser?.id) {
       const fromUserId = adminUser.id;
       const welcomeText = `Добро пожаловать в Рисование.Онлайн, ${user.username}! 🎨\n\nРисуйте, наслаждайтесь, публикуйте работы в галерее и общайтесь с другими пользователями.\n\nЕсли есть вопросы — пишите на почту ${supportEmail} или сюда в ЛС.`;
@@ -114,6 +122,8 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
           msgId
         );
       }
+    } else {
+      console.warn('Welcome PM skipped: admin user not found');
     }
   } catch (pmError) {
     console.error('Welcome personal message send error:', pmError);

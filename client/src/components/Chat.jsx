@@ -145,18 +145,20 @@ return (
         <div className="chat-main">
           <div className="chat-messages" ref={messagesRef}>
             {canvasState.chatMessages.map((msg, index) => {
-              const isClickable = userState.isAuthenticated && msg.isVerified && msg.userId;
+              const msgUserId = msg.userId || msg.user_id || msg.from_user_id || null;
+              const isClickable = userState.isAuthenticated && msg.isVerified && Boolean(msgUserId);
+
               return (
                 <div key={index} className="chat-message">
                   {msg.type === "system" ? (
                     <>
-                      <span style={{color: '#ff6699'}}>{msg.username}</span> {msg.message}
+                      <span style={{ color: '#ff6699' }}>{msg.username}</span> {msg.message}
                     </>
                   ) : (
                     <>
                       <strong
                         className={isClickable ? 'chat-message-username--clickable' : ''}
-                        onClick={() => isClickable && handleUserClick({ id: msg.userId, username: msg.username, isVerified: msg.isVerified })}
+                        onClick={() => isClickable && handleUserClick({ id: msgUserId, username: msg.username, isVerified: msg.isVerified })}
                         title={isClickable ? `Открыть ЛС с ${msg.username}` : ''}
                       >
                         {msg.username}
