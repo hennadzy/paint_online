@@ -88,9 +88,10 @@ function validateUsername(username) {
     return { valid: false, error: 'Имя может содержать только буквы, цифры, пробелы, _ и -' };
   }
 
-  const lower = trimmed.toLowerCase();
+const lower = trimmed.toLowerCase();
 
-  if (lower === 'admin') {
+  const reservedUsernames = ['admin', 'administrator', 'админ', 'администратор'];
+  if (reservedUsernames.includes(lower)) {
     return { valid: false, error: `Имя "${trimmed}" зарезервировано системой` };
   }
 
