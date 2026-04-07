@@ -77,10 +77,11 @@ const RoomInterface = observer(({ roomId }) => {
   const [publicRooms, setPublicRooms] = useState([]);
   const [createdRoom, setCreatedRoom] = useState(null);
   const [passwordPrompt, setPasswordPrompt] = useState(null);
-  const [roomPassword, setRoomPassword] = useState('');
+const [roomPassword, setRoomPassword] = useState('');
   const [roomInfo, setRoomInfo] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const usernameInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -289,7 +290,9 @@ const RoomInterface = observer(({ roomId }) => {
     canvasState.setModalOpen(false);
   };
 
-  const handleCreateRoom = async () => {
+const handleCreateRoom = async () => {
+    if (isLoading) return;
+
     if (!roomName.trim()) {
       setError('Введите название комнаты');
       return;
@@ -303,6 +306,7 @@ const RoomInterface = observer(({ roomId }) => {
       return;
     }
     setError('');
+    setIsLoading(true);
     try {
       const response = await axiosInstance.post(`${API_URL}/rooms`, {
         name: roomName,
@@ -320,6 +324,8 @@ const RoomInterface = observer(({ roomId }) => {
       });
     } catch (error) {
       setError('Ошибка создания комнаты');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -506,7 +512,7 @@ const RoomInterface = observer(({ roomId }) => {
                 <div className="room-card">
                   <div className="room-card-body">
                     {error && <div className="room-error">{error}</div>}
-                    <input
+<input
                       type="text"
                       className="room-input"
                       placeholder="Название комнаты"
@@ -514,10 +520,10 @@ const RoomInterface = observer(({ roomId }) => {
                       value={roomName}
                       onChange={(e) => { setRoomName(e.target.value); setError(''); }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCreateRoom();
+                        if (e.key === 'Enter' && !isLoading) handleCreateRoom();
                       }}
                     />
-                    {!isPublic && (
+{!isPublic && (
                       <input
                         type="password"
                         className="room-input"
@@ -525,7 +531,7 @@ const RoomInterface = observer(({ roomId }) => {
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setError(''); }}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleCreateRoom();
+                          if (e.key === 'Enter' && !isLoading) handleCreateRoom();
                         }}
                       />
                     )}
@@ -553,8 +559,8 @@ const RoomInterface = observer(({ roomId }) => {
                         <span className="privacy-desc">Вход по паролю</span>
                       </label>
                     </div>
-                    <button className="room-btn room-btn-primary" onClick={handleCreateRoom}>
-                      Создать комнату
+<button className="room-btn room-btn-primary" onClick={handleCreateRoom} disabled={isLoading}>
+                      {isLoading ? 'Создание...' : 'Создать комнату'}
                     </button>
                   </div>
                 </div>
