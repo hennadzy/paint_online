@@ -52,11 +52,13 @@ const AuthPage = observer(() => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setLocalError('');
+    setResetSuccess(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError('');
+    setResetSuccess(false);
 
     if (isLogin) {
       if (!formData.email || !formData.password) {
@@ -85,7 +87,18 @@ const AuthPage = observer(() => {
     navigate(isLogin ? '/register' : '/login');
     setFormData({ username: '', email: '', password: '' });
     setLocalError('');
+    setResetSuccess(false);
+    setShowForgotPassword(false);
   };
+
+  // Сброс состояния при изменении пути
+  React.useEffect(() => {
+    setFormData({ username: '', email: '', password: '' });
+    setLocalError('');
+    setResetSuccess(false);
+    setShowForgotPassword(false);
+    setResetToken('');
+  }, [location.pathname]);
 
   // Проверка токена при загрузке страницы сброса пароля
   React.useEffect(() => {
@@ -162,10 +175,18 @@ const AuthPage = observer(() => {
     }
   };
 
+  const handleClose = () => {
+    setFormData({ username: '', email: '', password: '' });
+    setLocalError('');
+    setResetSuccess(false);
+    setShowForgotPassword(false);
+    navigate('/');
+  };
+
   return (
-    <div className="room-interface-overlay fullscreen" onClick={() => navigate('/')}>
-      <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
-        <button className="room-close-btn" onClick={() => navigate('/')}>×</button>
+    <div className="room-interface-overlay fullscreen" onClick={handleClose}>
+        <div className="room-interface fullscreen" onClick={(e) => e.stopPropagation()}>
+        <button className="room-close-btn" onClick={handleClose}>×</button>
 
         <div className="room-welcome">
           <h1>{isResetPassword ? 'Сброс пароля' : showForgotPassword ? 'Забыли пароль?' : (isLogin ? 'Вход' : 'Регистрация')}</h1>
@@ -316,7 +337,11 @@ const AuthPage = observer(() => {
                   <button
                     type="button"
                     className="room-btn room-btn-ghost"
-                    onClick={() => setShowForgotPassword(true)}
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setLocalError('');
+                      setResetSuccess(false);
+                    }}
                     style={{ width: '100%', marginTop: '10px' }}
                   >
                     Забыли пароль?
