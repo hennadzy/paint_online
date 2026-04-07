@@ -242,6 +242,16 @@ app.get('/gallery', (req, res) => {
 
 const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery'];
 
+// Явные маршруты для SPA-страниц (включая reset-password)
+CLIENT_ROUTES.forEach(route => {
+  if (route !== '/*') {
+    app.get(route, (req, res) => {
+      const indexPath = path.join(__dirname, '../client/build', 'index.html');
+      return res.sendFile(indexPath);
+    });
+  }
+});
+
 app.get('*', (req, res) => {
   const pathname = req.path;
   const normalizedPath = pathname.replace(/\/+$/, '');
