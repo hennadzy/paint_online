@@ -9,6 +9,7 @@ import RoomInterface from './RoomInterface';
 import AboutModal from './AboutModal';
 import GamesModal from './GamesModal';
 import RestoreDialog from './RestoreDialog';
+import InactiveModal from './InactiveModal';
 import {
   useCanvasResize,
   useCanvasCursor,
@@ -206,6 +207,8 @@ const Canvas = observer(() => {
         onRestore={() => canvasState.restoreAutoSave()}
         onDiscard={() => canvasState.discardAutoSave()}
       />
+
+      <InactiveModal />
     </div>
   );
 });

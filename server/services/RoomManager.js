@@ -31,7 +31,7 @@ startInactivityCheck() {
   async checkInactiveUsers() {
     if (!this.redis) return;
 
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+    const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
     const now = Date.now();
 
     try {
@@ -51,7 +51,7 @@ startInactivityCheck() {
             const { roomId, username } = data;
 
             if (roomId && username) {
-              await this.removeUserByInfo(roomId, username);
+              await this.removeUserByInfo(roomId, username, true);
               console.log(`Removed inactive user: ${username} from room ${roomId}`);
             }
           }
@@ -64,7 +64,7 @@ startInactivityCheck() {
     }
   }
 
-  async removeUserByInfo(roomId, username) {
+  async removeUserByInfo(roomId, username, isInactive = false) {
     await this.redis.srem(`room:${roomId}:users`, username);
     await this.redis.del(`ws:${roomId}_${username}`);
     await this.redis.del(`user:${username}:room`);
@@ -72,7 +72,10 @@ startInactivityCheck() {
     const sockets = this.roomSockets.get(roomId);
     if (sockets) {
       const WebSocket = require('ws');
-      const message = JSON.stringify({ method: 'disconnection', username });
+      const message = JSON.stringify({ 
+        method: isInactive ? 'inactiveDisconnect' : 'disconnection', 
+        username 
+      });
       sockets.forEach(ws => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(message);
@@ -454,7 +457,7 @@ async getVerifiedUsers(roomId) {
   }
 
   async checkInactiveUsers() {
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+    const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
     const now = Date.now();
     try {
       const pattern = 'ws:ws_*';
@@ -483,7 +486,7 @@ async getVerifiedUsers(roomId) {
         await redis.del(`user:${user.username}:room`);
         const roomSockets = this.roomSockets.get(user.roomId);
         if (roomSockets) {
-          const message = JSON.stringify({ method: 'disconnection', username: user.username });
+          const message = JSON.stringify({ method: 'inactiveDisconnect', username: user.username });
           roomSockets.forEach(ws => { if (ws.readyState === 1) { try { ws.send(message); } catch (e) {} } });
           const remainingUsers = await this.getRoomUsers(user.roomId);
           const usersMessage = JSON.stringify({ method: 'users', users: remainingUsers });

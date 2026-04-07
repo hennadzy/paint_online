@@ -41,6 +41,7 @@ class CanvasState {
   roomError = null;
   showPersonalMessages = false;
   personalMessagesTargetUser = null;
+  showInactiveModal = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -70,6 +71,11 @@ WebSocketService.on('userConnected', ({ username }) => {
     WebSocketService.on('userDisconnected', ({ username }) => {
       this.removeUser(username);
       this.addChatMessage({ type: "system", username, message: `покинул комнату` });
+    });
+    WebSocketService.on('inactiveDisconnect', ({ username }) => {
+      this.removeUser(username);
+      this.isConnected = false;
+      this.showInactiveModal = true;
     });
 WebSocketService.on('usersList', ({ users }) => {
       this.users = users.map(user => {
@@ -762,6 +768,10 @@ setRoomError(val) {
   setShowPersonalMessages(val, targetUser = null) {
     this.showPersonalMessages = val;
     this.personalMessagesTargetUser = targetUser;
+  }
+
+  setShowInactiveModal(val) {
+    this.showInactiveModal = val;
   }
 }
 

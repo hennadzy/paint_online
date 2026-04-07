@@ -168,6 +168,9 @@ connect(wsUrl, roomId, username, token) {
       case 'disconnection':
         this.emit('userDisconnected', { username: message.username });
         break;
+      case 'inactiveDisconnect':
+        this.emit('inactiveDisconnect', { username: message.username });
+        break;
       case 'users':
         this.emit('usersList', { users: message.users });
         break;
@@ -198,7 +201,7 @@ connect(wsUrl, roomId, username, token) {
         
         this.emit('chatReceived', { 
           username: message.username, 
-          message: message.message, 
+          message: message.message,
           isVerified: message.isVerified,
           userId: message.userId
         });
