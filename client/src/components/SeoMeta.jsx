@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+
+const SeoContext = createContext({
+  title: null,
+  description: null,
+  setSeoData: () => {}
+});
+
+export const useSeo = () => useContext(SeoContext);
 
 const SEO_DATA = {
   '/': {
@@ -28,16 +36,28 @@ const OG_IMAGES = {
   '/gallery': 'https://risovanie.online/static/og-gallery.png'
 };
 
+export function SeoProvider({ children }) {
+  const [dynamicSeo, setDynamicSeo] = useState(null);
+
+  return (
+    <SeoContext.Provider value={{ seoData: dynamicSeo, setSeoData: setDynamicSeo }}>
+      {children}
+    </SeoContext.Provider>
+  );
+}
+
 export function SeoMeta() {
   const location = useLocation();
   const path = location.pathname;
+  const { seoData: dynamicSeo } = useContext(SeoContext);
+
   const seoData = SEO_DATA[path];
+  const finalData = seoData ? { ...seoData, ...dynamicSeo } : seoData;
 
   useEffect(() => {
-    if (!seoData) return;
+    if (!finalData) return;
 
-    // Update title
-    document.title = seoData.title;
+    document.title = finalData.title;
 
     // Update or create meta tags
     const updateMeta = (name, content, isProperty = false) => {
@@ -57,14 +77,14 @@ export function SeoMeta() {
     };
 
     // Standard meta tags
-    updateMeta('description', seoData.description);
-    updateMeta('keywords', seoData.keywords);
+    updateMeta('description', finalData.description);
+    updateMeta('keywords', finalData.keywords);
     updateMeta('robots', 'index, follow');
 
     // Open Graph
-    updateMeta('og:title', seoData.title, true);
-    updateMeta('og:description', seoData.description, true);
-    updateMeta('og:url', seoData.canonical, true);
+    updateMeta('og:title', finalData.title, true);
+    updateMeta('og:description', finalData.description, true);
+    updateMeta('og:url', finalData.canonical, true);
     updateMeta('og:type', 'website', true);
     updateMeta('og:locale', 'ru_RU', true);
     updateMeta('og:site_name', 'Рисование.Онлайн', true);
@@ -76,7 +96,7 @@ export function SeoMeta() {
       canonicalLink.rel = 'canonical';
       document.head.appendChild(canonicalLink);
     }
-    canonicalLink.href = seoData.canonical;
+    canonicalLink.href = finalData.canonical;
 
     // Update JSON-LD for specific pages
     const existingLd = document.querySelector('script[type="application/ld+json"][data-page]');
@@ -91,9 +111,9 @@ export function SeoMeta() {
       ld.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "Раскраски онлайн",
-        "description": seoData.description,
-        "url": "https://risovanie.online/coloring",
+        "name": finalData.title,
+        "description": finalData.description,
+        "url": finalData.canonical,
         "inLanguage": "ru"
       });
       document.head.appendChild(ld);
@@ -104,15 +124,15 @@ export function SeoMeta() {
       ld.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@type": "ImageGallery",
-        "name": "Галерея рисунков",
-        "description": seoData.description,
-        "url": "https://risovanie.online/gallery",
+        "name": finalData.title,
+        "description": finalData.description,
+        "url": finalData.canonical,
         "inLanguage": "ru"
       });
       document.head.appendChild(ld);
     }
 
-  }, [path, seoData]);
+  }, [path, finalData, dynamicSeo]);
 
   return null;
 }

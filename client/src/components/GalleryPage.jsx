@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import userState from '../store/userState';
 import { API_URL } from '../store/canvasState';
+import { useSeo } from './SeoMeta';
 import '../styles/gallery.scss';
 
 const HeartIcon = ({ filled }) => (
@@ -23,6 +24,7 @@ const HeartIcon = ({ filled }) => (
 
 const GalleryPage = observer(() => {
   const navigate = useNavigate();
+  const { setSeoData } = useSeo();
   const [drawings, setDrawings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,6 +58,22 @@ const GalleryPage = observer(() => {
   useEffect(() => {
     fetchDrawings();
   }, [fetchDrawings]);
+
+  useEffect(() => {
+    if (!loading && !error && drawings.length > 0) {
+      setSeoData({
+        title: 'Галерея рисунков - лучшие работы пользователей',
+        description: `Галерея рисунков пользователей Рисование.Онлайн. ${drawings.length} работ от авторов. Смотрите, оценивайте и добавляйте свои работы.`,
+        keywords: `галерея рисунков, рисунки онлайн, ${drawings.length} работ, галерея art`
+      });
+    } else if (!loading && !error && drawings.length === 0) {
+      setSeoData({
+        title: 'Галерея рисунков - добавить работу',
+        description: 'Галерея рисунков пользователей Рисование.Онлайн. Будьте первым, кто добавит свою работу!',
+        keywords: 'галерея рисунков, добавить рисунок, рисование онлайн'
+      });
+    }
+  }, [drawings, loading, error, setSeoData]);
 
 const handleLike = async (drawingId) => {
     if (!userState.isAuthenticated) return;
@@ -233,15 +251,24 @@ const handleLike = async (drawingId) => {
 
   const handleImageClick = (drawing) => {
     setSelectedImage(drawing);
+    if (drawing) {
+      setSeoData({
+        title: `${drawing.title} - Галерея рисунков`,
+        description: `Рисунок "${drawing.title}" от ${drawing.author_name}. Смотрите и оценивайте работы на Рисование.Онлайн`,
+        keywords: `рисунок ${drawing.title}, ${drawing.author_name}, галерея рисунков`
+      });
+    }
   };
 
   const handleCloseModal = () => {
     setSelectedImage(null);
+    setSeoData(null);
   };
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       setSelectedImage(null);
+      setSeoData(null);
     }
   };
 

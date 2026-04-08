@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Fill from '../tools/Fill';
 import { API_URL } from '../store/canvasState';
+import { useSeo } from './SeoMeta';
 import '../styles/coloring.scss';
 import '../styles/modal.scss';
 
@@ -88,8 +89,9 @@ const PRESET_COLORS = [
 ];
 
 const ColoringPage = () => {
- const navigate = useNavigate();
- const canvasRef = useRef(null);
+  const navigate = useNavigate();
+  const { setSeoData } = useSeo();
+  const canvasRef = useRef(null);
  const containerRef = useRef(null);
  const wrapperRef = useRef(null);
 
@@ -172,8 +174,20 @@ const ColoringPage = () => {
 
 
  useEffect(() => {
- zoomRef.current = zoom;
- }, [zoom]);
+  zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    if (selectedPage) {
+      setSeoData({
+        title: `${selectedPage.title} - Раскраска онлайн`,
+        description: `Раскраска "${selectedPage.title}" - раскрашивайте онлайн бесплатно на Рисование.Онлайн`,
+        keywords: `раскраска ${selectedPage.title}, раскраска онлайн, раскраска бесплатно`
+      });
+    } else {
+      setSeoData(null);
+    }
+  }, [selectedPage, setSeoData]);
 
 
  useEffect(() => {
