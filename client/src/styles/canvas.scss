@@ -270,7 +270,7 @@ button:active {
 
   .app {
     overflow: hidden;
-    height: 100vh;
+    height: 100dvh;
     height: -webkit-fill-available;
     display: flex;
     flex-direction: column;
@@ -283,7 +283,7 @@ button:active {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
+    max-height: calc(100dvh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -297,7 +297,7 @@ button:active {
 
   .canvas.canvas--has-chat {
     top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
-    max-height: calc(100vh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 28px)) !important;
+    max-height: calc(100dvh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 28px)) !important;
   }
 
   .canvas-container {
@@ -456,7 +456,7 @@ button:active {
 
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100vh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px));
+    max-height: calc(100dvh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px));
   }
 
   .canvas-layout.has-chat .canvas-container {
