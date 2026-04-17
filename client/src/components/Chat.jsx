@@ -35,11 +35,37 @@ const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  useEffect(() => {
+    if (inputRef.current) {
+      const handleFocus = () => {
+        setIsKeyboardVisible(true);
+        document.body.classList.add('keyboard-open');
+      };
+      
+      const handleBlur = () => {
+        setIsKeyboardVisible(false);
+        document.body.classList.remove('keyboard-open');
+      };
+      
+      inputRef.current.addEventListener('focus', handleFocus);
+      inputRef.current.addEventListener('blur', handleBlur);
+      
+      return () => {
+        if (inputRef.current) {
+          inputRef.current.removeEventListener('focus', handleFocus);
+          inputRef.current.removeEventListener('blur', handleBlur);
+        }
+        document.body.classList.remove('keyboard-open');
+      };
+    }
   }, []);
 
   useLayoutEffect(() => {

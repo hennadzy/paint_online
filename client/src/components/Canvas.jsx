@@ -162,19 +162,54 @@ const Canvas = observer(() => {
     };
   }, []);
 
-  // Сброс позиции и zoom при выходе из комнаты
   useEffect(() => {
     if (!canvasState.isConnected) {
       const container = containerRef.current;
       if (container) {
-        // Небольшая задержка чтобы DOM успел обновиться
         setTimeout(() => {
           container.scrollTop = 0;
           container.scrollLeft = 0;
-        }, 0);
+        }, 100);
       }
       canvasState.setZoom(1);
+
+      if (document.body.style.position === 'fixed') {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+      }
+      document.body.classList.remove('keyboard-open');
     }
+  }, [canvasState.isConnected]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const isMobileDevice = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+    if (!isMobileDevice) return;
+    
+    const handleFocus = () => {
+      document.body.classList.add('keyboard-open');
+    };
+    
+    const handleBlur = () => {
+      document.body.classList.remove('keyboard-open');
+    };
+    
+    const chatInput = document.querySelector('.chat-input');
+    
+    if (chatInput) {
+      chatInput.addEventListener('focus', handleFocus);
+      chatInput.addEventListener('blur', handleBlur);
+    }
+    
+    return () => {
+      if (chatInput) {
+        chatInput.removeEventListener('focus', handleFocus);
+        chatInput.removeEventListener('blur', handleBlur);
+      }
+    };
   }, [canvasState.isConnected]);
 
   useEffect(() => {
