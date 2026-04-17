@@ -7,7 +7,7 @@ let redis;
 if (process.env.DATABASE_URL) {
   pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000
@@ -39,6 +39,11 @@ if (process.env.REDIS_URL) {
     maxRetriesPerRequest: 3,
     retryDelayOnFailover: 100
   });
+}
+
+// Логирование только в development
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Database config loaded');
 }
 
 module.exports = { pgPool, redis };
