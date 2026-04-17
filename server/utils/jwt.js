@@ -3,7 +3,6 @@ const crypto = require('crypto');
 
 const JWT_EXPIRATION = '1h';
 
-// Требовать JWT_SECRET в production
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET environment variable is required in production.');

@@ -28,7 +28,6 @@ const sanitizeChatMessage = (text) => {
 
   sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
 
-  // Полностью полагаемся на DOMPurify для защиты от XSS
   sanitized = DOMPurify.sanitize(sanitized, {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [],
@@ -37,10 +36,8 @@ const sanitizeChatMessage = (text) => {
     USE_PROFILES: { html: false, svg: false, mathMl: false }
   });
 
-  // Удаляем любые оставшиеся HTML-теги
   sanitized = sanitized.replace(/<[^>]*>/g, '');
 
-  // Декодируем HTML-сущности для чистого текста
   sanitized = sanitized
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -168,7 +165,6 @@ const sanitizeUsername = (username, isPrivileged = false) => {
 };
 
 const generateId = () => {
-  // Используем криптографически стойкий генератор случайных чисел
   const bytes = crypto.randomBytes(9);
   return bytes.toString('hex').slice(0, 9);
 };

@@ -138,13 +138,11 @@ router.post('/submit', submitLimiter, authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Неверный формат изображения' });
     }
 
-    // Валидация размера изображения (макс 10MB для base64)
     const base64Data = imageData.split(',')[1];
     if (!base64Data || base64Data.length > 13 * 1024 * 1024) {
       return res.status(400).json({ error: 'Изображение слишком большое (макс 10MB)' });
     }
 
-    // Валидация MIME типа
     const mimeMatch = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,/);
     if (!mimeMatch) {
       return res.status(400).json({ error: 'Разрешены только JPEG, PNG, GIF и WebP' });
@@ -258,7 +256,6 @@ router.get('/user/me', authenticate, async (req, res) => {
   }
 });
 
-// Получение комментариев к рисунку
 router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -267,7 +264,6 @@ router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid id' });
     }
 
-    // Проверяем, что рисунок существует и одобрен
     const drawing = await pgPool.query(
       `SELECT id FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
       [id]
@@ -300,7 +296,6 @@ router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
   }
 });
 
-// Добавление комментария
 router.post('/:id/comments', authenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

@@ -21,8 +21,8 @@ const WebSocketHandler = require('../services/WebSocketHandler');
 const router = express.Router();
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 10, // 10 попыток
+  windowMs: 15 * 60 * 1000, 
+  max: 10, 
   message: 'Слишком много попыток входа, пожалуйста, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -30,8 +30,8 @@ const loginLimiter = rateLimit({
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 час
-  max: 5, // 5 попыток регистрации
+  windowMs: 60 * 60 * 1000, 
+  max: 5, 
   message: 'Слишком много попыток регистрации, пожалуйста, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -83,7 +83,6 @@ router.post('/register', registerLimiter, asyncHandler(async (req, res) => {
 
 const supportEmail = process.env.SUPPORT_EMAIL || process.env.FROM_EMAIL || 'support@paint-online.ru';
 
-  // Отправка приветственного email (без блокировки регистрации)
   try {
     await sendWelcomeEmail({
       to: user.email,
@@ -91,11 +90,9 @@ const supportEmail = process.env.SUPPORT_EMAIL || process.env.FROM_EMAIL || 'sup
       supportEmail
     });
   } catch (emailError) {
-    // Не блокируем регистрацию при ошибке отправки email
     console.error('Welcome email send error (non-blocking):', emailError);
   }
 
-  // Отправка приветственного сообщения в ЛС от admin
   try {
     const adminResult = await pgPool.query(
       `SELECT id, username
@@ -197,7 +194,6 @@ router.post('/logout', authenticate, asyncHandler(async (req, res) => {
     await Session.delete(token);
   }
   
-  // Инвалидируем все WebSocket соединения пользователя
   if (userId) {
     const WebSocketHandler = require('../services/WebSocketHandler');
     WebSocketHandler.invalidateUserSockets(userId);
@@ -217,8 +213,8 @@ router.get('/me', authenticate, asyncHandler(async (req, res) => {
 }));
 
 const resetPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 час
-  max: 3, // 3 попытки
+  windowMs: 60 * 60 * 1000, 
+  max: 3, 
   message: 'Слишком много попыток сброса пароля, пожалуйста, попробуйте позже.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -226,15 +222,15 @@ const resetPasswordLimiter = rateLimit({
 });
 
 const verifyResetTokenLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 10, // 10 попыток
+  windowMs: 15 * 60 * 1000, 
+  max: 10, 
   message: 'Слишком много попыток проверки токена.',
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false }
 });
 
-// Запрос на восстановление пароля
+
 router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -249,15 +245,12 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
 
   const user = await User.findByEmail(emailValidation.email);
   if (!user) {
-    // В целях безопасности не сообщаем, что пользователь не найден
     return res.json({ message: 'Если пользователь с таким email существует, инструкция будет отправлена' });
   }
 
-  // Генерируем токен восстановления
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const expiresAt = Date.now() + 60 * 60 * 1000; // 1 час
+  const expiresAt = Date.now() + 60 * 60 * 1000; 
 
-  // Сохраняем токен в базе данных
   await pgPool.query(
     `INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at)
      VALUES ($1, $2, $3, $4)`,
@@ -284,7 +277,6 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
   res.json({ message: 'Инструкция по восстановлению пароля отправлена на email' });
 }));
 
-// Сброс пароля
 router.post('/reset-password', asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -301,7 +293,6 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     throw new ValidationError(passwordValidation.error);
   }
 
-  // Ищем токен в базе данных
   const tokenResult = await pgPool.query(
     `SELECT prt.*, u.id AS user_id, u.email
      FROM password_reset_tokens prt
@@ -316,27 +307,22 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
 
   const tokenData = tokenResult.rows[0];
 
-  // Проверяем срок действия токена
   if (tokenData.expires_at < Date.now()) {
     throw new ValidationError('Токен истек');
   }
 
-  // Хешируем новый пароль
   const passwordHash = await hashPassword(newPassword);
 
-  // Обновляем пароль пользователя
   await pgPool.query(
     `UPDATE users SET password_hash = $1 WHERE id = $2`,
     [passwordHash, tokenData.user_id]
   );
 
-  // Помечаем токен как использованный
   await pgPool.query(
     `UPDATE password_reset_tokens SET used = TRUE WHERE id = $1`,
     [tokenData.id]
   );
 
-  // Удаляем все сессии пользователя (принудительный выход)
   await pgPool.query(
     `DELETE FROM sessions WHERE user_id = $1`,
     [tokenData.user_id]
@@ -345,7 +331,6 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
   res.json({ message: 'Пароль успешно изменен' });
 }));
 
-// Проверка токена (для валидации на клиенте)
 router.post('/verify-reset-token', verifyResetTokenLimiter, asyncHandler(async (req, res) => {
   const { token } = req.body;
 

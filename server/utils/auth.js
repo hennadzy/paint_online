@@ -6,7 +6,6 @@ const crypto = require('crypto');
 const JWT_EXPIRES_IN = '7d';
 const BCRYPT_ROUNDS = 12;
 
-// Требовать JWT_SECRET в production
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET environment variable is required in production. Please set it in your deployment configuration.');
@@ -78,7 +77,6 @@ function validatePassword(password) {
     return { valid: false, error: 'Пароль слишком длинный' };
   }
 
-  // Требовать хотя бы одну цифру и одну букву
   if (!/[a-zA-Zа-яА-ЯёЁ]/.test(password)) {
     return { valid: false, error: 'Пароль должен содержать хотя бы одну букву' };
   }

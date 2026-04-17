@@ -425,8 +425,6 @@ async addStroke(roomId, stroke) {
 async getRoomUsers(roomId) {
     const usernames = await redis.smembers(`room:${roomId}:users`);
     const verifiedUsers = await redis.smembers(`room:${roomId}:verified_users`);
-
-    // Получаем userId для всех пользователей
     const userIds = await redis.hgetall(`room:${roomId}:user_ids`);
 
     return usernames.map(username => ({
@@ -560,7 +558,6 @@ async cleanupStaleKeys() {
         }
       }
 
-      // Очистка устаревших хэшей user_ids
       const roomUserIdsKeys = await this.redis.keys('room:*:user_ids');
       for (const key of roomUserIdsKeys) {
         try {

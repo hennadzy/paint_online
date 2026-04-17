@@ -8,12 +8,11 @@ const { verifyToken } = require('../utils/jwt');
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
-    this.userSockets = new Map(); // userId -> WebSocket для личных сообщений
-    this.userRoomSockets = new Map(); // userId -> Set<WebSocket> для комнат
+    this.userSockets = new Map();
+    this.userRoomSockets = new Map();
     this.suspiciousActivityLog = new Map();
   }
 
-  // Инвалидация всех WebSocket соединений пользователя при logout
   invalidateUserSockets(userId) {
     const roomSockets = this.userRoomSockets.get(userId);
     if (roomSockets) {
@@ -121,7 +120,6 @@ async handleConnection(ws, msg) {
     ws._username = username;
     ws._isReconnecting = isReconnecting;
 
-    // Отслеживаем сокет пользователя для инвалидации при logout
     if (userId) {
       if (!this.userRoomSockets.has(userId)) {
         this.userRoomSockets.set(userId, new Set());
@@ -268,7 +266,7 @@ async handleChat(ws, msg) {
     if (this._recentMessages.size > 100) {
       const keysToDelete = [];
       for (const [key, time] of this._recentMessages.entries()) {
-        if (now - time > 30000) { // 30 секунд
+        if (now - time > 30000) { 
           keysToDelete.push(key);
         }
       }
@@ -392,7 +390,6 @@ async handleClose(ws) {
 
     const userId = ws._userId;
 
-    // Удаляем из личных сокетов
     for (const [uid, userWs] of this.userSockets.entries()) {
       if (userWs === ws) {
         this.userSockets.delete(uid);
@@ -400,7 +397,6 @@ async handleClose(ws) {
       }
     }
 
-    // Удаляем из комнатных сокетов
     if (userId && this.userRoomSockets.has(userId)) {
       const sockets = this.userRoomSockets.get(userId);
       sockets.delete(ws);

@@ -44,7 +44,6 @@ const validateImageFile = (buffer, mimetype) => {
     if (buffer[i] !== expected[i]) return false;
   }
   
-  // Дополнительная проверка для WebP
   if (mimetype === 'image/webp') {
     if (buffer.length < 12) return false;
     const webpSignature = buffer.toString('ascii', 8, 12);
@@ -365,7 +364,6 @@ router.get('/rooms', async (req, res) => {
       paramIndex++;
     }
 
-    // Whitelist для сортировки с явным маппингом
     const sortColumnMap = {
       'created_at': 'r.created_at',
       'last_activity': 'r.last_activity',
@@ -658,7 +656,6 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
       return res.status(400).json({ error: 'Изображение обязательно' });
     }
 
-    // Дополнительная валидация размера (макс 10MB)
     if (req.file.size > 10 * 1024 * 1024) {
       return res.status(400).json({ error: 'Изображение слишком большое (макс 10MB)' });
     }
