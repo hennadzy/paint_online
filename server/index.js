@@ -43,8 +43,8 @@ app.use(helmet({
       upgradeInsecureRequests: []
     }
   },
-  crossOriginEmbedderPolicy: true,
-  crossOriginResourcePolicy: { policy: 'same-site' },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   xssFilter: true,
   noSniff: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
