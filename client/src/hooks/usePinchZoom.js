@@ -31,6 +31,19 @@ export function usePinchZoom(containerRef) {
     let initialCenterX = 0;
     let initialCenterY = 0;
 
+    // Функция для получения минимального scrollTop
+    const getMinScrollTop = () => {
+      return 0;
+    };
+
+    // Обработчик для предотвращения прокрутки выше допустимого уровня
+    const handleScroll = () => {
+      const minScrollTop = getMinScrollTop();
+      if (container.scrollTop < minScrollTop) {
+        container.scrollTop = minScrollTop;
+      }
+    };
+
     const cancelDrawing = () => {
       if (toolState.tool && toolState.tool.mouseDown) {
         const tool = toolState.tool;
@@ -95,8 +108,13 @@ export function usePinchZoom(containerRef) {
             const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
             const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
 
+            // Ограничиваем прокрутку, чтобы холст не залазил под сетингбар
+            // На мобильных устройствах добавляем отступ сверху
+            const isMobile = window.innerWidth <= 768;
+            const minScrollTop = isMobile ? 0 : 0;
+
             const clampedLeft = Math.max(0, Math.min(maxScrollLeft, rawScrollLeft));
-            const clampedTop = Math.max(0, Math.min(maxScrollTop, rawScrollTop));
+            const clampedTop = Math.max(minScrollTop, Math.min(maxScrollTop, rawScrollTop));
 
             container.scrollLeft = clampedLeft;
             container.scrollTop = clampedTop;
@@ -105,7 +123,7 @@ export function usePinchZoom(containerRef) {
               const maxL = Math.max(0, container.scrollWidth - container.clientWidth);
               const maxT = Math.max(0, container.scrollHeight - container.clientHeight);
               container.scrollLeft = Math.max(0, Math.min(maxL, container.scrollLeft));
-              container.scrollTop = Math.max(0, Math.min(maxT, container.scrollTop));
+              container.scrollTop = Math.max(minScrollTop, Math.min(maxT, container.scrollTop));
             });
           });
         } else if (touchCount === 2 && initialDistance === 0) {
@@ -137,12 +155,14 @@ export function usePinchZoom(containerRef) {
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd);
     container.addEventListener('touchcancel', handleTouchEnd);
+    container.addEventListener('scroll', handleScroll);
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchEnd);
+      container.removeEventListener('scroll', handleScroll);
     };
   }, []);
 }
