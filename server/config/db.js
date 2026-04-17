@@ -41,7 +41,6 @@ if (process.env.REDIS_URL) {
   });
 }
 
-// Логирование только в development
 if (process.env.NODE_ENV !== 'production') {
   console.log('Database config loaded');
 }

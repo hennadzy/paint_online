@@ -31,12 +31,10 @@ export function usePinchZoom(containerRef) {
     let initialCenterX = 0;
     let initialCenterY = 0;
 
-    // Функция для получения минимального scrollTop
     const getMinScrollTop = () => {
       return 0;
     };
 
-    // Обработчик для предотвращения прокрутки выше допустимого уровня
     const handleScroll = () => {
       const minScrollTop = getMinScrollTop();
       if (container.scrollTop < minScrollTop) {
@@ -108,8 +106,6 @@ export function usePinchZoom(containerRef) {
             const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
             const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
 
-            // Ограничиваем прокрутку, чтобы холст не залазил под сетингбар
-            // На мобильных устройствах добавляем отступ сверху
             const isMobile = window.innerWidth <= 768;
             const minScrollTop = isMobile ? 0 : 0;
 
