@@ -1,7 +1,22 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'paint_online_default_secret_change_in_production';
 const JWT_EXPIRATION = '1h';
+
+// Требовать JWT_SECRET в production
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production.');
+  } else {
+    process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  }
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
 
 function generateToken(roomId, username, isPublic, role = 'user', userId = null) {
   const payload = { roomId, username, isPublic, role, iat: Math.floor(Date.now() / 1000) };

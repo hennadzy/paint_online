@@ -191,9 +191,18 @@ router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
 
 router.post('/logout', authenticate, asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
+  const userId = req.user.userId;
+  
   if (token) {
     await Session.delete(token);
   }
+  
+  // Инвалидируем все WebSocket соединения пользователя
+  if (userId) {
+    const WebSocketHandler = require('../services/WebSocketHandler');
+    WebSocketHandler.invalidateUserSockets(userId);
+  }
+  
   res.json({ message: 'Выход выполнен успешно' });
 }));
 
@@ -211,6 +220,15 @@ const resetPasswordLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 час
   max: 3, // 3 попытки
   message: 'Слишком много попыток сброса пароля, пожалуйста, попробуйте позже.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
+});
+
+const verifyResetTokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 10, // 10 попыток
+  message: 'Слишком много попыток проверки токена.',
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false }
@@ -328,7 +346,7 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
 }));
 
 // Проверка токена (для валидации на клиенте)
-router.post('/verify-reset-token', asyncHandler(async (req, res) => {
+router.post('/verify-reset-token', verifyResetTokenLimiter, asyncHandler(async (req, res) => {
   const { token } = req.body;
 
   if (!token || typeof token !== 'string') {

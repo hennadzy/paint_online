@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const crypto = require('crypto');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
 const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam } = require('../utils/security');
@@ -7,8 +8,30 @@ const { verifyToken } = require('../utils/jwt');
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
-    this.userSockets = new Map();
-    this.suspiciousActivityLog = new Map(); // Лог подозрительной активности
+    this.userSockets = new Map(); // userId -> WebSocket для личных сообщений
+    this.userRoomSockets = new Map(); // userId -> Set<WebSocket> для комнат
+    this.suspiciousActivityLog = new Map();
+  }
+
+  // Инвалидация всех WebSocket соединений пользователя при logout
+  invalidateUserSockets(userId) {
+    const roomSockets = this.userRoomSockets.get(userId);
+    if (roomSockets) {
+      roomSockets.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ method: 'session_terminated', reason: 'logout' }));
+          ws.close(4000, 'Session terminated');
+        }
+      });
+      this.userRoomSockets.delete(userId);
+    }
+
+    const personalWs = this.userSockets.get(userId);
+    if (personalWs && personalWs.readyState === WebSocket.OPEN) {
+      personalWs.send(JSON.stringify({ method: 'session_terminated', reason: 'logout' }));
+      personalWs.close(4000, 'Session terminated');
+    }
+    this.userSockets.delete(userId);
   }
 
   checkRateLimit(ws) {
@@ -98,6 +121,14 @@ async handleConnection(ws, msg) {
     ws._username = username;
     ws._isReconnecting = isReconnecting;
 
+    // Отслеживаем сокет пользователя для инвалидации при logout
+    if (userId) {
+      if (!this.userRoomSockets.has(userId)) {
+        this.userRoomSockets.set(userId, new Set());
+      }
+      this.userRoomSockets.get(userId).add(ws);
+    }
+
     try {
       const { strokes, cancelledStrokeIds } = await RoomManager.addUser(roomId, username, ws, isVerified, userId);
 
@@ -107,7 +138,7 @@ async handleConnection(ws, msg) {
         cancelledStrokeIds
       }));
 
-      this.broadcast(roomId, { 
+      this.broadcast(roomId, {
         method: 'connection', 
         username, 
         isVerified,
@@ -121,6 +152,16 @@ async handleConnection(ws, msg) {
       });
 
     } catch (error) {
+      if (userId) {
+        const sockets = this.userRoomSockets.get(userId);
+        if (sockets) {
+          sockets.delete(ws);
+          if (sockets.size === 0) {
+            this.userRoomSockets.delete(userId);
+          }
+        }
+      }
+      console.error('WebSocket connection error:', error.message);
       ws.send(JSON.stringify({
         method: "error",
         message: error.message
@@ -346,13 +387,25 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     }
   }
 
-  async handleClose(ws) {
+async handleClose(ws) {
     this.wsMessageLimits.delete(ws);
 
+    const userId = ws._userId;
+
+    // Удаляем из личных сокетов
     for (const [uid, userWs] of this.userSockets.entries()) {
       if (userWs === ws) {
         this.userSockets.delete(uid);
         break;
+      }
+    }
+
+    // Удаляем из комнатных сокетов
+    if (userId && this.userRoomSockets.has(userId)) {
+      const sockets = this.userRoomSockets.get(userId);
+      sockets.delete(ws);
+      if (sockets.size === 0) {
+        this.userRoomSockets.delete(userId);
       }
     }
 
@@ -369,7 +422,8 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
   }
 
   setupConnection(ws) {
-    ws._id = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const randomId = crypto.randomBytes(9).toString('hex').slice(0, 9);
+    ws._id = `ws_${Date.now()}_${randomId}`;
 
     ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));
     ws.on('close', () => this.handleClose(ws));
@@ -377,7 +431,8 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
   }
 
   setupPersonalConnection(ws) {
-    ws._id = `ws_personal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const randomId = crypto.randomBytes(9).toString('hex').slice(0, 9);
+    ws._id = `ws_personal_${Date.now()}_${randomId}`;
     ws._isPersonalConnection = true;
 
     ws.on('message', (msgStr) => this.handlePersonalConnectionMessage(ws, msgStr));

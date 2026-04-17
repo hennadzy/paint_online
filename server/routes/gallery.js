@@ -91,7 +91,7 @@ router.get('/image/:id', async (req, res) => {
     }
 
     const imageData = result.rows[0].image_data;
-    const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });
     }
@@ -101,7 +101,13 @@ router.get('/image/:id', async (req, res) => {
 
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    const origin = req.headers.origin;
+    const allowedOrigins = ['https://risovanie.online', 'http://localhost:3000', 'https://paint-online-back.onrender.com'];
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    }
+    
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(buffer);
   } catch (error) {
@@ -130,6 +136,18 @@ router.post('/submit', submitLimiter, authenticate, async (req, res) => {
 
     if (!imageData.startsWith('data:image/')) {
       return res.status(400).json({ error: 'Неверный формат изображения' });
+    }
+
+    // Валидация размера изображения (макс 10MB для base64)
+    const base64Data = imageData.split(',')[1];
+    if (!base64Data || base64Data.length > 13 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Изображение слишком большое (макс 10MB)' });
+    }
+
+    // Валидация MIME типа
+    const mimeMatch = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,/);
+    if (!mimeMatch) {
+      return res.status(400).json({ error: 'Разрешены только JPEG, PNG, GIF и WebP' });
     }
 
     const pendingCount = await pgPool.query(

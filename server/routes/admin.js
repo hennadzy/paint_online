@@ -365,20 +365,22 @@ router.get('/rooms', async (req, res) => {
       paramIndex++;
     }
 
-    const validSortColumns = ['created_at', 'last_activity', 'name', 'stroke_count', 'unique_users', 'weight', 'is_public', 'has_password'];
-    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'last_activity';
+    // Whitelist для сортировки с явным маппингом
+    const sortColumnMap = {
+      'created_at': 'r.created_at',
+      'last_activity': 'r.last_activity',
+      'name': 'r.name',
+      'stroke_count': 'COALESCE(s.stroke_count, 0)::INTEGER',
+      'unique_users': 'COALESCE(s.unique_users, 0)::INTEGER',
+      'weight': 'COALESCE(r.weight, 0)',
+      'is_public': 'r.is_public',
+      'has_password': 'r.has_password'
+    };
+    
+    const safeSortBy = sortColumnMap[sortBy] || 'r.last_activity';
     const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    let orderByColumn = `r.${safeSortBy}`;
-    if (safeSortBy === 'weight') {
-      orderByColumn = 'COALESCE(r.weight, 0)';
-    }
-    if (safeSortBy === 'is_public' || safeSortBy === 'has_password') {
-      orderByColumn = `r.${safeSortBy}`;
-    }
-    if (safeSortBy === 'stroke_count' || safeSortBy === 'unique_users') {
-      orderByColumn = `COALESCE(s.${safeSortBy}, 0)::INTEGER`;
-    }
+    let orderByColumn = safeSortBy;
 
     let countQuery = 'SELECT COUNT(*) as total FROM rooms';
     const countValues = [];
@@ -656,6 +658,11 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
       return res.status(400).json({ error: 'Изображение обязательно' });
     }
 
+    // Дополнительная валидация размера (макс 10MB)
+    if (req.file.size > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Изображение слишком большое (макс 10MB)' });
+    }
+
     if (!validateImageFile(req.file.buffer, req.file.mimetype)) {
       return res.status(400).json({ error: 'Неверный формат изображения' });
     }
@@ -820,7 +827,7 @@ router.get('/gallery/image/:id', async (req, res) => {
     }
 
     const imageData = result.rows[0].image_data;
-    const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });
     }
@@ -830,7 +837,13 @@ router.get('/gallery/image/:id', async (req, res) => {
 
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    const origin = req.headers.origin;
+    const allowedOrigins = ['https://risovanie.online', 'http://localhost:3000', 'https://paint-online-back.onrender.com'];
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    }
+    
     res.send(buffer);
   } catch (error) {
     console.error('Admin get gallery image error:', error);

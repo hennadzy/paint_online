@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const validator = require('validator');
 const createDOMPurify = require('dompurify');
 const { JSDOM } = require('jsdom');
-const xss = require('xss');
 
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
@@ -12,14 +11,6 @@ const sanitizeInput = (input, maxLength) => {
 
   let sanitized = input.trim().slice(0, maxLength);
   sanitized = validator.escape(sanitized);
-
-
-  sanitized = sanitized.replace(/javascript:/gi, '')
-                       .replace(/vbscript:/gi, '')
-                       .replace(/data:/gi, '')
-                       .replace(/on\w+\s*=/gi, '')
-                       .replace(/<script/gi, '')
-                       .replace(/<\/script>/gi, '');
 
   return sanitized;
 };
@@ -37,69 +28,28 @@ const sanitizeChatMessage = (text) => {
 
   sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
 
-  const dangerousPatterns = [
-    /javascript:/gi,
-    /data:/gi,
-    /vbscript:/gi,
-    /file:/gi,
-    /about:/gi,
-    /on\w+\s*=/gi,
-    /<script/gi,
-    /<\/script>/gi,
-    /<iframe/gi,
-    /<embed/gi,
-    /<object/gi,
-    /<link/gi,
-    /<meta/gi,
-    /<style/gi,
-    /<img/gi,
-    /<svg/gi,
-    /<math/gi,
-    /<form/gi,
-    /<input/gi,
-    /<button/gi,
-    /<a\s+[^>]*href\s*=/gi,
-    /onerror/gi,
-    /onload/gi,
-    /onclick/gi,
-    /onmouseover/gi,
-    /onfocus/gi,
-    /onblur/gi,
-    /eval\s*\(/gi,
-    /expression\s*\(/gi,
-    /import\s+/gi,
-    /document\./gi,
-    /window\./gi,
-    /<\?php/gi,
-    /<\?=/gi,
-    /<%/gi,
-    /%>/gi,
-    /\\x00/g,
-    /\\u0000/g
-  ];
-
-  dangerousPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
-
+  // Полностью полагаемся на DOMPurify для защиты от XSS
   sanitized = DOMPurify.sanitize(sanitized, {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: [],
     KEEP_CONTENT: true,
-    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto):)/
+    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel):)/i,
+    USE_PROFILES: { html: false, svg: false, mathMl: false }
   });
 
+  // Удаляем любые оставшиеся HTML-теги
   sanitized = sanitized.replace(/<[^>]*>/g, '');
 
-  sanitized = sanitized.replace(/&[a-zA-Z0-9#]+;/g, (match) => {
-    const decoded = match.replace('&', '').replace(';', '');
-    if (/^(lt|gt|amp|quot|#\d+|#x[0-9a-fA-F]+)$/.test(decoded)) {
-      return '';
-    }
-    return match;
-  });
+  // Декодируем HTML-сущности для чистого текста
+  sanitized = sanitized
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'");
 
-  return sanitized;
+  return sanitized.trim();
 };
 
 const checkSpam = (text, username, messageHistory = []) => {
@@ -218,10 +168,9 @@ const sanitizeUsername = (username, isPrivileged = false) => {
 };
 
 const generateId = () => {
-  if (typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID().replace(/-/g, '').slice(0, 9);
-  }
-  return Math.random().toString(36).substring(2, 11);
+  // Используем криптографически стойкий генератор случайных чисел
+  const bytes = crypto.randomBytes(9);
+  return bytes.toString('hex').slice(0, 9);
 };
 
 module.exports = {

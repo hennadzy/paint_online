@@ -14,7 +14,7 @@ const { asyncHandler, ValidationError, NotFoundError, ForbiddenError } = require
 const router = express.Router();
 
 const MAX_ROOM_NAME_LENGTH = 20;
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -63,10 +63,14 @@ const imageSaveLimiter = rateLimit({
 
 router.post('/image', imageSaveLimiter, asyncHandler(async (req, res) => {
   const origin = req.headers.origin;
-  if (process.env.NODE_ENV === 'production' ||
-      origin === 'https://risovanie.online' ||
-      origin === 'http://localhost:3000') {
-    res.header('Access-Control-Allow-Origin', origin || '*');
+  const allowedOrigins = [
+    'https://risovanie.online',
+    'http://localhost:3000',
+    'https://paint-online-back.onrender.com'
+  ];
+  
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
   }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -382,7 +386,7 @@ router.get('/coloring-pages/image/:id', async (req, res) => {
     }
 
     const imageData = result.rows[0].image_data;
-    const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });
     }
@@ -392,7 +396,13 @@ router.get('/coloring-pages/image/:id', async (req, res) => {
 
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    const origin = req.headers.origin;
+    const allowedOrigins = ['https://risovanie.online', 'http://localhost:3000', 'https://paint-online-back.onrender.com'];
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    }
+    
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(buffer);
   } catch (error) {

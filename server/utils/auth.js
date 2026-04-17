@@ -3,23 +3,23 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const JWT_EXPIRES_IN = '7d';
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
+// Требовать JWT_SECRET в production
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
-    console.error('⚠️  CRITICAL: JWT_SECRET not set in production!');
-    console.error('Please set JWT_SECRET environment variable in Render dashboard (Secrets tab).');
-    console.error('Server generated a temporary secret - NOT SECURE for production!');
-    console.error('All existing sessions will be invalid after restart.');
+    throw new Error('JWT_SECRET environment variable is required in production. Please set it in your deployment configuration.');
   } else {
-    console.warn('WARNING: JWT_SECRET not set. Generated temporary secret. Set JWT_SECRET environment variable!');
+    console.warn('WARNING: JWT_SECRET not set. Using generated secret for development only. Set JWT_SECRET environment variable!');
+    process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
   }
 }
 
-if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 16) {
-  throw new Error('JWT_SECRET must be at least 16 characters long');
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long for security');
 }
 
 async function hashPassword(password) {
@@ -70,12 +70,21 @@ function validatePassword(password) {
     return { valid: false, error: 'Пароль обязателен' };
   }
 
-  if (password.length < 6) {
-    return { valid: false, error: 'Пароль должен быть не менее 6 символов' };
+  if (password.length < 8) {
+    return { valid: false, error: 'Пароль должен быть не менее 8 символов' };
   }
 
   if (password.length > 72) {
     return { valid: false, error: 'Пароль слишком длинный' };
+  }
+
+  // Требовать хотя бы одну цифру и одну букву
+  if (!/[a-zA-Zа-яА-ЯёЁ]/.test(password)) {
+    return { valid: false, error: 'Пароль должен содержать хотя бы одну букву' };
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: 'Пароль должен содержать хотя бы одну цифру' };
   }
 
   return { valid: true };

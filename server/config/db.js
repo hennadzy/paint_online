@@ -7,7 +7,10 @@ let redis;
 if (process.env.DATABASE_URL) {
   pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000
   });
 } else {
   pgPool = new Pool({
@@ -16,35 +19,26 @@ if (process.env.DATABASE_URL) {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME || 'paint_online',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000
   });
-  
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('Using database connection:', {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || 'paint_online',
-      user: process.env.DB_USER || 'postgres',
-      ssl: false
-    });
-  }
 }
-
+  
 if (process.env.REDIS_URL) {
-  redis = new Redis(process.env.REDIS_URL);
+  redis = new Redis(process.env.REDIS_URL, {
+    maxRetriesPerRequest: 3,
+    retryDelayOnFailover: 100
+  });
 } else {
   redis = new Redis({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined
+    password: process.env.REDIS_PASSWORD || undefined,
+    maxRetriesPerRequest: 3,
+    retryDelayOnFailover: 100
   });
-  
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('Using Redis connection:', {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || 6379
-    });
-  }
 }
 
 module.exports = { pgPool, redis };

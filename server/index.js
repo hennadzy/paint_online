@@ -47,7 +47,12 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
   xssFilter: true,
   noSniff: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 
 app.use(cors({
@@ -145,12 +150,12 @@ app.get('/files/coloring_:id.:ext', async (req, res) => {
  [parseInt(id,10)]
  );
 
- if (result.rows.length ===0 || !result.rows[0].image_data) {
+ if (result.rows.length === 0 || !result.rows[0].image_data) {
  return res.status(404).send('Image not found');
  }
 
  const imageData = result.rows[0].image_data;
- const match = imageData.match(/^data:([^;]+);base64,(.+)$/s);
+ const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
  if (!match) {
  return res.status(500).send('Invalid image data');
  }
@@ -160,7 +165,13 @@ app.get('/files/coloring_:id.:ext', async (req, res) => {
 
  res.setHeader('Content-Type', mimeType);
  res.setHeader('Cache-Control', 'public, max-age=86400');
- res.setHeader('Access-Control-Allow-Origin', '*');
+ 
+ const origin = req.headers.origin;
+ const allowedOrigins = ['https://risovanie.online', 'http://localhost:3000', 'https://paint-online-back.onrender.com'];
+ if (!origin || allowedOrigins.includes(origin)) {
+   res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+ }
+ 
  res.send(buffer);
  } catch (error) {
  console.error('Legacy coloring image error:', error);
@@ -169,7 +180,17 @@ app.get('/files/coloring_:id.:ext', async (req, res) => {
 });
 
 app.use('/files', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://risovanie.online',
+    'http://localhost:3000',
+    'https://paint-online-back.onrender.com'
+  ];
+  
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -185,7 +206,15 @@ app.use('/files', (req, res, next) => {
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'https://risovanie.online',
+      'http://localhost:3000',
+      'https://paint-online-back.onrender.com'
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    }
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     res.header('Cache-Control', 'public, max-age=86400');
   }
@@ -517,16 +546,19 @@ try {
     if (adminExists.rows.length === 0) {
       const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
       if (!adminPassword) {
-        console.warn('WARNING: ADMIN_DEFAULT_PASSWORD not set. Admin account created with random password.');
-        console.warn('Check server logs for the password or reset it via database.');
+        console.error('ERROR: ADMIN_DEFAULT_PASSWORD environment variable is not set.');
+        console.error('Admin account cannot be created without a password.');
+        console.error('Please set ADMIN_DEFAULT_PASSWORD and restart the server.');
+        throw new Error('ADMIN_DEFAULT_PASSWORD is required for initial admin account creation');
       }
-      const adminPasswordHash = await hashPassword(adminPassword || crypto.randomBytes(16).toString('hex'));
+      const adminPasswordHash = await hashPassword(adminPassword);
       await pgPool.query(
         `INSERT INTO users (username, email, password_hash, role, created_at, is_active)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         ['admin', 'admin@admin.com', adminPasswordHash, 'superadmin', Date.now(), true]
       );
       console.log('Default admin user created: admin@admin.com');
+      console.log('IMPORTANT: Change the default admin password immediately after first login!');
     }
   } catch (err) {
     console.error('Failed to initialize database tables:', err.message);

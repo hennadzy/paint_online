@@ -518,7 +518,8 @@ async getVerifiedUsers(roomId) {
 
 _getWsId(ws) {
     if (!ws._id) {
-      ws._id = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const randomId = require('crypto').randomBytes(9).toString('hex').slice(0, 9);
+      ws._id = `ws_${Date.now()}_${randomId}`;
     }
     return ws._id;
   }
