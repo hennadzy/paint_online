@@ -35,30 +35,12 @@ const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (!isFocused) return;
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-      const chatElement = document.querySelector('.chat');
-      if (chatElement) {
-        chatElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
-    }
-    
-    return () => {
-      if (window.visualViewport) {
-        window.dispatchEvent(new Event('resize'));
-      }
-    };
-  }, [isFocused]);
 
   useLayoutEffect(() => {
     if (messagesRef.current) {
@@ -188,8 +170,6 @@ return (
             className="chat-input"
             placeholder="Введите сообщение"
             onKeyDown={sendMessage}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
           />
           <button
             className={`chat-send-btn ${isSending ? 'chat-send-btn--disabled' : ''}`}

@@ -162,18 +162,18 @@ const Canvas = observer(() => {
     };
   }, []);
 
+  // Сброс позиции и zoom при выходе из комнаты
   useEffect(() => {
     if (!canvasState.isConnected) {
       const container = containerRef.current;
       if (container) {
-        container.scrollTop = 0;
-        container.scrollLeft = 0;
+        // Небольшая задержка чтобы DOM успел обновиться
+        setTimeout(() => {
+          container.scrollTop = 0;
+          container.scrollLeft = 0;
+        }, 0);
       }
       canvasState.setZoom(1);
-      
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new Event('resize'));
-      });
     }
   }, [canvasState.isConnected]);
 
