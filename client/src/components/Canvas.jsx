@@ -145,6 +145,24 @@ const Canvas = observer(() => {
     }
   }, [canvasState.chatMessages.length]);
 
+  // Блокировка жеста двумя пальцами вне холста
+  useEffect(() => {
+    const layout = layoutRef.current;
+    if (!layout) return;
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+      }
+    };
+
+    layout.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      layout.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
   useEffect(() => {
     if (!canvasState.isConnected) return;
     const interval = setInterval(() => {

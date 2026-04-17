@@ -326,6 +326,7 @@ button:active {
     justify-content: center;
     align-items: center;
     overscroll-behavior: none;
+    touch-action: none;
   }
 
   .canvas-layout:not(.has-chat) {
@@ -333,9 +334,9 @@ button:active {
     align-items: center;
     padding-top: 0;
     padding-bottom: calc(2px + env(safe-area-inset-bottom, 6px));
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior: none;
   }
 
   .canvas-layout.has-chat {
@@ -499,6 +500,9 @@ button:active {
     min-height: 0;
     max-height: 190px;
     padding-bottom: env(safe-area-inset-bottom, 16px);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .canvas-layout.has-chat .canvas-side-panel {
@@ -513,6 +517,7 @@ button:active {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    touch-action: manipulation;
   }
 }
 
@@ -762,6 +767,9 @@ button:active {
     gap: 5px;
     width: 100%;
     padding: 6px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
@@ -788,6 +796,9 @@ button:active {
     transition: all 0.3s ease;
     flex-shrink: 0;
     z-index: 100;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
