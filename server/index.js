@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const helmet = require('helmet');
 const DataStore = require('./services/DataStore');
 const WebSocketHandler = require('./services/WebSocketHandler');
@@ -42,7 +43,8 @@ app.use(helmet({
       upgradeInsecureRequests: []
     }
   },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: true,
+  crossOriginResourcePolicy: { policy: 'same-site' },
   xssFilter: true,
   noSniff: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
@@ -50,15 +52,19 @@ app.use(helmet({
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
-      return callback(null, true);
-    }
-
     const allowedOrigins = [
       'https://risovanie.online',
       'http://localhost:3000',
       'https://paint-online-back.onrender.com'
     ];
+
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, origin || allowedOrigins[0]);
+      } else {
+        return callback(new Error('Not allowed by CORS'));
+      }
+    }
 
     if (!origin) return callback(null, true);
 
@@ -79,12 +85,22 @@ app.use(cors({
 
 app.use('/api', (req, res, next) => {
   const origin = req.headers.origin;
-  if (process.env.NODE_ENV === 'production' ||
-      process.env.RENDER_EXTERNAL_URL ||
-      origin === 'https://risovanie.online' ||
-      origin === 'http://localhost:3000') {
+  const allowedOrigins = [
+    'https://risovanie.online',
+    'http://localhost:3000',
+    'https://paint-online-back.onrender.com'
+  ];
+  
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else if (!origin) {
+      res.header('Access-Control-Allow-Origin', allowedOrigins[0]);
+    }
+  } else {
     res.header('Access-Control-Allow-Origin', origin || '*');
   }
+  
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -157,7 +173,7 @@ app.use('/files', (req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.header('Cross-Origin-Embedder-Policy', 'require-corp');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -192,7 +208,6 @@ app.use('/api/gallery', galleryRouter);
 
 app.use(errorMiddleware);
 
-// SEO: Server-rendered meta tags for bots (без JavaScript)
 const SEO_PAGES = {
   '/coloring': {
     title: 'Раскраски онлайн - бесплатные раскраски для детей и взрослых',
@@ -242,7 +257,6 @@ app.get('/gallery', (req, res) => {
 
 const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery'];
 
-// Явные маршруты для SPA-страниц (включая reset-password)
 CLIENT_ROUTES.forEach(route => {
   if (route !== '/*') {
     app.get(route, (req, res) => {
@@ -501,7 +515,12 @@ try {
     );
 
     if (adminExists.rows.length === 0) {
-      const adminPasswordHash = await hashPassword('Hbcjdfkrf!13');
+      const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+      if (!adminPassword) {
+        console.warn('WARNING: ADMIN_DEFAULT_PASSWORD not set. Admin account created with random password.');
+        console.warn('Check server logs for the password or reset it via database.');
+      }
+      const adminPasswordHash = await hashPassword(adminPassword || crypto.randomBytes(16).toString('hex'));
       await pgPool.query(
         `INSERT INTO users (username, email, password_hash, role, created_at, is_active)
          VALUES ($1, $2, $3, $4, $5, $6)`,

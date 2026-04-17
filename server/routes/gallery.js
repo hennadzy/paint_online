@@ -2,6 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { pgPool } = require('../config/db');
+const { sanitizeChatMessage } = require('../utils/security');
 
 const router = express.Router();
 
@@ -296,12 +297,16 @@ router.post('/:id/comments', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Введите комментарий' });
     }
 
-    const trimmedComment = comment.trim();
-    if (trimmedComment.length > 500) {
+    const sanitizedComment = sanitizeChatMessage(comment.trim());
+    
+    if (sanitizedComment.length === 0) {
+      return res.status(400).json({ error: 'Комментарий содержит недопустимые символы' });
+    }
+
+    if (sanitizedComment.length > 500) {
       return res.status(400).json({ error: 'Комментарий не должен превышать 500 символов' });
     }
 
-    // Проверяем, что рисунок существует и одобрен
     const drawing = await pgPool.query(
       `SELECT id FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
       [id]
@@ -322,7 +327,7 @@ router.post('/:id/comments', authenticate, async (req, res) => {
          updated_at,
          $6 AS user_id,
          $7 AS author_name`,
-      [id, userId, trimmedComment, now, now, userId, req.user.username]
+      [id, userId, sanitizedComment, now, now, userId, req.user.username]
     );
 
     res.json({ comment: result.rows[0] });
@@ -332,7 +337,6 @@ router.post('/:id/comments', authenticate, async (req, res) => {
   }
 });
 
-// Редактирование комментария (админ или автор)
 router.put('/comments/:commentId', authenticate, async (req, res) => {
   try {
     const commentId = parseInt(req.params.commentId, 10);
@@ -348,12 +352,16 @@ router.put('/comments/:commentId', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Введите комментарий' });
     }
 
-    const trimmedComment = comment.trim();
-    if (trimmedComment.length > 500) {
+    const sanitizedComment = sanitizeChatMessage(comment.trim());
+    
+    if (sanitizedComment.length === 0) {
+      return res.status(400).json({ error: 'Комментарий содержит недопустимые символы' });
+    }
+
+    if (sanitizedComment.length > 500) {
       return res.status(400).json({ error: 'Комментарий не должен превышать 500 символов' });
     }
 
-    // Получаем информацию о комментарии
     const existingComment = await pgPool.query(
       `SELECT user_id FROM gallery_comments WHERE id = $1 AND is_deleted = FALSE`,
       [commentId]
@@ -363,7 +371,6 @@ router.put('/comments/:commentId', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Комментарий не найден' });
     }
 
-    // Проверяем права: админ или автор комментария
     const isAuthor = existingComment.rows[0].user_id === userId;
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
@@ -377,7 +384,7 @@ router.put('/comments/:commentId', authenticate, async (req, res) => {
        SET comment = $1, updated_at = $2
        WHERE id = $3
        RETURNING id, comment, created_at, updated_at`,
-      [trimmedComment, now, commentId]
+      [sanitizedComment, now, commentId]
     );
 
     res.json({ comment: result.rows[0] });
@@ -387,7 +394,6 @@ router.put('/comments/:commentId', authenticate, async (req, res) => {
   }
 });
 
-// Удаление комментария (админ или автор)
 router.delete('/comments/:commentId', authenticate, async (req, res) => {
   try {
     const commentId = parseInt(req.params.commentId, 10);
@@ -398,7 +404,6 @@ router.delete('/comments/:commentId', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid comment id' });
     }
 
-    // Получаем информацию о комментарии
     const existingComment = await pgPool.query(
       `SELECT user_id FROM gallery_comments WHERE id = $1 AND is_deleted = FALSE`,
       [commentId]
@@ -408,7 +413,6 @@ router.delete('/comments/:commentId', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Комментарий не найден' });
     }
 
-    // Проверяем права: админ или автор комментария
     const isAuthor = existingComment.rows[0].user_id === userId;
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 

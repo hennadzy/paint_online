@@ -12,11 +12,13 @@ async function authenticate(req, res, next) {
 
     const decoded = verifyToken(token);
     if (!decoded) {
+      console.warn(`Invalid token attempt from IP: ${req.ip || req.connection.remoteAddress}`);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
     const session = await Session.findByToken(token);
     if (!session) {
+      console.warn(`Session not found for token from IP: ${req.ip || req.connection.remoteAddress}`);
       return res.status(401).json({ error: 'Session not found or expired' });
     }
 

@@ -16,16 +16,43 @@ const router = express.Router();
 
 const coloringUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Только изображения JPEG, PNG, GIF и WebP разрешены'));
     }
   }
 });
+
+const validateImageFile = (buffer, mimetype) => {
+  if (!buffer || buffer.length < 4) return false;
+  
+  const signatures = {
+    'image/jpeg': [0xFF, 0xD8, 0xFF],
+    'image/png': [0x89, 0x50, 0x4E, 0x47],
+    'image/gif': [0x47, 0x49, 0x46],
+    'image/webp': [0x52, 0x49, 0x46, 0x46] 
+  };
+  
+  const expected = signatures[mimetype];
+  if (!expected) return false;
+  
+  for (let i = 0; i < expected.length; i++) {
+    if (buffer[i] !== expected[i]) return false;
+  }
+  
+  // Дополнительная проверка для WebP
+  if (mimetype === 'image/webp') {
+    if (buffer.length < 12) return false;
+    const webpSignature = buffer.toString('ascii', 8, 12);
+    if (webpSignature !== 'WEBP') return false;
+  }
+  
+  return true;
+};
 
 router.use(authenticate);
 router.use(requireSuperAdmin);
@@ -629,6 +656,9 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
       return res.status(400).json({ error: 'Изображение обязательно' });
     }
 
+    if (!validateImageFile(req.file.buffer, req.file.mimetype)) {
+      return res.status(400).json({ error: 'Неверный формат изображения' });
+    }
 
     const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 

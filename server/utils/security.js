@@ -13,7 +13,10 @@ const sanitizeInput = (input, maxLength) => {
   let sanitized = input.trim().slice(0, maxLength);
   sanitized = validator.escape(sanitized);
 
+
   sanitized = sanitized.replace(/javascript:/gi, '')
+                       .replace(/vbscript:/gi, '')
+                       .replace(/data:/gi, '')
                        .replace(/on\w+\s*=/gi, '')
                        .replace(/<script/gi, '')
                        .replace(/<\/script>/gi, '');
@@ -32,7 +35,7 @@ const sanitizeChatMessage = (text) => {
 
   sanitized = sanitized.normalize('NFKC');
 
-  sanitized = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
 
   const dangerousPatterns = [
     /javascript:/gi,
@@ -51,6 +54,11 @@ const sanitizeChatMessage = (text) => {
     /<style/gi,
     /<img/gi,
     /<svg/gi,
+    /<math/gi,
+    /<form/gi,
+    /<input/gi,
+    /<button/gi,
+    /<a\s+[^>]*href\s*=/gi,
     /onerror/gi,
     /onload/gi,
     /onclick/gi,
@@ -65,20 +73,31 @@ const sanitizeChatMessage = (text) => {
     /<\?php/gi,
     /<\?=/gi,
     /<%/gi,
-    /%>/gi
+    /%>/gi,
+    /\\x00/g,
+    /\\u0000/g
   ];
 
   dangerousPatterns.forEach(pattern => {
     sanitized = sanitized.replace(pattern, '');
   });
 
- sanitized = DOMPurify.sanitize(sanitized, {
- ALLOWED_TAGS: [],
- ALLOWED_ATTR: [],
- KEEP_CONTENT: true
- });
+  sanitized = DOMPurify.sanitize(sanitized, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto):)/
+  });
 
- sanitized = sanitized.replace(/<[^>]*>/g, '');
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+
+  sanitized = sanitized.replace(/&[a-zA-Z0-9#]+;/g, (match) => {
+    const decoded = match.replace('&', '').replace(';', '');
+    if (/^(lt|gt|amp|quot|#\d+|#x[0-9a-fA-F]+)$/.test(decoded)) {
+      return '';
+    }
+    return match;
+  });
 
   return sanitized;
 };

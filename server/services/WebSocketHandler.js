@@ -8,18 +8,24 @@ class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
     this.userSockets = new Map();
+    this.suspiciousActivityLog = new Map(); // Лог подозрительной активности
   }
 
   checkRateLimit(ws) {
     const now = Date.now();
     const limit = this.wsMessageLimits.get(ws) || { count: 0, resetTime: now + 1000 };
+    
     if (now > limit.resetTime) {
       this.wsMessageLimits.set(ws, { count: 1, resetTime: now + 1000 });
       return true;
     }
-    if (limit.count >= 50) {
+    
+    if (limit.count >= 30) {
+      const wsId = ws._id || 'unknown';
+      console.warn(`Rate limit exceeded for WebSocket: ${wsId}`);
       return false;
     }
+    
     limit.count++;
     return true;
   }
@@ -50,6 +56,7 @@ async handleConnection(ws, msg) {
     const isVerified = Boolean(msg.isVerified);
 
     if (!token || !roomId || !username) {
+      console.warn(`Invalid connection attempt: missing token=${!token}, roomId=${!roomId}, username=${!username}`);
       ws.close(1008, 'Invalid request');
       return;
     }
@@ -60,12 +67,14 @@ async handleConnection(ws, msg) {
     }
 
     if (!payload) {
+      console.warn(`Invalid or expired token for user: ${username}`);
       ws.close(1008, 'Invalid or expired token');
       return;
     }
 
     const sanitizedPayloadUsername = sanitizeUsername(payload.username, isPrivileged);
     if (payload.roomId !== roomId || sanitizedPayloadUsername !== username) {
+      console.warn(`Token mismatch for user: ${username}, roomId: ${roomId}`);
       ws.close(1008, 'Token mismatch');
       return;
     }
@@ -78,6 +87,7 @@ async handleConnection(ws, msg) {
     }
 
     if (!roomInfo.isPublic && payload.isPublic) {
+      console.warn(`Attempt to join private room with public token: ${roomId}`);
       ws.close(1008, 'Invalid token for private room');
       return;
     }
