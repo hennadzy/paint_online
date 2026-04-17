@@ -166,7 +166,7 @@ async deleteRoom(roomId) {
     try {
       await pgPool.query(
         'INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ($1, $2, $3, $4)',
-        [roomId, stroke, stroke.username || 'unknown', Date.now()]
+        [roomId, JSON.stringify(stroke), stroke.username || 'unknown', Date.now()]
       );
       return true;
     } catch (error) {
@@ -175,41 +175,41 @@ async deleteRoom(roomId) {
     }
   }
 
- async saveStrokes(roomId, strokes) {
- if (!strokes.length) return true;
- try {
- const existingIds = new Set();
- const newStrokes = [];
+  async saveStrokes(roomId, strokes) {
+    if (!strokes || strokes.length === 0) return true;
+    try {
+      const existingIds = new Set();
+      const newStrokes = [];
 
- for (const s of strokes) {
- if (s.id && !existingIds.has(s.id)) {
- existingIds.add(s.id);
- newStrokes.push(s);
- }
- }
+      for (const s of strokes) {
+        if (s.id && !existingIds.has(s.id)) {
+          existingIds.add(s.id);
+          newStrokes.push(s);
+        }
+      }
 
- if (newStrokes.length ===0) return true;
+      if (newStrokes.length === 0) return true;
 
- const values = newStrokes.map(s => [
- roomId,
- s,
- s.username || 'unknown',
- Date.now()
- ]);
- const placeholders = values.map((_, i) => `(${i*4+1}, ${i*4+2}, ${i*4+3}, ${i*4+4})`).join(',');
- const flatValues = values.flat();
- await pgPool.query(
- `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
- flatValues
- );
- return true;
- } catch (error) {
- console.error('saveStrokes error:', error);
- return false;
- }
- }
+      const values = newStrokes.map(s => [
+        roomId,
+        JSON.stringify(s),
+        s.username || 'unknown',
+        Date.now()
+      ]);
+      const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+      const flatValues = values.flat();
+      await pgPool.query(
+        `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
+        flatValues
+      );
+      return true;
+    } catch (error) {
+      console.error('saveStrokes error:', error);
+      return false;
+    }
+  }
 
-async loadStrokes(roomId) {
+  async loadStrokes(roomId) {
     try {
       const res = await pgPool.query(
         'SELECT stroke_data FROM strokes WHERE room_id = $1 ORDER BY created_at',
@@ -233,24 +233,21 @@ async loadStrokes(roomId) {
   }
 
   async saveCancelledStrokes(roomId, username, strokes) {
-    if (!strokes.length) return true;
+    if (!strokes || strokes.length === 0) return true;
     try {
       await pgPool.query(
         'DELETE FROM cancelled_strokes WHERE room_id = $1 AND username = $2',
         [roomId, username]
       );
 
-      const values = strokes.map(s => [
+      const values = strokes.map((s, i) => [
         roomId,
-        s,
+        JSON.stringify(s),
         username,
         Date.now()
       ]);
-      const placeholders = values.map((_, i) => `($1, $2, $3, $4)`).join(',');
-      const flatValues = [];
-      for (let i = 0; i < strokes.length; i++) {
-        flatValues.push(roomId, strokes[i], username, Date.now());
-      }
+      const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+      const flatValues = values.flat();
       await pgPool.query(
         `INSERT INTO cancelled_strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
         flatValues

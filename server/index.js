@@ -206,17 +206,17 @@ app.use('/files', (req, res, next) => {
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    const origin = req.headers.origin;
+    const origin = res.req.headers.origin;
     const allowedOrigins = [
       'https://risovanie.online',
       'http://localhost:3000',
       'https://paint-online-back.onrender.com'
     ];
     if (!origin || allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
     }
-    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.header('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
   }
 }));
 app.use(express.static(path.join(__dirname, '../client/build')));
