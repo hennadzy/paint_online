@@ -35,12 +35,30 @@ const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      const chatElement = document.querySelector('.chat');
+      if (chatElement) {
+        chatElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+    
+    return () => {
+      if (window.visualViewport) {
+        window.dispatchEvent(new Event('resize'));
+      }
+    };
+  }, [isFocused]);
 
   useLayoutEffect(() => {
     if (messagesRef.current) {
@@ -73,13 +91,11 @@ const handleInvite = () => {
   };
 
 const handleUserClick = (user) => {
-    // Проверяем, что пользователь авторизован и клик по авторизованному пользователю
     if (!userState.isAuthenticated) return;
 
     const userId = typeof user === 'object' ? user.id : null;
     const isVerified = typeof user === 'object' ? user.isVerified : false;
 
-    // Открываем ЛС только для авторизованных пользователей
     if (isVerified && userId) {
       const username = typeof user === 'object' ? user.username : user;
       canvasState.setShowPersonalMessages(true, { id: userId, username, is_online: true });
@@ -172,6 +188,8 @@ return (
             className="chat-input"
             placeholder="Введите сообщение"
             onKeyDown={sendMessage}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
           />
           <button
             className={`chat-send-btn ${isSending ? 'chat-send-btn--disabled' : ''}`}

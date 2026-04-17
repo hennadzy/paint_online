@@ -145,7 +145,6 @@ const Canvas = observer(() => {
     }
   }, [canvasState.chatMessages.length]);
 
-  // Блокировка жеста двумя пальцами вне холста
   useEffect(() => {
     const layout = layoutRef.current;
     if (!layout) return;
@@ -162,6 +161,21 @@ const Canvas = observer(() => {
       layout.removeEventListener('touchmove', handleTouchMove);
     };
   }, []);
+
+  useEffect(() => {
+    if (!canvasState.isConnected) {
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+      }
+      canvasState.setZoom(1);
+      
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+    }
+  }, [canvasState.isConnected]);
 
   useEffect(() => {
     if (!canvasState.isConnected) return;
