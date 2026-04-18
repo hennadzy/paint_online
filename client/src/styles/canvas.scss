@@ -547,14 +547,14 @@ button:active {
   body.keyboard-open .canvas.canvas--has-chat {
     top: calc(var(--mobile-menu-height-chat) + env(safe-area-inset-top, 0px)) !important;
     max-height: calc(100svh - var(--mobile-menu-height-chat) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-    height: calc(100svh - var(--mobile-menu-height-chat) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    height: auto !important;
     bottom: 0 !important;
   }
 
   body.keyboard-open .canvas:not(.canvas--has-chat) {
     top: calc(var(--mobile-menu-height-local) + env(safe-area-inset-top, 0px)) !important;
     max-height: calc(100svh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-    height: calc(100svh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+    height: auto !important;
     bottom: 0 !important;
   }
 
