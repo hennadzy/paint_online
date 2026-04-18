@@ -192,7 +192,18 @@ const Canvas = observer(() => {
     let rafId = null;
     let keyboardTracking = false;
 
+    const getChatInput = () => document.querySelector('.chat-input');
+
     const updateKeyboardState = () => {
+      const chatInput = getChatInput();
+      const isInputFocused = chatInput && chatInput === document.activeElement;
+      
+      if (!isInputFocused) {
+        document.body.classList.remove('keyboard-open');
+        document.documentElement.style.removeProperty('--keyboard-height');
+        return;
+      }
+
       const vv = window.visualViewport;
       const keyboardOpen = vv ? (vv.height < window.innerHeight * 0.9) : false;
 
@@ -225,7 +236,7 @@ const Canvas = observer(() => {
       document.documentElement.style.removeProperty('--keyboard-height');
     };
 
-    const chatInput = document.querySelector('.chat-input');
+    const chatInput = getChatInput();
 
     if (chatInput) {
       chatInput.addEventListener('focus', startKeyboardTracking);

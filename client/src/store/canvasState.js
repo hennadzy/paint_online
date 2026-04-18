@@ -540,6 +540,11 @@ setupThumbnailInterval() {
     if (wasInRoom && !keepLocalSave) {
       AutoSaveService.clear(null);
     }
+    
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('keyboard-open');
+      document.documentElement.style.removeProperty('--keyboard-height');
+    }
   }
   setModalOpen(val) {
     this.modalOpen = val;

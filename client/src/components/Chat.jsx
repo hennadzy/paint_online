@@ -34,24 +34,14 @@ const sanitizeMessage = (text) => {
 const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
   useEffect(() => {
     if (inputRef.current) {
       const handleFocus = () => {
-        setIsKeyboardVisible(true);
         document.body.classList.add('keyboard-open');
       };
       
       const handleBlur = () => {
-        setIsKeyboardVisible(false);
         document.body.classList.remove('keyboard-open');
       };
       
@@ -62,10 +52,19 @@ const Chat = observer(() => {
         if (inputRef.current) {
           inputRef.current.removeEventListener('focus', handleFocus);
           inputRef.current.removeEventListener('blur', handleBlur);
+          if (document.activeElement === inputRef.current) {
+            inputRef.current.blur();
+          }
         }
         document.body.classList.remove('keyboard-open');
+        document.documentElement.style.removeProperty('--keyboard-height');
       };
     }
+    
+    return () => {
+      document.body.classList.remove('keyboard-open');
+      document.documentElement.style.removeProperty('--keyboard-height');
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -121,6 +120,11 @@ const handleUserClick = (user) => {
       setIsSending(true);
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
+      
+      if (window.innerWidth <= 768) {
+        inputRef.current.blur();
+        document.body.classList.remove('keyboard-open');
+      }
       
       setTimeout(() => {
         setIsSending(false);
