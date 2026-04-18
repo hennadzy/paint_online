@@ -194,16 +194,9 @@ const Canvas = observer(() => {
 
     const getChatInput = () => document.querySelector('.chat-input');
 
-    const updateKeyboardState = () => {
-      const chatInput = getChatInput();
-      const isInputFocused = chatInput && chatInput === document.activeElement;
-      
-      if (!isInputFocused) {
-        document.body.classList.remove('keyboard-open');
-        document.documentElement.style.removeProperty('--keyboard-height');
-        return;
-      }
+    let blurTimeout = null;
 
+    const updateKeyboardState = () => {
       const vv = window.visualViewport;
       const keyboardOpen = vv ? (vv.height < window.innerHeight * 0.9) : false;
 
@@ -221,19 +214,26 @@ const Canvas = observer(() => {
     };
 
     const startKeyboardTracking = () => {
+      if (blurTimeout) {
+        clearTimeout(blurTimeout);
+        blurTimeout = null;
+      }
       if (keyboardTracking) return;
       keyboardTracking = true;
       updateKeyboardState();
     };
 
     const stopKeyboardTracking = () => {
-      keyboardTracking = false;
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      document.body.classList.remove('keyboard-open');
-      document.documentElement.style.removeProperty('--keyboard-height');
+      // Не удаляем класс сразу, даём visualViewport время обновиться
+      blurTimeout = setTimeout(() => {
+        keyboardTracking = false;
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        document.body.classList.remove('keyboard-open');
+        document.documentElement.style.removeProperty('--keyboard-height');
+      }, 150);
     };
 
     const chatInput = getChatInput();
@@ -248,7 +248,11 @@ const Canvas = observer(() => {
     }
 
     return () => {
-      stopKeyboardTracking();
+      if (blurTimeout) clearTimeout(blurTimeout);
+      if (rafId) cancelAnimationFrame(rafId);
+      keyboardTracking = false;
+      document.body.classList.remove('keyboard-open');
+      document.documentElement.style.removeProperty('--keyboard-height');
       if (chatInput) {
         chatInput.removeEventListener('focus', startKeyboardTracking);
         chatInput.removeEventListener('blur', stopKeyboardTracking);
