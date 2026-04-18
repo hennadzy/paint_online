@@ -250,6 +250,12 @@ button:active {
   $mobile-menu-height-local: 158px;
   $mobile-menu-height-chat: 158px;
 
+  :root {
+    --mobile-menu-height-local: #{$mobile-menu-height-local};
+    --mobile-menu-height-chat: #{$mobile-menu-height-chat};
+    --keyboard-height: 0px;
+  }
+
   html {
     height: 100%;
     height: -webkit-fill-available;
@@ -290,11 +296,11 @@ button:active {
 
   .canvas {
     position: absolute !important;
-    top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
+    top: calc(var(--mobile-menu-height-local) + env(safe-area-inset-top, 0px)) !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    max-height: calc(100dvh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
+    max-height: calc(100dvh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -304,16 +310,17 @@ button:active {
     align-items: stretch !important;
     z-index: 0 !important;
     margin: 0 !important;
+    transition: top 0.2s ease, max-height 0.2s ease;
   }
 
   .canvas.canvas--has-chat {
-    top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
-    max-height: calc(100dvh - #{$mobile-menu-height-chat} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 28px)) !important;
+    top: calc(var(--mobile-menu-height-chat) + env(safe-area-inset-top, 0px)) !important;
+    max-height: calc(100dvh - var(--mobile-menu-height-chat) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 28px)) !important;
   }
 
   .canvas:not(.canvas--has-chat) {
-    top: calc(#{$mobile-menu-height-local} + env(safe-area-inset-top, 0px)) !important;
-    max-height: calc(100dvh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
+    top: calc(var(--mobile-menu-height-local) + env(safe-area-inset-top, 0px)) !important;
+    max-height: calc(100dvh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px)) !important;
   }
 
   .canvas-container {
@@ -482,7 +489,7 @@ button:active {
 
   .canvas-layout:not(.has-chat) .canvas-container {
     flex-shrink: 0;
-    max-height: calc(100dvh - #{$mobile-menu-height-local} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px));
+    max-height: calc(100dvh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 6px));
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: contain;
@@ -536,13 +543,23 @@ button:active {
     touch-action: manipulation;
   }
   
-  body.keyboard-open .canvas {
-    position: fixed !important;
-    top: calc(#{$mobile-menu-height-chat} + env(safe-area-inset-top, 0px)) !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    height: auto !important;
+  body.keyboard-open .canvas,
+  body.keyboard-open .canvas.canvas--has-chat {
+    top: calc(var(--mobile-menu-height-chat) + env(safe-area-inset-top, 0px) + var(--keyboard-height, 0px)) !important;
+    max-height: calc(100svh - var(--mobile-menu-height-chat) - env(safe-area-inset-top, 0px) - var(--keyboard-height, 0px)) !important;
+    height: calc(100svh - var(--mobile-menu-height-chat) - env(safe-area-inset-top, 0px) - var(--keyboard-height, 0px)) !important;
+    bottom: var(--keyboard-height, 0px) !important;
+  }
+
+  body.keyboard-open .canvas:not(.canvas--has-chat) {
+    top: calc(var(--mobile-menu-height-local) + env(safe-area-inset-top, 0px) + var(--keyboard-height, 0px)) !important;
+    max-height: calc(100svh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - var(--keyboard-height, 0px)) !important;
+    height: calc(100svh - var(--mobile-menu-height-local) - env(safe-area-inset-top, 0px) - var(--keyboard-height, 0px)) !important;
+    bottom: var(--keyboard-height, 0px) !important;
+  }
+
+  body.keyboard-open .chat-input-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-height, 0px)) !important;
   }
   
   body.keyboard-open .canvas-layout {
@@ -959,22 +976,22 @@ button:active {
   }
 }
 
-.chat-input-container {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-shrink: 0;
-  padding-right: 4px;
-  margin-top: auto;
-
-  @media (max-width: 768px) {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  @media (min-width: 769px) {
+  .chat-input-container {
+    display: flex;
+    gap: 6px;
+    align-items: center;
     flex-shrink: 0;
+    padding-right: 4px;
+    margin-top: auto;
+
+    @media (max-width: 768px) {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-height, 0px));
+    }
+
+    @media (min-width: 769px) {
+      flex-shrink: 0;
+    }
   }
-}
 
 .chat-input {
   flex: 1;
