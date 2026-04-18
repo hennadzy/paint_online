@@ -120,10 +120,13 @@ const handleUserClick = (user) => {
       setIsSending(true);
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
-      
+
       if (window.innerWidth <= 768) {
-        inputRef.current.blur();
-        document.body.classList.remove('keyboard-open');
+        setTimeout(() => {
+          inputRef.current.blur();
+          document.body.classList.remove('keyboard-open');
+          document.documentElement.style.removeProperty('--keyboard-height');
+        }, 100);
       }
       
       setTimeout(() => {
