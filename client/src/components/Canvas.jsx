@@ -177,7 +177,7 @@ const Canvas = observer(() => {
         document.body.style.height = '';
       }
       document.body.classList.remove('keyboard-open');
-      containerRef.current?.offsetHeight;
+      void containerRef.current?.offsetHeight;
       window.dispatchEvent(new Event('resize'));
     }
   }, [canvasState.isConnected, canvasState.currentRoomId]);
@@ -185,15 +185,17 @@ const Canvas = observer(() => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const isMobile = window.innerWidth <= 768;
     if (!isMobile || !canvasState.currentRoomId || !canvasState.isConnected) return;
-    
-    let rafId;
+
+    let rafId = null;
+    let keyboardTracking = false;
+
     const updateKeyboardState = () => {
       const vv = window.visualViewport;
       const keyboardOpen = vv ? (vv.height < window.innerHeight * 0.9) : false;
-      
+
       if (keyboardOpen) {
         document.body.classList.add('keyboard-open');
         document.documentElement.style.setProperty('--keyboard-height', `${window.innerHeight - (vv?.height || window.innerHeight)}px`);
@@ -201,35 +203,48 @@ const Canvas = observer(() => {
         document.body.classList.remove('keyboard-open');
         document.documentElement.style.removeProperty('--keyboard-height');
       }
-      
-      rafId = requestAnimationFrame(updateKeyboardState);
+
+      if (keyboardTracking) {
+        rafId = requestAnimationFrame(updateKeyboardState);
+      }
     };
-    
+
+    const startKeyboardTracking = () => {
+      if (keyboardTracking) return;
+      keyboardTracking = true;
+      updateKeyboardState();
+    };
+
+    const stopKeyboardTracking = () => {
+      keyboardTracking = false;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      document.body.classList.remove('keyboard-open');
+      document.documentElement.style.removeProperty('--keyboard-height');
+    };
+
     const chatInput = document.querySelector('.chat-input');
+
     if (chatInput) {
-      chatInput.addEventListener('focus', updateKeyboardState);
-      chatInput.addEventListener('blur', () => {
-        rafId && cancelAnimationFrame(rafId);
-        document.body.classList.remove('keyboard-open');
-        document.documentElement.style.removeProperty('--keyboard-height');
-      });
+      chatInput.addEventListener('focus', startKeyboardTracking);
+      chatInput.addEventListener('blur', stopKeyboardTracking);
     }
-    
+
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateKeyboardState);
     }
-    
+
     return () => {
-      rafId && cancelAnimationFrame(rafId);
+      stopKeyboardTracking();
       if (chatInput) {
-        chatInput.removeEventListener('focus', updateKeyboardState);
-        chatInput.removeEventListener('blur', () => {});
+        chatInput.removeEventListener('focus', startKeyboardTracking);
+        chatInput.removeEventListener('blur', stopKeyboardTracking);
       }
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', updateKeyboardState);
       }
-      document.body.classList.remove('keyboard-open');
-      document.documentElement.style.removeProperty('--keyboard-height');
     };
   }, [canvasState.isConnected, canvasState.currentRoomId]);
 
