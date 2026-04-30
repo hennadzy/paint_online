@@ -250,6 +250,23 @@ const AdminPage = observer(() => {
     adminState.fetchStats();
   }, [navigate]);
 
+  useEffect(() => {
+    const handleGalleryPreviewClick = (e) => {
+      const preview = e.target.closest('.admin-gallery-preview');
+      if (preview) {
+        e.preventDefault();
+        e.stopPropagation();
+        const drawingId = preview.getAttribute('data-drawing-id');
+        if (drawingId) {
+          setGalleryPreviewId(galleryPreviewId === drawingId ? null : drawingId);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleGalleryPreviewClick);
+    return () => document.removeEventListener('click', handleGalleryPreviewClick);
+  }, [galleryPreviewId]);
+
   const handleLogout = async () => {
     await userState.logout();
     navigate('/');
@@ -1350,13 +1367,9 @@ const AdminPage = observer(() => {
                 <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
                   {/* Preview */}
                   <div
-                    className="admin-coloring-item__preview"
+                    className="admin-coloring-item__preview admin-gallery-preview"
                     style={{ cursor: 'pointer', flexShrink: 0 }}
-                    onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id);
-                    }}
+                    data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
@@ -1543,13 +1556,9 @@ const AdminPage = observer(() => {
               {adminState.galleryApproved.map(drawing => (
                 <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
                   <div
-                    className="admin-coloring-item__preview"
+                    className="admin-coloring-item__preview admin-gallery-preview"
                     style={{ cursor: 'pointer', flexShrink: 0 }}
-                    onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
-                    onTouchEnd={(e) => {
-                      e.preventDefault();
-                      setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id);
-                    }}
+                    data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />

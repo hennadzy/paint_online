@@ -820,4 +820,18 @@ html, body {
   .admin-room-details__info {
     grid-template-columns: 1fr;
   }
+
+  .admin-coloring-item__preview {
+    min-height: 100px;
+    height: 100px;
+  }
+}
+
+.admin-gallery-preview {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  img {
+    pointer-events: none;
+  }
 }
