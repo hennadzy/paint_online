@@ -206,14 +206,7 @@ connect(wsUrl, roomId, username, token) {
           userId: message.userId
         });
         break;
-      case 'personalMessage':
-        this.emit('personalMessage', {
-          from: message.from,
-          fromUsername: message.fromUsername,
-          message: message.message,
-          timestamp: message.timestamp
-        });
-        break;
+
       case 'syncCancelled':
         this.emit('syncCancelled', { cancelledStrokeIds: message.cancelledStrokeIds });
         break;

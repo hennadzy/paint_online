@@ -175,6 +175,21 @@ async deleteRoom(roomId) {
     }
   }
 
+  async deleteOldStrokes(roomId, keep = 5000) {
+    try {
+      const countQuery = await pgPool.query('SELECT COUNT(*) as count FROM strokes WHERE room_id = $1', [roomId]);
+      const total = parseInt(countQuery.rows[0].count, 10);
+      if (total > keep) {
+        const toDelete = total - keep;
+        await pgPool.query('DELETE FROM strokes WHERE room_id = $1 ORDER BY created_at ASC LIMIT $2', [roomId, toDelete]);
+      }
+      return true;
+    } catch (error) {
+      console.error('deleteOldStrokes error:', error);
+      return false;
+    }
+  }
+
   async saveStrokes(roomId, strokes) {
     if (!strokes || strokes.length === 0) return true;
     try {

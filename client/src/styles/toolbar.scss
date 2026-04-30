@@ -681,3 +681,12 @@ canvas.eraser-cursor {
     }
   }
 }
+
+.notification {
+  animation: notificationBlink 1s infinite;
+}
+
+@keyframes notificationBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

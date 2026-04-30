@@ -344,7 +344,7 @@ const performExport = () => {
               <>
                 <button
                   type="button"
-                  className="toolbar__btn"
+                  className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'notification' : ''}`}
                   onClick={() => { sessionStorage.setItem('profileFromRoom', '/'); navigate('/profile'); }}
                   onMouseDown={(e) => e.target.blur()}
                   title="Профиль"
@@ -438,12 +438,12 @@ const performExport = () => {
  {userState.isAuthenticated && (
 <>
 <button
- type="button"
- className="toolbar__btn"
- onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
- onMouseDown={(e) => e.target.blur()}
- title="Профиль"
- >
+  type="button"
+  className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'notification' : ''}`}
+  onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
+  onMouseDown={(e) => e.target.blur()}
+  title="Профиль"
+  >
 <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
 <span className="tooltip">Профиль</span>
 </button>

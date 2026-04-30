@@ -1353,6 +1353,10 @@ const AdminPage = observer(() => {
                     className="admin-coloring-item__preview"
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id);
+                    }}
                     title="Нажмите для просмотра"
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
@@ -1542,6 +1546,10 @@ const AdminPage = observer(() => {
                     className="admin-coloring-item__preview"
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     onClick={() => setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id)}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
+                      setGalleryPreviewId(galleryPreviewId === drawing.id ? null : drawing.id);
+                    }}
                     title="Нажмите для просмотра"
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />

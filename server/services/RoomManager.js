@@ -194,7 +194,8 @@ async addUser(roomId, username, ws, isVerified = false, userId = null) {
           multi.rpush(`room:${roomId}:strokes`, JSON.stringify(s));
         }
         await multi.exec();
-        strokes = normalizedStrokes;
+        await redis.ltrim(`room:${roomId}:strokes`, -5000, -1);
+        strokes = normalizedStrokes.slice(-5000);
       }
     } else {
       strokes = strokes.map(s => {
@@ -293,10 +294,11 @@ async removeUser(ws) {
     return { roomId, username };
   }
 
-async addStroke(roomId, stroke) {
+  async addStroke(roomId, stroke) {
     await redis.rpush(`room:${roomId}:strokes`, JSON.stringify(stroke));
     await redis.ltrim(`room:${roomId}:strokes`, -5000, -1);
     try {
+      await DataStore.deleteOldStrokes(roomId, 5000);
       await DataStore.saveStroke(roomId, stroke);
     } catch (error) {
       console.error('Error saving stroke to database:', error);

@@ -132,11 +132,11 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !selectedUser) return;
     if (userState.incomingPersonalMessages.length === 0) return;
     const incoming = userState.consumeIncomingPersonalMessages();
     incoming.forEach(data => handleReceiveMessage(data));
-  }, [isOpen, userState.incomingPersonalMessages.length, handleReceiveMessage]);
+  }, [isOpen, selectedUser, userState.incomingPersonalMessages.length, handleReceiveMessage]);
 
   useEffect(() => {
     if (!selectedUser) return;
