@@ -706,6 +706,16 @@
   &:hover {
     background: rgba(255, 255, 255, 0.12);
   }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 }
 
 .notification {
@@ -715,13 +725,9 @@
 @keyframes notificationBlink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
 }
+
+
 
 .profile-loading {
   min-height: 100vh;
