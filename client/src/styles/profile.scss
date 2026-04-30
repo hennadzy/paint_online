@@ -719,9 +719,17 @@
   }
 }
 
-.notification {
-  animation: notificationRainbow 2s linear infinite;
+.notification, .profile-notification {
+  animation: notificationRainbow 2s linear infinite !important;
 }
+
+.toolbar__btn.notification,
+.toolbar__btn.profile-notification {
+  background: inherit !important;
+  border-color: inherit !important;
+}
+
+
 
 @keyframes notificationRainbow {
   0% {

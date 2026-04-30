@@ -830,8 +830,16 @@ html, body {
 .admin-gallery-preview {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 
   img {
     pointer-events: none;
   }
 }
+
+@media (max-width: 768px) {
+  .admin-gallery-preview {
+    touch-action: manipulation !important;
+  }
+}
+

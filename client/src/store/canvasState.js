@@ -87,19 +87,21 @@ WebSocketService.on('usersList', ({ users }) => {
       });
     });
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
-      if (this.joiningRoom) {
-        console.log('Ignoring initial strokes during join');
-        this.joiningRoom = false;
-        return;
-      }
-      console.log('Received draws:', strokes.length, 'cancelled:', cancelledStrokeIds);
-
+      console.log('drawsReceived, joiningRoom:', this.joiningRoom, 'strokes:', strokes?.length || 0);
+      
       HistoryService.clearStrokes();
 
       if (CanvasService.bufferCtx) {
         CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
         CanvasService.bufferCtx.fillStyle = 'white';
         CanvasService.bufferCtx.fillRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
+      }
+
+      if (this.joiningRoom) {
+        console.log('Ignoring initial strokes during join');
+        this.joiningRoom = false;
+        CanvasService.rebuildBuffer([]);
+        return;
       }
 
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {
@@ -119,6 +121,8 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
           return true;
         });
 
+      console.log('Filtered strokes count:', filteredStrokes.length);
+
       HistoryService.setStrokes(filteredStrokes);
 
       CanvasService.rebuildBuffer(filteredStrokes, () => {
@@ -127,6 +131,7 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         }
       });
     });
+
 
     WebSocketService.on('syncCancelled', ({ cancelledStrokeIds }) => {
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {

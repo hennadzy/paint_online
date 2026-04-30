@@ -342,16 +342,17 @@ const performExport = () => {
           {isHome && !canvasState.isConnected && !canvasState.currentRoomId && (
             userState.isAuthenticated ? (
               <>
-                <button
-                  type="button"
-                  className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'notification' : ''}`}
-                  onClick={() => { sessionStorage.setItem('profileFromRoom', '/'); navigate('/profile'); }}
-                  onMouseDown={(e) => e.target.blur()}
-                  title="Профиль"
-                >
-                  <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
-                  <span className="tooltip">Профиль</span>
-                </button>
+              <button
+                type="button"
+                className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'profile-notification' : ''}`}
+                onClick={() => { sessionStorage.setItem('profileFromRoom', '/'); navigate('/profile'); }}
+                onMouseDown={(e) => e.target.blur()}
+                title="Профиль"
+              >
+                <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+                <span className="tooltip">Профиль</span>
+              </button>
+
                 {['admin', 'superadmin'].includes(userState.user?.role) && (
                   <button
                     type="button"
@@ -437,16 +438,17 @@ const performExport = () => {
  <>
  {userState.isAuthenticated && (
 <>
-<button
-  type="button"
-  className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'notification' : ''}`}
-  onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
-  onMouseDown={(e) => e.target.blur()}
-  title="Профиль"
-  >
-<span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
-<span className="tooltip">Профиль</span>
-</button>
+            <button
+              type="button"
+              className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'profile-notification' : ''}`}
+              onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
+              onMouseDown={(e) => e.target.blur()}
+              title="Профиль"
+            >
+              <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+              <span className="tooltip">Профиль</span>
+            </button>
+
 <button
  type="button"
  className="toolbar__btn"

@@ -1708,7 +1708,8 @@ const AdminPage = observer(() => {
               position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 10001, cursor: 'pointer', padding: '20px',
-              touchAction: 'none', overscrollBehavior: 'contain'
+              touchAction: 'none', overscrollBehavior: 'contain',
+              '-webkit-overflow-scrolling': 'touch'
             }}
             onClick={(e) => {
               e.preventDefault();
@@ -1725,6 +1726,7 @@ const AdminPage = observer(() => {
                 maxHeight: '90vh',
                 borderRadius: '12px',
                 boxShadow: '0 25px 80px rgba(0,0,0,0.9)',
+                pointerEvents: 'none'
               }}
               onImageClick={(e) => {
                 e.stopPropagation();
@@ -1749,6 +1751,7 @@ const AdminPage = observer(() => {
             </button>
           </div>
         )}
+
       </div>
     );
   };
