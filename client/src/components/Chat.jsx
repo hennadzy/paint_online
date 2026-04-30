@@ -35,6 +35,35 @@ const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
 
+  useEffect(() => {
+    const resetViewportOffset = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    const input = inputRef.current;
+    if (!input) return undefined;
+
+    const handleFocus = () => {
+      setTimeout(resetViewportOffset, 0);
+      setTimeout(resetViewportOffset, 120);
+    };
+
+    const handleBlur = () => {
+      setTimeout(resetViewportOffset, 0);
+      setTimeout(resetViewportOffset, 180);
+    };
+
+    input.addEventListener('focus', handleFocus);
+    input.addEventListener('blur', handleBlur);
+
+    return () => {
+      input.removeEventListener('focus', handleFocus);
+      input.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+
   useLayoutEffect(() => {
     if (messagesRef.current) {
       const lastMessage = messagesRef.current.lastElementChild;

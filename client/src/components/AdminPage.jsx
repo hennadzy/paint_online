@@ -1281,6 +1281,12 @@ const AdminPage = observer(() => {
   };
 
   const renderGallery = () => {
+    const handleOpenPreview = (e, drawingId) => {
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
+      setGalleryPreviewId(String(drawingId));
+    };
+
     const handleApprove = async (id) => {
       setGalleryActionError('');
       const result = await adminState.approveGalleryDrawing(id);
@@ -1361,11 +1367,9 @@ const AdminPage = observer(() => {
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setGalleryPreviewId(String(drawing.id));
-                    }}
+                    onClick={(e) => handleOpenPreview(e, drawing.id)}
+                    onTouchEnd={(e) => handleOpenPreview(e, drawing.id)}
+                    onPointerUp={(e) => handleOpenPreview(e, drawing.id)}
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
@@ -1555,11 +1559,9 @@ const AdminPage = observer(() => {
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setGalleryPreviewId(String(drawing.id));
-                    }}
+                    onClick={(e) => handleOpenPreview(e, drawing.id)}
+                    onTouchEnd={(e) => handleOpenPreview(e, drawing.id)}
+                    onPointerUp={(e) => handleOpenPreview(e, drawing.id)}
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
