@@ -38,10 +38,22 @@ function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, 
           responseType: 'blob',
         });
         if (cancelled) return;
-        const objUrl = URL.createObjectURL(res.data);
-        adminGalleryImageCache.set(cacheKey, objUrl);
-        setSrc(objUrl);
-        setFailed(false);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (cancelled) return;
+          const dataUrl = typeof reader.result === 'string' ? reader.result : null;
+          if (dataUrl) {
+            adminGalleryImageCache.set(cacheKey, dataUrl);
+            setSrc(dataUrl);
+            setFailed(false);
+          } else {
+            setFailed(true);
+          }
+        };
+        reader.onerror = () => {
+          if (!cancelled) setFailed(true);
+        };
+        reader.readAsDataURL(res.data);
       } catch {
         if (!cancelled) setFailed(true);
       }

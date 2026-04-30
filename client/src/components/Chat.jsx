@@ -58,9 +58,23 @@ const Chat = observer(() => {
     input.addEventListener('focus', handleFocus);
     input.addEventListener('blur', handleBlur);
 
+    let lastViewportHeight = window.visualViewport?.height || window.innerHeight;
+    const handleViewportResize = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const increased = vv.height > lastViewportHeight;
+      lastViewportHeight = vv.height;
+      if (increased) {
+        setTimeout(resetViewportOffset, 0);
+        setTimeout(resetViewportOffset, 120);
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+
     return () => {
       input.removeEventListener('focus', handleFocus);
       input.removeEventListener('blur', handleBlur);
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
     };
   }, []);
 
@@ -77,6 +91,7 @@ const Chat = observer(() => {
 
   const sendMessage = (e) => {
     if (e && e.key === "Enter" && inputRef.current.value.trim()) {
+      e.preventDefault();
       handleSend();
     }
   };

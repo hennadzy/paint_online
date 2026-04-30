@@ -162,6 +162,9 @@ const Canvas = observer(() => {
         container.scrollTop = 0;
         container.scrollLeft = 0;
       }
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       canvasState.setZoom(1);
       if (document.body.style.position === 'fixed') {
         document.body.style.position = '';
