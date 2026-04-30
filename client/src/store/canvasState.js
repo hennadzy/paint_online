@@ -10,7 +10,7 @@ export const API_URL = window.location.hostname === 'localhost'
 export const WS_URL = window.location.hostname === 'localhost'
   ? 'ws://localhost:5000'
   : 'wss://paint-online-back.onrender.com';
-
+ 
 class CanvasState {
   currentRoomId = null;
   username = "";
