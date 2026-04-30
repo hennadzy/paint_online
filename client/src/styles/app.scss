@@ -165,6 +165,12 @@ body.modal-open {
   }
 }
 
+.top-menu__actions .toolbar__btn.profile-notification::before,
+.top-menu__actions .toolbar__btn.notification::before {
+  opacity: 1 !important;
+  animation: glowing 10s linear infinite, notificationBlink 1.2s ease-in-out infinite;
+}
+
 @media (max-width: 768px) {
   .disconnect-room-btn.mobile-exit {
     min-width: 32px !important;
@@ -693,6 +699,15 @@ body.modal-open {
 
   100% {
     transform: translateY(0);
+  }
+}
+
+@keyframes notificationBlink {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

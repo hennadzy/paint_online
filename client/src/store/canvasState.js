@@ -88,7 +88,6 @@ WebSocketService.on('usersList', ({ users }) => {
     });
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       console.log('drawsReceived, joiningRoom:', this.joiningRoom, 'strokes:', strokes?.length || 0);
-      
       HistoryService.clearStrokes();
 
       if (CanvasService.bufferCtx) {
@@ -98,10 +97,7 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
       }
 
       if (this.joiningRoom) {
-        console.log('Ignoring initial strokes during join');
         this.joiningRoom = false;
-        CanvasService.rebuildBuffer([]);
-        return;
       }
 
       if (cancelledStrokeIds && Array.isArray(cancelledStrokeIds)) {

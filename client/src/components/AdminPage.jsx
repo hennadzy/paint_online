@@ -9,15 +9,22 @@ import '../styles/admin.scss';
 const getAdminApiBase = () => (window.location.hostname === 'localhost'
   ? 'http://localhost:5000'
   : 'https://paint-online-back.onrender.com');
+const adminGalleryImageCache = new Map();
 
 /** Admin gallery images require Authorization; a plain img URL cannot send the Bearer token. */
 function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, onImageClick }) {
-  const [src, setSrc] = useState(null);
+  const [src, setSrc] = useState(() => adminGalleryImageCache.get(String(drawingId)) || null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let objUrl = null;
+    const cacheKey = String(drawingId);
+    const cachedSrc = adminGalleryImageCache.get(cacheKey);
+    if (cachedSrc) {
+      setSrc(cachedSrc);
+      setFailed(false);
+      return () => {};
+    }
     const token = localStorage.getItem('token');
     if (!token) {
       setFailed(true);
@@ -31,7 +38,8 @@ function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, 
           responseType: 'blob',
         });
         if (cancelled) return;
-        objUrl = URL.createObjectURL(res.data);
+        const objUrl = URL.createObjectURL(res.data);
+        adminGalleryImageCache.set(cacheKey, objUrl);
         setSrc(objUrl);
         setFailed(false);
       } catch {
@@ -40,7 +48,6 @@ function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, 
     })();
     return () => {
       cancelled = true;
-      if (objUrl) URL.revokeObjectURL(objUrl);
     };
   }, [drawingId]);
 

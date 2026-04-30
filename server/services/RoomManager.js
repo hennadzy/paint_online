@@ -273,11 +273,7 @@ async removeUser(ws) {
         const strokesObjects = strokes.map(s => JSON.parse(s));
         const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
 
-        if (activeStrokes.length > 0) {
-          await DataStore.saveStrokes(roomId, activeStrokes);
-        } else {
-          await DataStore.deleteStrokes(roomId);
-        }
+        await DataStore.replaceRoomStrokes(roomId, activeStrokes);
       }
       await redis.del(`room:${roomId}:strokes`);
 
@@ -493,10 +489,8 @@ async getVerifiedUsers(roomId) {
           roomSockets.forEach(ws => { if (ws.readyState === 1) { try { ws.send(usersMessage); } catch (e) {} } });
           if (remainingUsers.length === 0) {
             const strokes = await redis.lrange(`room:${user.roomId}:strokes`, 0, -1);
-            if (strokes.length > 0) {
-              const strokesObjects = strokes.map(s => JSON.parse(s));
-              await DataStore.saveStrokes(user.roomId, strokesObjects);
-            }
+            const strokesObjects = strokes.length > 0 ? strokes.map(s => JSON.parse(s)) : [];
+            await DataStore.replaceRoomStrokes(user.roomId, strokesObjects);
             await redis.del(`room:${user.roomId}:strokes`);
             const allCancelled = await this.getAllCancelledStrokes(user.roomId);
             for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {

@@ -725,8 +725,7 @@
 
 .toolbar__btn.notification,
 .toolbar__btn.profile-notification {
-  background: inherit !important;
-  border-color: inherit !important;
+  animation: notificationRainbow 2s linear infinite !important;
 }
 
 

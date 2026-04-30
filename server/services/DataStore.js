@@ -224,6 +224,33 @@ async deleteRoom(roomId) {
     }
   }
 
+  async replaceRoomStrokes(roomId, strokes) {
+    try {
+      await pgPool.query('DELETE FROM strokes WHERE room_id = $1', [roomId]);
+      if (!strokes || strokes.length === 0) {
+        return true;
+      }
+
+      const values = strokes.map((s) => [
+        roomId,
+        JSON.stringify(s),
+        s.username || 'unknown',
+        Date.now()
+      ]);
+      const placeholders = values.map((_, i) => `($${i*4+1}, $${i*4+2}, $${i*4+3}, $${i*4+4})`).join(',');
+      const flatValues = values.flat();
+
+      await pgPool.query(
+        `INSERT INTO strokes (room_id, stroke_data, username, created_at) VALUES ${placeholders}`,
+        flatValues
+      );
+      return true;
+    } catch (error) {
+      console.error('replaceRoomStrokes error:', error);
+      return false;
+    }
+  }
+
   async loadStrokes(roomId) {
     try {
       const res = await pgPool.query(
