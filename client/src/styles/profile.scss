@@ -720,12 +720,12 @@
 }
 
 .notification, .profile-notification {
-  animation: notificationRainbow 2s linear infinite !important;
+  animation: none !important;
 }
 
 .toolbar__btn.notification,
 .toolbar__btn.profile-notification {
-  animation: notificationRainbow 2s linear infinite !important;
+  animation: none !important;
 }
 
 

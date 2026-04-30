@@ -257,30 +257,6 @@ const AdminPage = observer(() => {
     adminState.fetchStats();
   }, [navigate]);
 
-  useEffect(() => {
-    const handleGalleryPreviewClick = (e) => {
-      const preview = e.target.closest('.admin-gallery-preview');
-      if (preview) {
-        e.preventDefault?.();
-        e.stopPropagation();
-        if (e.touches && e.touches.length > 0) {
-          e.preventDefault();
-        }
-        const drawingId = preview.getAttribute('data-drawing-id');
-        if (drawingId) {
-          setGalleryPreviewId(galleryPreviewId === drawingId ? null : drawingId);
-        }
-      }
-    };
-
-    document.addEventListener('click', handleGalleryPreviewClick);
-    document.addEventListener('touchstart', handleGalleryPreviewClick, { passive: false });
-    return () => {
-      document.removeEventListener('click', handleGalleryPreviewClick);
-      document.removeEventListener('touchstart', handleGalleryPreviewClick);
-    };
-  }, [galleryPreviewId]);
-
   const handleLogout = async () => {
     await userState.logout();
     navigate('/');
@@ -1385,6 +1361,11 @@ const AdminPage = observer(() => {
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setGalleryPreviewId(String(drawing.id));
+                    }}
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
@@ -1574,6 +1555,11 @@ const AdminPage = observer(() => {
                     style={{ cursor: 'pointer', flexShrink: 0 }}
                     data-drawing-id={drawing.id}
                     title="Нажмите для просмотра"
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setGalleryPreviewId(String(drawing.id));
+                    }}
                   >
                     <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>

@@ -31,6 +31,7 @@ const TopMenu = observer(() => {
   const [gallerySubmitting, setGallerySubmitting] = useState(false);
   const [galleryError, setGalleryError] = useState('');
   const [gallerySuccess, setGallerySuccess] = useState(false);
+  const unreadMessagesCount = userState.incomingPersonalMessages.length;
 
 useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -344,12 +345,13 @@ const performExport = () => {
               <>
               <button
                 type="button"
-                className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'profile-notification' : ''}`}
+                className={`toolbar__btn ${unreadMessagesCount > 0 ? 'profile-notification' : ''}`}
                 onClick={() => { sessionStorage.setItem('profileFromRoom', '/'); navigate('/profile'); }}
                 onMouseDown={(e) => e.target.blur()}
                 title="Профиль"
               >
                 <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+                {unreadMessagesCount > 0 && <span className="top-menu-message-badge">✉</span>}
                 <span className="tooltip">Профиль</span>
               </button>
 
@@ -440,12 +442,13 @@ const performExport = () => {
 <>
             <button
               type="button"
-              className={`toolbar__btn ${userState.incomingPersonalMessages.length > 0 ? 'profile-notification' : ''}`}
+              className={`toolbar__btn ${unreadMessagesCount > 0 ? 'profile-notification' : ''}`}
               onClick={() => { sessionStorage.setItem('profileFromRoom', window.location.pathname); navigate('/profile'); }}
               onMouseDown={(e) => e.target.blur()}
               title="Профиль"
             >
               <span className="icon" style={{ backgroundImage: `url(${profileIcon})` }} />
+              {unreadMessagesCount > 0 && <span className="top-menu-message-badge">✉</span>}
               <span className="tooltip">Профиль</span>
             </button>
 

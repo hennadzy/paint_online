@@ -167,8 +167,33 @@ body.modal-open {
 
 .top-menu__actions .toolbar__btn.profile-notification::before,
 .top-menu__actions .toolbar__btn.notification::before {
-  opacity: 1 !important;
-  animation: glowing 10s linear infinite, notificationBlink 1.2s ease-in-out infinite;
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.top-menu-message-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  background: linear-gradient(135deg, #ff6699, #ff0055);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(255, 0, 85, 0.45);
+  z-index: 3;
+}
+
+.top-menu__actions .toolbar__btn.profile-notification .top-menu-message-badge {
+  animation: messageBadgeBlink 1s ease-in-out infinite;
 }
 
 @media (max-width: 768px) {
@@ -708,6 +733,17 @@ body.modal-open {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes messageBadgeBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(0.82);
   }
 }
 

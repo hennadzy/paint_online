@@ -34,38 +34,6 @@ const sanitizeMessage = (text) => {
 const Chat = observer(() => {
   const inputRef = useRef();
   const messagesRef = useRef();
-  
-  useEffect(() => {
-    if (inputRef.current) {
-      const handleFocus = () => {
-        document.body.classList.add('keyboard-open');
-      };
-      
-      const handleBlur = () => {
-        document.body.classList.remove('keyboard-open');
-      };
-      
-      inputRef.current.addEventListener('focus', handleFocus);
-      inputRef.current.addEventListener('blur', handleBlur);
-      
-      return () => {
-        if (inputRef.current) {
-          inputRef.current.removeEventListener('focus', handleFocus);
-          inputRef.current.removeEventListener('blur', handleBlur);
-          if (document.activeElement === inputRef.current) {
-            inputRef.current.blur();
-          }
-        }
-        document.body.classList.remove('keyboard-open');
-        document.documentElement.style.removeProperty('--keyboard-height');
-      };
-    }
-    
-    return () => {
-      document.body.classList.remove('keyboard-open');
-      document.documentElement.style.removeProperty('--keyboard-height');
-    };
-  }, []);
 
   useLayoutEffect(() => {
     if (messagesRef.current) {
@@ -120,14 +88,6 @@ const handleUserClick = (user) => {
       setIsSending(true);
       canvasState.sendChatMessage(message);
       inputRef.current.value = "";
-
-      if (window.innerWidth <= 768) {
-        setTimeout(() => {
-          inputRef.current.blur();
-          document.body.classList.remove('keyboard-open');
-          document.documentElement.style.removeProperty('--keyboard-height');
-        }, 100);
-      }
       
       setTimeout(() => {
         setIsSending(false);

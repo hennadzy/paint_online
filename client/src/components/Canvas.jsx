@@ -139,13 +139,6 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    const isMobilePortrait = window.innerWidth < 768 && window.innerHeight > window.innerWidth;
-    if (canvasState.isConnected && params.id && isMobilePortrait) {
-      setTimeout(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }), 100);
-    }
-  }, [canvasState.chatMessages.length]);
-
-  useEffect(() => {
     const layout = layoutRef.current;
     if (!layout) return;
 
