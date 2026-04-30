@@ -16,7 +16,7 @@ const validateUserId = (userId) => {
     throw new ValidationError('ID пользователя содержит недопустимые символы');
   }
   
-  return true;
+  return true; 
 };
 
 const upload = multer({
