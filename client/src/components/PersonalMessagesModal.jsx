@@ -129,13 +129,18 @@ useEffect(() => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, []);
+  }, []); 
+
+  const clearNotifications = () => {
+    userState.incomingPersonalMessages = [];
+  };
 
   useEffect(() => {
     if (!isOpen || !selectedUser) return;
     if (userState.incomingPersonalMessages.length === 0) return;
     const incoming = userState.consumeIncomingPersonalMessages();
     incoming.forEach(data => handleReceiveMessage(data));
+    clearNotifications();
   }, [isOpen, selectedUser, userState.incomingPersonalMessages.length, handleReceiveMessage]);
 
   useEffect(() => {

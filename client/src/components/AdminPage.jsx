@@ -254,8 +254,11 @@ const AdminPage = observer(() => {
     const handleGalleryPreviewClick = (e) => {
       const preview = e.target.closest('.admin-gallery-preview');
       if (preview) {
-        e.preventDefault();
+        e.preventDefault?.();
         e.stopPropagation();
+        if (e.touches && e.touches.length > 0) {
+          e.preventDefault();
+        }
         const drawingId = preview.getAttribute('data-drawing-id');
         if (drawingId) {
           setGalleryPreviewId(galleryPreviewId === drawingId ? null : drawingId);
@@ -264,7 +267,11 @@ const AdminPage = observer(() => {
     };
 
     document.addEventListener('click', handleGalleryPreviewClick);
-    return () => document.removeEventListener('click', handleGalleryPreviewClick);
+    document.addEventListener('touchstart', handleGalleryPreviewClick, { passive: false });
+    return () => {
+      document.removeEventListener('click', handleGalleryPreviewClick);
+      document.removeEventListener('touchstart', handleGalleryPreviewClick);
+    };
   }, [galleryPreviewId]);
 
   const handleLogout = async () => {
@@ -1698,31 +1705,45 @@ const AdminPage = observer(() => {
         {galleryPreviewId && (
           <div
             style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              zIndex: 9999, cursor: 'pointer', padding: '20px'
+              zIndex: 10001, cursor: 'pointer', padding: '20px',
+              touchAction: 'none', overscrollBehavior: 'contain'
             }}
-            onClick={() => setGalleryPreviewId(null)}
+            onClick={(e) => {
+              e.preventDefault();
+              setGalleryPreviewId(null);
+            }}
+            onTouchStart={(e) => e.preventDefault()}
           >
             <AdminGalleryImage
               drawingId={galleryPreviewId}
               alt="preview"
               wrapperStyle={{ minHeight: 120 }}
               imgStyle={{
-                maxWidth: '90vw',
-                maxHeight: '85vh',
+                maxWidth: '95vw',
+                maxHeight: '90vh',
                 borderRadius: '12px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                boxShadow: '0 25px 80px rgba(0,0,0,0.9)',
               }}
-              onImageClick={(e) => e.stopPropagation()}
+              onImageClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             />
             <button
               style={{
                 position: 'absolute', top: '16px', right: '20px',
-                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '8px', color: '#fff', fontSize: '18px', padding: '6px 14px', cursor: 'pointer'
+                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px', color: '#fff', fontSize: '20px', padding: '8px 16px',
+                cursor: 'pointer', backdropFilter: 'blur(10px)', touchAction: 'manipulation'
               }}
-              onClick={() => setGalleryPreviewId(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setGalleryPreviewId(null);
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
             >
               ✕
             </button>

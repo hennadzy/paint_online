@@ -16,6 +16,7 @@ class CanvasState {
   username = "";
   usernameReady = false;
   isConnected = false;
+  joiningRoom = false; 
   isDrawing = false;
   users = []; 
   chatMessages = [];
@@ -42,7 +43,6 @@ class CanvasState {
   showPersonalMessages = false;
   personalMessagesTargetUser = null;
   showInactiveModal = false;
-  joiningRoom = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -788,3 +788,4 @@ setRoomError(val) {
 
 const canvasState = new CanvasState();
 export default canvasState;
+
