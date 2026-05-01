@@ -229,11 +229,11 @@ app.ws('/ws/personal', (ws, req) => {
   WebSocketHandler.setupPersonalConnection(ws);
 });
 
-app.use('/', apiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/gallery', galleryRouter);
+app.use('/api', apiRouter);
 
 app.use(errorMiddleware);
 
