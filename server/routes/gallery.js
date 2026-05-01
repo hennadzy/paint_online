@@ -129,7 +129,6 @@ router.get('/image/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   console.log(`[GALLERY-IMAGE] Request ID=${id}, IP=${req.ip}, User-Agent=${req.get('User-Agent')}`);
   try {
-    const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id) || id <= 0) {
       console.log('Invalid id:', id);
       return res.status(400).json({ error: 'Invalid id' });
