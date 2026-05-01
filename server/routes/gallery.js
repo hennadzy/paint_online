@@ -155,7 +155,7 @@ router.get('/image/:id', async (req, res) => {
 
     const imageData = row.image_data;
     console.log(`[GALLERY-IMAGE-OK] Serving ID=${id}, status='${row.status}', data_len=${imageData.length}`);
-    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
+    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,([\s\S]+)$/i);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });
     }
