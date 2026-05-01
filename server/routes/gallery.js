@@ -126,9 +126,11 @@ router.get('/drawing/:id', galleryLimiter, optionalAuthenticate, async (req, res
 });
 
 router.get('/image/:id', async (req, res) => {
+  console.log('Gallery image request:', req.path, 'params:', req.params);
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id) || id <= 0) {
+      console.log('Invalid id:', id);
       return res.status(400).json({ error: 'Invalid id' });
     }
 
@@ -138,6 +140,7 @@ router.get('/image/:id', async (req, res) => {
     );
 
     if (result.rows.length === 0 || !result.rows[0].image_data) {
+      console.log('Image not found for id:', id);
       return res.status(404).json({ error: 'Image not found' });
     }
 
@@ -160,6 +163,14 @@ router.get('/image/:id', async (req, res) => {
     }
     
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    
     res.send(buffer);
   } catch (error) {
     console.error('Get gallery image error:', error);

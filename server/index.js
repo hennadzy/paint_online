@@ -219,7 +219,6 @@ app.use('/files', (req, res, next) => {
     res.setHeader('Cache-Control', 'public, max-age=86400');
   }
 }));
-app.use(express.static(path.join(__dirname, '../client/build')));
 
 app.ws('/', (ws, req) => {
   WebSocketHandler.setupConnection(ws);
@@ -234,6 +233,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/gallery', galleryRouter);
 app.use('/api', apiRouter);
+
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 app.use(errorMiddleware);
 
