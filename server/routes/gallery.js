@@ -148,20 +148,38 @@ router.get('/image/:id', async (req, res) => {
       console.log(`[GALLERY-IMAGE-404] Empty image_data for ID=${id}`);
       return res.status(404).json({ error: 'Image not found' });
     }
-    if (row.status !== 'approved') {
+    if (String(row.status || '').trim().toLowerCase() !== 'approved') {
       console.log(`[GALLERY-IMAGE-404] Not approved for ID=${id}, status='${row.status}'`);
       return res.status(404).json({ error: 'Image not found' });
     }
 
-    const imageData = row.image_data;
+    const imageData = String(row.image_data).trim();
     console.log(`[GALLERY-IMAGE-OK] Serving ID=${id}, status='${row.status}', data_len=${imageData.length}`);
-    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/is);
-    if (!match) {
+
+    let mimeType = 'image/png';
+    let base64Payload = '';
+
+    const dataUrlMatch = imageData.match(/^data:(image\/[a-z0-9.+-]+);base64,([\s\S]+)$/i);
+    if (dataUrlMatch) {
+      mimeType = dataUrlMatch[1].toLowerCase();
+      if (mimeType === 'image/jpg') {
+        mimeType = 'image/jpeg';
+      }
+      base64Payload = dataUrlMatch[2];
+    } else if (/^[a-z0-9+/=\r\n]+$/i.test(imageData)) {
+      // Backward compatibility: DB may contain only raw base64 without data URL header.
+      base64Payload = imageData;
+    } else {
+      console.log(`[GALLERY-IMAGE-INVALID] Unsupported format for ID=${id}`);
       return res.status(500).json({ error: 'Invalid image data' });
     }
 
-    const mimeType = `image/${match[1].toLowerCase()}`;
-    const buffer = Buffer.from(match[2], 'base64');
+    const sanitizedBase64 = base64Payload.replace(/\s+/g, '');
+    const buffer = Buffer.from(sanitizedBase64, 'base64');
+    if (!buffer || buffer.length === 0) {
+      console.log(`[GALLERY-IMAGE-INVALID] Empty decoded buffer for ID=${id}`);
+      return res.status(500).json({ error: 'Invalid image data' });
+    }
 
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
