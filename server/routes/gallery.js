@@ -144,8 +144,8 @@ router.get('/image/:id', async (req, res) => {
       console.log(`[GALLERY-IMAGE-404] No row for ID=${id}`);
       return res.status(404).json({ error: 'Image not found' });
     }
-    if (!row.image_data || row.image_data.length < 100) {
-      console.log(`[GALLERY-IMAGE-404] Empty/corrupt image_data for ID=${id}, data_len=${row.image_data ? row.image_data.length : 0}`);
+    if (!row.image_data || typeof row.image_data !== 'string' || row.image_data.trim().length === 0) {
+      console.log(`[GALLERY-IMAGE-404] Empty image_data for ID=${id}`);
       return res.status(404).json({ error: 'Image not found' });
     }
     if (row.status !== 'approved') {
@@ -155,12 +155,12 @@ router.get('/image/:id', async (req, res) => {
 
     const imageData = row.image_data;
     console.log(`[GALLERY-IMAGE-OK] Serving ID=${id}, status='${row.status}', data_len=${imageData.length}`);
-    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,([\s\S]+)$/i);
+    const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/is);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });
     }
 
-    const mimeType = match[1];
+    const mimeType = `image/${match[1].toLowerCase()}`;
     const buffer = Buffer.from(match[2], 'base64');
 
     res.setHeader('Content-Type', mimeType);
