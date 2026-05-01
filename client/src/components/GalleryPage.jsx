@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import userState from '../store/userState';
 import { API_URL } from '../store/canvasState';
@@ -24,21 +24,29 @@ const HeartIcon = ({ filled }) => (
 
 const GalleryPage = observer(() => {
   const navigate = useNavigate();
+  const { id: drawingIdParam } = useParams();
+  const drawingId = drawingIdParam ? parseInt(drawingIdParam, 10) : null;
   const { setSeoData } = useSeo();
   const [drawings, setDrawings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [likingId, setLikingId] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [comments, setComments] = useState({});
-  const [commentsLoading, setCommentsLoading] = useState({});
-  const [expandedComments, setExpandedComments] = useState({});
-  const [newComment, setNewComment] = useState({});
-  const [submittingComment, setSubmittingComment] = useState({});
+  const [selectedDrawing, setSelectedDrawing] = useState(null);
+  const [drawingLoading, setDrawingLoading] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
   const [editingComment, setEditingComment] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [commentLikeLoading, setCommentLikeLoading] = useState({});
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
+  const initialDistanceRef = useRef(0);
+  const initialZoomRef = useRef(1);
+  const imageContainerRef = useRef(null);
 
   const fetchDrawings = useCallback(async () => {
     setLoading(true);
@@ -60,96 +68,171 @@ const GalleryPage = observer(() => {
   }, [fetchDrawings]);
 
   useEffect(() => {
+    if (selectedDrawing) {
+      const commentsCount = comments.length;
+      setSeoData({
+        title: `${selectedDrawing.title} - рисунок в галерее Рисование.Онлайн`,
+        description: `Рисунок "${selectedDrawing.title}" автора ${selectedDrawing.author_name}. Открывайте изображение и комментарии (${commentsCount}) на отдельной странице работы.`,
+        keywords: `рисунок ${selectedDrawing.title}, комментарии к рисунку, ${selectedDrawing.author_name}, галерея рисунков`,
+        canonical: `https://risovanie.online/gallery/${selectedDrawing.id}`
+      });
+      return;
+    }
+
     if (!loading && !error && drawings.length > 0) {
       setSeoData({
-        title: 'Галерея рисунков - лучшие работы пользователей',
-        description: `Галерея рисунков пользователей Рисование.Онлайн. ${drawings.length} работ от авторов. Смотрите, оценивайте и добавляйте свои работы.`,
-        keywords: `галерея рисунков, рисунки онлайн, ${drawings.length} работ, галерея art`
+        title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
+        description: `Смотрите галерею рисунков пользователей: ${drawings.length} работ от авторов, отдельные страницы изображений и обсуждения в комментариях.`,
+        keywords: `галерея рисунков пользователей, рисунки онлайн, ${drawings.length} работ, комментарии к рисункам`,
+        canonical: 'https://risovanie.online/gallery'
       });
     } else if (!loading && !error && drawings.length === 0) {
       setSeoData({
-        title: 'Галерея рисунков - добавить работу',
-        description: 'Галерея рисунков пользователей Рисование.Онлайн. Будьте первым, кто добавит свою работу!',
-        keywords: 'галерея рисунков, добавить рисунок, рисование онлайн'
+        title: 'Галерея рисунков пользователей - добавить работу',
+        description: 'Галерея рисунков пользователей Рисование.Онлайн. Добавьте первую работу и откройте отдельную страницу рисунка с комментариями.',
+        keywords: 'галерея рисунков, добавить рисунок, комментарии к рисункам',
+        canonical: 'https://risovanie.online/gallery'
       });
     }
-  }, [drawings, loading, error, setSeoData]);
+  }, [drawings, loading, error, setSeoData, selectedDrawing, comments.length]);
 
-const handleLike = async (drawingId) => {
+  const fetchDrawingById = useCallback(async (id) => {
+    if (!id) return;
+    setDrawingLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API_URL}/api/gallery/drawing/${id}`, { headers });
+      setSelectedDrawing(response.data.drawing);
+    } catch (err) {
+      navigate('/gallery');
+    } finally {
+      setDrawingLoading(false);
+    }
+  }, [navigate]);
+
+  const fetchComments = useCallback(async (id) => {
+    if (!id) return;
+    setCommentsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API_URL}/api/gallery/${id}/comments`, { headers });
+      setComments(response.data.comments || []);
+    } catch (err) {
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (drawingId) {
+      fetchDrawingById(drawingId);
+      fetchComments(drawingId);
+    } else {
+      setSelectedDrawing(null);
+      setComments([]);
+      setZoom(1);
+      zoomRef.current = 1;
+    }
+  }, [drawingId, fetchDrawingById, fetchComments]);
+
+  useEffect(() => {
+    const container = imageContainerRef.current;
+    if (!container || !selectedDrawing) return;
+
+    const clampZoom = (value) => Math.max(1, Math.min(3, value));
+    const getDistance = (t1, t2) => {
+      const dx = t2.clientX - t1.clientX;
+      const dy = t2.clientY - t1.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const nextZoom = clampZoom(zoomRef.current + (e.deltaY > 0 ? -0.1 : 0.1));
+      zoomRef.current = nextZoom;
+      setZoom(nextZoom);
+    };
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
+        initialZoomRef.current = zoomRef.current;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2 && initialDistanceRef.current > 0) {
+        e.preventDefault();
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scale = currentDistance / initialDistanceRef.current;
+        const nextZoom = clampZoom(initialZoomRef.current * scale);
+        zoomRef.current = nextZoom;
+        setZoom(nextZoom);
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        initialDistanceRef.current = 0;
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [selectedDrawing]);
+
+  const handleLike = async (targetDrawingId) => {
     if (!userState.isAuthenticated) return;
-    if (likingId === drawingId) return;
+    if (likingId === targetDrawingId) return;
 
-    setLikingId(drawingId);
+    setLikingId(targetDrawingId);
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${API_URL}/api/gallery/${drawingId}/like`,
+        `${API_URL}/api/gallery/${targetDrawingId}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const { liked, likesCount } = response.data;
       setDrawings(prev =>
         prev.map(d =>
-          d.id === drawingId
+          d.id === targetDrawingId
             ? { ...d, user_liked: liked, likes_count: likesCount }
             : d
         )
       );
+      setSelectedDrawing(prev => (prev && prev.id === targetDrawingId ? { ...prev, user_liked: liked, likes_count: likesCount } : prev));
     } catch (err) {
-      console.error('Like error:', err);
     } finally {
       setLikingId(null);
     }
   };
 
-  const fetchComments = async (drawingId) => {
-    setCommentsLoading(prev => ({ ...prev, [drawingId]: true }));
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(
-        `${API_URL}/api/gallery/${drawingId}/comments`,
-        { headers }
-      );
-      setComments(prev => ({ ...prev, [drawingId]: response.data.comments || [] }));
-    } catch (err) {
-      console.error('Fetch comments error:', err);
-    } finally {
-      setCommentsLoading(prev => ({ ...prev, [drawingId]: false }));
-    }
-  };
-
-  const toggleComments = async (drawingId, e) => {
-    if (e) e.stopPropagation();
-
-    // Сворачиваем все другие комментарии
-    setExpandedComments(prev => {
-      const newExpanded = {};
-      Object.keys(prev).forEach(key => {
-        if (key !== String(drawingId)) {
-          newExpanded[key] = false;
-        }
-      });
-      newExpanded[drawingId] = !prev[drawingId];
-      return newExpanded;
-    });
-
-    // Если открываем комментарии и они еще не загружены
-    if (!expandedComments[drawingId] && !comments[drawingId]) {
-      await fetchComments(drawingId);
-    }
-  };
-
-  const handleSubmitComment = async (drawingId, e) => {
+  const handleSubmitComment = async (e) => {
     if (e) e.stopPropagation();
     if (!userState.isAuthenticated) {
       alert('Войдите, чтобы оставлять комментарии');
       return;
     }
-    const commentText = newComment[drawingId]?.trim();
+    const commentText = newComment.trim();
     if (!commentText) return;
 
-    setSubmittingComment(prev => ({ ...prev, [drawingId]: true }));
+    setSubmittingComment(true);
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
@@ -158,13 +241,8 @@ const handleLike = async (drawingId) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setComments(prev => ({
-        ...prev,
-        [drawingId]: [...(prev[drawingId] || []), response.data.comment]
-      }));
-      setNewComment(prev => ({ ...prev, [drawingId]: '' }));
-
-// Обновляем количество комментариев в карточке
+      setComments(prev => [...prev, response.data.comment]);
+      setNewComment('');
       setDrawings(prev =>
         prev.map(d =>
           d.id === drawingId
@@ -172,15 +250,15 @@ const handleLike = async (drawingId) => {
             : d
         )
       );
+      setSelectedDrawing(prev => (prev ? { ...prev, comments_count: Number(prev.comments_count || 0) + 1 } : prev));
     } catch (err) {
-      console.error('Submit comment error:', err);
       alert('Ошибка отправки комментария');
     } finally {
-      setSubmittingComment(prev => ({ ...prev, [drawingId]: false }));
+      setSubmittingComment(false);
     }
   };
 
-  const handleEditComment = async (commentId, drawingId) => {
+  const handleEditComment = async (commentId) => {
     if (!userState.isAuthenticated) return;
 
     setSubmittingEdit(true);
@@ -192,24 +270,20 @@ const handleLike = async (drawingId) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setComments(prev => ({
-        ...prev,
-        [drawingId]: prev[drawingId].map(c =>
+      setComments(prev => prev.map(c =>
           c.id === commentId ? response.data.comment : c
-        )
-      }));
+      ));
 
       setEditingComment(null);
       setEditCommentText('');
     } catch (err) {
-      console.error('Edit comment error:', err);
       alert(err.response?.data?.error || 'Ошибка редактирования комментария');
     } finally {
       setSubmittingEdit(false);
     }
   };
 
-  const handleDeleteComment = async (commentId, drawingId) => {
+  const handleDeleteComment = async (commentId) => {
     if (!userState.isAuthenticated) return;
     if (!window.confirm('Удалить комментарий?')) return;
 
@@ -220,12 +294,7 @@ const handleLike = async (drawingId) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setComments(prev => ({
-        ...prev,
-        [drawingId]: prev[drawingId].filter(c => c.id !== commentId)
-      }));
-
-// Обновляем количество комментариев в карточке
+      setComments(prev => prev.filter(c => c.id !== commentId));
       setDrawings(prev =>
         prev.map(d =>
           d.id === drawingId
@@ -233,9 +302,31 @@ const handleLike = async (drawingId) => {
             : d
         )
       );
+      setSelectedDrawing(prev => (prev ? { ...prev, comments_count: Math.max(0, Number(prev.comments_count || 0) - 1) } : prev));
     } catch (err) {
-      console.error('Delete comment error:', err);
       alert(err.response?.data?.error || 'Ошибка удаления комментария');
+    }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    if (!userState.isAuthenticated || commentLikeLoading[commentId]) return;
+    setCommentLikeLoading(prev => ({ ...prev, [commentId]: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_URL}/api/gallery/comments/${commentId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComments(prev => prev.map(comment => (
+        comment.id === commentId
+          ? { ...comment, user_liked: response.data.liked, likes_count: response.data.likesCount }
+          : comment
+      )));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Ошибка лайка комментария');
+    } finally {
+      setCommentLikeLoading(prev => ({ ...prev, [commentId]: false }));
     }
   };
 
@@ -250,27 +341,176 @@ const handleLike = async (drawingId) => {
   };
 
   const handleImageClick = (drawing) => {
-    setSelectedImage(drawing);
-    if (drawing) {
-      setSeoData({
-        title: `${drawing.title} - Галерея рисунков`,
-        description: `Рисунок "${drawing.title}" от ${drawing.author_name}. Смотрите и оценивайте работы на Рисование.Онлайн`,
-        keywords: `рисунок ${drawing.title}, ${drawing.author_name}, галерея рисунков`
-      });
-    }
+    navigate(`/gallery/${drawing.id}`);
   };
 
-  const handleCloseModal = () => {
-    setSelectedImage(null);
-    setSeoData(null);
+  const handleBackToFeed = () => {
+    navigate('/gallery');
+    setZoom(1);
+    zoomRef.current = 1;
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      setSelectedImage(null);
-      setSeoData(null);
+  if (drawingId) {
+    if (drawingLoading || !selectedDrawing) {
+      return (
+        <div className="gallery-page">
+          <main className="gallery-main">
+            <div className="gallery-loading">
+              <div className="gallery-spinner" />
+              <p>Загрузка рисунка...</p>
+            </div>
+          </main>
+        </div>
+      );
     }
-  };
+
+    return (
+      <div className="gallery-page gallery-page--detail">
+        <header className="gallery-header">
+          <button className="gallery-back-btn" onClick={handleBackToFeed}>← В галерею</button>
+          <h1 className="gallery-title">{selectedDrawing.title}</h1>
+          <div className="gallery-header-spacer" />
+        </header>
+        <main className="gallery-main">
+          <div className="gallery-detail">
+            <div className="gallery-detail__image-wrap" ref={imageContainerRef}>
+              <img
+                src={`${API_URL}/api/gallery/image/${selectedDrawing.id}`}
+                alt={selectedDrawing.title}
+                className="gallery-detail__image"
+                style={{ transform: `scale(${zoom})` }}
+              />
+            </div>
+            <div className="gallery-detail__meta">
+              <p>✏️ {selectedDrawing.author_name}</p>
+              <p>{formatDate(selectedDrawing.approved_at || selectedDrawing.created_at)}</p>
+              <button
+                className={`gallery-like-btn ${selectedDrawing.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
+                onClick={() => userState.isAuthenticated && handleLike(selectedDrawing.id)}
+                disabled={likingId === selectedDrawing.id || !userState.isAuthenticated}
+              >
+                <HeartIcon filled={selectedDrawing.user_liked} />
+                <span className="gallery-like-count">{selectedDrawing.likes_count}</span>
+              </button>
+            </div>
+
+            <section className="gallery-detail__comments">
+              <h2>Комментарии</h2>
+              {commentsLoading ? (
+                <div className="gallery-comments-loading">Загрузка комментариев...</div>
+              ) : (
+                <div className="gallery-comments-list gallery-comments-list--detail">
+                  {comments.length > 0 ? comments.map(comment => {
+                    const isCommentAuthor = comment.user_id === userState.user?.id;
+                    const isAdmin = ['admin', 'superadmin'].includes(userState.user?.role);
+                    const canEdit = isCommentAuthor || isAdmin;
+                    return (
+                      <div key={comment.id} className="gallery-comment">
+                        <div className="gallery-comment__header">
+                          <span className="gallery-comment__author">{comment.author_name}</span>
+                          <span className="gallery-comment__date">{formatDate(comment.created_at)}</span>
+                        </div>
+                        {editingComment === comment.id ? (
+                          <div className="gallery-comment__edit">
+                            <textarea
+                              className="gallery-comment__textarea"
+                              value={editCommentText}
+                              onChange={(e) => setEditCommentText(e.target.value)}
+                              maxLength={500}
+                            />
+                            <div className="gallery-comment__actions">
+                              <button
+                                className="gallery-comment__btn gallery-comment__btn--save"
+                                onClick={() => handleEditComment(comment.id)}
+                                disabled={submittingEdit || !editCommentText.trim()}
+                              >
+                                {submittingEdit ? '...' : 'Сохранить'}
+                              </button>
+                              <button
+                                className="gallery-comment__btn gallery-comment__btn--cancel"
+                                onClick={() => {
+                                  setEditingComment(null);
+                                  setEditCommentText('');
+                                }}
+                              >
+                                Отмена
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="gallery-comment__text">{comment.comment}</p>
+                            <div className="gallery-comment__controls">
+                              <button
+                                className={`gallery-like-btn ${comment.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
+                                onClick={() => handleLikeComment(comment.id)}
+                                disabled={!userState.isAuthenticated || commentLikeLoading[comment.id]}
+                                title={userState.isAuthenticated ? 'Лайкнуть комментарий' : 'Войдите, чтобы лайкать комментарии'}
+                              >
+                                <HeartIcon filled={comment.user_liked} />
+                                <span className="gallery-like-count">{comment.likes_count || 0}</span>
+                              </button>
+                              {canEdit && (
+                                <>
+                                  <button
+                                    className="gallery-comment__control-btn"
+                                    onClick={() => {
+                                      setEditingComment(comment.id);
+                                      setEditCommentText(comment.comment);
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    className="gallery-comment__control-btn"
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                  >
+                                    🗑️
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }) : (
+                    <div className="gallery-comments-empty">
+                      <p>Пока нет комментариев</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {userState.isAuthenticated ? (
+                <div className="gallery-comment-form">
+                  <textarea
+                    className="gallery-comment-form__input"
+                    placeholder="Напишите комментарий..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    maxLength={500}
+                    rows={3}
+                  />
+                  <button
+                    className="gallery-comment-form__btn"
+                    onClick={handleSubmitComment}
+                    disabled={submittingComment || !newComment.trim()}
+                  >
+                    {submittingComment ? '...' : 'Отправить'}
+                  </button>
+                </div>
+              ) : (
+                <div className="gallery-comments-auth-hint">
+                  <p>Войдите, чтобы оставлять комментарии и лайкать чужие комментарии</p>
+                </div>
+              )}
+            </section>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="gallery-page">
@@ -327,7 +567,7 @@ const handleLike = async (drawingId) => {
             {drawings.map(drawing => (
               <div 
                 key={drawing.id} 
-                className={`gallery-card ${expandedComments[drawing.id] ? 'comments-expanded' : ''}`}
+                className="gallery-card"
                 onClick={() => handleImageClick(drawing)}
               >
                 <div className="gallery-card__image-wrap">
@@ -355,9 +595,12 @@ const handleLike = async (drawingId) => {
                   <p className="gallery-card__date">{formatDate(drawing.approved_at || drawing.created_at)}</p>
                   <div className="gallery-card__footer">
 <button
-                      className={`gallery-comments-btn ${expandedComments[drawing.id] ? 'active' : ''}`}
-                      onClick={(e) => toggleComments(drawing.id, e)}
-                      title="Комментарии"
+                      className="gallery-comments-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/gallery/${drawing.id}`);
+                      }}
+                      title="Открыть комментарии"
                     >
                       💬 Комментарии ({parseInt(drawing.comments_count, 10) || 0})
                     </button>
@@ -372,165 +615,8 @@ const handleLike = async (drawingId) => {
                     </button>
                   </div>
                 </div>
-
-                {expandedComments[drawing.id] && (
-                  <div className="gallery-card__comments" onClick={(e) => e.stopPropagation()}>
-                    {commentsLoading[drawing.id] ? (
-                      <div className="gallery-comments-loading">Загрузка комментариев...</div>
-                    ) : (
-                      <>
-                        <div className="gallery-comments-list">
-                          {comments[drawing.id] && comments[drawing.id].length > 0 ? (
-                            comments[drawing.id].map(comment => {
-                              const isCommentAuthor = comment.user_id === userState.user?.id;
-                              const isAdmin = ['admin', 'superadmin'].includes(userState.user?.role);
-                              const canEdit = isCommentAuthor || isAdmin;
-
-                              return (
-                                <div key={comment.id} className="gallery-comment">
-                                  <div className="gallery-comment__header">
-                                    <span className="gallery-comment__author">
-                                      {comment.author_name}
-                                    </span>
-                                    <span className="gallery-comment__date">
-                                      {formatDate(comment.created_at)}
-                                    </span>
-                                  </div>
-                                  {editingComment === comment.id ? (
-                                    <div className="gallery-comment__edit">
-                                      <textarea
-                                        className="gallery-comment__textarea"
-                                        value={editCommentText}
-                                        onChange={(e) => setEditCommentText(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleEditComment(comment.id, drawing.id);
-                                          }
-                                        }}
-                                        maxLength={500}
-                                        autoFocus
-                                      />
-                                      <div className="gallery-comment__actions">
-                                        <button
-                                          className="gallery-comment__btn gallery-comment__btn--save"
-                                          onClick={() => handleEditComment(comment.id, drawing.id)}
-                                          disabled={submittingEdit || !editCommentText.trim()}
-                                        >
-                                          {submittingEdit ? '...' : 'Сохранить'}
-                                        </button>
-                                        <button
-                                          className="gallery-comment__btn gallery-comment__btn--cancel"
-                                          onClick={() => {
-                                            setEditingComment(null);
-                                            setEditCommentText('');
-                                          }}
-                                        >
-                                          Отмена
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <p className="gallery-comment__text">{comment.comment}</p>
-                                      {canEdit && (
-                                        <div className="gallery-comment__controls">
-                                          <button
-                                            className="gallery-comment__control-btn"
-                                            onClick={() => {
-                                              setEditingComment(comment.id);
-                                              setEditCommentText(comment.comment);
-                                            }}
-                                            title="Редактировать"
-                                          >
-                                            ✏️
-                                          </button>
-                                          <button
-                                            className="gallery-comment__control-btn"
-                                            onClick={() => handleDeleteComment(comment.id, drawing.id)}
-                                            title="Удалить"
-                                          >
-                                            🗑️
-                                          </button>
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="gallery-comments-empty">
-                              <p>Пока нет комментариев</p>
-                              <p className="gallery-comments-empty-hint">Будьте первым!</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {userState.isAuthenticated && (
-                          <div className="gallery-comment-form">
-                            <textarea
-                              className="gallery-comment-form__input"
-                              placeholder="Напишите комментарий..."
-                              value={newComment[drawing.id] || ''}
-                              onChange={(e) => setNewComment(prev => ({ ...prev, [drawing.id]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSubmitComment(drawing.id);
-                                }
-                              }}
-                              maxLength={500}
-                              rows={2}
-                            />
-                            <button
-                              className="gallery-comment-form__btn"
-                              onClick={(e) => handleSubmitComment(drawing.id, e)}
-                              disabled={submittingComment[drawing.id] || !newComment[drawing.id]?.trim()}
-                            >
-                              {submittingComment[drawing.id] ? '...' : 'Отправить'}
-                            </button>
-                          </div>
-                        )}
-
-                        {!userState.isAuthenticated && (
-                          <div className="gallery-comments-auth-hint">
-                            <p>Войдите, чтобы оставлять комментарии</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
-          </div>
-        )}
-
-        {selectedImage && (
-          <div className="gallery-image-modal" onClick={handleOverlayClick}>
-            <div className="gallery-image-modal__content">
-              <button 
-                className="gallery-image-modal__close"
-                onClick={handleCloseModal}
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-              <img 
-                src={`${API_URL}/api/gallery/image/${selectedImage.id}`}
-                alt={selectedImage.title}
-                className="gallery-image-modal__image"
-              />
-              <div className="gallery-image-modal__info">
-                <h3>{selectedImage.title}</h3>
-                <p>✏️ {selectedImage.author_name}</p>
-                <p>{formatDate(selectedImage.approved_at || selectedImage.created_at)}</p>
-                <div className="gallery-image-modal__likes">
-                  <span>❤️ {selectedImage.likes_count}</span>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </main>

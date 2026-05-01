@@ -17,15 +17,15 @@ const SEO_DATA = {
     canonical: 'https://risovanie.online/'
   },
   '/coloring': {
-    title: 'Раскраски онлайн - бесплатные раскраски для детей и взрослых',
-    description: 'Раскраски онлайн бесплатно. Раскрашивайте картинки прямо в браузере без скачивания. Большая коллекция раскрасок для детей и взрослых.',
-    keywords: 'раскраски онлайн, раскраски для детей, раскраски бесплатно, раскраски для взрослых, онлайн раскраски',
+    title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
+    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
+    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски',
     canonical: 'https://risovanie.online/coloring'
   },
   '/gallery': {
-    title: 'Галерея рисунков - лучшие работы пользователей',
-    description: 'Галерея рисунков пользователей Рисование.Онлайн. Смотрите, оценивайте и добавляйте свои работы в галерею.',
-    keywords: 'галерея рисунков, рисунки онлайн, галерея art, рисование онлайн галерея',
+    title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
+    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
+    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам',
     canonical: 'https://risovanie.online/gallery'
   }
 };
@@ -50,8 +50,9 @@ export function SeoMeta() {
   const location = useLocation();
   const path = location.pathname;
   const { seoData: dynamicSeo } = useContext(SeoContext);
+  const hasPaginationQuery = new URLSearchParams(location.search).has('page');
 
-  const seoData = SEO_DATA[path];
+  const seoData = SEO_DATA[path] || (path.startsWith('/gallery/') ? SEO_DATA['/gallery'] : null);
   const finalData = seoData ? { ...seoData, ...dynamicSeo } : seoData;
 
   useEffect(() => {
@@ -59,7 +60,6 @@ export function SeoMeta() {
 
     document.title = finalData.title;
 
-    // Update or create meta tags
     const updateMeta = (name, content, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let meta = document.querySelector(selector);
@@ -76,12 +76,12 @@ export function SeoMeta() {
       meta.setAttribute('content', content);
     };
 
-    // Standard meta tags
+    
     updateMeta('description', finalData.description);
     updateMeta('keywords', finalData.keywords);
-    updateMeta('robots', 'index, follow');
+    updateMeta('robots', hasPaginationQuery ? 'noindex, follow' : 'index, follow');
 
-    // Open Graph
+   
     updateMeta('og:title', finalData.title, true);
     updateMeta('og:description', finalData.description, true);
     updateMeta('og:url', finalData.canonical, true);
@@ -89,16 +89,14 @@ export function SeoMeta() {
     updateMeta('og:locale', 'ru_RU', true);
     updateMeta('og:site_name', 'Рисование.Онлайн', true);
 
-    // Update canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
       canonicalLink.rel = 'canonical';
       document.head.appendChild(canonicalLink);
     }
-    canonicalLink.href = finalData.canonical;
+    canonicalLink.href = hasPaginationQuery ? finalData.canonical : (finalData.canonical || `https://risovanie.online${path}`);
 
-    // Update JSON-LD for specific pages
     const existingLd = document.querySelector('script[type="application/ld+json"][data-page]');
     if (existingLd) {
       existingLd.remove();
@@ -132,7 +130,7 @@ export function SeoMeta() {
       document.head.appendChild(ld);
     }
 
-  }, [path, finalData, dynamicSeo]);
+  }, [path, finalData, dynamicSeo, hasPaginationQuery]);
 
   return null;
 }

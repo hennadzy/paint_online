@@ -239,14 +239,14 @@ app.use(errorMiddleware);
 
 const SEO_PAGES = {
   '/coloring': {
-    title: 'Раскраски онлайн - бесплатные раскраски для детей и взрослых',
-    description: 'Раскраски онлайн бесплатно. Раскрашивайте картинки прямо в браузере без скачивания. Большая коллекция раскрасок для детей и взрослых.',
-    keywords: 'раскраски онлайн, раскраски для детей, раскраски бесплатно, раскраски для взрослых, онлайн раскраски'
+    title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
+    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
+    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски'
   },
   '/gallery': {
-    title: 'Галерея рисунков - лучшие работы пользователей',
-    description: 'Галерея рисунков пользователей Рисование.Онлайн. Смотрите, оценивайте и добавляйте свои работы в галерею.',
-    keywords: 'галерея рисунков, рисунки онлайн, галерея art, рисование онлайн галерея'
+    title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
+    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
+    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам'
   }
 };
 
@@ -280,6 +280,79 @@ app.get('/gallery', (req, res) => {
     .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
     .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/gallery"`);
   
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/gallery/:id', async (req, res) => {
+  const drawingId = parseInt(req.params.id, 10);
+  if (!Number.isFinite(drawingId) || drawingId <= 0) {
+    return send404Page(res);
+  }
+
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  const escapeHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  try {
+    const result = await pgPool.query(
+      `SELECT gd.id, gd.title, gd.created_at, gd.approved_at, u.username AS author_name
+       FROM gallery_drawings gd
+       JOIN users u ON u.id = gd.user_id
+       WHERE gd.id = $1 AND gd.status = 'approved'`,
+      [drawingId]
+    );
+
+    if (result.rows.length === 0) {
+      return send404Page(res);
+    }
+
+    const drawing = result.rows[0];
+    const commentsResult = await pgPool.query(
+      `SELECT gc.comment, u.username AS author_name
+       FROM gallery_comments gc
+       JOIN users u ON u.id = gc.user_id
+       WHERE gc.drawing_id = $1 AND gc.is_deleted = FALSE
+       ORDER BY gc.created_at ASC
+       LIMIT 50`,
+      [drawingId]
+    );
+    const seoTitle = `${drawing.title} - рисунок в галерее Рисование.Онлайн`;
+    const seoDescription = `Рисунок "${drawing.title}" автора ${drawing.author_name}. Смотрите изображение и комментарии к работе в галерее Рисование.Онлайн.`;
+    const canonical = `https://risovanie.online/gallery/${drawing.id}`;
+    const seoKeywords = `рисунок ${drawing.title}, галерея рисунков, комментарии к рисунку, ${drawing.author_name}`;
+
+    html = html
+      .replace(/<title>.*?<\/title>/, `<title>${seoTitle}</title>`)
+      .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seoDescription}"`)
+      .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seoKeywords}"`)
+      .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seoTitle}"`)
+      .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seoDescription}"`)
+      .replace(/<meta property="og:url" content=".*?"/, `<meta property="og:url" content="${canonical}"`)
+      .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="${canonical}"`);
+
+    const commentsHtml = commentsResult.rows
+      .map(comment => `<li><strong>${escapeHtml(comment.author_name)}:</strong> ${escapeHtml(comment.comment)}</li>`)
+      .join('');
+
+    const indexableContent = `<section style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+      <h1>${escapeHtml(drawing.title)}</h1>
+      <p>Автор: ${escapeHtml(drawing.author_name)}</p>
+      <h2>Комментарии к рисунку</h2>
+      <ul>${commentsHtml || '<li>Комментариев пока нет.</li>'}</ul>
+    </section>`;
+
+    html = html.replace('<div id="root"></div>', `${indexableContent}<div id="root"></div>`);
+  } catch (error) {
+    console.error('Gallery drawing seo error:', error);
+    return send404Page(res);
+  }
+
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
 });
@@ -467,9 +540,16 @@ try {
           drawing_id INTEGER NOT NULL REFERENCES gallery_drawings(id) ON DELETE CASCADE,
           user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           comment TEXT NOT NULL,
+          likes_count INTEGER DEFAULT 0,
           created_at BIGINT NOT NULL,
           updated_at BIGINT,
           is_deleted BOOLEAN DEFAULT FALSE
+        );
+        CREATE TABLE IF NOT EXISTS gallery_comment_likes (
+          user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+          comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE,
+          created_at BIGINT NOT NULL,
+          PRIMARY KEY (user_id, comment_id)
         );
         CREATE INDEX IF NOT EXISTS idx_gallery_drawings_status ON gallery_drawings(status);
         CREATE INDEX IF NOT EXISTS idx_gallery_drawings_user ON gallery_drawings(user_id);
@@ -478,7 +558,12 @@ try {
         CREATE INDEX IF NOT EXISTS idx_gallery_comments_drawing_id ON gallery_comments(drawing_id);
         CREATE INDEX IF NOT EXISTS idx_gallery_comments_user_id ON gallery_comments(user_id);
         CREATE INDEX IF NOT EXISTS idx_gallery_comments_created_at ON gallery_comments(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_gallery_comment_likes_comment ON gallery_comment_likes(comment_id);
       `);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE gallery_comments ADD COLUMN IF NOT EXISTS likes_count INTEGER DEFAULT 0`);
     } catch (_) { }
 
     try {

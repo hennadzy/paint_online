@@ -74,6 +74,57 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   }
 });
 
+router.get('/drawing/:id', galleryLimiter, optionalAuthenticate, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const userId = req.user ? req.user.userId : null;
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const result = await pgPool.query(
+      userId
+        ? `SELECT
+             gd.id,
+             gd.title,
+             gd.likes_count,
+             (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.drawing_id = gd.id AND gc.is_deleted = FALSE) AS comments_count,
+             gd.created_at,
+             gd.approved_at,
+             u.username AS author_name,
+             u.id AS author_id,
+             EXISTS(SELECT 1 FROM gallery_likes gl WHERE gl.drawing_id = gd.id AND gl.user_id = $2) AS user_liked
+           FROM gallery_drawings gd
+           JOIN users u ON u.id = gd.user_id
+           WHERE gd.id = $1 AND gd.status = 'approved'`
+        : `SELECT
+             gd.id,
+             gd.title,
+             gd.likes_count,
+             (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.drawing_id = gd.id AND gc.is_deleted = FALSE) AS comments_count,
+             gd.created_at,
+             gd.approved_at,
+             u.username AS author_name,
+             u.id AS author_id,
+             FALSE AS user_liked
+           FROM gallery_drawings gd
+           JOIN users u ON u.id = gd.user_id
+           WHERE gd.id = $1 AND gd.status = 'approved'`,
+      userId ? [id, userId] : [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    res.json({ drawing: result.rows[0] });
+  } catch (error) {
+    console.error('Get gallery drawing error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/image/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -273,20 +324,24 @@ router.get('/:id/comments', optionalAuthenticate, async (req, res) => {
       return res.status(404).json({ error: 'Рисунок не найден' });
     }
 
+    const userId = req.user ? req.user.userId : null;
+
     const result = await pgPool.query(
       `SELECT
          gc.id,
          gc.comment,
+         gc.likes_count,
          gc.created_at,
          gc.updated_at,
          u.id AS user_id,
          u.username AS author_name,
-         u.avatar_url AS author_avatar
+         u.avatar_url AS author_avatar,
+         ${userId ? `EXISTS(SELECT 1 FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id AND gcl.user_id = $2)` : 'FALSE'} AS user_liked
        FROM gallery_comments gc
        JOIN users u ON u.id = gc.user_id
        WHERE gc.drawing_id = $1 AND gc.is_deleted = FALSE
        ORDER BY gc.created_at ASC`,
-      [id]
+      userId ? [id, userId] : [id]
     );
 
     res.json({ comments: result.rows });
@@ -441,6 +496,67 @@ router.delete('/comments/:commentId', authenticate, async (req, res) => {
     res.json({ message: 'Комментарий удален' });
   } catch (error) {
     console.error('Delete comment error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/comments/:commentId/like', likeLimiter, authenticate, async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.commentId, 10);
+    const userId = req.user.userId;
+
+    if (!Number.isFinite(commentId) || commentId <= 0) {
+      return res.status(400).json({ error: 'Invalid comment id' });
+    }
+
+    const commentResult = await pgPool.query(
+      `SELECT id FROM gallery_comments WHERE id = $1 AND is_deleted = FALSE`,
+      [commentId]
+    );
+
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Комментарий не найден' });
+    }
+
+    const existingLike = await pgPool.query(
+      `SELECT 1 FROM gallery_comment_likes WHERE user_id = $1 AND comment_id = $2`,
+      [userId, commentId]
+    );
+
+    let liked = false;
+    if (existingLike.rows.length > 0) {
+      await pgPool.query(
+        `DELETE FROM gallery_comment_likes WHERE user_id = $1 AND comment_id = $2`,
+        [userId, commentId]
+      );
+      await pgPool.query(
+        `UPDATE gallery_comments SET likes_count = GREATEST(0, likes_count - 1) WHERE id = $1`,
+        [commentId]
+      );
+      liked = false;
+    } else {
+      await pgPool.query(
+        `INSERT INTO gallery_comment_likes (user_id, comment_id, created_at) VALUES ($1, $2, $3)`,
+        [userId, commentId, Date.now()]
+      );
+      await pgPool.query(
+        `UPDATE gallery_comments SET likes_count = likes_count + 1 WHERE id = $1`,
+        [commentId]
+      );
+      liked = true;
+    }
+
+    const updated = await pgPool.query(
+      `SELECT likes_count FROM gallery_comments WHERE id = $1`,
+      [commentId]
+    );
+
+    res.json({
+      liked,
+      likesCount: updated.rows[0].likes_count
+    });
+  } catch (error) {
+    console.error('Like comment error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

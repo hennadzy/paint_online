@@ -36,7 +36,9 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
-    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring', '/gallery'].includes(location.pathname);
+    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring'].includes(location.pathname)
+      || location.pathname === '/gallery'
+      || location.pathname.startsWith('/gallery/');
 
   usePersonalMessages();
   useRoomValidation(location.pathname, navigate);
@@ -47,7 +49,7 @@ const App = observer(() => {
 
     const isAdminPage = location.pathname === '/admin';
     const isColoringPage = location.pathname === '/coloring';
-    const isGalleryPage = location.pathname === '/gallery';
+    const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
 
 return (
         <SeoProvider>
@@ -66,6 +68,7 @@ return (
                     <Route path='/admin' element={<AdminPage />} />
                     <Route path='/coloring' element={<ColoringPage />} />
                     <Route path='/gallery' element={<GalleryPage />} />
+                    <Route path='/gallery/:id' element={<GalleryPage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>
