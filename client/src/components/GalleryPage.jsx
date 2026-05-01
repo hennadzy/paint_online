@@ -373,15 +373,22 @@ const GalleryPage = observer(() => {
           <div className="gallery-header-spacer" />
         </header>
         <main className="gallery-main">
-          <div className="gallery-detail">
-            <div className="gallery-detail__image-wrap" ref={imageContainerRef}>
-              <img
-                src={`${API_URL}/api/gallery/image/${selectedDrawing.id}`}
-                alt={selectedDrawing.title}
-                className="gallery-detail__image"
-                style={{ transform: `scale(${zoom})` }}
-              />
-            </div>
+           <div className="gallery-detail">
+             <div className="gallery-detail__image-wrap" ref={imageContainerRef}>
+               {imageErrors[selectedDrawing.id] ? (
+                 <div className="gallery-detail__image-fallback">
+                   <span>🖼️</span>
+                 </div>
+               ) : (
+                 <img
+                   src={`${API_URL}/api/gallery/image/${selectedDrawing.id}`}
+                   alt={selectedDrawing.title}
+                   className="gallery-detail__image"
+                   style={{ transform: `scale(${zoom})` }}
+                   onError={() => handleImageError(selectedDrawing.id)}
+                 />
+               )}
+             </div>
             <div className="gallery-detail__meta">
               <p>✏️ {selectedDrawing.author_name}</p>
               <p>{formatDate(selectedDrawing.approved_at || selectedDrawing.created_at)}</p>

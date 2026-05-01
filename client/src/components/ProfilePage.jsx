@@ -44,9 +44,15 @@ const ProfilePage = observer(() => {
  const [avatarFile, setAvatarFile] = useState(null);
  const [previewUrl, setPreviewUrl] = useState(null);
  const [uploadError, setUploadError] = useState('');
- const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
- const fileInputRef = useRef(null);
- const [fromRoom, setFromRoom] = useState(null);
+  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
+  const fileInputRef = useRef(null);
+  const [fromRoom, setFromRoom] = useState(null);
+  const [imageErrors, setImageErrors] = useState({});
+
+  const handleImageError = (id) => {
+    console.log(`[CLIENT-PROFILE] Image load failed for ID=${id}`);
+    setImageErrors(prev => ({ ...prev, [id]: true }));
+  };
 
 useEffect(() => {
  const fromRoomPath = sessionStorage.getItem('profileFromRoom');
@@ -339,15 +345,12 @@ useEffect(() => {
                   {userState.galleryDrawings.map(drawing => (
                     <div key={drawing.id} className="profile-gallery-card">
                       <div className="profile-gallery-card__img-wrap">
-                        <img
-                          src={`${API_URL}/api/gallery/image/${drawing.id}`}
-                          alt={drawing.title}
-                          className="profile-gallery-card__img"
-                          onError={(e) => { 
-                            console.log(`[CLIENT-PROFILE] Gallery image load failed for drawing ID=${drawing.id}`);
-                            e.target.style.display = 'none'; 
-                          }}
-                        />
+                       <img
+                           src={`${API_URL}/api/gallery/image/${drawing.id}`}
+                           alt={drawing.title}
+                           className="profile-gallery-card__img"
+                           onError={() => handleImageError(drawing.id)}
+                         />
                       </div>
                       <div className="profile-gallery-card__info">
                         <div className="profile-gallery-card__title">{drawing.title}</div>

@@ -11,7 +11,7 @@
 ## ✅ 4. Удалить server/files/undefined.jpg
 - Файл удалён
 
-## ⏳ 4. Улучшить обработку ошибок в клиенте (GalleryPage.jsx, ProfilePage.jsx)
+## ✅ 4. Улучшить обработку ошибок в клиенте (GalleryPage.jsx, ProfilePage.jsx)
 
 ## ⏳ 5. Очистить server/files/undefined.jpg
 
