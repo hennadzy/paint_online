@@ -126,7 +126,8 @@ router.get('/drawing/:id', galleryLimiter, optionalAuthenticate, async (req, res
 });
 
 router.get('/image/:id', async (req, res) => {
-  console.log('Gallery image request:', req.path, 'params:', req.params);
+  const id = parseInt(req.params.id, 10);
+  console.log(`[GALLERY-IMAGE] Request ID=${id}, IP=${req.ip}, User-Agent=${req.get('User-Agent')}`);
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id) || id <= 0) {
@@ -139,12 +140,21 @@ router.get('/image/:id', async (req, res) => {
       [id]
     );
 
-    if (result.rows.length === 0 || !result.rows[0].image_data) {
-      console.log('Image not found for id:', id);
+    const row = result.rows[0];
+    if (result.rows.length === 0) {
+      console.log(`[GALLERY-IMAGE-404] No row for ID=${id}`);
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    if (!row.image_data || row.image_data.length < 100) {
+      console.log(`[GALLERY-IMAGE-404] Empty/corrupt image_data for ID=${id}, data_len=${row.image_data ? row.image_data.length : 0}`);
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    if (row.status !== 'approved') {
+      console.log(`[GALLERY-IMAGE-404] Not approved for ID=${id}, status='${row.status}'`);
       return res.status(404).json({ error: 'Image not found' });
     }
 
-    const imageData = result.rows[0].image_data;
+    const imageData = row.image_data;
     const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
     if (!match) {
       return res.status(500).json({ error: 'Invalid image data' });

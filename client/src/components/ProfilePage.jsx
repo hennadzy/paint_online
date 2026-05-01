@@ -343,7 +343,10 @@ useEffect(() => {
                           src={`${API_URL}/api/gallery/image/${drawing.id}`}
                           alt={drawing.title}
                           className="profile-gallery-card__img"
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                          onError={(e) => { 
+                            console.log(`[CLIENT-PROFILE] Gallery image load failed for drawing ID=${drawing.id}`);
+                            e.target.style.display = 'none'; 
+                          }}
                         />
                       </div>
                       <div className="profile-gallery-card__info">
