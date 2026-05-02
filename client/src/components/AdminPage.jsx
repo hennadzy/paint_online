@@ -554,6 +554,7 @@ const AdminPage = observer(() => {
                     <th className="admin-sortable" onClick={() => handleUsersSort('username')}>
                       Имя {renderSortIcon('username', usersSortBy, usersSortOrder)}
                     </th>
+                    <th>UUID</th>
                     <th className="admin-sortable" onClick={() => handleUsersSort('email')}>
                       Email {renderSortIcon('email', usersSortBy, usersSortOrder)}
                     </th>
@@ -574,6 +575,36 @@ const AdminPage = observer(() => {
                   {adminState.users.map(user => (
                     <tr key={user.id}>
                       <td>{user.username}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', maxWidth: 320 }}>
+                          <code
+                            style={{
+                              fontSize: 12,
+                              lineHeight: 1.35,
+                              wordBreak: 'break-all',
+                              color: '#b8c5d6',
+                              flex: 1,
+                              minWidth: 0
+                            }}
+                            title={user.id}
+                          >
+                            {user.id}
+                          </code>
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            style={{ flexShrink: 0, padding: '4px 8px', fontSize: 11 }}
+                            title="Копировать UUID"
+                            onClick={() => {
+                              if (user.id && navigator.clipboard?.writeText) {
+                                navigator.clipboard.writeText(user.id).catch(() => {});
+                              }
+                            }}
+                          >
+                            Копир.
+                          </button>
+                        </div>
+                      </td>
                       <td>{user.email}</td>
                       <td>
                         <span className={`admin-badge admin-badge--${user.role}`}>
@@ -624,7 +655,7 @@ const AdminPage = observer(() => {
                   ))}
                   {adminState.users.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="admin-empty">
+                      <td colSpan="8" className="admin-empty">
                         <div className="admin-empty__text">Пользователи не найдены</div>
                       </td>
                     </tr>
