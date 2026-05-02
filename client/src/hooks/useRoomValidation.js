@@ -9,7 +9,6 @@ export const useRoomValidation = (pathname, navigate) => {
     const allowedClientPaths = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/admin', '/coloring', '/gallery'];
     if (allowedClientPaths.includes(pathname)) return;
 
-    // Страница отдельной работы галереи: /gallery/:id (числовой id)
     const galleryDetailMatch = pathname.match(/^\/gallery\/(\d+)\/?$/);
     if (galleryDetailMatch) return;
 

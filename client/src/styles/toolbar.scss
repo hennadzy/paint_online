@@ -358,7 +358,6 @@
 
 @media (max-width: 768px) {
   .toolbar__btn {
-    // Видимый фон и рамка по умолчанию
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -367,25 +366,21 @@
       display: none !important;
     }
 
-    // Градиент показывается при active (для инструментов) или click-animation (для действий)
     &.active::before,
     &.click-animation::before {
       opacity: 1;
       animation: glowing 10s linear infinite;
     }
 
-    // Градиент скрыт когда нет active или click-animation
     &:not(.active):not(.click-animation)::before {
       opacity: 0;
       animation: none;
     }
 
-    // Анимация пульсации при клике
     &.click-animation {
       animation: clickPulse 1s ease-out;
     }
 
-    // Фокус и активное состояние сохраняют видимость
     &:focus {
       background-color: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);

@@ -49,6 +49,53 @@ const sanitizeChatMessage = (text) => {
   return sanitized.trim();
 };
 
+const sanitizeBroadcastSubject = (text) => {
+  if (typeof text !== 'string') return '';
+  let s = text.trim().slice(0, 200);
+  s = s.normalize('NFKC');
+  s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+  s = DOMPurify.sanitize(s, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true
+  });
+  s = s.replace(/<[^>]*>/g, '');
+  s = s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'");
+  return s.trim();
+};
+
+const sanitizeBroadcastBody = (text, maxLength = 15000) => {
+  if (typeof text !== 'string') return '';
+  let sanitized = text.trim();
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.slice(0, maxLength);
+  }
+  sanitized = sanitized.normalize('NFKC');
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+  sanitized = DOMPurify.sanitize(sanitized, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel):)/i,
+    USE_PROFILES: { html: false, svg: false, mathMl: false }
+  });
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  sanitized = sanitized
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'");
+  return sanitized.trim();
+};
+
 const checkSpam = (text, username, messageHistory = []) => {
   if (typeof text !== 'string') return { isSpam: false };
 
@@ -172,6 +219,8 @@ const generateId = () => {
 module.exports = {
   sanitizeInput,
   sanitizeChatMessage,
+  sanitizeBroadcastSubject,
+  sanitizeBroadcastBody,
   sanitizeUsername,
   validateUsername,
   checkSpam,

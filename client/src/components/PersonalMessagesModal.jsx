@@ -54,13 +54,11 @@ useEffect(() => {
     }
   }, [isOpen]);
 
-  // Если передан пользователь из комнаты — сразу открываем с ним диалог
   useEffect(() => {
     if (!isOpen || !initialUser?.id) return;
     setSelectedUser(initialUser);
   }, [isOpen, initialUser]);
 
-  // Добавляем выбранного пользователя в контакты, если его там нет
   useEffect(() => {
     if (!isOpen || !selectedUser?.id) return;
     setContacts(prev => {

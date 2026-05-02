@@ -91,7 +91,6 @@ const AuthPage = observer(() => {
     setShowForgotPassword(false);
   };
 
-  // Сброс состояния при изменении пути
   React.useEffect(() => {
     setFormData({ username: '', email: '', password: '' });
     setLocalError('');
@@ -100,7 +99,6 @@ const AuthPage = observer(() => {
     setResetToken('');
   }, [location.pathname]);
 
-  // Проверка токена при загрузке страницы сброса пароля
   React.useEffect(() => {
     if (isResetPassword) {
       const token = searchParams.get('token');

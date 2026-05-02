@@ -456,7 +456,6 @@ body.modal-open {
 
   .top-menu__actions .toolbar__btn {
     overflow: hidden;
-    // Видимый фон, рамка и тень по умолчанию
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -465,24 +464,20 @@ body.modal-open {
       display: none !important;
     }
 
-    // Градиент показывается при click-animation
     &.click-animation::before {
       opacity: 1;
       animation: glowing 10s linear infinite;
     }
 
-    // Градиент скрыт когда нет click-animation
     &:not(.click-animation)::before {
       opacity: 0;
       animation: none;
     }
 
-    // Анимация пульсации при клике
     &.click-animation {
       animation: clickPulse 1s ease-out;
     }
 
-    // Фокус и активное состояние сохраняют видимость
     &:focus {
       background-color: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -929,7 +924,6 @@ body.modal-open {
   }
 }
 
-// Стили для кликабельных ников в чате
 .chat-user--clickable {
   cursor: pointer;
   transition: color 0.2s ease;
@@ -967,7 +961,6 @@ body.modal-open {
   opacity: 0.95;
 }
 
-// Моргание иконки справки
 .help-blinking {
   animation: helpBlink 1.5s ease-in-out infinite;
 

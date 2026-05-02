@@ -233,6 +233,16 @@ const AdminPage = observer(() => {
   const [galleryRejectReason, setGalleryRejectReason] = useState('');
   const [galleryActionError, setGalleryActionError] = useState('');
 
+  const [broadcastScope, setBroadcastScope] = useState('all');
+  const [broadcastChannels, setBroadcastChannels] = useState({ email: false, dm: true });
+  const [broadcastSubject, setBroadcastSubject] = useState('');
+  const [broadcastBody, setBroadcastBody] = useState('');
+  const [broadcastOnlyActive, setBroadcastOnlyActive] = useState(true);
+  const [broadcastTargetIds, setBroadcastTargetIds] = useState('');
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+  const [broadcastError, setBroadcastError] = useState('');
+
   useEffect(() => {
     if (adminState.selectedUser) {
       const user = adminState.selectedUser;
@@ -1763,6 +1773,288 @@ const AdminPage = observer(() => {
     );
   };
 
+  const renderBroadcast = () => {
+    const mailReady = adminState.broadcastMailConfigured === true;
+    const mailChecking = adminState.broadcastMailConfigured === null;
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setBroadcastError('');
+      setBroadcastResult(null);
+      if (!broadcastChannels.email && !broadcastChannels.dm) {
+        setBroadcastError('Выберите хотя бы один канал');
+        return;
+      }
+      if (broadcastChannels.email) {
+        if (!mailReady) {
+          setBroadcastError('Почта на сервере не настроена — отключите канал Email или настройте SMTP.');
+          return;
+        }
+        if (!broadcastSubject.trim()) {
+          setBroadcastError('Укажите тему письма');
+          return;
+        }
+      }
+      if (!broadcastBody.trim()) {
+        setBroadcastError('Введите текст сообщения');
+        return;
+      }
+      let userIds;
+      if (broadcastScope === 'selected') {
+        userIds = broadcastTargetIds.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+        if (userIds.length === 0) {
+          setBroadcastError('Укажите UUID пользователей (через запятую или с новой строки)');
+          return;
+        }
+      }
+      const ok = window.confirm(
+        broadcastScope === 'all'
+          ? `Отправить рассылку всем подходящим пользователям (на сервере действует лимит получателей за один запрос)?`
+          : `Отправить выбранным пользователям (${userIds.length} ID в списке)?`
+      );
+      if (!ok) return;
+
+      setBroadcastLoading(true);
+      const res = await adminState.sendBroadcast({
+        channels: { email: broadcastChannels.email, dm: broadcastChannels.dm },
+        scope: broadcastScope,
+        userIds: broadcastScope === 'selected' ? userIds : undefined,
+        filters: broadcastScope === 'all' ? { onlyActive: broadcastOnlyActive } : undefined,
+        subject: broadcastSubject.trim(),
+        body: broadcastBody
+      });
+      setBroadcastLoading(false);
+      if (res.success) {
+        setBroadcastResult(res.data);
+      } else {
+        setBroadcastError(res.error);
+      }
+    };
+
+    return (
+      <div className="admin-table-container">
+        <div className="admin-toolbar" style={{ marginBottom: '16px' }}>
+          <h3 style={{ color: '#ffd700', margin: 0 }}>✉️ Рассылка</h3>
+        </div>
+
+        <div style={{ padding: '0 20px 24px', maxWidth: 720 }}>
+          <p style={{ color: '#aaa', fontSize: 14, lineHeight: 1.5, margin: '0 0 16px' }}>
+            Массовая рассылка — всем пользователям (с фильтром по активным аккаунтам). Точечная — по списку UUID.
+            Личные сообщения сохраняются в переписке; пользователи онлайн получат их сразу по WebSocket.
+            Email отправляется только если на сервере заданы переменные SMTP (см. статус ниже).
+          </p>
+
+          <div
+            style={{
+              background: '#252525',
+              border: '1px solid #444',
+              borderRadius: 8,
+              padding: '12px 14px',
+              marginBottom: 20,
+              fontSize: 13,
+              color: mailChecking ? '#aaa' : mailReady ? '#8fbc8f' : '#ff9580'
+            }}
+          >
+            {mailChecking && 'Проверка настроек почты…'}
+            {!mailChecking && mailReady && '✓ SMTP настроен — рассылка по email доступна.'}
+            {!mailChecking && !mailReady && 'Почта не настроена: нужны непустые SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM или часто тот же SMTP_USER), при необходимости SMTP_PASS.'}
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: '#ddd' }}>Каналы</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={broadcastChannels.dm}
+                  onChange={(e) => setBroadcastChannels((c) => ({ ...c, dm: e.target.checked }))}
+                />
+                Личные сообщения (ЛС)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: mailReady ? 'pointer' : 'not-allowed', opacity: mailReady ? 1 : 0.55 }}>
+                <input
+                  type="checkbox"
+                  checked={broadcastChannels.email}
+                  disabled={!mailReady}
+                  onChange={(e) => setBroadcastChannels((c) => ({ ...c, email: e.target.checked }))}
+                />
+                Email на адрес из профиля
+              </label>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, color: '#ddd' }}>Аудитория</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="bscope"
+                  checked={broadcastScope === 'all'}
+                  onChange={() => setBroadcastScope('all')}
+                />
+                Все пользователи
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="bscope"
+                  checked={broadcastScope === 'selected'}
+                  onChange={() => setBroadcastScope('selected')}
+                />
+                Только выбранные (UUID)
+              </label>
+            </div>
+
+            {broadcastScope === 'all' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={broadcastOnlyActive}
+                  onChange={(e) => setBroadcastOnlyActive(e.target.checked)}
+                />
+                Только активные аккаунты (не заблокированные)
+              </label>
+            )}
+
+            {broadcastScope === 'selected' && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                  <label style={{ fontWeight: 600, color: '#ddd' }} htmlFor="broadcast-ids">
+                    ID пользователей
+                  </label>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--secondary"
+                    style={{ fontSize: 12, padding: '6px 12px' }}
+                    onClick={() => {
+                      const ids = adminState.users.map((u) => u.id).join('\n');
+                      setBroadcastTargetIds(ids);
+                      if (!ids) {
+                        window.alert('Сначала откройте вкладку «Пользователи», чтобы список загрузился, затем вернитесь сюда.');
+                      }
+                    }}
+                  >
+                    Подставить из текущей страницы списка
+                  </button>
+                </div>
+                <textarea
+                  id="broadcast-ids"
+                  value={broadcastTargetIds}
+                  onChange={(e) => setBroadcastTargetIds(e.target.value)}
+                  placeholder="Один UUID на строку или через запятую"
+                  rows={5}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: '#1a1a1a',
+                    border: '1px solid #444',
+                    borderRadius: 6,
+                    color: '#e0e0e0',
+                    padding: '10px 12px',
+                    fontFamily: 'monospace',
+                    fontSize: 13
+                  }}
+                />
+              </div>
+            )}
+
+            {broadcastChannels.email && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: 6, color: '#ddd' }} htmlFor="broadcast-subj">
+                  Тема письма
+                </label>
+                <input
+                  id="broadcast-subj"
+                  type="text"
+                  value={broadcastSubject}
+                  onChange={(e) => setBroadcastSubject(e.target.value)}
+                  maxLength={200}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: '#1a1a1a',
+                    border: '1px solid #444',
+                    borderRadius: 6,
+                    color: '#e0e0e0',
+                    padding: '10px 12px'
+                  }}
+                />
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontWeight: 600, display: 'block', marginBottom: 6, color: '#ddd' }} htmlFor="broadcast-body">
+                Текст {broadcastChannels.email && broadcastChannels.dm ? '(общий для ЛС и email)' : ''}
+              </label>
+              <textarea
+                id="broadcast-body"
+                value={broadcastBody}
+                onChange={(e) => setBroadcastBody(e.target.value)}
+                rows={10}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#1a1a1a',
+                  border: '1px solid #444',
+                  borderRadius: 6,
+                  color: '#e0e0e0',
+                  padding: '10px 12px',
+                  fontSize: 14,
+                  lineHeight: 1.45
+                }}
+              />
+            </div>
+
+            {broadcastError && (
+              <div className="admin-form__error" style={{ marginBottom: 12 }}>
+                {broadcastError}
+              </div>
+            )}
+
+            {broadcastResult && (
+              <div
+                style={{
+                  background: '#1e2e1e',
+                  border: '1px solid #3a5a3a',
+                  borderRadius: 8,
+                  padding: '12px 14px',
+                  marginBottom: 16,
+                  fontSize: 13,
+                  color: '#c8e6c8'
+                }}
+              >
+                <strong>Готово.</strong> Получателей в выборке: {broadcastResult.recipientCount}
+                {broadcastChannels.dm && broadcastResult.dmSaved !== undefined && (
+                  <>
+                    <br />
+                    ЛС сохранено: {broadcastResult.dmSaved}, доставлено онлайн: {broadcastResult.dmDeliveredLive}
+                    {broadcastResult.dmFailed > 0 && `, ошибок: ${broadcastResult.dmFailed}`}
+                  </>
+                )}
+                {broadcastChannels.email && (
+                  <>
+                    <br />
+                    Email отправлено: {broadcastResult.emailSent}
+                    {broadcastResult.emailSkippedNoAddress > 0 && `, без адреса: ${broadcastResult.emailSkippedNoAddress}`}
+                    {broadcastResult.emailFailed > 0 && `, ошибок SMTP: ${broadcastResult.emailFailed}`}
+                  </>
+                )}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="admin-btn admin-btn--primary"
+              disabled={broadcastLoading}
+              style={{ opacity: broadcastLoading ? 0.7 : 1 }}
+            >
+              {broadcastLoading ? 'Отправка…' : 'Отправить рассылку'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -1837,6 +2129,12 @@ const AdminPage = observer(() => {
             </span>
           )}
         </button>
+        <button
+          className={`admin-nav__item ${adminState.activeTab === 'broadcast' ? 'active' : ''}`}
+          onClick={() => adminState.setActiveTab('broadcast')}
+        >
+          ✉️ Рассылка
+        </button>
       </nav>
 
       <main className="admin-content">
@@ -1845,6 +2143,7 @@ const AdminPage = observer(() => {
         {adminState.activeTab === 'rooms' && renderRooms()}
         {adminState.activeTab === 'gameModes' && renderGameModes()}
         {adminState.activeTab === 'gallery' && renderGallery()}
+        {adminState.activeTab === 'broadcast' && renderBroadcast()}
       </main>
 
       {renderUserModal()}

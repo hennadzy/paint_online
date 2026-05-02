@@ -167,7 +167,6 @@ router.get('/image/:id', async (req, res) => {
       }
       base64Payload = dataUrlMatch[2];
     } else if (/^[a-z0-9+/=\r\n]+$/i.test(imageData)) {
-      // Backward compatibility: DB may contain only raw base64 without data URL header.
       base64Payload = imageData;
     } else {
       console.log(`[GALLERY-IMAGE-INVALID] Unsupported format for ID=${id}`);

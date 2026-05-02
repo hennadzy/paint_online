@@ -8,8 +8,16 @@ const { authenticate, requireSuperAdmin } = require('../middleware/auth');
 const { validateUsername, validateEmail, validatePassword, hashPassword } = require('../utils/auth');
 const { pgPool } = require('../config/db');
 const bcrypt = require('bcrypt');
+const validator = require('validator');
 const { generateToken } = require('../utils/jwt');
 const PersonalMessageStore = require('../services/PersonalMessageStore');
+const MailService = require('../services/MailService');
+const WebSocketHandler = require('../services/WebSocketHandler');
+const { sanitizeBroadcastSubject, sanitizeBroadcastBody } = require('../utils/security');
+
+const MAX_BROADCAST_RECIPIENTS = 2000;
+const MAX_BROADCAST_SELECTED = 500;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const router = express.Router();
 
@@ -990,6 +998,151 @@ router.delete('/gallery/:id', async (req, res) => {
     res.json({ message: 'Рисунок удалён' });
   } catch (error) {
     console.error('Admin delete gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/broadcast/mail-status', async (req, res) => {
+  try {
+    res.json({ configured: MailService.isConfigured() });
+  } catch (error) {
+    console.error('Admin mail status error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/broadcast', async (req, res) => {
+  try {
+    const { channels = {}, scope, userIds, filters = {}, subject, body } = req.body;
+    const sendEmail = !!channels.email;
+    const sendDm = !!channels.dm;
+
+    if (!sendEmail && !sendDm) {
+      return res.status(400).json({ error: 'Выберите хотя бы один канал: email или личные сообщения' });
+    }
+
+    const dmText = sanitizeBroadcastBody(typeof body === 'string' ? body : '', 15000);
+    if (!dmText) {
+      return res.status(400).json({ error: 'Введите текст сообщения' });
+    }
+
+    let emailSubject = '';
+    if (sendEmail) {
+      emailSubject = sanitizeBroadcastSubject(typeof subject === 'string' ? subject : '');
+      if (!emailSubject) {
+        return res.status(400).json({ error: 'Укажите тему письма для рассылки по email' });
+      }
+      if (!MailService.isConfigured()) {
+        return res.status(503).json({
+          error: 'Почта не настроена на сервере: нужны SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM или SMTP_USER), при необходимости SMTP_PASS.'
+        });
+      }
+    }
+
+    const onlyActive = filters.onlyActive !== false;
+
+    let recipients = [];
+    if (scope === 'selected') {
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'Укажите список получателей (userIds)' });
+      }
+      if (userIds.length > MAX_BROADCAST_SELECTED) {
+        return res.status(400).json({ error: `Не более ${MAX_BROADCAST_SELECTED} получателей за один раз` });
+      }
+      const uniq = [...new Set(userIds.map((id) => String(id).trim()).filter(Boolean))];
+      const uuidList = uniq.filter((id) => UUID_RE.test(id));
+      if (uuidList.length === 0) {
+        return res.status(400).json({ error: 'Некорректные идентификаторы пользователей' });
+      }
+      const result = await pgPool.query(
+        `SELECT id, email, username FROM users
+         WHERE id = ANY($1::uuid[]) AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)`,
+        [uuidList]
+      );
+      recipients = result.rows;
+    } else if (scope === 'all') {
+      let q = `SELECT id, email, username FROM users WHERE (is_deleted IS NOT TRUE OR is_deleted IS NULL)`;
+      const vals = [];
+      if (onlyActive) {
+        q += ` AND is_active IS NOT FALSE`;
+      }
+      const result = await pgPool.query(q, vals);
+      recipients = result.rows;
+      if (recipients.length > MAX_BROADCAST_RECIPIENTS) {
+        return res.status(400).json({
+          error: `Слишком много получателей (${recipients.length}). Максимум ${MAX_BROADCAST_RECIPIENTS} за запрос. Включите фильтр «только активные» или выберите пользователей вручную.`
+        });
+      }
+    } else {
+      return res.status(400).json({ error: 'Укажите scope: all или selected' });
+    }
+
+    if (recipients.length === 0) {
+      return res.status(400).json({ error: 'Нет подходящих получателей' });
+    }
+
+    const adminId = req.user.userId;
+    const adminRow = await pgPool.query('SELECT username FROM users WHERE id = $1', [adminId]);
+    const adminUsername = adminRow.rows[0]?.username || 'Администратор';
+
+    const stats = {
+      recipientCount: recipients.length,
+      dmSaved: 0,
+      dmDeliveredLive: 0,
+      dmFailed: 0,
+      emailSent: 0,
+      emailFailed: 0,
+      emailSkippedNoAddress: 0
+    };
+
+    for (const row of recipients) {
+      if (sendDm) {
+        try {
+          const ts = Date.now();
+          const msgId = await PersonalMessageStore.saveMessage(adminId, row.id, dmText, ts);
+          if (msgId) {
+            stats.dmSaved++;
+            const delivered = await WebSocketHandler.deliverPersonalMessageToUser(
+              row.id,
+              adminId,
+              adminUsername,
+              dmText,
+              ts,
+              msgId
+            );
+            if (delivered) stats.dmDeliveredLive++;
+          } else {
+            stats.dmFailed++;
+          }
+        } catch (e) {
+          console.error('Broadcast DM error:', e);
+          stats.dmFailed++;
+        }
+      }
+
+      if (sendEmail) {
+        if (!row.email || !validator.isEmail(row.email)) {
+          stats.emailSkippedNoAddress++;
+        } else {
+          try {
+            await MailService.sendTextEmail({
+              to: row.email,
+              subject: emailSubject,
+              text: dmText
+            });
+            stats.emailSent++;
+          } catch (e) {
+            console.error('Broadcast email error:', e);
+            stats.emailFailed++;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      }
+    }
+
+    res.json({ ok: true, ...stats });
+  } catch (error) {
+    console.error('Admin broadcast error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

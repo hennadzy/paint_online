@@ -39,7 +39,6 @@ useEffect(() => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Проверка, была ли просмотрена справка
   useEffect(() => {
     try {
       const viewed = localStorage.getItem('helpViewed');

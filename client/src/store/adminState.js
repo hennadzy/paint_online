@@ -51,6 +51,8 @@ class AdminState {
   galleryApprovedLoading = false;
   galleryApprovedError = null;
 
+  broadcastMailConfigured = null;
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -63,6 +65,8 @@ class AdminState {
       this.fetchRooms();
     } else if (tab === 'gallery') {
       this.fetchGalleryAll();
+    } else if (tab === 'broadcast') {
+      this.fetchBroadcastMailStatus();
     }
   }
 
@@ -579,6 +583,31 @@ class AdminState {
       return {
         success: false,
         error: error.response?.data?.error || 'Ошибка удаления'
+      };
+    }
+  }
+
+  async fetchBroadcastMailStatus() {
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/broadcast/mail-status`);
+      runInAction(() => {
+        this.broadcastMailConfigured = response.data.configured;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.broadcastMailConfigured = false;
+      });
+    }
+  }
+
+  async sendBroadcast(payload) {
+    try {
+      const response = await axios.post(`${API_URL}/api/admin/broadcast`, payload);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка рассылки'
       };
     }
   }
