@@ -52,7 +52,7 @@ useEffect(() => {
   useEffect(() => {
     if (canvasState.currentRoomId && !canvasState.isConnected && !canvasState.modalOpen) {
       const timer = setTimeout(() => {
-        axios.get(`${API_URL}/rooms/${canvasState.currentRoomId}/exists`)
+        axios.get(`${API_URL}/api/rooms/${canvasState.currentRoomId}/exists`)
           .then(response => {
             if (response.data.exists) {
               canvasState.setModalOpen(true);

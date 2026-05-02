@@ -88,7 +88,7 @@ export default class Tool {
 
   saveImage() {
     if (this.id) {
-      axios.post(`${API_URL}/image?id=${this.id}`, { img: this.canvas.toDataURL() });
+      axios.post(`${API_URL}/api/image?id=${this.id}`, { img: this.canvas.toDataURL() });
     }
   }
 }

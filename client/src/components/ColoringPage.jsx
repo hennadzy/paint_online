@@ -70,6 +70,12 @@ class ColoringHistory {
 
 const coloringHistoryRef = { current: new ColoringHistory() };
 
+const coloringAssetUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${API_URL}/api${url.startsWith('/') ? url : `/${url}`}`;
+};
+
 const PRESET_COLORS = [
 
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700',
@@ -126,7 +132,7 @@ const ColoringPage = () => {
       setIsLoading(true);
       setFetchError('');
       try {
-        const res = await fetch(`${API_URL}/coloring-pages`);
+        const res = await fetch(`${API_URL}/api/coloring-pages`);
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
         setColoringPages(data);
@@ -169,7 +175,7 @@ const ColoringPage = () => {
  console.error('Failed to load coloring image');
  };
 
- img.src = `${API_URL}${page.image_url}`;
+ img.src = coloringAssetUrl(page.image_url);
  }, []);
 
 
@@ -436,7 +442,7 @@ const ColoringPage = () => {
                 >
                   <div className="coloring-page-item__preview">
                     <img
-                      src={`${API_URL}${page.thumbnail_url || page.image_url}`}
+                      src={coloringAssetUrl(page.thumbnail_url || page.image_url)}
                       alt={page.title}
                       onError={(e) => {
                         e.target.style.display = 'none';

@@ -107,7 +107,7 @@ const [roomPassword, setRoomPassword] = useState('');
     let cancelled = false;
     const doJoin = async () => {
       try {
-        const roomInfoRes = await axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`);
+        const roomInfoRes = await axiosInstance.get(`${API_URL}/api/rooms/${roomId}/exists`);
         if (!roomInfoRes.data.exists || cancelled) return;
 
         const endpoint = roomInfoRes.data.hasPassword ? 'join-private' : 'join-public';
@@ -122,7 +122,7 @@ const [roomPassword, setRoomPassword] = useState('');
           }
         }
 
-        const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
+        const tokenResponse = await axiosInstance.post(`${API_URL}/api/rooms/${roomId}/${endpoint}`, payload);
         const token = tokenResponse.data.token;
         const effectiveUsername = tokenResponse.data.username || profileUsername;
         localStorage.setItem(`room_token_${roomId}`, token);
@@ -184,7 +184,7 @@ const [roomPassword, setRoomPassword] = useState('');
 
   const fetchPublicRooms = useCallback(async () => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/rooms/public`);
+      const response = await axiosInstance.get(`${API_URL}/api/rooms/public`);
       const rooms = response.data || [];
       setPublicRooms(rooms);
       if (rooms.length === 0) {
@@ -211,7 +211,7 @@ const [roomPassword, setRoomPassword] = useState('');
 
   useEffect(() => {
     if (roomId && !canvasState.isConnected) {
-      axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`)
+      axiosInstance.get(`${API_URL}/api/rooms/${roomId}/exists`)
         .then(response => {
           if (response.data.exists) {
             setRoomInfo(response.data);
@@ -235,7 +235,7 @@ const [roomPassword, setRoomPassword] = useState('');
     setError('');
 
     try {
-      const roomInfo = await axiosInstance.get(`${API_URL}/rooms/${roomId}/exists`);
+      const roomInfo = await axiosInstance.get(`${API_URL}/api/rooms/${roomId}/exists`);
 
       if (!roomInfo.data.exists) {
         setError('Комната не найдена');
@@ -260,7 +260,7 @@ const [roomPassword, setRoomPassword] = useState('');
         }
       }
 
-        const tokenResponse = await axiosInstance.post(`${API_URL}/rooms/${roomId}/${endpoint}`, payload);
+        const tokenResponse = await axiosInstance.post(`${API_URL}/api/rooms/${roomId}/${endpoint}`, payload);
         const token = tokenResponse.data.token;
         const effectiveUsername = tokenResponse.data.username || username.trim();
         localStorage.setItem(`room_token_${roomId}`, token);
@@ -311,7 +311,7 @@ const handleCreateRoom = async () => {
     setError('');
     setIsLoading(true);
     try {
-      const response = await axiosInstance.post(`${API_URL}/rooms`, {
+      const response = await axiosInstance.post(`${API_URL}/api/rooms`, {
         name: roomName,
         isPublic,
         password: !isPublic ? password : null
@@ -360,7 +360,7 @@ const handleCreateRoom = async () => {
     try {
       const roomIdToJoin = passwordPrompt.id;
 
-      const response = await axiosInstance.post(`${API_URL}/rooms/${roomIdToJoin}/verify-password`, {
+      const response = await axiosInstance.post(`${API_URL}/api/rooms/${roomIdToJoin}/verify-password`, {
         password: roomPassword
       });
 

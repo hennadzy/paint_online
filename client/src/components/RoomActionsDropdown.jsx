@@ -57,7 +57,7 @@ const RoomActionsDropdown = ({ room, isCreator, onDeleted, onUpdated, compact = 
   const handleMakePublic = async () => {
     setLoading(true);
     try {
-      await axiosInstance.patch(`${API_URL}/rooms/${room.id}`, { isPublic: true });
+      await axiosInstance.patch(`${API_URL}/api/rooms/${room.id}`, { isPublic: true });
       onUpdated?.();
     } catch (err) {
       console.error(err);
@@ -76,7 +76,7 @@ const RoomActionsDropdown = ({ room, isCreator, onDeleted, onUpdated, compact = 
     e?.stopPropagation();
     if (window.confirm(`Удалить комнату "${room.name}"? Это действие нельзя отменить.`)) {
       setLoading(true);
-      axiosInstance.delete(`${API_URL}/rooms/${room.id}`)
+      axiosInstance.delete(`${API_URL}/api/rooms/${room.id}`)
         .then(() => {
           onDeleted?.();
           navigate('/');
@@ -92,7 +92,7 @@ const RoomActionsDropdown = ({ room, isCreator, onDeleted, onUpdated, compact = 
     if (!privatePassword.trim()) return;
     setLoading(true);
     try {
-      await axiosInstance.patch(`${API_URL}/rooms/${room.id}`, { isPublic: false, password: privatePassword.trim() });
+      await axiosInstance.patch(`${API_URL}/api/rooms/${room.id}`, { isPublic: false, password: privatePassword.trim() });
       setPasswordPrompt(null);
       setPrivatePassword('');
       onUpdated?.();

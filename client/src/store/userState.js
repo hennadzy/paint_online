@@ -254,18 +254,18 @@ class UserState {
   }
 
   async deleteRoom(roomId) {
-    await axios.delete(`${API_URL}/rooms/${roomId}`);
+    await axios.delete(`${API_URL}/api/rooms/${roomId}`);
   }
 
   async updateRoomVisibility(roomId, { isPublic, password }) {
-    await axios.patch(`${API_URL}/rooms/${roomId}`, { isPublic, password });
+    await axios.patch(`${API_URL}/api/rooms/${roomId}`, { isPublic, password });
   }
 
   async createRoom(name, isPublic, password = null) {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/rooms`, {
+      const response = await axios.post(`${API_URL}/api/rooms`, {
         name,
         isPublic,
         password: isPublic ? null : password
