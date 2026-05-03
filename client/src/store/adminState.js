@@ -53,6 +53,10 @@ class AdminState {
 
   broadcastMailConfigured = null;
 
+  roleCapabilitiesPayload = null;
+  roleCapabilitiesLoading = false;
+  roleCapabilitiesError = null;
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -67,6 +71,8 @@ class AdminState {
       this.fetchGalleryAll();
     } else if (tab === 'broadcast') {
       this.fetchBroadcastMailStatus();
+    } else if (tab === 'capabilities') {
+      this.fetchRoleCapabilities();
     }
   }
 
@@ -608,6 +614,38 @@ class AdminState {
       return {
         success: false,
         error: error.response?.data?.error || 'Ошибка рассылки'
+      };
+    }
+  }
+
+  async fetchRoleCapabilities() {
+    this.roleCapabilitiesLoading = true;
+    this.roleCapabilitiesError = null;
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/capabilities`);
+      runInAction(() => {
+        this.roleCapabilitiesPayload = response.data;
+        this.roleCapabilitiesLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.roleCapabilitiesError = error.response?.data?.error || 'Не удалось загрузить настройки';
+        this.roleCapabilitiesLoading = false;
+      });
+    }
+  }
+
+  async saveRoleCapabilities(config) {
+    try {
+      const response = await axios.put(`${API_URL}/api/admin/capabilities`, { config });
+      runInAction(() => {
+        this.roleCapabilitiesPayload = response.data;
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Не удалось сохранить'
       };
     }
   }

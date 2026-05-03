@@ -183,20 +183,33 @@ renderBrushStroke(ctx, stroke, isEraser = false) {
   }
 
   const color = this.hexToRgba(strokeStyle, strokeOpacity);
+  const variableW = points.some((pt) => typeof pt.w === "number");
 
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = isEraser ? "rgba(0,0,0,1)" : color;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
-  ctx.beginPath();
 
   if (points.length === 1) {
-    ctx.arc(points[0].x, points[0].y, lineWidth / 2, 0, 2 * Math.PI);
-    ctx.fillStyle = ctx.strokeStyle;
+    const w = points[0].w ?? lineWidth;
+    ctx.fillStyle = isEraser ? "rgba(0,0,0,1)" : color;
+    ctx.beginPath();
+    ctx.arc(points[0].x, points[0].y, w / 2, 0, 2 * Math.PI);
     ctx.fill();
+  } else if (variableW) {
+    for (let i = 1; i < points.length; i++) {
+      const w0 = points[i - 1].w ?? lineWidth;
+      const w1 = points[i].w ?? lineWidth;
+      ctx.lineWidth = (w0 + w1) / 2;
+      ctx.beginPath();
+      ctx.moveTo(points[i - 1].x, points[i - 1].y);
+      ctx.lineTo(points[i].x, points[i].y);
+      ctx.stroke();
+    }
   } else {
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
       ctx.lineTo(points[i].x, points[i].y);

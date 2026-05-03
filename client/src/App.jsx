@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { observer } from "mobx-react-lite";
 import "./styles/app.scss"
 import "./styles/room-interface.scss"
@@ -21,6 +21,7 @@ import PersonalMessagesModal from "./components/PersonalMessagesModal";
 import SeoMeta, { SeoProvider } from "./components/SeoMeta";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
+import capabilitiesState from "./store/capabilitiesState";
 import { isValidRoomId } from "./utils/routerUtils";
 import { usePersonalMessages } from "./hooks/usePersonalMessages";
 import { useRoomValidation } from "./hooks/useRoomValidation";
@@ -36,6 +37,11 @@ const RoomRoute = () => {
 const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        capabilitiesState.fetch();
+    }, []);
+
     const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring'].includes(location.pathname)
       || location.pathname === '/gallery'
       || location.pathname.startsWith('/gallery/');

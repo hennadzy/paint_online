@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import adminState from '../store/adminState';
 import userState from '../store/userState';
+import capabilitiesState from '../store/capabilitiesState';
 import '../styles/admin.scss';
 
 const getAdminApiBase = () => (window.location.hostname === 'localhost'
@@ -242,6 +243,16 @@ const AdminPage = observer(() => {
   const [broadcastLoading, setBroadcastLoading] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState(null);
   const [broadcastError, setBroadcastError] = useState('');
+
+  const [capEdit, setCapEdit] = useState(null);
+  const [capSaveFeedback, setCapSaveFeedback] = useState(null);
+
+  useEffect(() => {
+    const cfg = adminState.roleCapabilitiesPayload?.config;
+    if (cfg) {
+      setCapEdit(JSON.parse(JSON.stringify(cfg)));
+    }
+  }, [adminState.roleCapabilitiesPayload]);
 
   useEffect(() => {
     if (adminState.selectedUser) {
@@ -490,6 +501,7 @@ const AdminPage = observer(() => {
                 >
                   <option value="all">Все роли</option>
                   <option value="user">Пользователь</option>
+                  <option value="premium">Премиум</option>
                   <option value="admin">Админ</option>
                   <option value="superadmin">Супер Админ</option>
                 </select>
@@ -930,6 +942,7 @@ const AdminPage = observer(() => {
                   onChange={(e) => setUserFormData({...userFormData, role: e.target.value})}
                 >
                   <option value="user">Пользователь</option>
+                  <option value="premium">Премиум</option>
                   <option value="admin">Админ</option>
                   <option value="superadmin">Супер Админ</option>
                 </select>
@@ -2086,6 +2099,167 @@ const AdminPage = observer(() => {
     );
   };
 
+  const renderCapabilities = () => {
+    if (adminState.roleCapabilitiesLoading && !capEdit) {
+      return (
+        <div className="admin-content__section">
+          <p style={{ color: '#aaa' }}>Загрузка настроек…</p>
+        </div>
+      );
+    }
+    if (adminState.roleCapabilitiesError && !capEdit) {
+      return (
+        <div className="admin-content__section">
+          <p className="admin-form__error">{adminState.roleCapabilitiesError}</p>
+        </div>
+      );
+    }
+    const payload = adminState.roleCapabilitiesPayload;
+    if (!capEdit || !payload?.featureIds?.length) {
+      return (
+        <div className="admin-content__section">
+          <p style={{ color: '#aaa' }}>Нет данных. Откройте раздел ещё раз.</p>
+        </div>
+      );
+    }
+
+    const { featureDefs, roleLabels, featureIds, roleIds } = payload;
+
+    const setFeatureMaster = (featureId, enabled) => {
+      setCapEdit((prev) => {
+        if (!prev) return prev;
+        const next = JSON.parse(JSON.stringify(prev));
+        if (!next.features[featureId]) next.features[featureId] = { enabled };
+        next.features[featureId].enabled = enabled;
+        return next;
+      });
+    };
+
+    const setRoleFeature = (roleId, featureId, allowed) => {
+      setCapEdit((prev) => {
+        if (!prev) return prev;
+        const next = JSON.parse(JSON.stringify(prev));
+        if (!next.roles[roleId]) next.roles[roleId] = {};
+        next.roles[roleId][featureId] = allowed;
+        return next;
+      });
+    };
+
+    const handleCapSave = async () => {
+      setCapSaveFeedback(null);
+      const result = await adminState.saveRoleCapabilities(capEdit);
+      if (result.success) {
+        setCapSaveFeedback({ ok: true, text: 'Сохранено. Изменения подхватятся у пользователей после обновления страницы.' });
+        capabilitiesState.fetch();
+      } else {
+        setCapSaveFeedback({ ok: false, text: result.error || 'Ошибка сохранения' });
+      }
+    };
+
+    const tableStyle = {
+      width: '100%',
+      borderCollapse: 'collapse',
+      marginTop: 12,
+      fontSize: 14,
+    };
+    const thStyle = {
+      textAlign: 'left',
+      padding: '10px 12px',
+      borderBottom: '1px solid #444',
+      color: '#bbb',
+    };
+    const tdStyle = {
+      padding: '10px 12px',
+      borderBottom: '1px solid #333',
+      color: '#e0e0e0',
+    };
+
+    return (
+      <div className="admin-content__section">
+        <h2 style={{ marginTop: 0, color: '#eee', fontSize: '1.35rem' }}>Возможности по ролям</h2>
+        <p style={{ color: '#999', maxWidth: 720, lineHeight: 1.5 }}>
+          Здесь задаётся, какие функции доступны гостям (без регистрации), авторам (зарегистрированные пользователи),
+          премиум-аккаунтам (роль в БД — premium) и администраторам. Глобальное отключение функции убирает её для всех,
+          независимо от галочек у ролей.
+        </p>
+
+        {featureIds.map((featureId) => {
+          const def = featureDefs[featureId] || { label: featureId, description: '' };
+          const masterOn = capEdit.features[featureId]?.enabled !== false;
+          return (
+            <div
+              key={featureId}
+              style={{
+                background: '#1e1e1e',
+                border: '1px solid #333',
+                borderRadius: 10,
+                padding: '18px 20px',
+                marginBottom: 20,
+              }}
+            >
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={masterOn}
+                  onChange={(e) => setFeatureMaster(featureId, e.target.checked)}
+                  style={{ marginTop: 3 }}
+                />
+                <span>
+                  <strong style={{ color: '#fff', fontSize: 16 }}>{def.label}</strong>
+                  <div style={{ color: '#888', fontSize: 13, marginTop: 6, fontWeight: 400 }}>{def.description}</div>
+                </span>
+              </label>
+
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <th style={thStyle}>Роль</th>
+                    <th style={{ ...thStyle, width: 120 }}>Доступ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roleIds.map((roleId) => (
+                    <tr key={`${featureId}-${roleId}`}>
+                      <td style={tdStyle}>{roleLabels[roleId] || roleId}</td>
+                      <td style={tdStyle}>
+                        <input
+                          type="checkbox"
+                          disabled={!masterOn}
+                          checked={masterOn && Boolean(capEdit.roles[roleId]?.[featureId])}
+                          onChange={(e) => setRoleFeature(roleId, featureId, e.target.checked)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+
+        {capSaveFeedback && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 14px',
+              borderRadius: 8,
+              background: capSaveFeedback.ok ? '#1e2e1e' : '#2e1e1e',
+              border: `1px solid ${capSaveFeedback.ok ? '#3a5a3a' : '#5a3a3a'}`,
+              color: capSaveFeedback.ok ? '#c8e6c8' : '#e6a8a8',
+              fontSize: 14,
+            }}
+          >
+            {capSaveFeedback.text}
+          </div>
+        )}
+
+        <button type="button" className="admin-btn admin-btn--primary" onClick={handleCapSave}>
+          Сохранить возможности
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -2131,6 +2305,12 @@ const AdminPage = observer(() => {
           Комнаты
         </button>
         <button
+          className={`admin-nav__item ${adminState.activeTab === 'capabilities' ? 'active' : ''}`}
+          onClick={() => adminState.setActiveTab('capabilities')}
+        >
+          Возможности
+        </button>
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'gameModes' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('gameModes');
@@ -2172,6 +2352,7 @@ const AdminPage = observer(() => {
         {adminState.activeTab === 'dashboard' && renderDashboard()}
         {adminState.activeTab === 'users' && renderUsers()}
         {adminState.activeTab === 'rooms' && renderRooms()}
+        {adminState.activeTab === 'capabilities' && renderCapabilities()}
         {adminState.activeTab === 'gameModes' && renderGameModes()}
         {adminState.activeTab === 'gallery' && renderGallery()}
         {adminState.activeTab === 'broadcast' && renderBroadcast()}

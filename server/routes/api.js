@@ -10,6 +10,7 @@ const { generateToken } = require('../utils/jwt');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { pgPool } = require('../config/db');
 const { asyncHandler, ValidationError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
+const RoleCapabilitiesService = require('../services/RoleCapabilitiesService');
 
 const router = express.Router();
 
@@ -24,6 +25,11 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   validate: { xForwardedForHeader: false }
 });
+
+router.get('/capabilities', apiLimiter, asyncHandler(async (req, res) => {
+  const config = await RoleCapabilitiesService.getConfig();
+  res.json(RoleCapabilitiesService.getPublicPayload(config));
+}));
 
 const createRoomLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

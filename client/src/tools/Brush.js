@@ -57,11 +57,16 @@ export default class Brush extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
+    this.resetPenPressureState();
 
     const { x, y } = this.getCanvasCoordinates(e);
     this.lastX = x;
     this.lastY = y;
-    this.points.push({ x, y });
+    const pt = { x, y };
+    if (e.pointerType === "pen") {
+      pt.w = this.getPressureAdjustedLineWidth(e);
+    }
+    this.points.push(pt);
     this.drawDot();
   }
 
@@ -80,6 +85,9 @@ export default class Brush extends Tool {
     const { x, y } = this.getCanvasCoordinates(e);
 
     const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
+    if (e.pointerType === "pen") {
+      smoothed.w = this.getPressureAdjustedLineWidth(e);
+    }
     this.points.push(smoothed);
     this.lastX = smoothed.x;
     this.lastY = smoothed.y;
@@ -111,12 +119,13 @@ export default class Brush extends Tool {
 
   drawDot() {
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+    const r = (this.points[0].w ?? this.lineWidth) / 2;
     ctx.save();
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
     ctx.globalCompositeOperation = "source-over";
     ctx.beginPath();
-    ctx.arc(this.points[0].x, this.points[0].y, this.lineWidth / 2, 0, 2 * Math.PI);
+    ctx.arc(this.points[0].x, this.points[0].y, r, 0, 2 * Math.PI);
     ctx.fill();
     ctx.restore();
   }
@@ -126,9 +135,14 @@ export default class Brush extends Tool {
     const len = this.points.length;
     if (len < 2) return;
 
+    const p0 = this.points[len - 2];
+    const p1 = this.points[len - 1];
+    const w0 = p0.w ?? this.lineWidth;
+    const w1 = p1.w ?? this.lineWidth;
+
     ctx.save();
     ctx.globalAlpha = 1;
-    ctx.lineWidth = this.lineWidth;
+    ctx.lineWidth = (w0 + w1) / 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
@@ -136,33 +150,46 @@ export default class Brush extends Tool {
     ctx.globalCompositeOperation = "source-over";
 
     ctx.beginPath();
-    ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
-    ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
     ctx.restore();
   }
 
   drawStroke() {
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+    const p = this.points;
+    const variableW = p.some((pt) => typeof pt.w === "number");
 
     ctx.save();
-    ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
     ctx.fillStyle = this.hexToRgba(this.strokeStyle, this.strokeOpacity);
     ctx.globalCompositeOperation = "source-over";
 
-    ctx.beginPath();
-    const p = this.points;
-    if (p.length > 1) {
+    if (p.length > 1 && variableW) {
+      for (let i = 1; i < p.length; i++) {
+        const w0 = p[i - 1].w ?? this.lineWidth;
+        const w1 = p[i].w ?? this.lineWidth;
+        ctx.lineWidth = (w0 + w1) / 2;
+        ctx.beginPath();
+        ctx.moveTo(p[i - 1].x, p[i - 1].y);
+        ctx.lineTo(p[i].x, p[i].y);
+        ctx.stroke();
+      }
+    } else if (p.length > 1) {
+      ctx.lineWidth = this.lineWidth;
+      ctx.beginPath();
       ctx.moveTo(p[0].x, p[0].y);
       for (let i = 1; i < p.length; i++) {
         ctx.lineTo(p[i].x, p[i].y);
       }
       ctx.stroke();
     } else if (p.length === 1) {
-      ctx.arc(p[0].x, p[0].y, this.lineWidth / 2, 0, 2 * Math.PI);
+      const r = (p[0].w ?? this.lineWidth) / 2;
+      ctx.beginPath();
+      ctx.arc(p[0].x, p[0].y, r, 0, 2 * Math.PI);
       ctx.fill();
     }
     ctx.restore();

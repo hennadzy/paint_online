@@ -55,9 +55,14 @@ export default class Eraser extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
+    this.resetPenPressureState();
 
     const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
+    const pt = { x, y };
+    if (e.pointerType === "pen") {
+      pt.w = this.getPressureAdjustedLineWidth(e);
+    }
+    this.points.push(pt);
   }
 
   pointerMoveHandler(e) {
@@ -73,7 +78,11 @@ export default class Eraser extends Tool {
     }
 
     const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
+    const pt = { x, y };
+    if (e.pointerType === "pen") {
+      pt.w = this.getPressureAdjustedLineWidth(e);
+    }
+    this.points.push(pt);
     this.drawSegment();
 
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
@@ -96,9 +105,14 @@ export default class Eraser extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.points = [];
+    this.resetPenPressureState();
 
     const { x, y } = this.getCoords(e);
-    this.points.push({ x, y });
+    const pt = { x, y };
+    if (e.pointerType === "pen") {
+      pt.w = this.getPressureAdjustedLineWidth(e);
+    }
+    this.points.push(pt);
   }
 
   drawSegment() {
@@ -106,40 +120,58 @@ export default class Eraser extends Tool {
     const len = this.points.length;
     if (len < 2) return;
 
+    const p0 = this.points[len - 2];
+    const p1 = this.points[len - 1];
+    const w0 = p0.w ?? this.lineWidth;
+    const w1 = p1.w ?? this.lineWidth;
+
     ctx.save();
     ctx.globalCompositeOperation = "destination-out";
     ctx.strokeStyle = "rgba(0,0,0,1)";
-    ctx.lineWidth = this.lineWidth;
+    ctx.lineWidth = (w0 + w1) / 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(this.points[len - 2].x, this.points[len - 2].y);
-    ctx.lineTo(this.points[len - 1].x, this.points[len - 1].y);
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
     ctx.restore();
   }
 
   drawStroke() {
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+    const p = this.points;
+    const variableW = p.some((pt) => typeof pt.w === "number");
 
     ctx.save();
-    ctx.lineWidth = this.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "rgba(0,0,0,1)";
     ctx.fillStyle = "rgba(0,0,0,1)";
     ctx.globalCompositeOperation = "destination-out";
 
-    ctx.beginPath();
-    const p = this.points;
-    if (p.length > 1) {
+    if (p.length > 1 && variableW) {
+      for (let i = 1; i < p.length; i++) {
+        const w0 = p[i - 1].w ?? this.lineWidth;
+        const w1 = p[i].w ?? this.lineWidth;
+        ctx.lineWidth = (w0 + w1) / 2;
+        ctx.beginPath();
+        ctx.moveTo(p[i - 1].x, p[i - 1].y);
+        ctx.lineTo(p[i].x, p[i].y);
+        ctx.stroke();
+      }
+    } else if (p.length > 1) {
+      ctx.lineWidth = this.lineWidth;
+      ctx.beginPath();
       ctx.moveTo(p[0].x, p[0].y);
       for (let i = 1; i < p.length; i++) {
         ctx.lineTo(p[i].x, p[i].y);
       }
       ctx.stroke();
     } else if (p.length === 1) {
-      ctx.arc(p[0].x, p[0].y, this.lineWidth / 2, 0, 2 * Math.PI);
+      const r = (p[0].w ?? this.lineWidth) / 2;
+      ctx.beginPath();
+      ctx.arc(p[0].x, p[0].y, r, 0, 2 * Math.PI);
       ctx.fill();
     }
     ctx.restore();

@@ -1,5 +1,6 @@
 import toolState from "../store/toolState";
 import { API_URL } from "../store/canvasState";
+import capabilitiesState from "../store/capabilitiesState";
 import axios from "axios";
 
 export default class Tool {
@@ -15,6 +16,7 @@ export default class Tool {
     this.lineWidth = toolState.lineWidths[toolName] ?? 1;
     this.mouseDown = false;
     this._hasCommitted = false;
+    this._penPressureSmoothed = null;
   }
 
   destroyEvents() {
@@ -74,6 +76,45 @@ export default class Tool {
     const y = Math.round((e.clientY - rect.top) * scaleY);
 
     return { x, y };
+  }
+
+  /** Сброс сглаживания давления в начале штриха (перо). */
+  resetPenPressureState() {
+    this._penPressureSmoothed = null;
+  }
+
+  /**
+   * Кривая давления в духе Procreate: тонкие штрихи при лёгком касании,
+   * плавный набор к полной толщине, сглаживание джиттера планшета.
+   * Только pointerType "pen"; мышь / touch / тачпад — без изменений.
+   */
+  getPressureAdjustedLineWidth(e) {
+    if (e.pointerType !== "pen") {
+      return this.lineWidth;
+    }
+    if (!capabilitiesState.penPressureAllowed) {
+      return this.lineWidth;
+    }
+    const p = e.pressure;
+    if (typeof p !== "number" || !Number.isFinite(p) || p <= 0) {
+      return Math.max(0.5, this.lineWidth * (this._penPressureSmoothed ?? 1));
+    }
+
+    const t = Math.min(1, Math.max(0, p));
+    // Ease-out: больше контроля в лёгкой зоне, как у стандартной кисти в Procreate
+    const curved = 1 - Math.pow(1 - t, 3.15);
+    const minRatio = 0.04;
+    let ratio = minRatio + (1 - minRatio) * curved;
+
+    const alpha = 0.38;
+    if (this._penPressureSmoothed == null) {
+      this._penPressureSmoothed = ratio;
+    } else {
+      this._penPressureSmoothed += alpha * (ratio - this._penPressureSmoothed);
+    }
+    ratio = this._penPressureSmoothed;
+
+    return Math.max(0.5, this.lineWidth * ratio);
   }
 
   isPinchingActive() {

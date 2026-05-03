@@ -14,6 +14,7 @@ const PersonalMessageStore = require('../services/PersonalMessageStore');
 const MailService = require('../services/MailService');
 const WebSocketHandler = require('../services/WebSocketHandler');
 const { sanitizeBroadcastSubject, sanitizeBroadcastBody } = require('../utils/security');
+const RoleCapabilitiesService = require('../services/RoleCapabilitiesService');
 
 const MAX_BROADCAST_RECIPIENTS = 2000;
 const MAX_BROADCAST_SELECTED = 500;
@@ -232,7 +233,7 @@ router.put('/users/:id', async (req, res) => {
     }
 
     if (role !== undefined) {
-      if (!['user', 'admin', 'superadmin'].includes(role)) {
+      if (!['user', 'premium', 'admin', 'superadmin'].includes(role)) {
         return res.status(400).json({ error: 'Invalid role' });
       }
       updates.role = role;
@@ -1143,6 +1144,28 @@ router.post('/broadcast', async (req, res) => {
     res.json({ ok: true, ...stats });
   } catch (error) {
     console.error('Admin broadcast error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/capabilities', async (req, res) => {
+  try {
+    const config = await RoleCapabilitiesService.getConfig();
+    res.json(RoleCapabilitiesService.getAdminPayload(config));
+  } catch (error) {
+    console.error('Admin capabilities get error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/capabilities', async (req, res) => {
+  try {
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const incoming = body.config && typeof body.config === 'object' ? body.config : body;
+    const saved = await RoleCapabilitiesService.saveConfig(incoming);
+    res.json(RoleCapabilitiesService.getAdminPayload(saved));
+  } catch (error) {
+    console.error('Admin capabilities put error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

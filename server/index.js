@@ -622,6 +622,16 @@ try {
       `);
     } catch (_) { }
 
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS app_config (
+          key VARCHAR(64) PRIMARY KEY,
+          value JSONB NOT NULL DEFAULT '{}',
+          updated_at BIGINT NOT NULL
+        );
+      `);
+    } catch (_) { }
+
     const bcrypt = require('bcrypt');
     const { hashPassword } = require('./utils/auth');
 
