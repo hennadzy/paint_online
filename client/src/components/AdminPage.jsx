@@ -221,6 +221,7 @@ const AdminPage = observer(() => {
   const [passwordFormError, setPasswordFormError] = useState('');
 
   const [coloringUploadTitle, setColoringUploadTitle] = useState('');
+  const [coloringUploadAlt, setColoringUploadAlt] = useState('');
   const [coloringUploadFile, setColoringUploadFile] = useState(null);
   const [coloringUploadError, setColoringUploadError] = useState('');
   const [coloringUploadLoading, setColoringUploadLoading] = useState(false);
@@ -230,6 +231,15 @@ const AdminPage = observer(() => {
   const [galleryRenameId, setGalleryRenameId] = useState(null);
   const [galleryRenameTitle, setGalleryRenameTitle] = useState('');
   const [galleryRenameError, setGalleryRenameError] = useState('');
+
+  const [galleryAltId, setGalleryAltId] = useState(null);
+  const [galleryAltValue, setGalleryAltValue] = useState('');
+  const [galleryAltError, setGalleryAltError] = useState('');
+
+  const [galleryAuthorId, setGalleryAuthorId] = useState(null);
+  const [galleryAuthorValue, setGalleryAuthorValue] = useState('');
+  const [galleryAuthorError, setGalleryAuthorError] = useState('');
+
   const [galleryRejectId, setGalleryRejectId] = useState(null);
   const [galleryRejectReason, setGalleryRejectReason] = useState('');
   const [galleryActionError, setGalleryActionError] = useState('');
@@ -1189,37 +1199,39 @@ const AdminPage = observer(() => {
   };
 
   const renderGameModes = () => {
-    const handleColoringUpload = async (e) => {
-      e.preventDefault();
-      setColoringUploadError('');
-      setColoringUploadSuccess('');
+  const handleColoringUpload = async (e) => {
+    e.preventDefault();
+    setColoringUploadError('');
+    setColoringUploadSuccess('');
 
-      if (!coloringUploadTitle.trim()) {
-        setColoringUploadError('Введите название раскраски');
-        return;
-      }
-      if (!coloringUploadFile) {
-        setColoringUploadError('Выберите изображение');
-        return;
-      }
+    if (!coloringUploadTitle.trim()) {
+      setColoringUploadError('Введите название раскраски');
+      return;
+    }
+    if (!coloringUploadFile) {
+      setColoringUploadError('Выберите изображение');
+      return;
+    }
 
-      setColoringUploadLoading(true);
-      const formData = new FormData();
-      formData.append('title', coloringUploadTitle.trim());
-      formData.append('image', coloringUploadFile);
+    setColoringUploadLoading(true);
+    const formData = new FormData();
+    formData.append('title', coloringUploadTitle.trim());
+    formData.append('alt', (coloringUploadAlt || coloringUploadTitle).trim().substring(0, 200));
+    formData.append('image', coloringUploadFile);
 
-      const result = await adminState.uploadColoringPage(formData);
-      setColoringUploadLoading(false);
+    const result = await adminState.uploadColoringPage(formData);
+    setColoringUploadLoading(false);
 
-      if (result.success) {
-        setColoringUploadTitle('');
-        setColoringUploadFile(null);
-        setColoringUploadSuccess('Раскраска успешно добавлена!');
-        setTimeout(() => setColoringUploadSuccess(''), 3000);
-      } else {
-        setColoringUploadError(result.error);
-      }
-    };
+    if (result.success) {
+      setColoringUploadTitle('');
+      setColoringUploadAlt('');
+      setColoringUploadFile(null);
+      setColoringUploadSuccess('Раскраска успешно добавлена!');
+      setTimeout(() => setColoringUploadSuccess(''), 3000);
+    } else {
+      setColoringUploadError(result.error);
+    }
+  };
 
     const handleToggleActive = async (page) => {
       await adminState.updateColoringPage(page.id, { isActive: !page.is_active });
@@ -1257,6 +1269,18 @@ const AdminPage = observer(() => {
                   maxLength={100}
                 />
               </div>
+
+              <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                <label>ALT для изображения</label>
+                <input
+                  type="text"
+                  value={coloringUploadAlt}
+                  onChange={(e) => setColoringUploadAlt(e.target.value)}
+                  placeholder="Например: Котик для раскрашивания"
+                  maxLength={200}
+                />
+              </div>
+
               <div className="admin-form__group" style={{ marginBottom: 0 }}>
                 <label>Изображение (PNG, JPG, WebP — до 15 МБ)</label>
                 <input
@@ -1304,9 +1328,9 @@ const AdminPage = observer(() => {
               {adminState.coloringPages.map(page => (
                 <div key={page.id} className="admin-coloring-item">
                   <div className="admin-coloring-item__preview">
-                    <img
+                        <img
                       src={`${window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com'}${page.thumbnail_url || page.image_url}`}
-                      alt={page.title}
+                      alt={page.alt || page.title}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   </div>
@@ -1357,6 +1381,38 @@ const AdminPage = observer(() => {
       setGalleryActionError('');
       const result = await adminState.approveGalleryDrawing(id);
       if (!result.success) setGalleryActionError(result.error);
+    };
+
+    const handleSaveGalleryAlt = async (id) => {
+      setGalleryAltError('');
+      const altToSave = (galleryAltValue || '').trim();
+      if (!altToSave) {
+        setGalleryAltError('Введите alt');
+        return;
+      }
+      const result = await adminState.updateGalleryAlt(id, altToSave);
+      if (result.success) {
+        setGalleryAltId(null);
+        setGalleryAltValue('');
+      } else {
+        setGalleryAltError(result.error);
+      }
+    };
+
+    const handleSaveGalleryAuthorName = async (id) => {
+      setGalleryAuthorError('');
+      const authorToSave = (galleryAuthorValue || '').trim();
+      if (!authorToSave) {
+        setGalleryAuthorError('Введите имя автора');
+        return;
+      }
+      const result = await adminState.updateGalleryAuthorName(id, authorToSave);
+      if (result.success) {
+        setGalleryAuthorId(null);
+        setGalleryAuthorValue('');
+      } else {
+        setGalleryAuthorError(result.error);
+      }
     };
 
     const handleReject = async () => {
@@ -1428,16 +1484,16 @@ const AdminPage = observer(() => {
               {adminState.galleryPending.map(drawing => (
                 <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
                   {/* Preview */}
-                  <div
-                    className="admin-coloring-item__preview admin-gallery-preview"
-                    style={{ cursor: 'pointer', flexShrink: 0 }}
-                    data-drawing-id={drawing.id}
-                    title="Нажмите для просмотра"
-                    onClick={(e) => handleOpenPreview(e, drawing.id)}
-                    onTouchEnd={(e) => handleOpenPreview(e, drawing.id)}
-                    onPointerUp={(e) => handleOpenPreview(e, drawing.id)}
-                  >
-                    <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
+                    <div
+                      className="admin-coloring-item__preview admin-gallery-preview"
+                      style={{ cursor: 'pointer', flexShrink: 0 }}
+                      data-drawing-id={drawing.id}
+                      title="Нажмите для просмотра"
+                      onClick={(e) => handleOpenPreview(e, drawing.id)}
+                      onTouchEnd={(e) => handleOpenPreview(e, drawing.id)}
+                      onPointerUp={(e) => handleOpenPreview(e, drawing.id)}
+                    >
+                      <AdminGalleryImage drawingId={drawing.id} alt={drawing.alt || drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
                       👁 Просмотр
                     </div>
@@ -1485,6 +1541,98 @@ const AdminPage = observer(() => {
                         {drawing.created_at ? new Date(Number(drawing.created_at)).toLocaleString('ru-RU') : ''}
                       </span>
                     </div>
+
+                    {/* ALT input */}
+                    {galleryAltId === drawing.id ? (
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={galleryAltValue}
+                          onChange={(e) => { setGalleryAltValue(e.target.value); setGalleryAltError(''); }}
+                          placeholder="Введите alt"
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ffd700',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '13px',
+                            outline: 'none',
+                            width: '260px'
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveGalleryAlt(drawing.id);
+                            if (e.key === 'Escape') { setGalleryAltId(null); setGalleryAltValue(''); setGalleryAltError(''); }
+                          }}
+                        />
+                        <button className="admin-btn admin-btn--primary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleSaveGalleryAlt(drawing.id)}>
+                          ✓
+                        </button>
+                        <button className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryAltId(null); setGalleryAltValue(''); setGalleryAltError(''); }}>
+                          ✕
+                        </button>
+                        {galleryAltError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryAltError}</span>}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Alt: {drawing.alt || drawing.title}</span>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--secondary"
+                          style={{ padding: '4px 10px', fontSize: '12px' }}
+                          onClick={() => { setGalleryAltId(drawing.id); setGalleryAltValue(drawing.alt || drawing.title); setGalleryAltError(''); }}
+                        >
+                          Редактировать alt
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Author signature input */}
+                    {galleryAuthorId === drawing.id ? (
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={galleryAuthorValue}
+                          onChange={(e) => { setGalleryAuthorValue(e.target.value); setGalleryAuthorError(''); }}
+                          placeholder="Имя автора"
+                          style={{
+                            background: '#1a1a2e',
+                            border: '1.5px solid #ffd700',
+                            borderRadius: '6px',
+                            color: '#fff',
+                            padding: '6px 10px',
+                            fontSize: '13px',
+                            outline: 'none',
+                            width: '260px'
+                          }}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveGalleryAuthorName(drawing.id);
+                            if (e.key === 'Escape') { setGalleryAuthorId(null); setGalleryAuthorValue(''); setGalleryAuthorError(''); }
+                          }}
+                        />
+                        <button className="admin-btn admin-btn--primary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleSaveGalleryAuthorName(drawing.id)}>
+                          ✓
+                        </button>
+                        <button className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryAuthorId(null); setGalleryAuthorValue(''); setGalleryAuthorError(''); }}>
+                          ✕
+                        </button>
+                        {galleryAuthorError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryAuthorError}</span>}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#666' }}>Автор: {drawing.author_name || drawing.author_name}</span>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--secondary"
+                          style={{ padding: '4px 10px', fontSize: '12px' }}
+                          onClick={() => { setGalleryAuthorId(drawing.id); setGalleryAuthorValue(drawing.author_name || ''); setGalleryAuthorError(''); }}
+                        >
+                          Редактировать автора
+                        </button>
+                      </div>
+                    )}
 
                     {/* Reject reason input */}
                     {galleryRejectId === drawing.id && (

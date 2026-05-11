@@ -577,6 +577,46 @@ class AdminState {
     }
   }
 
+  async updateGalleryAlt(id, alt) {
+    try {
+      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/alt`, { alt });
+      const newAlt = response.data.drawing?.alt ?? alt;
+
+      runInAction(() => {
+        const apply = (arr) => arr.map(d => (d.id === id ? { ...d, alt: newAlt } : d));
+        this.galleryPending = apply(this.galleryPending);
+        this.galleryApproved = apply(this.galleryApproved);
+      });
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка обновления alt'
+      };
+    }
+  }
+
+  async updateGalleryAuthorName(id, authorName) {
+    try {
+      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/author-name`, { authorName });
+      const newAuthorName = response.data.drawing?.author_name ?? authorName;
+
+      runInAction(() => {
+        const apply = (arr) => arr.map(d => (d.id === id ? { ...d, author_name: newAuthorName } : d));
+        this.galleryPending = apply(this.galleryPending);
+        this.galleryApproved = apply(this.galleryApproved);
+      });
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка обновления имени автора'
+      };
+    }
+  }
+
   async deleteGalleryDrawing(id) {
     try {
       await axios.delete(`${API_URL}/api/admin/gallery/${id}`);

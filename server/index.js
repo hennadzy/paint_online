@@ -518,7 +518,7 @@ async function initDb() {
       `);
     } catch (_) { }
 
-try {
+    try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS gallery_drawings (
           id SERIAL PRIMARY KEY,
@@ -528,7 +528,9 @@ try {
           status VARCHAR(20) DEFAULT 'pending',
           likes_count INTEGER DEFAULT 0,
           created_at BIGINT NOT NULL,
-          approved_at BIGINT
+          approved_at BIGINT,
+          alt TEXT,
+          author_name TEXT
         );
         CREATE TABLE IF NOT EXISTS gallery_likes (
           user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -569,6 +571,18 @@ try {
 
     try {
       await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS image_data TEXT`);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS alt TEXT`);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE gallery_drawings ADD COLUMN IF NOT EXISTS alt TEXT`);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE gallery_drawings ADD COLUMN IF NOT EXISTS author_name TEXT`);
     } catch (_) { }
 
     try {

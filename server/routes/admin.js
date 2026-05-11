@@ -657,7 +657,8 @@ router.get('/game-modes/coloring', async (req, res) => {
 
 router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, alt } = req.body;
+
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Название обязательно' });
     }
@@ -676,10 +677,11 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
     const imageData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
 
+    const finalAlt = (alt && typeof alt === 'string' ? alt.trim() : '').substring(0, 200);
     const insertResult = await pgPool.query(
-      `INSERT INTO coloring_pages (title, image_url, thumbnail_url, image_data, created_at, is_active)
-       VALUES ($1, '', '', $2, $3, true) RETURNING id`,
-      [title.trim().substring(0, 100), imageData, Date.now()]
+      `INSERT INTO coloring_pages (title, alt, image_url, thumbnail_url, image_data, created_at, is_active)
+       VALUES ($1, $2, '', '', $3, $4, true) RETURNING id`,
+      [title.trim().substring(0, 100), finalAlt || null, imageData, Date.now()]
     );
 
     const id = insertResult.rows[0].id;
@@ -700,7 +702,7 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
 router.put('/game-modes/coloring/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { title, isActive } = req.body;
+    const { title, isActive, alt } = req.body;
 
     const setClauses = [];
     const values = [];
@@ -713,6 +715,11 @@ router.put('/game-modes/coloring/:id', async (req, res) => {
     if (isActive !== undefined) {
       setClauses.push(`is_active = $${idx++}`);
       values.push(Boolean(isActive));
+    }
+    if (alt !== undefined) {
+      const finalAlt = (alt && typeof alt === 'string' ? alt.trim() : '').substring(0, 200);
+      setClauses.push(`alt = $${idx++}`);
+      values.push(finalAlt || null);
     }
 
     if (setClauses.length === 0) {
@@ -778,7 +785,8 @@ router.get('/gallery/pending', async (req, res) => {
          gd.status,
          gd.likes_count,
          gd.created_at,
-         u.username AS author_name,
+         gd.alt,
+         COALESCE(gd.author_name, u.username) AS author_name,
          u.id AS author_id
        FROM gallery_drawings gd
        JOIN users u ON u.id = gd.user_id
@@ -802,7 +810,8 @@ router.get('/gallery/approved', async (req, res) => {
          gd.likes_count,
          gd.created_at,
          gd.approved_at,
-         u.username AS author_name,
+         gd.alt,
+         COALESCE(gd.author_name, u.username) AS author_name,
          u.id AS author_id
        FROM gallery_drawings gd
        JOIN users u ON u.id = gd.user_id
@@ -976,6 +985,62 @@ router.put('/gallery/:id/rename', async (req, res) => {
     res.json({ message: 'Название обновлено', drawing: result.rows[0] });
   } catch (error) {
     console.error('Admin rename gallery error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/gallery/:id/alt', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const { alt } = req.body;
+    const finalAlt = (alt && typeof alt === 'string' ? alt.trim() : '').substring(0, 200);
+
+    const result = await pgPool.query(
+      `UPDATE gallery_drawings SET alt = $1 WHERE id = $2 RETURNING id, alt`,
+      [finalAlt || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    res.json({ message: 'Alt обновлён', drawing: result.rows[0] });
+  } catch (error) {
+    console.error('Admin update gallery alt error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/gallery/:id/author-name', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const { authorName } = req.body;
+    if (authorName !== undefined && (typeof authorName !== 'string' || authorName.trim().length === 0)) {
+      return res.status(400).json({ error: 'Введите имя автора' });
+    }
+
+    const finalAuthorName = (authorName && typeof authorName === 'string' ? authorName.trim() : '').substring(0, 50);
+
+    const result = await pgPool.query(
+      `UPDATE gallery_drawings SET author_name = $1 WHERE id = $2 RETURNING id, author_name`,
+      [finalAuthorName || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден' });
+    }
+
+    res.json({ message: 'Имя автора обновлено', drawing: result.rows[0] });
+  } catch (error) {
+    console.error('Admin update gallery author-name error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
