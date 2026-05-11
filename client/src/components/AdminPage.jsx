@@ -1777,7 +1777,7 @@ const AdminPage = observer(() => {
                     onTouchEnd={(e) => handleOpenPreview(e, drawing.id)}
                     onPointerUp={(e) => handleOpenPreview(e, drawing.id)}
                   >
-                    <AdminGalleryImage drawingId={drawing.id} alt={drawing.title} />
+                    <AdminGalleryImage drawingId={drawing.id} alt={drawing.alt || drawing.title} />
                     <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', marginTop: '4px' }}>
                       👁 Просмотр
                     </div>
@@ -1807,10 +1807,20 @@ const AdminPage = observer(() => {
                             if (e.key === 'Escape') { setGalleryRenameId(null); setGalleryRenameTitle(''); }
                           }}
                         />
-                        <button type="button" className="admin-btn admin-btn--primary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleRename(drawing.id)}>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--primary"
+                          style={{ padding: '6px 12px', fontSize: '13px' }}
+                          onClick={() => handleRename(drawing.id)}
+                        >
                           ✓
                         </button>
-                        <button type="button" className="admin-btn admin-btn--secondary" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => { setGalleryRenameId(null); setGalleryRenameTitle(''); setGalleryRenameError(''); }}>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--secondary"
+                          style={{ padding: '6px 12px', fontSize: '13px' }}
+                          onClick={() => { setGalleryRenameId(null); setGalleryRenameTitle(''); setGalleryRenameError(''); }}
+                        >
                           ✕
                         </button>
                         {galleryRenameError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryRenameError}</span>}
@@ -1818,6 +1828,7 @@ const AdminPage = observer(() => {
                     ) : (
                       <div className="admin-coloring-item__title">{drawing.title}</div>
                     )}
+
                     <div className="admin-coloring-item__meta" style={{ marginTop: '4px' }}>
                       <span style={{ fontSize: '13px', color: '#aaa' }}>✏️ {drawing.author_name}</span>
                       <span style={{ fontSize: '12px', color: '#888', marginLeft: '10px' }}>
@@ -1827,6 +1838,118 @@ const AdminPage = observer(() => {
                         Опубликовано:{' '}
                         {drawing.approved_at ? new Date(Number(drawing.approved_at)).toLocaleString('ru-RU') : '—'}
                       </span>
+
+                      {/* ALT editor (approved) */}
+                      {galleryAltId === drawing.id ? (
+                        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            value={galleryAltValue}
+                            onChange={(e) => { setGalleryAltValue(e.target.value); setGalleryAltError(''); }}
+                            placeholder="Введите alt"
+                            style={{
+                              background: '#1a1a2e',
+                              border: '1.5px solid #ffd700',
+                              borderRadius: '6px',
+                              color: '#fff',
+                              padding: '6px 10px',
+                              fontSize: '13px',
+                              outline: 'none',
+                              width: '260px'
+                            }}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveGalleryAlt(drawing.id);
+                              if (e.key === 'Escape') { setGalleryAltId(null); setGalleryAltValue(''); setGalleryAltError(''); }
+                            }}
+                          />
+                          <button
+                            className="admin-btn admin-btn--primary"
+                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                            type="button"
+                            onClick={() => handleSaveGalleryAlt(drawing.id)}
+                          >
+                            ✓
+                          </button>
+                          <button
+                            className="admin-btn admin-btn--secondary"
+                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                            type="button"
+                            onClick={() => { setGalleryAltId(null); setGalleryAltValue(''); setGalleryAltError(''); }}
+                          >
+                            ✕
+                          </button>
+                          {galleryAltError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryAltError}</span>}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#666' }}>Alt: {drawing.alt || drawing.title}</span>
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            style={{ padding: '4px 10px', fontSize: '12px' }}
+                            onClick={() => { setGalleryAltId(drawing.id); setGalleryAltValue(drawing.alt || drawing.title); setGalleryAltError(''); }}
+                          >
+                            Редактировать alt
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Author name editor (approved) */}
+                      {galleryAuthorId === drawing.id ? (
+                        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            value={galleryAuthorValue}
+                            onChange={(e) => { setGalleryAuthorValue(e.target.value); setGalleryAuthorError(''); }}
+                            placeholder="Имя автора"
+                            style={{
+                              background: '#1a1a2e',
+                              border: '1.5px solid #ffd700',
+                              borderRadius: '6px',
+                              color: '#fff',
+                              padding: '6px 10px',
+                              fontSize: '13px',
+                              outline: 'none',
+                              width: '260px'
+                            }}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveGalleryAuthorName(drawing.id);
+                              if (e.key === 'Escape') { setGalleryAuthorId(null); setGalleryAuthorValue(''); setGalleryAuthorError(''); }
+                            }}
+                          />
+                          <button
+                            className="admin-btn admin-btn--primary"
+                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                            type="button"
+                            onClick={() => handleSaveGalleryAuthorName(drawing.id)}
+                          >
+                            ✓
+                          </button>
+                          <button
+                            className="admin-btn admin-btn--secondary"
+                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                            type="button"
+                            onClick={() => { setGalleryAuthorId(null); setGalleryAuthorValue(''); setGalleryAuthorError(''); }}
+                          >
+                            ✕
+                          </button>
+                          {galleryAuthorError && <span style={{ color: '#ff6b6b', fontSize: '12px' }}>{galleryAuthorError}</span>}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#666' }}>Автор: {drawing.author_name}</span>
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            style={{ padding: '4px 10px', fontSize: '12px' }}
+                            onClick={() => { setGalleryAuthorId(drawing.id); setGalleryAuthorValue(drawing.author_name || ''); setGalleryAuthorError(''); }}
+                          >
+                            Редактировать автора
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {galleryRejectId === drawing.id && (
