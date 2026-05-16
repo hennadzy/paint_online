@@ -2,9 +2,13 @@ User-agent: *
 Allow: /
 Allow: /coloring
 Allow: /gallery
+Allow: /gallery/
 Disallow: /static/
 Disallow: /*.json$
 Disallow: /api/
+Disallow: /*?page=
+Disallow: /gallery?page=
+Disallow: /coloring?page=
 Disallow: /login
 Disallow: /register
 Disallow: /profile

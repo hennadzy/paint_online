@@ -542,6 +542,23 @@ const GalleryPage = observer(() => {
           </div>
         )}
 
+        {!loading && !error && drawings.length > 0 && (
+          <section className="gallery-auth-hint-top" aria-label="Правила участия в галерее">
+            <div className="gallery-auth-hint-top__text">
+              <strong>Добавлять рисунки в галерею</strong>, оставлять комментарии и ставить оценки могут только авторизованные пользователи.
+            </div>
+            {!userState.isAuthenticated && (
+              <button
+                type="button"
+                className="gallery-auth-hint-top__btn"
+                onClick={() => navigate('/register')}
+              >
+                Зарегистрироваться
+              </button>
+            )}
+          </section>
+        )}
+
         {!loading && error && (
           <div className="gallery-error">
             <p>{error}</p>
@@ -570,11 +587,11 @@ const GalleryPage = observer(() => {
           </div>
         )}
 
-{!loading && !error && drawings.length > 0 && (
+        {!loading && !error && drawings.length > 0 && (
           <div className="gallery-feed">
             {drawings.map(drawing => (
-              <div 
-                key={drawing.id} 
+              <div
+                key={drawing.id}
                 className="gallery-card"
                 onClick={() => handleImageClick(drawing)}
               >
@@ -602,7 +619,7 @@ const GalleryPage = observer(() => {
                   <p className="gallery-card__author">✏️ {drawing.author_name}</p>
                   <p className="gallery-card__date">{formatDate(drawing.approved_at || drawing.created_at)}</p>
                   <div className="gallery-card__footer">
-<button
+                    <button
                       className="gallery-comments-btn"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -614,9 +631,18 @@ const GalleryPage = observer(() => {
                     </button>
                     <button
                       className={`gallery-like-btn ${drawing.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); userState.isAuthenticated && handleLike(drawing.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        userState.isAuthenticated && handleLike(drawing.id);
+                      }}
                       disabled={likingId === drawing.id || !userState.isAuthenticated}
-                      title={userState.isAuthenticated ? (drawing.user_liked ? 'Убрать лайк' : 'Поставить лайк') : 'Войдите, чтобы ставить лайки'}
+                      title={
+                        userState.isAuthenticated
+                          ? drawing.user_liked
+                            ? 'Убрать лайк'
+                            : 'Поставить лайк'
+                          : 'Войдите, чтобы ставить лайки'
+                      }
                     >
                       <HeartIcon filled={drawing.user_liked} />
                       <span className="gallery-like-count">{drawing.likes_count}</span>
@@ -626,6 +652,25 @@ const GalleryPage = observer(() => {
               </div>
             ))}
           </div>
+        )}
+
+        {!loading && !error && drawings.length > 0 && (
+          <section className="gallery-seo-bottom" aria-label="Информация о галерее">
+            <div className="gallery-seo-bottom__text">
+              <p>
+                На этой странице собрана <strong>галерея рисунков пользователей</strong> проекта «Рисование.Онлайн».
+                Здесь можно <strong>добавлять рисунок</strong>, знакомиться с работами других авторов и участвовать в обсуждениях.
+              </p>
+              <p>
+                Открывайте понравившиеся изображения, оставляйте <strong>комментарии к рисункам</strong> и ставьте
+                оценки — так сообщество помогает авторам получать обратную связь и вдохновение.
+              </p>
+              <p>
+                Хотите поделиться своим творчеством? Войдите в аккаунт и начните участвовать в галерее: публикуйте работы,
+                комментируйте и поддерживайте участников лайками.
+              </p>
+            </div>
+          </section>
         )}
       </main>
     </div>

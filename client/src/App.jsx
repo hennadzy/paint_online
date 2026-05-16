@@ -19,6 +19,7 @@ import GalleryPage from "./components/GalleryPage";
 import RoomInterface from "./components/RoomInterface";
 import PersonalMessagesModal from "./components/PersonalMessagesModal";
 import SeoMeta, { SeoProvider } from "./components/SeoMeta";
+import HelpPage from "./components/HelpPage";
 import { Routes, Route, useLocation, useParams, useNavigate, Navigate } from 'react-router-dom';
 import canvasState from "./store/canvasState";
 import capabilitiesState from "./store/capabilitiesState";
@@ -42,7 +43,7 @@ const App = observer(() => {
         capabilitiesState.fetch();
     }, []);
 
-    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring'].includes(location.pathname)
+    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring', '/help'].includes(location.pathname)
       || location.pathname === '/gallery'
       || location.pathname.startsWith('/gallery/');
 
@@ -56,6 +57,7 @@ const App = observer(() => {
     const isAdminPage = location.pathname === '/admin';
     const isColoringPage = location.pathname === '/coloring';
     const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
+    const isHelpPage = location.pathname === '/help';
 
 return (
         <SeoProvider>
@@ -64,7 +66,7 @@ return (
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
                 <Routes>
                     <Route path='/' element={<Canvas />} />
                     <Route path='/login' element={<AuthPage />} />
@@ -75,6 +77,7 @@ return (
                     <Route path='/coloring' element={<ColoringPage />} />
                     <Route path='/gallery' element={<GalleryPage />} />
                     <Route path='/gallery/:id' element={<GalleryPage />} />
+                    <Route path='/help' element={<HelpPage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>

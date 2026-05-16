@@ -27,13 +27,20 @@ const SEO_DATA = {
     description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
     keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам',
     canonical: 'https://risovanie.online/gallery'
+  },
+  '/help': {
+    title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
+    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
+    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы',
+    canonical: 'https://risovanie.online/help'
   }
 };
 
 const OG_IMAGES = {
   '/': 'https://risovanie.online/static/og-main.png',
   '/coloring': 'https://risovanie.online/static/og-coloring.png',
-  '/gallery': 'https://risovanie.online/static/og-gallery.png'
+  '/gallery': 'https://risovanie.online/static/og-gallery.png',
+  '/help': 'https://risovanie.online/static/og-help.png'
 };
 
 export function SeoProvider({ children }) {
@@ -122,6 +129,19 @@ export function SeoMeta() {
       ld.textContent = JSON.stringify({
         "@context": "https://schema.org",
         "@type": "ImageGallery",
+        "name": finalData.title,
+        "description": finalData.description,
+        "url": finalData.canonical,
+        "inLanguage": "ru"
+      });
+      document.head.appendChild(ld);
+    } else if (path === '/help') {
+      const ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.setAttribute('data-page', 'help');
+      ld.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
         "name": finalData.title,
         "description": finalData.description,
         "url": finalData.canonical,

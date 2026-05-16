@@ -231,7 +231,8 @@ const handleActionClick = useCallback((action, buttonId) => {
    } catch (error) {
      console.error('Error saving helpViewed to localStorage:', error);
    }
- }, []);
+   navigate('/help');
+ }, [navigate]);
 
 const performExport = () => {
  const canvas = canvasState.canvas;
@@ -330,7 +331,7 @@ const performExport = () => {
             className={`toolbar__btn ${clickAnimation === "help" ? "click-animation" : ""} ${!helpViewed ? "help-blinking" : ""}`}
             onClick={() => {
               handleHelpClick();
-              handleActionClick(() => canvasState.setShowAboutModal(true), "help");
+              handleActionClick(() => {}, "help");
             }}
             onMouseDown={(e) => e.target.blur()}
             title="Справка"
