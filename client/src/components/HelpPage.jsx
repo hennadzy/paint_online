@@ -207,6 +207,9 @@ const HelpPage = () => {
               📧 <a href="mailto:admin@risovanie.online">admin@risovanie.online</a>
             </p>
             <p>
+              Вернуться на <a href="/">главную страницу</a> — начать рисовать онлайн без регистрации.
+            </p>
+            <p>
               Спасибо за понимание! ❤️
             </p>
           </div>
