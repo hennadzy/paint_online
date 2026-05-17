@@ -118,6 +118,12 @@ app.use('/api', (req, res, next) => {
 
 app.use(express.json({ limit: '5mb' }));
 
+// Жёстко обслуживаем /help в SPA: любые варианты /help... отдаем index.html
+app.get(/^\/help(\/.*)?$/, (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  return res.sendFile(indexPath);
+});
+
 function send404Page(res) {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   const fallback = '<div id="server-404-fallback" style="text-align:center;padding:2rem 1rem;font-family:sans-serif;max-width:400px;margin:0 auto;"><p style="margin:0 0 1rem;">Страница не найдена.</p><a href="/" style="color:#0066cc;">На главную</a></div>';
