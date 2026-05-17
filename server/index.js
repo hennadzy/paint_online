@@ -396,6 +396,11 @@ app.get('*', (req, res) => {
   const normalizedPath = pathname.replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
+  // гарантируем доступность страницы справки даже если middleware/normalize дали неожиданный путь
+  if (normalizedPath === '/help') {
+    return res.sendFile(indexPath);
+  }
+
   if (CLIENT_ROUTES.includes(normalizedPath)) {
     return res.sendFile(indexPath);
   }
