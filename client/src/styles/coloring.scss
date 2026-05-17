@@ -443,7 +443,8 @@
   }
 
   .coloring-actions {
-    bottom: 60px;
+    /* palette снизу фиксирована, чтобы кнопки не налезали на область выбора цвета */
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
   .coloring-workspace {
