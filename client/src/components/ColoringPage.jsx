@@ -453,13 +453,19 @@ const ColoringPage = () => {
           <section className="coloring-seo-bottom" aria-label="Раскраски — описание">
             <div className="coloring-seo-bottom__text">
               <p>
-                Раскраски на <strong>Рисование.Онлайн</strong> — это простой способ
-                <strong> раскрашивать онлайн бесплатно</strong> прямо в браузере. Подберите рисунок
-                по настроению и начните творить без установки программ.
+                Раскраски на Рисование.Онлайн — это простой и удобный способ провести время с пользой: выбрать рисунок по
+                настроению, раскрасить его прямо в браузере и получить готовую картинку без лишних шагов.
+                Интерфейс помогает быстро разобраться, даже если вы впервые пробуете раскрашивать онлайн.
               </p>
               <p>
-                Тематика разнообразная: животные, сказки, сезонные картинки. Процесс удобен на
-                компьютере и телефоне — выбирайте раскраску и раскрашивайте.
+                Здесь собраны раскраски разных тем: животные, сказки, сезонные сюжеты и многое другое. Можно
+                раскрашивать с ребёнком или взрослому — в любом случае получится ярко и приятно.
+                Если вы любите быстрые занятия, делайте по одному рисунку за раз. Если хочется заняться глубже —
+                сохраняйте понравившиеся варианты и возвращайтесь к темам снова.
+              </p>
+              <p>
+                Рисовать можно на компьютере и на мобильных устройствах. Поддерживается удобный просмотр, а цвета
+                переключаются легко, чтобы процесс был комфортным и не отвлекал от творчества.
               </p>
             </div>
           </section>
@@ -538,54 +544,7 @@ const ColoringPage = () => {
         </button>
       </div>
 
-      {/* Color Palette */}
-      <div className="coloring-palette">
-        <div className="coloring-palette__inner">
-          <div className="coloring-palette__swatches">
-            {PRESET_COLORS.map((color) => (
-              <button
-                key={color}
-                className={`coloring-swatch ${selectedColor === color ? 'coloring-swatch--selected' : ''}`}
-                style={{ backgroundColor: color }}
-                onClick={() => setSelectedColor(color)}
-                title={color}
-                aria-label={`Цвет ${color}`}
-              />
-            ))}
-          </div>
 
-          <div className="coloring-palette__custom">
-            <div
-              className="coloring-selected-preview"
-              style={{ backgroundColor: selectedColor }}
-              title={`Выбранный цвет: ${selectedColor}`}
-            />
-            <label className="coloring-custom-label" title="Выбрать любой цвет">
-              <span>Другой цвет</span>
-              <input
-                type="color"
-                value={selectedColor}
-                onChange={(e) => setSelectedColor(e.target.value)}
-                className="coloring-custom-input"
-              />
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <section className="coloring-seo-bottom coloring-seo-bottom--after" aria-label="Описание раскраски">
-        <div className="coloring-seo-bottom__text">
-          <p>
-            Раскраска <strong>{selectedPage.title}</strong> на <strong>Рисование.Онлайн</strong> —
-            это возможность <strong>раскрашивать онлайн</strong> в удобном формате. Ставьте
-            цвета аккуратно, создавайте красивый результат и сохраняйте изображение себе.
-          </p>
-          <p>
-            Процесс не требует установки программ: раскрашивать можно в браузере на ПК и мобильных
-            устройствах. Выбирайте тему и наслаждайтесь творчеством.
-          </p>
-        </div>
-      </section>
 
       {/* Save Modal */}
       {showSaveModal && (

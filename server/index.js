@@ -248,6 +248,11 @@ const SEO_PAGES = {
     title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
     description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
     keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам'
+  },
+  '/help': {
+    title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
+    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
+    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы'
   }
 };
 
@@ -280,6 +285,23 @@ app.get('/gallery', (req, res) => {
     .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
     .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
     .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/gallery"`);
+  
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/help', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  
+  const seo = SEO_PAGES['/help'];
+  html = html
+    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
+    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/help"`);
   
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
@@ -358,7 +380,7 @@ app.get('/gallery/:id', async (req, res) => {
   res.send(html);
 });
 
-const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery'];
+const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery', '/help'];
 
 CLIENT_ROUTES.forEach(route => {
   if (route !== '/*') {

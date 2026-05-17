@@ -105,6 +105,37 @@
  }
 }
 
+.coloring-seo-bottom {
+ width: 100%;
+ max-width: 780px;
+ margin: 44px auto 0;
+ padding: 16px 14px 6px;
+ color: #9a9a9a;
+ font-size: 14px;
+ line-height: 1.7;
+ text-align: justify;
+
+ &__text {
+   color: inherit;
+ }
+
+ p {
+   margin: 0 0 12px;
+ }
+
+ p:last-child {
+   margin-bottom: 0;
+ }
+}
+
+@media (max-width: 600px) {
+  .coloring-seo-bottom {
+    margin-top: 32px;
+    padding: 14px 12px 6px;
+    font-size: 13.5px;
+  }
+}
+
 .coloring-pages-list {
  width:100%;
  max-width:640px;
