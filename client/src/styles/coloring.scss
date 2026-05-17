@@ -40,16 +40,10 @@
   &--active {
     height: 100%;
     overflow: hidden;
-    
-    // When active, palette and actions are fixed at bottom
-    .coloring-workspace {
-      flex: 1;
-      min-height: 0;
-      padding-bottom: 0;
-    }
+    position: relative;
   }
 }
-
+    
 .coloring-selector {
   flex: 1;
   overflow-y: auto;
@@ -118,45 +112,27 @@
  }
 }
 
-
-
-.coloring-selector {
- flex:1;
- overflow-y: auto;
- padding:24px 20px;
- display: flex;
- flex-direction: column;
- align-items: center;
-
- &__hint {
- color: #aaa;
- font-size:15px;
- margin-bottom:20px;
- text-align: center;
- }
-}
-
 .coloring-seo-bottom {
- width: 100%;
- max-width: 780px;
- margin: 44px auto 0;
- padding: 16px 14px 6px;
- color: #9a9a9a;
- font-size: 14px;
- line-height: 1.7;
- text-align: justify;
+  width: 100%;
+  max-width: 780px;
+  margin: 44px auto 0;
+  padding: 16px 14px 6px;
+  color: #9a9a9a;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: justify;
 
- &__text {
-   color: inherit;
- }
+  &__text {
+    color: inherit;
+  }
 
- p {
-   margin: 0 0 12px;
- }
+  p {
+    margin: 0 0 12px;
+  }
 
- p:last-child {
-   margin-bottom: 0;
- }
+  p:last-child {
+    margin-bottom: 0;
+  }
 }
 
 @media (max-width: 600px) {
@@ -451,6 +427,28 @@
   background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
   border-top: 2px solid #ffcc00;
   padding: 10px 16px 12px;
+}
+
+.coloring-page--active {
+  .coloring-palette,
+  .coloring-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
+
+  .coloring-palette {
+    bottom: 0;
+  }
+
+  .coloring-actions {
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .coloring-workspace {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .coloring-palette__inner {
