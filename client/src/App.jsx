@@ -78,6 +78,8 @@ return (
                     <Route path='/gallery' element={<GalleryPage />} />
                     <Route path='/gallery/:id' element={<GalleryPage />} />
                     <Route path='/help' element={<HelpPage />} />
+                    <Route path='/help/' element={<HelpPage />} />
+                    <Route path='/help/*' element={<HelpPage />} />
                     <Route path='/:id' element={<RoomRoute />} />
                     <Route path='*' element={<Navigate to="/404" replace />} />
                 </Routes>
