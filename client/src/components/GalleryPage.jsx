@@ -555,7 +555,7 @@ const GalleryPage = observer(() => {
                     className="gallery-auth-hint-top__link"
                   >
                     авторизованные
-                  </a>{' '}
+                  </a>
                 </>
               )}{' '}
               пользователи.

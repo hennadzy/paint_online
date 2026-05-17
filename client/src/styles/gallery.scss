@@ -916,7 +916,6 @@
     color: #cfcfcf;
     font-size: 14px;
     line-height: 1.45;
-    max-width: 720px;
     text-align: justify;
     width: 100%;
 
@@ -927,14 +926,9 @@
   }
 
   &__link {
-    background: none;
-    border: none;
     color: #ffcc00;
-    font-size: 14px;
     font-weight: 700;
     text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
     transition: all 0.2s;
 
     &:hover {

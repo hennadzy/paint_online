@@ -43,9 +43,11 @@ const App = observer(() => {
         capabilitiesState.fetch();
     }, []);
 
-    const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/coloring', '/help'].includes(location.pathname)
+  const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/help'].includes(location.pathname)
       || location.pathname === '/gallery'
-      || location.pathname.startsWith('/gallery/');
+      || location.pathname.startsWith('/gallery/')
+      || location.pathname === '/coloring'
+      || location.pathname.startsWith('/coloring');
 
   usePersonalMessages();
   useRoomValidation(location.pathname, navigate);
