@@ -290,6 +290,23 @@ app.get('/gallery', (req, res) => {
   res.send(html);
 });
 
+app.get('/help', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  const seo = SEO_PAGES['/help'];
+  html = html
+    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
+    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/help"`);
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 app.get('/gallery/:id', async (req, res) => {
   const drawingId = parseInt(req.params.id, 10);
   if (!Number.isFinite(drawingId) || drawingId <= 0) {

@@ -547,13 +547,13 @@ const GalleryPage = observer(() => {
             <div className="gallery-auth-hint-top__text">
               Добавлять рисунки в галерею, оставлять комментарии и ставить оценки могут только{' '}
               {!userState.isAuthenticated ? (
-                <button
-                  type="button"
-                  className="gallery-auth-hint-top__link"
-                  onClick={() => navigate('/register')}
-                >
-                  авторизованные
-                </button>
+                  <button
+                    type="button"
+                    className="gallery-auth-hint-top__link"
+                    onClick={() => navigate('/login')}
+                  >
+                    авторизованные
+                  </button>
               ) : (
                 'авторизованные'
               )}{' '}
