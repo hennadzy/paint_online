@@ -380,7 +380,7 @@ app.get('/gallery/:id', async (req, res) => {
   res.send(html);
 });
 
-const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery', '/help'];
+const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery'];
 
 CLIENT_ROUTES.forEach(route => {
   if (route !== '/*') {

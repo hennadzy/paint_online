@@ -12,7 +12,6 @@ const getAdminApiBase = () => (window.location.hostname === 'localhost'
   : 'https://paint-online-back.onrender.com');
 const adminGalleryImageCache = new Map();
 
-/** Admin gallery images require Authorization; a plain img URL cannot send the Bearer token. */
 function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, onImageClick }) {
   const [src, setSrc] = useState(() => adminGalleryImageCache.get(String(drawingId)) || null);
   const [failed, setFailed] = useState(false);
