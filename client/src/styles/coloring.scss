@@ -458,6 +458,25 @@
   }
 }
 
+@media (max-width: 600px) {
+  .coloring-page--active {
+    /* Mobile: хотим порядок как в JSX — сначала actions под холстом, затем palette.
+       Убираем fixed, чтобы не было серой полосы сверху и налезаний. */
+    .coloring-actions,
+    .coloring-palette {
+      position: static;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      z-index: auto;
+    }
+
+    .coloring-workspace {
+      padding-bottom: 0;
+    }
+  }
+}
+
 .coloring-palette__inner {
  display: flex;
  align-items: center;
