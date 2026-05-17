@@ -118,10 +118,17 @@ app.use('/api', (req, res, next) => {
 
 app.use(express.json({ limit: '5mb' }));
 
-// Жёстко обслуживаем /help в SPA: любые варианты /help... отдаем index.html
-app.get(/^\/help(\/.*)?$/, (req, res) => {
+/*
+  Жёстко обслуживаем /help в SPA: любые варианты /help... отдаем index.html
+  (независимо от статик/последующих роутов) — нужен 200 без 404.
+*/
+app.get(/^\/help(?:\/.*)?$/, (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  return res.sendFile(indexPath);
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.status(500).send('Internal Server Error');
+    }
+  });
 });
 
 function send404Page(res) {
