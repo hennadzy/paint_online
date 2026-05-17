@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { API_URL } from '../store/canvasState';
+
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
+  : 'https://paint-online-back.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
