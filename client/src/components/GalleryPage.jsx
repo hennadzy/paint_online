@@ -553,10 +553,6 @@ const GalleryPage = observer(() => {
                   <a
                     href="/login"
                     className="gallery-auth-hint-top__link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate('/login');
-                    }}
                   >
                     авторизованные
                   </a>{' '}
