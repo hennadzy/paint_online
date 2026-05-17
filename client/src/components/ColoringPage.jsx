@@ -483,7 +483,7 @@ const ColoringPage = () => {
                 Наша библиотека постоянно пополняется новыми изображениями, поэтому вы всегда найдёте что-то свежее.
                 Добавляйте любимые раскраски в закладки, возвращайтесь к ним позже и делитесь результатами с друзьями.
                 Рисование.Онлайн делает творчество доступным для каждого — просто откройте браузер и начните создавать
-                свои шедевры уже сегодня, без регистрации и сложных настроек. Посетите <a href="/">главную страницу</a>
+                свои шедевры уже сегодня, без регистрации и сложных настроек. Посетите <a href="/">главную страницу</a> 
                 для совместного рисования или загляните в <a href="/gallery">галерею</a>, чтобы увидеть работы других.
               </p>
             </div>
@@ -521,6 +521,40 @@ const ColoringPage = () => {
               transformOrigin: 'center center',
             }}
           />
+        </div>
+      </div>
+
+      {/* Color Palette */}
+      <div className="coloring-palette">
+        <div className="coloring-palette__inner">
+          <div className="coloring-palette__swatches">
+            {PRESET_COLORS.map((color) => (
+              <button
+                key={color}
+                className={`coloring-swatch ${selectedColor === color ? 'coloring-swatch--selected' : ''}`}
+                style={{ backgroundColor: color }}
+                onClick={() => setSelectedColor(color)}
+                title={color}
+                aria-label={`Выбрать цвет ${color}`}
+              />
+            ))}
+          </div>
+          <div className="coloring-palette__custom">
+            <div
+              className="coloring-selected-preview"
+              style={{ backgroundColor: selectedColor }}
+            />
+            <label className="coloring-custom-label">
+              <span>Цвет:</span>
+              <input
+                type="color"
+                className="coloring-custom-input"
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+                title="Выбрать любой цвет"
+              />
+            </label>
+          </div>
         </div>
       </div>
 
