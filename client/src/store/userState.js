@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import axios from 'axios';
 import { API_URL } from './canvasState';
+import api from '../services/api';
 
 class UserState {
  user = null;
@@ -43,25 +44,24 @@ class UserState {
  }
  }
 
- loadFromStorage() {
- const token = localStorage.getItem('token');
- const user = localStorage.getItem('user');
- if (token && user) {
- try {
- this.user = JSON.parse(user);
- this.isAuthenticated = true;
- axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
- } catch (error) {
- localStorage.removeItem('user');
- }
- }
- }
+  loadFromStorage() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      try {
+        this.user = JSON.parse(user);
+        this.isAuthenticated = true;
+      } catch (error) {
+        localStorage.removeItem('user');
+      }
+    }
+  }
 
   async register(username, email, password) {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
+      const response = await api.post('/api/auth/register', {
         username,
         email,
         password
@@ -74,7 +74,6 @@ class UserState {
       });
  localStorage.setItem('token', token);
  this.saveUserToStorage(user);
- axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       runInAction(() => {
         this.error = error.response?.data?.error || 'Registration failed';
@@ -87,7 +86,7 @@ class UserState {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const response = await api.post('/api/auth/login', {
         email,
         password
       });
@@ -99,7 +98,6 @@ class UserState {
       });
  localStorage.setItem('token', token);
  this.saveUserToStorage(user);
- axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       runInAction(() => {
         this.error = error.response?.data?.error || 'Login failed';
@@ -110,7 +108,7 @@ class UserState {
 
   async logout() {
     try {
-      await axios.post(`${API_URL}/api/auth/logout`);
+      await api.post('/api/auth/logout');
     } catch (error) {
       console.error('Logout error', error);
     } finally {
@@ -120,14 +118,13 @@ class UserState {
       });
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      delete axios.defaults.headers.common['Authorization'];
     }
   }
 
   async updateProfile(updates) {
     this.loading = true;
     try {
-      const response = await axios.put(`${API_URL}/api/users/me`, updates);
+      const response = await api.put('/api/users/me', updates);
  runInAction(() => {
  this.user = response.data.user;
  this.saveUserToStorage(this.user);
@@ -145,7 +142,7 @@ class UserState {
     this.loading = true;
     this.error = null;
     try {
-      await axios.put(`${API_URL}/api/users/me/password`, {
+      await api.put('/api/users/me/password', {
         currentPassword,
         newPassword
       });
@@ -167,7 +164,7 @@ class UserState {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/api/users/me/avatar`, formData, {
+      const response = await api.post('/api/users/me/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
  runInAction(() => {
@@ -187,7 +184,7 @@ class UserState {
 
   async updateSettings(settings) {
     try {
-      const response = await axios.put(`${API_URL}/api/users/me/settings`, { settings });
+      const response = await api.put('/api/users/me/settings', { settings });
  runInAction(() => {
  this.user.settings = response.data.settings;
  this.saveUserToStorage(this.user);
@@ -199,7 +196,7 @@ class UserState {
 
   async fetchCurrentUser() {
     try {
-      const response = await axios.get(`${API_URL}/api/users/me`);
+      const response = await api.get('/api/users/me');
       runInAction(() => {
         if (response.data.user) {
           this.user = { ...this.user, ...response.data.user };
@@ -212,7 +209,7 @@ class UserState {
 
   async fetchUserRooms() {
     try {
-      const response = await axios.get(`${API_URL}/api/users/me/rooms`);
+      const response = await api.get('/api/users/me/rooms');
       runInAction(() => {
         this.userRooms = response.data.rooms;
       });
@@ -223,7 +220,7 @@ class UserState {
 
   async fetchActivityRooms() {
     try {
-      const response = await axios.get(`${API_URL}/api/users/me/activity-rooms`);
+      const response = await api.get('/api/users/me/activity-rooms');
       runInAction(() => {
         this.activityRooms = response.data.rooms || [];
       });
@@ -244,7 +241,7 @@ class UserState {
 
   async fetchGalleryDrawings() {
     try {
-      const response = await axios.get(`${API_URL}/api/gallery/user/me`);
+      const response = await api.get('/api/gallery/user/me');
       runInAction(() => {
         this.galleryDrawings = response.data.drawings || [];
       });
@@ -254,18 +251,18 @@ class UserState {
   }
 
   async deleteRoom(roomId) {
-    await axios.delete(`${API_URL}/api/rooms/${roomId}`);
+    await api.delete(`/api/rooms/${roomId}`);
   }
 
   async updateRoomVisibility(roomId, { isPublic, password }) {
-    await axios.patch(`${API_URL}/api/rooms/${roomId}`, { isPublic, password });
+    await api.patch(`/api/rooms/${roomId}`, { isPublic, password });
   }
 
   async createRoom(name, isPublic, password = null) {
     this.loading = true;
     this.error = null;
     try {
-      const response = await axios.post(`${API_URL}/api/rooms`, {
+      const response = await api.post('/api/rooms', {
         name,
         isPublic,
         password: isPublic ? null : password

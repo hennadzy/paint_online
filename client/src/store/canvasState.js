@@ -4,12 +4,8 @@ import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
 
-export const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000'
-  : 'https://paint-online-back.onrender.com';
-export const WS_URL = window.location.hostname === 'localhost'
-  ? 'ws://localhost:5000'
-  : 'wss://paint-online-back.onrender.com';
+export const API_URL = 'https://paint-online-back.onrender.com';
+export const WS_URL = 'wss://paint-online-back.onrender.com';
  
 class CanvasState {
   currentRoomId = null;

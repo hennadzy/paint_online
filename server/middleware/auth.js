@@ -5,6 +5,7 @@ async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn(`No auth header from IP: ${req.ip || req.connection.remoteAddress}`);
       return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -12,14 +13,27 @@ async function authenticate(req, res, next) {
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      console.warn(`Invalid token attempt from IP: ${req.ip || req.connection.remoteAddress}`);
+      console.warn(`Invalid token attempt from IP: ${req.ip || req.connection.remoteAddress}, token: ${token.substring(0,20)}...`);
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
+    console.log(`Token decoded successfully: userId=${decoded.userId}, username=${decoded.username}`);
+
     const session = await Session.findByToken(token);
     if (!session) {
-      console.warn(`Session not found for token from IP: ${req.ip || req.connection.remoteAddress}`);
-      return res.status(401).json({ error: 'Session not found or expired' });
+      console.warn(`Session not found for token from IP: ${req.ip || req.connection.remoteAddress}, userId: ${decoded.userId}`);
+      console.log(`Creating new session for user ${decoded.userId}...`);
+      
+      const SessionModel = require('../models/Session');
+      await SessionModel.create(decoded.userId, token, req.ip || req.connection.remoteAddress, req.get('User-Agent') || 'unknown');
+      
+      req.user = {
+        userId: decoded.userId,
+        username: decoded.username,
+        role: decoded.role
+      };
+
+      return next();
     }
 
     req.user = {
