@@ -546,16 +546,21 @@ const GalleryPage = observer(() => {
           <section className="gallery-auth-hint-top" aria-label="Правила участия в галерее">
             <div className="gallery-auth-hint-top__text">
               Добавлять рисунки в галерею, оставлять комментарии и ставить оценки могут только{' '}
-              {!userState.isAuthenticated ? (
-                  <button
-                    type="button"
+              {userState.isAuthenticated ? (
+                'авторизованные'
+              ) : (
+                <>
+                  <a
+                    href="/login"
                     className="gallery-auth-hint-top__link"
-                    onClick={() => navigate('/login')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate('/login');
+                    }}
                   >
                     авторизованные
-                  </button>
-              ) : (
-                'авторизованные'
+                  </a>{' '}
+                </>
               )}{' '}
               пользователи.
             </div>
