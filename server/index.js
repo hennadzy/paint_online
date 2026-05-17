@@ -307,6 +307,17 @@ app.get('/help', (req, res) => {
   res.send(html);
 });
 
+// Жёсткий перехват вариаций /help/, /help/* — чтобы не попадать в логику room/404
+app.get('/help/', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  return res.sendFile(indexPath);
+});
+
+app.get('/help/*', (req, res) => {
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  return res.sendFile(indexPath);
+});
+
 app.get('/gallery/:id', async (req, res) => {
   const drawingId = parseInt(req.params.id, 10);
   if (!Number.isFinite(drawingId) || drawingId <= 0) {
@@ -398,6 +409,9 @@ app.get('*', (req, res) => {
 
   // гарантируем доступность страницы справки даже если middleware/normalize дали неожиданный путь
   if (normalizedPath === '/help') {
+    return res.sendFile(indexPath);
+  }
+  if (normalizedPath.startsWith('/help')) {
     return res.sendFile(indexPath);
   }
 
