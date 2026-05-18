@@ -39,25 +39,10 @@ const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Гарантированно отдаём HelpPage без падения в NotFoundPage
-    // Даже если React-router не совпал по под-роуту/варианту /help*
     const isHelpPageByPath =
       location.pathname === '/help' ||
       location.pathname === '/help/' ||
       location.pathname.startsWith('/help/');
-
-    if (isHelpPageByPath) {
-      return (
-        <SeoProvider>
-          <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
-            <SeoMeta />
-            <div className="main-content main-content--help">
-              <HelpPage />
-            </div>
-          </div>
-        </SeoProvider>
-      );
-    }
 
     useEffect(() => {
         capabilitiesState.fetch();
