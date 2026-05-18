@@ -19,17 +19,7 @@
   flex-direction: column !important;
 }
 
-@media (max-width: 768px) {
-  .main-content--coloring {
-    top: calc(50px + env(safe-area-inset-top, 0px)) !important;
-  }
-}
 
-@media (max-width: 768px) and (orientation: landscape) {
-  .main-content--coloring {
-    top: calc(50px + env(safe-area-inset-top, 0px)) !important;
-  }
-}
 
 
 
