@@ -222,8 +222,9 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
   const { pgPool } = require('../config/db');
 
-  // other_user_id: кто не я
-  // выбираем последнюю запись переписки с каждым other_user_id и возвращаем данные пользователя
+  // ВЫБИРАЕМ собеседников по персональным сообщениям без оконных функций
+  // 1) для каждого other_user_id ищем max(timestamp)
+  // 2) джойним обратно на сообщение, чтобы взять last_message
   const query = `
     WITH me_messages AS (
       SELECT
@@ -238,28 +239,28 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       FROM personal_messages pm
       WHERE pm.from_user_id = $1 OR pm.to_user_id = $1
     ),
-    ranked AS (
+    last_per_other AS (
       SELECT
-        *,
-        ROW_NUMBER() OVER (
-          PARTITION BY other_user_id
-          ORDER BY timestamp DESC, message DESC
-        ) AS rn
+        other_user_id,
+        MAX(timestamp) AS last_timestamp
       FROM me_messages
       WHERE other_user_id IS NOT NULL
+      GROUP BY other_user_id
     )
     SELECT
       u.id,
       u.username,
       u.avatar_url,
       u.is_online,
-      r.message AS last_message,
-      r.timestamp AS last_timestamp
-    FROM ranked r
-    JOIN users u ON u.id = r.other_user_id
-    WHERE r.rn = 1
-      AND (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
-    ORDER BY r.last_timestamp DESC NULLS LAST, u.username ASC
+      mm.message AS last_message,
+      l.last_timestamp
+    FROM last_per_other l
+    JOIN me_messages mm
+      ON mm.other_user_id = l.other_user_id
+     AND mm.timestamp = l.last_timestamp
+    JOIN users u ON u.id = l.other_user_id
+    WHERE (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
+    ORDER BY l.last_timestamp DESC NULLS LAST, u.username ASC
   `;
 
   const result = await pgPool.query(query, [meId]);
