@@ -2,6 +2,11 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import axios from 'axios';
 import { API_URL } from './canvasState';
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 class AdminState {
   stats = null;
 
@@ -96,7 +101,7 @@ class AdminState {
 
   async fetchStats() {
     try {
-      const response = await axios.get(`${API_URL}/api/admin/stats`);
+      const response = await axios.get(`${API_URL}/api/admin/stats`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.stats = response.data;
       });
@@ -119,6 +124,7 @@ class AdminState {
     this.usersError = null;
     try {
       const response = await axios.get(`${API_URL}/api/admin/users`, {
+        headers: getAuthHeaders(),
         params: {
           page,
           limit: this.usersPagination.limit,
@@ -144,7 +150,7 @@ class AdminState {
   async fetchUserDetails(userId) {
     this.userDetailsLoading = true;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/users/${userId}`);
+      const response = await axios.get(`${API_URL}/api/admin/users/${userId}`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.selectedUser = response.data.user;
         this.userDetailsLoading = false;
@@ -158,7 +164,7 @@ class AdminState {
 
   async updateUser(userId, data) {
     try {
-      const response = await axios.put(`${API_URL}/api/admin/users/${userId}`, data);
+      const response = await axios.put(`${API_URL}/api/admin/users/${userId}`, data, { headers: getAuthHeaders() });
       runInAction(() => {
         const index = this.users.findIndex(u => u.id === userId);
         if (index !== -1) {
@@ -178,7 +184,7 @@ class AdminState {
 
   async deleteUser(userId) {
     try {
-      await axios.delete(`${API_URL}/api/admin/users/${userId}`);
+      await axios.delete(`${API_URL}/api/admin/users/${userId}`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.users = this.users.filter(u => u.id !== userId);
         this.showDeleteConfirm = false;
@@ -195,7 +201,7 @@ class AdminState {
 
   async toggleUserActive(userId) {
     try {
-      const response = await axios.post(`${API_URL}/api/admin/users/${userId}/toggle-active`);
+      const response = await axios.post(`${API_URL}/api/admin/users/${userId}/toggle-active}`, null, { headers: getAuthHeaders() });
       runInAction(() => {
         const index = this.users.findIndex(u => u.id === userId);
         if (index !== -1) {
@@ -213,9 +219,7 @@ class AdminState {
 
   async changeUserPassword(userId, newPassword) {
     try {
-      await axios.post(`${API_URL}/api/admin/users/${userId}/change-password`, {
-        newPassword
-      });
+      await axios.post(`${API_URL}/api/admin/users/${userId}/change-password`, { newPassword }, { headers: getAuthHeaders() });
       runInAction(() => {
         this.showPasswordModal = false;
       });
@@ -233,6 +237,7 @@ class AdminState {
     this.roomsError = null;
     try {
       const response = await axios.get(`${API_URL}/api/admin/rooms`, {
+        headers: getAuthHeaders(),
         params: {
           page,
           limit: this.roomsPagination.limit,
@@ -258,7 +263,7 @@ class AdminState {
   async fetchRoomDetails(roomId) {
     this.roomDetailsLoading = true;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/rooms/${roomId}`);
+      const response = await axios.get(`${API_URL}/api/admin/rooms/${roomId}`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.selectedRoom = response.data.room;
         this.roomDetailsLoading = false;
@@ -272,7 +277,7 @@ class AdminState {
 
   async updateRoom(roomId, data) {
     try {
-      await axios.put(`${API_URL}/api/admin/rooms/${roomId}`, data);
+      await axios.put(`${API_URL}/api/admin/rooms/${roomId}`, data, { headers: getAuthHeaders() });
       runInAction(() => {
         const index = this.rooms.findIndex(r => r.id === roomId);
         if (index !== -1) {
@@ -292,7 +297,7 @@ class AdminState {
 
   async deleteRoom(roomId) {
     try {
-      await axios.delete(`${API_URL}/api/admin/rooms/${roomId}`);
+      await axios.delete(`${API_URL}/api/admin/rooms/${roomId}`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.rooms = this.rooms.filter(r => r.id !== roomId);
         this.showDeleteConfirm = false;
@@ -309,9 +314,7 @@ class AdminState {
 
   async joinRoom(roomId) {
     try {
-      const response = await axios.post(`${API_URL}/api/admin/rooms/${roomId}/join`, {
-        username: 'Admin'
-      });
+      const response = await axios.post(`${API_URL}/api/admin/rooms/${roomId}/join`, { username: 'Admin' }, { headers: getAuthHeaders() });
       return {
         success: true,
         data: response.data
@@ -327,6 +330,7 @@ class AdminState {
   async exportUsers(format = 'json') {
     try {
       const response = await axios.get(`${API_URL}/api/admin/export/users`, {
+        headers: getAuthHeaders(),
         params: { format },
         responseType: 'blob'
       });
@@ -352,6 +356,7 @@ class AdminState {
   async exportRooms(format = 'json') {
     try {
       const response = await axios.get(`${API_URL}/api/admin/export/rooms`, {
+        headers: getAuthHeaders(),
         params: { format },
         responseType: 'blob'
       });
@@ -430,7 +435,7 @@ class AdminState {
     this.coloringPagesLoading = true;
     this.coloringPagesError = null;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/game-modes/coloring`);
+      const response = await axios.get(`${API_URL}/api/admin/game-modes/coloring`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.coloringPages = response.data.pages;
         this.coloringPagesLoading = false;
@@ -448,7 +453,7 @@ class AdminState {
       const response = await axios.post(
         `${API_URL}/api/admin/game-modes/coloring`,
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        { headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' } }
       );
       runInAction(() => {
         this.coloringPages.unshift(response.data.page);
@@ -466,7 +471,8 @@ class AdminState {
     try {
       const response = await axios.put(
         `${API_URL}/api/admin/game-modes/coloring/${id}`,
-        data
+        data,
+        { headers: getAuthHeaders() }
       );
       runInAction(() => {
         const idx = this.coloringPages.findIndex(p => p.id === id);
@@ -485,7 +491,7 @@ class AdminState {
 
   async deleteColoringPage(id) {
     try {
-      await axios.delete(`${API_URL}/api/admin/game-modes/coloring/${id}`);
+      await axios.delete(`${API_URL}/api/admin/game-modes/coloring/${id}`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.coloringPages = this.coloringPages.filter(p => p.id !== id);
       });
@@ -502,7 +508,7 @@ class AdminState {
     this.galleryPendingLoading = true;
     this.galleryPendingError = null;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/gallery/pending`);
+      const response = await axios.get(`${API_URL}/api/admin/gallery/pending`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.galleryPending = response.data.drawings || [];
         this.galleryPendingLoading = false;
@@ -519,7 +525,7 @@ class AdminState {
     this.galleryApprovedLoading = true;
     this.galleryApprovedError = null;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/gallery/approved`);
+      const response = await axios.get(`${API_URL}/api/admin/gallery/approved`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.galleryApproved = response.data.drawings || [];
         this.galleryApprovedLoading = false;
@@ -538,7 +544,7 @@ class AdminState {
 
   async approveGalleryDrawing(id) {
     try {
-      await axios.put(`${API_URL}/api/admin/gallery/${id}/approve`);
+      await axios.put(`${API_URL}/api/admin/gallery/${id}/approve`, null, { headers: getAuthHeaders() });
       runInAction(() => {
         this.galleryPending = this.galleryPending.filter(d => d.id !== id);
       });
@@ -554,7 +560,7 @@ class AdminState {
 
   async rejectGalleryDrawing(id, reason = '') {
     try {
-      await axios.put(`${API_URL}/api/admin/gallery/${id}/reject`, { reason });
+      await axios.put(`${API_URL}/api/admin/gallery/${id}/reject`, { reason }, { headers: getAuthHeaders() });
       runInAction(() => {
         this.galleryPending = this.galleryPending.filter(d => d.id !== id);
         this.galleryApproved = this.galleryApproved.filter(d => d.id !== id);
@@ -570,7 +576,7 @@ class AdminState {
 
   async renameGalleryDrawing(id, title) {
     try {
-      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/rename`, { title });
+      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/rename`, { title }, { headers: getAuthHeaders() });
       const newTitle = response.data.drawing?.title ?? title;
       runInAction(() => {
         const apply = (arr) => arr.map(d => (d.id === id ? { ...d, title: newTitle } : d));
@@ -588,7 +594,7 @@ class AdminState {
 
   async updateGalleryAlt(id, alt) {
     try {
-      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/alt`, { alt });
+      const response = await axios.put(`${API_URL}/api/admin/gallery/${id}/alt`, { alt }, { headers: getAuthHeaders() });
       const newAlt = response.data.drawing?.alt ?? alt;
 
       runInAction(() => {
@@ -657,7 +663,7 @@ class AdminState {
 
   async sendBroadcast(payload) {
     try {
-      const response = await axios.post(`${API_URL}/api/admin/broadcast`, payload);
+      const response = await axios.post(`${API_URL}/api/admin/broadcast`, payload, { headers: getAuthHeaders() });
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -671,7 +677,7 @@ class AdminState {
     this.roleCapabilitiesLoading = true;
     this.roleCapabilitiesError = null;
     try {
-      const response = await axios.get(`${API_URL}/api/admin/capabilities`);
+      const response = await axios.get(`${API_URL}/api/admin/capabilities`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.roleCapabilitiesPayload = response.data;
         this.roleCapabilitiesLoading = false;
@@ -686,7 +692,7 @@ class AdminState {
 
   async saveRoleCapabilities(config) {
     try {
-      const response = await axios.put(`${API_URL}/api/admin/capabilities`, { config });
+      const response = await axios.put(`${API_URL}/api/admin/capabilities`, { config }, { headers: getAuthHeaders() });
       runInAction(() => {
         this.roleCapabilitiesPayload = response.data;
       });
