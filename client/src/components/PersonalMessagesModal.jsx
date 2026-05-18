@@ -54,7 +54,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     }
   }, [isOpen]);
 
-  // Догружаем контакты с сервера, чтобы админ/пользователь видел новых собеседников даже когда он был офлайн
   useEffect(() => {
     const loadContactsFromServer = async () => {
       if (!isOpen) return;
@@ -78,8 +77,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
               if (!existingIds.has(c.id)) merged.push(c);
             }
 
-            localStorage.setItem(getContactsKey(), JSON.stringify(merged));
-            return merged;
+            const nextContacts = merged.slice(0, 200);  
+            try {
+              localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
+            } catch (e) {
+              console.warn('personalContacts localStorage write failed:', e);
+            }
+            return nextContacts;
           });
         }
       } catch (error) {

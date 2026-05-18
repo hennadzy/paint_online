@@ -217,14 +217,10 @@ router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
   res.json(history);
 }));
 
-// Список контактов (собеседников) в ЛС для текущего пользователя
 router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
   const { pgPool } = require('../config/db');
 
-  // ВЫБИРАЕМ собеседников по персональным сообщениям без оконных функций
-  // 1) для каждого other_user_id ищем max(timestamp)
-  // 2) джойним обратно на сообщение, чтобы взять last_message
   const query = `
     WITH me_messages AS (
       SELECT
