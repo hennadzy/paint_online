@@ -6,8 +6,9 @@ export const useRoomValidation = (pathname, navigate) => {
     const fallback = document.getElementById('server-404-fallback');
     if (fallback) fallback.hidden = true;
 
-    const allowedClientPaths = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/admin', '/coloring', '/gallery'];
+    const allowedClientPaths = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/admin', '/coloring', '/gallery', '/help', '/help/'];
     if (allowedClientPaths.includes(pathname)) return;
+    if (pathname.startsWith('/help/')) return;
 
     const galleryDetailMatch = pathname.match(/^\/gallery\/(\d+)\/?$/);
     if (galleryDetailMatch) return;
