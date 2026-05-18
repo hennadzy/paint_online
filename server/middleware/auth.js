@@ -68,7 +68,8 @@ async function optionalAuthenticate(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
+  // супер-админ тоже должен иметь доступ к админским методам
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'superadmin')) {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
