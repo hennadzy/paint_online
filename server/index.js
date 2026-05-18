@@ -420,11 +420,11 @@ app.get('*', (req, res) => {
   const normalizedPath = pathname.replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
-  // гарантируем доступность страницы справки даже если middleware/normalize дали неожиданный путь
-  if (normalizedPath === '/help') {
+  // гарантируем доступность страницы справки даже если upstream/normalize дали неожиданный путь
+  if (pathname === '/help' || pathname.startsWith('/help/')) {
     return res.sendFile(indexPath);
   }
-  if (normalizedPath.startsWith('/help')) {
+  if (normalizedPath === '/help' || normalizedPath.startsWith('/help')) {
     return res.sendFile(indexPath);
   }
 
