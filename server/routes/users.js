@@ -217,6 +217,65 @@ router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
   res.json(history);
 }));
 
+// Список контактов (собеседников) в ЛС для текущего пользователя
+router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
+  const meId = req.user.userId;
+  const { pgPool } = require('../config/db');
+
+  // other_user_id: кто не я
+  // выбираем последнюю запись переписки с каждым other_user_id и возвращаем данные пользователя
+  const query = `
+    WITH me_messages AS (
+      SELECT
+        pm.from_user_id,
+        pm.to_user_id,
+        pm.message,
+        pm.timestamp,
+        CASE
+          WHEN pm.from_user_id = $1 THEN pm.to_user_id
+          ELSE pm.from_user_id
+        END AS other_user_id
+      FROM personal_messages pm
+      WHERE pm.from_user_id = $1 OR pm.to_user_id = $1
+    ),
+    ranked AS (
+      SELECT
+        *,
+        ROW_NUMBER() OVER (
+          PARTITION BY other_user_id
+          ORDER BY timestamp DESC, message DESC
+        ) AS rn
+      FROM me_messages
+      WHERE other_user_id IS NOT NULL
+    )
+    SELECT
+      u.id,
+      u.username,
+      u.avatar_url,
+      u.is_online,
+      r.message AS last_message,
+      r.timestamp AS last_timestamp
+    FROM ranked r
+    JOIN users u ON u.id = r.other_user_id
+    WHERE r.rn = 1
+      AND (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
+    ORDER BY r.last_timestamp DESC NULLS LAST, u.username ASC
+  `;
+
+  const result = await pgPool.query(query, [meId]);
+
+  res.json(
+    result.rows.map(row => ({
+      id: row.id,
+      username: row.username,
+      avatar_url: row.avatar_url,
+      is_online: row.is_online,
+      last_message: row.last_message,
+      last_timestamp: row.last_timestamp
+    }))
+  );
+}));
+
 router.post('/messages', authenticate, asyncHandler(async (req, res) => {
   const { toUserId, message, timestamp } = req.body;
   

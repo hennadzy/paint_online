@@ -39,7 +39,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     if (!isOpen) return;
 
     try {
@@ -52,6 +52,42 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading contacts:', error);
     }
+  }, [isOpen]);
+
+  // Догружаем контакты с сервера, чтобы админ/пользователь видел новых собеседников даже когда он был офлайн
+  useEffect(() => {
+    const loadContactsFromServer = async () => {
+      if (!isOpen) return;
+      const token = localStorage.getItem('token');
+      const myId = userState.user?.id;
+
+      if (!token || !myId) return;
+
+      try {
+        const response = await axios.get(`${API_URL}/api/users/contacts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (Array.isArray(response.data)) {
+          setContacts(prev => {
+            const existing = Array.isArray(prev) ? prev : [];
+            const existingIds = new Set(existing.map(c => c.id));
+            const merged = [...existing];
+
+            for (const c of response.data) {
+              if (!existingIds.has(c.id)) merged.push(c);
+            }
+
+            localStorage.setItem(getContactsKey(), JSON.stringify(merged));
+            return merged;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading contacts from server:', error);
+      }
+    };
+
+    loadContactsFromServer();
   }, [isOpen]);
 
   useEffect(() => {
