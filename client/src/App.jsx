@@ -74,22 +74,23 @@ return (
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
             <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
-                <Routes>
-                    <Route path='/' element={<Canvas />} />
-                    <Route path='/login' element={<AuthPage />} />
-                    <Route path='/register' element={<AuthPage />} />
-                    <Route path='/reset-password' element={<AuthPage />} />
-                    <Route path='/profile' element={<ProfilePage />} />
-                    <Route path='/admin' element={<AdminPage />} />
-                    <Route path='/coloring' element={<ColoringPage />} />
-                    <Route path='/gallery' element={<GalleryPage />} />
-                    <Route path='/gallery/:id' element={<GalleryPage />} />
-                    <Route path='/help' element={<HelpPage />} />
-                    <Route path='/help/' element={<HelpPage />} />
-                    <Route path='/help/*' element={<HelpPage />} />
-                    <Route path='/:id' element={<RoomRoute />} />
-                    <Route path='*' element={<Navigate to="/404" replace />} />
-                </Routes>
+                {isHelpPageByPath ? (
+                    <HelpPage />
+                ) : (
+                    <Routes>
+                        <Route path='/' element={<Canvas />} />
+                        <Route path='/login' element={<AuthPage />} />
+                        <Route path='/register' element={<AuthPage />} />
+                        <Route path='/reset-password' element={<AuthPage />} />
+                        <Route path='/profile' element={<ProfilePage />} />
+                        <Route path='/admin' element={<AdminPage />} />
+                        <Route path='/coloring' element={<ColoringPage />} />
+                        <Route path='/gallery' element={<GalleryPage />} />
+                        <Route path='/gallery/:id' element={<GalleryPage />} />
+                        <Route path='/:id' element={<RoomRoute />} />
+                        <Route path='*' element={<Navigate to="/404" replace />} />
+                    </Routes>
+                )}
                 {canvasState.showRoomInterface && <RoomInterface roomId={null} />}
             </div>
             {canvasState.showPersonalMessages && (
