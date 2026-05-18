@@ -416,14 +416,10 @@ CLIENT_ROUTES.forEach(route => {
 });
 
 app.get('*', (req, res) => {
-  const pathname = req.path;
-  const normalizedPath = pathname.replace(/\/+$/, '');
+  const normalizedPath = (req.path || '').replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
-  // гарантируем доступность страницы справки даже если upstream/normalize дали неожиданный путь
-  if (pathname === '/help' || pathname.startsWith('/help/')) {
-    return res.sendFile(indexPath);
-  }
+  // гарантируем доступность /help при любых вариантах (путь/слэш/редирект)
   if (normalizedPath === '/help' || normalizedPath.startsWith('/help')) {
     return res.sendFile(indexPath);
   }

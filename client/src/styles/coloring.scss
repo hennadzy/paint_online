@@ -459,25 +459,33 @@
 }
 
 @media (max-width: 600px) {
-  /* Mobile: отменяем position: fixed для панелей с максимальной специфичностью */
+  /* Mobile: приводим layout к flex-колонке без "скачков" */
   .coloring-page--active {
-    .coloring-actions,
-    .coloring-palette {
-      position: relative !important;
-      left: auto !important;
-      right: auto !important;
-      top: auto !important;
-      bottom: auto !important;
-      z-index: 50 !important;
-      display: flex !important;
-    }
-
-    .coloring-palette {
-      display: block !important;
-    }
-
     .coloring-workspace {
-      padding-bottom: 0;
+      flex: 1 1 auto !important;
+      order: 1 !important;
+      padding-bottom: 0 !important;
+      min-height: 0 !important;
+    }
+
+    .coloring-actions {
+      flex-shrink: 0 !important;
+      order: 2 !important;
+      display: flex !important;
+      position: static !important;
+    }
+
+    .coloring-palette {
+      flex-shrink: 0 !important;
+      order: 3 !important;
+      display: block !important;
+
+      /* Убираем "серую полосу" */
+      border-top: 0 !important;
+      border: none !important;
+      padding: 8px 12px 10px !important;
+
+      position: static !important;
     }
   }
 }
