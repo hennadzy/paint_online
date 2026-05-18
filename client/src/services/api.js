@@ -11,7 +11,6 @@ const api = axios.create({
   }
 });
 
-// Интерцептор запросов - добавляет токен к каждому запросу
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -25,7 +24,6 @@ api.interceptors.request.use(
   }
 );
 
-// Интерцептор ответов - обрабатывает 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {

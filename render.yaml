@@ -1,15 +1,12 @@
-# Конфиг для paint_online_back (Node-сервер с клиентом)
-# В Render: Dashboard → paint_online_back → Settings
-# Убедись, что Build Command и Start Command совпадают с этим
 
 services:
   - type: web
     name: paint_online_back
     runtime: node
-    # Root = корень репо
+
     buildCommand: npm run build && cd server && npm install
     startCommand: node server/index.js
-    # Сервер отдаёт статику из client/build — билд клиента обязателен
+
     envVars:
       - key: NODE_ENV
         value: production
@@ -30,10 +27,4 @@ databases:
   - name: paint_online_db
     databaseName: paint_online
     user: paint_online
-    # PostgreSQL plan: Free (Free tier has limited resources)
 
-# Redis for session storage (optional - requires paid plan or external Redis)
-# Uncomment if you have a Redis service
-# redis:
-#   - name: paint_online_redis
-#     ipVersion: ipv4

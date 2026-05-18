@@ -1,6 +1,3 @@
-/**
- * Централизованный обработчик ошибок для Express
- */
 
 class AppError extends Error {
   constructor(message, statusCode = 500) {

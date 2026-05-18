@@ -118,10 +118,6 @@ app.use('/api', (req, res, next) => {
 
 app.use(express.json({ limit: '5mb' }));
 
-/*
-  Жёстко обслуживаем /help в SPA: любые варианты /help... отдаем index.html
-  (независимо от статик/последующих роутов) — нужен 200 без 404.
-*/
 app.get(/^\/help(?:\/.*)?$/, (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   res.sendFile(indexPath, (err) => {
@@ -320,7 +316,6 @@ app.get('/help', (req, res) => {
   res.send(html);
 });
 
-// Жёсткий перехват вариаций /help/, /help/* — чтобы не попадать в логику room/404
 app.get('/help/', (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   return res.sendFile(indexPath);
@@ -419,7 +414,6 @@ app.get('*', (req, res) => {
   const normalizedPath = (req.path || '').replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
-  // гарантируем доступность /help при любых вариантах (путь/слэш/редирект)
   if (normalizedPath === '/help' || normalizedPath.startsWith('/help')) {
     return res.sendFile(indexPath);
   }

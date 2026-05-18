@@ -19,10 +19,6 @@
   flex-direction: column !important;
 }
 
-
-
-
-
 .coloring-page {
   height: 100dvh;
   width: 100%;
@@ -283,8 +279,6 @@
   touch-action: pan-x pan-y;
 
   .coloring-page--active & {
-    // When coloring page is active, workspace should fill available space
-    // and palette/actions stay at bottom without scrolling
     flex: 1;
     min-height: 0;
     padding-bottom: 0;
@@ -439,7 +433,6 @@
   }
 
   .coloring-actions {
-    /* palette снизу фиксирована, чтобы кнопки не налезали на область выбора цвета */
     bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -449,7 +442,6 @@
 }
 
 @media (max-width: 600px) {
-  /* Mobile: приводим layout к flex-колонке без "скачков" */
   .coloring-page--active {
     .coloring-workspace {
       flex: 1 1 auto !important;
@@ -469,12 +461,9 @@
       flex-shrink: 0 !important;
       order: 3 !important;
       display: block !important;
-
-      /* Убираем "серую полосу" */
       border-top: 0 !important;
       border: none !important;
       padding: 8px 12px 10px !important;
-
       position: static !important;
     }
   }

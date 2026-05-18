@@ -3,6 +3,8 @@ Allow: /
 Allow: /coloring
 Allow: /gallery
 Allow: /gallery/
+Allow: /help
+
 Disallow: /static/
 Disallow: /*.json$
 Disallow: /api/

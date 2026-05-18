@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { isValidRoomId } from '../utils/routerUtils';
 
 const SeoContext = createContext({
   title: null,
@@ -62,15 +63,19 @@ export function SeoMeta() {
   const seoData = SEO_DATA[path] || (path.startsWith('/gallery/') ? SEO_DATA['/gallery'] : null);
   const finalData = seoData ? { ...seoData, ...dynamicSeo } : seoData;
 
+  const isRoomPage = (() => {
+    // комнаты роутятся как '/:id', где id — 9 символов A-Z a-z 0-9
+    if (!path || path === '/') return false;
+    const parts = path.split('/').filter(Boolean); // ['{id}'] либо []
+    if (parts.length !== 1) return false;
+    return isValidRoomId(parts[0]);
+  })();
+
   useEffect(() => {
-    if (!finalData) return;
-
-    document.title = finalData.title;
-
     const updateMeta = (name, content, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let meta = document.querySelector(selector);
-      
+
       if (!meta) {
         meta = document.createElement('meta');
         if (isProperty) {
@@ -83,12 +88,19 @@ export function SeoMeta() {
       meta.setAttribute('content', content);
     };
 
-    
+    if (isRoomPage) {
+      updateMeta('robots', 'noindex, follow');
+      return;
+    }
+
+    if (!finalData) return;
+
+    document.title = finalData.title;
+
     updateMeta('description', finalData.description);
     updateMeta('keywords', finalData.keywords);
     updateMeta('robots', hasPaginationQuery ? 'noindex, follow' : 'index, follow');
 
-   
     updateMeta('og:title', finalData.title, true);
     updateMeta('og:description', finalData.description, true);
     updateMeta('og:url', finalData.canonical, true);
@@ -149,8 +161,7 @@ export function SeoMeta() {
       });
       document.head.appendChild(ld);
     }
-
-  }, [path, finalData, dynamicSeo, hasPaginationQuery]);
+  }, [path, finalData, dynamicSeo, hasPaginationQuery, isRoomPage]);
 
   return null;
 }
