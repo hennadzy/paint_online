@@ -101,6 +101,15 @@ class AdminState {
         this.stats = response.data;
       });
     } catch (error) {
+      // Если пользователь не супер-админ, /api/admin/stats вернёт 401.
+      // Не засоряем консоль и не триггерим “ошибки” на каждой загрузке.
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        runInAction(() => {
+          this.stats = null;
+        });
+        return;
+      }
       console.error('Fetch admin stats error:', error);
     }
   }
