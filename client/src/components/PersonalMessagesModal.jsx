@@ -23,6 +23,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const [message, setMessage] = useState('');
   const [conversations, setConversations] = useState({});
   const [contacts, setContacts] = useState([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +46,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     try {
       const savedContacts = localStorage.getItem(getContactsKey());
       if (savedContacts) {
-        setContacts(JSON.parse(savedContacts));
+        const parsed = JSON.parse(savedContacts);
+        setContacts(Array.isArray(parsed) ? parsed : []);
       } else {
         setContacts([]);
       }
@@ -62,6 +64,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
       if (!token || !myId) return;
 
+      setContactsLoading(true);
       try {
         const response = await axios.get(`${API_URL}/api/users/contacts`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -69,25 +72,33 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
         if (Array.isArray(response.data)) {
           setContacts(prev => {
+            // Merge by id, but always take unread info from server.
             const existing = Array.isArray(prev) ? prev : [];
-            const existingIds = new Set(existing.map(c => c.id));
-            const merged = [...existing];
+            const map = new Map(existing.map(c => [c.id, c]));
 
             for (const c of response.data) {
-              if (!existingIds.has(c.id)) merged.push(c);
+              map.set(c.id, {
+                ...(map.get(c.id) || {}),
+                ...c,
+                undelivered_count: typeof c.undelivered_count === 'number' ? c.undelivered_count : (map.get(c.id)?.undelivered_count || 0)
+              });
             }
 
-            const nextContacts = merged.slice(0, 200);  
+            const nextContacts = Array.from(map.values()).slice(0, 200);
+
             try {
               localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
             } catch (e) {
               console.warn('personalContacts localStorage write failed:', e);
             }
+
             return nextContacts;
           });
         }
       } catch (error) {
         console.error('Error loading contacts from server:', error);
+      } finally {
+        setContactsLoading(false);
       }
     };
 
@@ -95,15 +106,31 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !initialUser?.id) return;
-    setSelectedUser(initialUser);
-  }, [isOpen, initialUser]);
+    if (!isOpen) return;
+
+    // If user was not provided - auto-select first contact (Telegram-like).
+    if (initialUser?.id) {
+      setSelectedUser(initialUser);
+      return;
+    }
+
+    if (!selectedUser && contacts.length > 0) {
+      setSelectedUser(contacts[0]);
+    }
+  }, [isOpen, initialUser, contacts]); 
 
   useEffect(() => {
     if (!isOpen || !selectedUser?.id) return;
     setContacts(prev => {
       if (prev.some(c => c.id === selectedUser.id)) return prev;
-      const updated = [...prev, selectedUser];
+
+      const updated = [
+        ...prev,
+        {
+          ...selectedUser,
+          undelivered_count: typeof selectedUser.undelivered_count === 'number' ? selectedUser.undelivered_count : 0
+        }
+      ];
       localStorage.setItem(getContactsKey(), JSON.stringify(updated));
       return updated;
     });
@@ -154,11 +181,33 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
 
+    // Update unread counter if the user isn't currently selected.
     setContacts(prev => {
-      if (prev.some(c => c.id === from)) return prev;
-      const updated = [...prev, { id: from, username: fromUsername || from, is_online: true }];
-      localStorage.setItem(getContactsKey(), JSON.stringify(updated));
-      return updated;
+      const next = Array.isArray(prev) ? [...prev] : [];
+      const idx = next.findIndex(c => String(c.id) === String(from));
+
+      if (idx === -1) {
+        next.push({
+          id: from,
+          username: fromUsername || from,
+          is_online: true,
+          undelivered_count: selectedUser?.id && String(selectedUser.id) === String(from) ? 0 : 1
+        });
+      } else {
+        const isSame = selectedUser?.id && String(selectedUser.id) === String(from);
+        next[idx] = {
+          ...next[idx],
+          is_online: true,
+          undelivered_count: isSame
+            ? 0
+            : (typeof next[idx].undelivered_count === 'number' ? next[idx].undelivered_count : 0) + 1
+        };
+      }
+
+      try {
+        localStorage.setItem(getContactsKey(), JSON.stringify(next));
+      } catch (_) {}
+      return next;
     });
 
     setConversations(prev => {
@@ -167,10 +216,26 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, []); 
+  }, [selectedUser?.id]); 
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
+  };
+
+  const sortContacts = (list) => {
+    const safe = Array.isArray(list) ? list : [];
+    return safe
+      .slice()
+      .sort((a, b) => {
+        const ua = typeof a.undelivered_count === 'number' ? a.undelivered_count : 0;
+        const ub = typeof b.undelivered_count === 'number' ? b.undelivered_count : 0;
+        if ((ub > 0) !== (ua > 0)) return ub > 0 ? 1 : -1;
+        if (ub !== ua) return ub - ua;
+        const ta = typeof a.last_timestamp === 'number' ? a.last_timestamp : -1;
+        const tb = typeof b.last_timestamp === 'number' ? b.last_timestamp : -1;
+        if (tb !== ta) return tb - ta;
+        return String(a.username || '').localeCompare(String(b.username || ''));
+      });
   };
 
   useEffect(() => {
@@ -254,7 +319,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const addUserToContacts = (user) => {
     setContacts(prev => {
       if (prev.some(c => c.id === user.id)) return prev;
-      const updated = [...prev, user];
+      const updated = [
+        ...prev,
+        {
+          ...user,
+          undelivered_count: typeof user.undelivered_count === 'number' ? user.undelivered_count : 0
+        }
+      ];
       localStorage.setItem(getContactsKey(), JSON.stringify(updated));
       return updated;
     });
@@ -262,6 +333,34 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     setSelectedUser(user);
     setIsSearching(false);
     setSearchQuery('');
+  };
+
+  const markDeliveredForContact = async (contactId) => {
+    const token = localStorage.getItem('token');
+    if (!token || !contactId) return;
+
+    try {
+      await axios.post(
+        `${API_URL}/api/users/messages/mark-delivered/${encodeURIComponent(contactId)}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (e) {
+      // silent - UI still works with optimistic local update
+      console.warn('mark-delivered failed:', e);
+    }
+
+    // Optimistic UI: remove unread for selected contact
+    setContacts(prev => {
+      const next = Array.isArray(prev) ? prev.map(c => {
+        if (String(c.id) !== String(contactId)) return c;
+        return { ...c, undelivered_count: 0 };
+      }) : [];
+      try {
+        localStorage.setItem(getContactsKey(), JSON.stringify(next));
+      } catch (_) {}
+      return sortContacts(next);
+    });
   };
 
   const handleSendMessage = async () => {
@@ -305,6 +404,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
   const mobileShowChat = isMobileView && !!selectedUser;
   const currentMessages = selectedUser ? (conversations[selectedUser.id] || []) : [];
+
+  const sortedContacts = sortContacts(contacts);
 
   return (
     <div
@@ -386,21 +487,26 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
               ) : (
                 <div className="contacts">
                   <h3 className="contacts-title">Контакты</h3>
-                  {contacts.length === 0 ? (
-                    <div className="empty-state">
-                      <span className="empty-icon">👥</span>
-                      <p>Пока нет контактов</p>
-                      <p className="empty-hint">Найдите пользователей, чтобы начать общение</p>
-                    </div>
+                  {sortedContacts.length === 0 ? (
+                     <div className="empty-state">
+                       <span className="empty-icon">👥</span>
+                       <p>Пока нет контактов</p>
+                       <p className="empty-hint">Найдите пользователей, чтобы начать общение</p>
+                     </div>
                   ) : (
-                    <ul className="users-list contacts-list">
-                      {contacts.map(user => {
+                     <ul className="users-list contacts-list">
+                      {sortedContacts.map(user => {
                         const last = (conversations[user.id] || []).slice(-1)[0];
+                        const unread = typeof user.undelivered_count === 'number' ? user.undelivered_count : 0;
+
                         return (
                           <li
                             key={user.id}
                             className={`user-item${selectedUser?.id === user.id ? ' selected' : ''}`}
-                            onClick={() => setSelectedUser(user)}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              markDeliveredForContact(user.id);
+                            }}
                           >
                             <div className="user-avatar">
                               {user.avatar_url
@@ -415,13 +521,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                                 </span>
                               )}
                             </div>
+                            {unread > 0 && (
+                              <span className="pm-unread-dot" title={`Непрочитано: ${unread}`} />
+                            )}
                           </li>
                         );
                       })}
                     </ul>
                   )}
-                </div>
-              )}
             </div>
           )}
 

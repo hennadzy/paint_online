@@ -190,6 +190,16 @@
   &.selected {
     background-color: #e8f0fe;
   }
+
+  .pm-unread-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ff3b30;
+    flex-shrink: 0;
+    margin-left: 10px;
+    box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.15);
+  }
 }
 
 .user-avatar {

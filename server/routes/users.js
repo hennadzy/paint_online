@@ -282,11 +282,30 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       avatar_url: row.avatar_url,
       is_online: row.is_online,
       last_message: row.last_message,
-      last_timestamp: row.last_timestamp
-      // undelivered_count пока не возвращаем, т.к. вы просили “как в Telegram” — сортируем,
-      // а UI-иконку/бейдж можно добавить позже
+      last_timestamp: row.last_timestamp,
+      undelivered_count: row.undelivered_count
     }))
   );
+}));
+
+router.post('/messages/mark-delivered/:userId', authenticate, asyncHandler(async (req, res) => {
+  const meId = req.user.userId;
+  const fromUserId = req.params.userId;
+  validateUserId(fromUserId);
+
+  const PersonalMessageStore = require('../services/PersonalMessageStore');
+
+  // get all pending messages for me (delivered=false)
+  const pending = await PersonalMessageStore.getPendingMessages(meId);
+
+  // keep only those from the specific user
+  const toMark = pending
+    .filter(m => String(m.from_user_id) === String(fromUserId))
+    .map(m => m.id);
+
+  await PersonalMessageStore.markDelivered(toMark);
+
+  res.json({ marked: toMark.length });
 }));
 
 router.post('/messages', authenticate, asyncHandler(async (req, res) => {
