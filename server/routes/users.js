@@ -228,6 +228,7 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
         pm.to_user_id,
         pm.message,
         pm.timestamp,
+        pm.delivered,
         CASE
           WHEN pm.from_user_id = $1 THEN pm.to_user_id
           ELSE pm.from_user_id
@@ -242,6 +243,15 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       FROM me_messages
       WHERE other_user_id IS NOT NULL
       GROUP BY other_user_id
+    ),
+    undelivered_per_other AS (
+      SELECT
+        other_user_id,
+        COUNT(*)::int AS undelivered_count
+      FROM me_messages
+      WHERE other_user_id IS NOT NULL
+        AND delivered = false
+      GROUP BY other_user_id
     )
     SELECT
       u.id,
@@ -249,14 +259,18 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       u.avatar_url,
       u.is_online,
       mm.message AS last_message,
-      l.last_timestamp
+      l.last_timestamp,
+      COALESCE(up.undelivered_count, 0) AS undelivered_count
     FROM last_per_other l
     JOIN me_messages mm
       ON mm.other_user_id = l.other_user_id
      AND mm.timestamp = l.last_timestamp
     JOIN users u ON u.id = l.other_user_id
+    LEFT JOIN undelivered_per_other up ON up.other_user_id = l.other_user_id
     WHERE (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
-    ORDER BY l.last_timestamp DESC NULLS LAST, u.username ASC
+    ORDER BY (COALESCE(up.undelivered_count, 0) > 0) DESC,
+             l.last_timestamp DESC NULLS LAST,
+             u.username ASC
   `;
 
   const result = await pgPool.query(query, [meId]);
@@ -269,6 +283,8 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       is_online: row.is_online,
       last_message: row.last_message,
       last_timestamp: row.last_timestamp
+      // undelivered_count пока не возвращаем, т.к. вы просили “как в Telegram” — сортируем,
+      // а UI-иконку/бейдж можно добавить позже
     }))
   );
 }));
