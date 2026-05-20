@@ -295,10 +295,8 @@ router.post('/messages/mark-delivered/:userId', authenticate, asyncHandler(async
 
   const PersonalMessageStore = require('../services/PersonalMessageStore');
 
-  // get all pending messages for me (delivered=false)
   const pending = await PersonalMessageStore.getPendingMessages(meId);
 
-  // keep only those from the specific user
   const toMark = pending
     .filter(m => String(m.from_user_id) === String(fromUserId))
     .map(m => m.id);

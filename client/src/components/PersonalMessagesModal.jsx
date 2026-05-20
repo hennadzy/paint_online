@@ -72,7 +72,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
         if (Array.isArray(response.data)) {
           setContacts(prev => {
-            // Merge by id, but always take unread info from server.
             const existing = Array.isArray(prev) ? prev : [];
             const map = new Map(existing.map(c => [c.id, c]));
 
@@ -108,7 +107,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   useEffect(() => {
     if (!isOpen) return;
 
-    // If user was not provided - auto-select first contact (Telegram-like).
     if (initialUser?.id) {
       setSelectedUser(initialUser);
       return;
@@ -181,7 +179,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
 
-    // Update unread counter if the user isn't currently selected.
     setContacts(prev => {
       const next = Array.isArray(prev) ? [...prev] : [];
       const idx = next.findIndex(c => String(c.id) === String(from));
@@ -346,11 +343,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (e) {
-      // silent - UI still works with optimistic local update
       console.warn('mark-delivered failed:', e);
     }
 
-    // Optimistic UI: remove unread for selected contact
     setContacts(prev => {
       const next = Array.isArray(prev) ? prev.map(c => {
         if (String(c.id) !== String(contactId)) return c;
@@ -488,13 +483,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                 <div className="contacts">
                   <h3 className="contacts-title">Контакты</h3>
                   {sortedContacts.length === 0 ? (
-                     <div className="empty-state">
-                       <span className="empty-icon">👥</span>
-                       <p>Пока нет контактов</p>
-                       <p className="empty-hint">Найдите пользователей, чтобы начать общение</p>
-                     </div>
+                    <div className="empty-state">
+                      <span className="empty-icon">👥</span>
+                      <p>Пока нет контактов</p>
+                      <p className="empty-hint">Найдите пользователей, чтобы начать общение</p>
+                    </div>
                   ) : (
-                     <ul className="users-list contacts-list">
+                    <ul className="users-list contacts-list">
                       {sortedContacts.map(user => {
                         const last = (conversations[user.id] || []).slice(-1)[0];
                         const unread = typeof user.undelivered_count === 'number' ? user.undelivered_count : 0;
@@ -529,9 +524,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                       })}
                     </ul>
                   )}
+                </div>
+              )}
             </div>
           )}
-
           <div className={`chat-area${mobileShowChat ? ' fullscreen' : ''}`}>
             {selectedUser ? (
               <>
@@ -549,57 +545,59 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                   </div>
                 )}
 
-                <div className="messages-list">
-                  {historyLoading ? (
-                    <div className="empty-state"><p>Загрузка истории...</p></div>
-                  ) : currentMessages.length === 0 ? (
-                    <div className="empty-state">
-                      <span className="empty-icon">💬</span>
-                      <p>Пока нет сообщений</p>
-                      <p className="empty-hint">Начните разговор</p>
-                    </div>
-                  ) : (
-                    currentMessages.map((msg, index) => {
-                      const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
-                      const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
-                      const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
+                <>
+                  <div className="messages-list">
+                    {historyLoading ? (
+                      <div className="empty-state"><p>Загрузка истории...</p></div>
+                    ) : currentMessages.length === 0 ? (
+                      <div className="empty-state">
+                        <span className="empty-icon">💬</span>
+                        <p>Пока нет сообщений</p>
+                        <p className="empty-hint">Начните разговор</p>
+                      </div>
+                    ) : (
+                      currentMessages.map((msg, index) => {
+                        const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
+                        const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
+                        const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
 
-                      const formattedTime = messageDate instanceof Date && !isNaN(messageDate)
-                        ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : '00:00';
+                        const formattedTime = messageDate instanceof Date && !isNaN(messageDate)
+                          ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : '00:00';
 
-                      return (
-                        <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
-                          <div className="message-content">
-                            <p>{decodeHtmlEntities(msg.text)}</p>
-                            <span className="message-time">
-                              {formattedTime}
-                            </span>
+                        return (
+                          <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
+                            <div className="message-content">
+                              <p>{decodeHtmlEntities(msg.text)}</p>
+                              <span className="message-time">
+                                {formattedTime}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
 
-                <div className="message-input-container">
-                  <input
-                    type="text"
-                    className="message-input"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Введите сообщение..."
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <button
-                    className="send-btn"
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || loading}
-                  >
-                    Отправить
-                  </button>
-                </div>
+                  <div className="message-input-container">
+                    <input
+                      type="text"
+                      className="message-input"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Введите сообщение..."
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    />
+                    <button
+                      className="send-btn"
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || loading}
+                    >
+                      Отправить
+                    </button>
+                  </div>
+                </>
               </>
             ) : (
               <div className="empty-state">
