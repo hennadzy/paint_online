@@ -244,14 +244,25 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       WHERE other_user_id IS NOT NULL
       GROUP BY other_user_id
     ),
-    undelivered_per_other AS (
+    undelivered_received AS (
+      -- Непрочитано НАМИ (нам не delivered): to_user_id = meId
       SELECT
-        other_user_id,
-        COUNT(*)::int AS undelivered_count
-      FROM me_messages
-      WHERE other_user_id IS NOT NULL
-        AND delivered = false
-      GROUP BY other_user_id
+        pm.from_user_id AS other_user_id,
+        COUNT(*)::int AS undelivered_received_count
+      FROM personal_messages pm
+      WHERE pm.to_user_id = $1
+        AND pm.delivered = false
+      GROUP BY pm.from_user_id
+    ),
+    undelivered_sent AS (
+      -- Непрочитано собеседником (от нас не delivered): from_user_id = meId
+      SELECT
+        pm.to_user_id AS other_user_id,
+        COUNT(*)::int AS undelivered_sent_count
+      FROM personal_messages pm
+      WHERE pm.from_user_id = $1
+        AND pm.delivered = false
+      GROUP BY pm.to_user_id
     )
     SELECT
       u.id,
@@ -260,15 +271,18 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       u.is_online,
       mm.message AS last_message,
       l.last_timestamp,
-      COALESCE(up.undelivered_count, 0) AS undelivered_count
+      COALESCE(ur.undelivered_received_count, 0) AS undelivered_received_count,
+      COALESCE(us.undelivered_sent_count, 0) AS undelivered_sent_count,
+      COALESCE(ur.undelivered_received_count, 0) AS undelivered_count
     FROM last_per_other l
     JOIN me_messages mm
       ON mm.other_user_id = l.other_user_id
      AND mm.timestamp = l.last_timestamp
     JOIN users u ON u.id = l.other_user_id
-    LEFT JOIN undelivered_per_other up ON up.other_user_id = l.other_user_id
+    LEFT JOIN undelivered_received ur ON ur.other_user_id = l.other_user_id
+    LEFT JOIN undelivered_sent us ON us.other_user_id = l.other_user_id
     WHERE (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
-    ORDER BY (COALESCE(up.undelivered_count, 0) > 0) DESC,
+    ORDER BY (COALESCE(ur.undelivered_received_count, 0) > 0) DESC,
              l.last_timestamp DESC NULLS LAST,
              u.username ASC
   `;
@@ -283,6 +297,8 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       is_online: row.is_online,
       last_message: row.last_message,
       last_timestamp: row.last_timestamp,
+      undelivered_received_count: row.undelivered_received_count,
+      undelivered_sent_count: row.undelivered_sent_count,
       undelivered_count: row.undelivered_count
     }))
   );

@@ -79,7 +79,21 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
               map.set(c.id, {
                 ...(map.get(c.id) || {}),
                 ...c,
-                undelivered_count: typeof c.undelivered_count === 'number' ? c.undelivered_count : (map.get(c.id)?.undelivered_count || 0)
+                undelivered_received_count:
+                  typeof c.undelivered_received_count === 'number'
+                    ? c.undelivered_received_count
+                    : (map.get(c.id)?.undelivered_received_count || 0),
+                undelivered_sent_count:
+                  typeof c.undelivered_sent_count === 'number'
+                    ? c.undelivered_sent_count
+                    : (map.get(c.id)?.undelivered_sent_count || 0),
+                // legacy (compat)
+                undelivered_count:
+                  typeof c.undelivered_count === 'number'
+                    ? c.undelivered_count
+                    : (typeof c.undelivered_received_count === 'number'
+                        ? c.undelivered_received_count
+                        : (map.get(c.id)?.undelivered_count || 0))
               });
             }
 
@@ -183,21 +197,34 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       const next = Array.isArray(prev) ? [...prev] : [];
       const idx = next.findIndex(c => String(c.id) === String(from));
 
+      const isSameChat = selectedUser?.id && String(selectedUser.id) === String(from);
+
       if (idx === -1) {
+        const undeliveredReceived = isSameChat ? 0 : 1;
         next.push({
           id: from,
           username: fromUsername || from,
           is_online: true,
-          undelivered_count: selectedUser?.id && String(selectedUser.id) === String(from) ? 0 : 1
+          undelivered_received_count: undeliveredReceived,
+          undelivered_sent_count: 0,
+          // legacy compat
+          undelivered_count: undeliveredReceived
         });
       } else {
-        const isSame = selectedUser?.id && String(selectedUser.id) === String(from);
+        const currReceived =
+          typeof next[idx].undelivered_received_count === 'number'
+            ? next[idx].undelivered_received_count
+            : (typeof next[idx].undelivered_count === 'number' ? next[idx].undelivered_count : 0);
+
+        const nextReceived = isSameChat ? 0 : currReceived + 1;
+
         next[idx] = {
           ...next[idx],
           is_online: true,
-          undelivered_count: isSame
-            ? 0
-            : (typeof next[idx].undelivered_count === 'number' ? next[idx].undelivered_count : 0) + 1
+          undelivered_received_count: nextReceived,
+          undelivered_sent_count: typeof next[idx].undelivered_sent_count === 'number' ? next[idx].undelivered_sent_count : 0,
+          // legacy compat
+          undelivered_count: nextReceived
         };
       }
 
@@ -224,13 +251,23 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     return safe
       .slice()
       .sort((a, b) => {
-        const ua = typeof a.undelivered_count === 'number' ? a.undelivered_count : 0;
-        const ub = typeof b.undelivered_count === 'number' ? b.undelivered_count : 0;
-        if ((ub > 0) !== (ua > 0)) return ub > 0 ? 1 : -1;
+        const ua =
+          typeof a.undelivered_received_count === 'number'
+            ? a.undelivered_received_count
+            : (typeof a.undelivered_count === 'number' ? a.undelivered_count : 0);
+        const ub =
+          typeof b.undelivered_received_count === 'number'
+            ? b.undelivered_received_count
+            : (typeof b.undelivered_count === 'number' ? b.undelivered_count : 0);
+
+        // Telegram-like: unread (received by us) on top.
+        if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
         if (ub !== ua) return ub - ua;
+
         const ta = typeof a.last_timestamp === 'number' ? a.last_timestamp : -1;
         const tb = typeof b.last_timestamp === 'number' ? b.last_timestamp : -1;
         if (tb !== ta) return tb - ta;
+
         return String(a.username || '').localeCompare(String(b.username || ''));
       });
   };
@@ -346,11 +383,19 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       console.warn('mark-delivered failed:', e);
     }
 
+    // clear ONLY unread-for-us (red)
     setContacts(prev => {
-      const next = Array.isArray(prev) ? prev.map(c => {
-        if (String(c.id) !== String(contactId)) return c;
-        return { ...c, undelivered_count: 0 };
-      }) : [];
+      const next = Array.isArray(prev)
+        ? prev.map(c => {
+            if (String(c.id) !== String(contactId)) return c;
+            return {
+              ...c,
+              undelivered_received_count: 0,
+              // legacy compat
+              undelivered_count: 0
+            };
+          })
+        : [];
       try {
         localStorage.setItem(getContactsKey(), JSON.stringify(next));
       } catch (_) {}
@@ -491,8 +536,13 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                   ) : (
                     <ul className="users-list contacts-list">
                       {sortedContacts.map(user => {
-                        const last = (conversations[user.id] || []).slice(-1)[0];
-                        const unread = typeof user.undelivered_count === 'number' ? user.undelivered_count : 0;
+                            const last = (conversations[user.id] || []).slice(-1)[0];
+                            const unreadForUs = typeof user.undelivered_received_count === 'number'
+                              ? user.undelivered_received_count
+                              : (typeof user.undelivered_count === 'number' ? user.undelivered_count : 0);
+                            const unreadForThem = typeof user.undelivered_sent_count === 'number'
+                              ? user.undelivered_sent_count
+                              : 0;
 
                         return (
                           <li
@@ -516,9 +566,11 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                                 </span>
                               )}
                             </div>
-                            {unread > 0 && (
-                              <span className="pm-unread-dot" title={`Непрочитано: ${unread}`} />
-                            )}
+                            {unreadForUs > 0 ? (
+                              <span className="pm-unread-dot pm-unread-dot--red" title={`Нам непрочитано: ${unreadForUs}`} />
+                            ) : unreadForThem > 0 ? (
+                              <span className="pm-unread-dot pm-unread-dot--gray" title={`Собеседнику непрочитано: ${unreadForThem}`} />
+                            ) : null}
                           </li>
                         );
                       })}
