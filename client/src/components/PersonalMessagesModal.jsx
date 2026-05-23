@@ -155,8 +155,19 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     if (!isOpen) return;
     if (!selectedUser?.id) return;
 
-    markReadDeliveredForSelectedContact();
-  }, [isOpen, selectedUser, markReadDeliveredForSelectedContact]);
+    const contactId = selectedUser.id;
+
+    (async () => {
+      try {
+        // Красный пропадает когда мы отметили входящие как delivered
+        await markDeliveredForContact(contactId, true);
+        // Серый пропадает когда мы отметили наши исходящие как прочитанные (read)
+        await markReadForContact(contactId, true);
+      } catch (e) {
+        console.warn('mark delivered/read failed:', e);
+      }
+    })();
+  }, [isOpen, selectedUser]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -428,31 +439,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
     scheduleRefreshContacts();
   };
-
-  const markReadDeliveredForSelectedContact = useCallback(async () => {
-    if (!isOpen || !selectedUser?.id) return;
-
-    const contactId = selectedUser.id;
-    const key = String(contactId);
-
-    // Anti-debounce: не дергать два раза подряд при быстрых рендерах/выборе
-    if (markReadDeliveredInFlightRef.current[key]) return;
-    markReadDeliveredInFlightRef.current[key] = true;
-
-    try {
-      // Красный пропадает когда мы отметили входящие как delivered
-      // Серый пропадает когда мы отметили наши исходящие как прочитанные (read)
-      await Promise.all([
-        markDeliveredForContact(contactId, true),
-        markReadForContact(contactId, true),
-      ]);
-    } finally {
-      // Небольшая задержка, чтобы не было повторных вызовов в одном тике
-      setTimeout(() => {
-        delete markReadDeliveredInFlightRef.current[key];
-      }, 300);
-    }
-  }, [isOpen, selectedUser, scheduleRefreshContacts]);
 
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
