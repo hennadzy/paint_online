@@ -35,25 +35,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
 
-  const sortContacts = useCallback((list) => {
-    const safe = Array.isArray(list) ? list : [];
-    return safe
-      .slice()
-      .sort((a, b) => {
-        const ua = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
-        const ub = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
-
-        if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
-        if (ub !== ua) return ub - ua;
-
-        const ta = typeof a.last_timestamp === 'number' ? a.last_timestamp : -1;
-        const tb = typeof b.last_timestamp === 'number' ? b.last_timestamp : -1;
-        if (tb !== ta) return tb - ta;
-
-        return String(a.username || '').localeCompare(String(b.username || ''));
-      });
-  }, []);
-
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
     checkMobile();
@@ -88,12 +69,18 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
             typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0
         }));
 
-        // Сортируем сразу
-        const sorted = sortContacts(nextContacts);
-        setContacts(sorted);
+        // Конвертируем last_timestamp в число если нужно
+        const normalizedContacts = nextContacts.map(c => ({
+          ...c,
+          last_timestamp: typeof c.last_timestamp === 'number' 
+            ? c.last_timestamp 
+            : (c.last_timestamp ? new Date(c.last_timestamp).getTime() : 0)
+        }));
+
+        setContacts(normalizedContacts);
 
         try {
-          localStorage.setItem(getContactsKey(), JSON.stringify(sorted));
+          localStorage.setItem(getContactsKey(), JSON.stringify(normalizedContacts));
         } catch (e) {
           console.warn('personalContacts localStorage write failed:', e);
         }
@@ -106,14 +93,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         if (savedContacts) {
           const parsed = JSON.parse(savedContacts);
           if (Array.isArray(parsed)) {
-            setContacts(sortContacts(parsed));
+            setContacts(parsed.slice());
           }
         }
       } catch (_) {}
     } finally {
       setContactsLoading(false);
     }
-  }, [isOpen, sortContacts]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -222,6 +209,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
       const isSameChat = selectedUser?.id && String(selectedUser.id) === String(from);
 
+      // Нормализуем timestamp
+      const ts = typeof timestamp === 'number' ? timestamp : (timestamp ? new Date(timestamp).getTime() : Date.now());
+
       if (idx === -1) {
         const undeliveredReceived = isSameChat ? 0 : 1;
         next.push({
@@ -230,7 +220,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           is_online: true,
           undelivered_received_count: undeliveredReceived,
           undelivered_sent_count: 0,
-          last_timestamp: timestamp,
+          last_timestamp: ts,
           last_message: text
         });
       } else {
@@ -244,7 +234,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           is_online: true,
           undelivered_received_count: nextReceived,
           undelivered_sent_count: currSent,
-          last_timestamp: timestamp,
+          last_timestamp: ts,
           last_message: text
         };
       }
@@ -252,7 +242,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       try {
         localStorage.setItem(getContactsKey(), JSON.stringify(next));
       } catch (_) {}
-      return sortContacts(next);
+      return next;
     });
 
     setConversations(prev => {
@@ -261,7 +251,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, [selectedUser?.id, sortContacts]);
+  }, [selectedUser?.id]);
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
@@ -394,7 +384,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       try {
         localStorage.setItem(getContactsKey(), JSON.stringify(next));
       } catch (_) {}
-      return sortContacts(next);
+      return next;
     });
   };
 
@@ -446,7 +436,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         try {
           localStorage.setItem(getContactsKey(), JSON.stringify(next));
         } catch (_) {}
-        return sortContacts(next);
+        return next;
       });
 
       axios.post(
@@ -473,8 +463,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
   const mobileShowChat = isMobileView && !!selectedUser;
   const currentMessages = selectedUser ? (conversations[selectedUser.id] || []) : [];
-
-  const sortedContacts = sortContacts(contacts);
 
   return (
     <div
@@ -556,7 +544,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
               ) : (
                 <div className="contacts">
                   <h3 className="contacts-title">Контакты</h3>
-                  {sortedContacts.length === 0 ? (
+                  {contacts.length === 0 ? (
                     <div className="empty-state">
                       <span className="empty-icon">👥</span>
                       <p>Пока нет контактов</p>
@@ -564,7 +552,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                     </div>
                   ) : (
                     <ul className="users-list contacts-list">
-                      {sortedContacts.map(user => {
+                      {contacts.map(user => {
                             const last = (conversations[user.id] || []).slice(-1)[0];
                             const unreadForUs = typeof user.undelivered_received_count === 'number' ? user.undelivered_received_count : 0;
                             const unreadForThem = typeof user.undelivered_sent_count === 'number' ? user.undelivered_sent_count : 0;

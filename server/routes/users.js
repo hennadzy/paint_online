@@ -294,7 +294,9 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       avatar_url: row.avatar_url,
       is_online: row.is_online,
       last_message: row.last_message,
-      last_timestamp: row.last_timestamp,
+      last_timestamp: typeof row.last_timestamp === 'number' 
+        ? row.last_timestamp 
+        : (row.last_timestamp ? new Date(row.last_timestamp).getTime() : 0),
       undelivered_received_count: row.undelivered_received_count,
       undelivered_sent_count: row.undelivered_sent_count
     }))
