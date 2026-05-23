@@ -87,7 +87,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       }
     } catch (error) {
       console.error('Error loading contacts from server:', error);
-      // При ошибке пробуем загрузить из localStorage
       try {
         const savedContacts = localStorage.getItem(getContactsKey());
         if (savedContacts) {
