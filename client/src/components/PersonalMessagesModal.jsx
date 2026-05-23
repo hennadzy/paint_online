@@ -56,60 +56,53 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const loadContactsFromServer = async () => {
-      if (!isOpen) return;
-      const token = localStorage.getItem('token');
-      const myId = userState.user?.id;
+  const refreshContacts = useCallback(async () => {
+    if (!isOpen) return;
 
-      if (!token || !myId) return;
+    const token = localStorage.getItem('token');
+    const myId = userState.user?.id;
+    if (!token || !myId) return;
 
-      setContactsLoading(true);
-      try {
-        const response = await axios.get(`${API_URL}/api/users/contacts`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+    setContactsLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/api/users/contacts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-        if (Array.isArray(response.data)) {
-          setContacts(prev => {
-            const existing = Array.isArray(prev) ? prev : [];
-            const map = new Map(existing.map(c => [c.id, c]));
+      if (Array.isArray(response.data)) {
+        const nextContacts = response.data.slice(0, 200).map(c => ({
+          ...c,
+          undelivered_received_count:
+            typeof c.undelivered_received_count === 'number'
+              ? c.undelivered_received_count
+              : (typeof c.undelivered_count === 'number' ? c.undelivered_count : 0),
+          undelivered_sent_count:
+            typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0,
+          // legacy compat
+          undelivered_count:
+            typeof c.undelivered_count === 'number'
+              ? c.undelivered_count
+              : (typeof c.undelivered_received_count === 'number' ? c.undelivered_received_count : 0)
+        }));
 
-            // Чтобы не смешивать старый формат из localStorage,
-            // при загрузке с сервера полностью перезаписываем контакты (до 200).
-            const nextContacts = response.data.slice(0, 200).map(c => ({
-              ...c,
-              undelivered_received_count:
-                typeof c.undelivered_received_count === 'number'
-                  ? c.undelivered_received_count
-                  : (typeof c.undelivered_count === 'number' ? c.undelivered_count : 0),
-              undelivered_sent_count:
-                typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0,
-              // legacy compat (может понадобиться где-то ещё)
-              undelivered_count:
-                typeof c.undelivered_count === 'number'
-                  ? c.undelivered_count
-                  : (typeof c.undelivered_received_count === 'number' ? c.undelivered_received_count : 0)
-            }));
+        setContacts(nextContacts);
 
-            try {
-              localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
-            } catch (e) {
-              console.warn('personalContacts localStorage write failed:', e);
-            }
-
-            return nextContacts;
-          });
+        try {
+          localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
+        } catch (e) {
+          console.warn('personalContacts localStorage write failed:', e);
         }
-      } catch (error) {
-        console.error('Error loading contacts from server:', error);
-      } finally {
-        setContactsLoading(false);
       }
-    };
-
-    loadContactsFromServer();
+    } catch (error) {
+      console.error('Error loading contacts from server:', error);
+    } finally {
+      setContactsLoading(false);
+    }
   }, [isOpen]);
+
+  useEffect(() => {
+    refreshContacts();
+  }, [isOpen, refreshContacts]);
 
   const markedDeliveredRef = useRef({}); // { [userId]: true }
 
