@@ -111,6 +111,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     loadContactsFromServer();
   }, [isOpen]);
 
+  const markedDeliveredRef = useRef({}); // { [userId]: true }
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -122,7 +124,17 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     if (!selectedUser && contacts.length > 0) {
       setSelectedUser(contacts[0]);
     }
-  }, [isOpen, initialUser, contacts]); 
+  }, [isOpen, initialUser, contacts]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedUser?.id) return;
+    // При автоподборе контакта (без клика) нужно снять красные метки.
+    // Чтобы не слать запросы постоянно — делаем 1 раз на выбранного пользователя за сессию открытия.
+    if (markedDeliveredRef.current[selectedUser.id]) return;
+
+    markedDeliveredRef.current[selectedUser.id] = true;
+    markDeliveredForContact(selectedUser.id);
+  }, [isOpen, selectedUser]);
 
   useEffect(() => {
     if (!isOpen || !selectedUser?.id) return;

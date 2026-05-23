@@ -221,6 +221,8 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
   const { pgPool } = require('../config/db');
 
+  console.log('[LS][contacts] meId=', meId);
+
   const query = `
     WITH me_messages AS (
       SELECT
