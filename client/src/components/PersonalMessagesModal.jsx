@@ -35,6 +35,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
   const refreshContactsTimerRef = useRef(null);
+  const markReadDeliveredInFlightRef = useRef({}); // anti-debounce per contact
 
   const refreshContacts = useCallback(async () => {
     if (!isOpen) return;
@@ -148,6 +149,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       setSelectedUser(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Требование: при открытии окна ЛС обновляем маркеры для выбранного контакта
+    if (!isOpen) return;
+    if (!selectedUser?.id) return;
+
+    markReadDeliveredForSelectedContact();
+  }, [isOpen, selectedUser, markReadDeliveredForSelectedContact]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -382,9 +391,68 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       return next;
     });
 
-    // Важно: подтянуть актуальные unread-счётчики с сервера (с антидребезгом, чтобы не было гонок)
     scheduleRefreshContacts();
   };
+
+  const markReadForContact = async (contactId, refreshFromServer = true) => {
+    const token = localStorage.getItem('token');
+    if (!token || !contactId) return;
+
+    if (refreshFromServer) {
+      try {
+        await axios.post(
+          `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(contactId)}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (e) {
+        console.warn('mark-read failed:', e);
+      }
+    }
+
+    setContacts(prev => {
+      const next = Array.isArray(prev)
+        ? prev.map(c => {
+            if (String(c.id) !== String(contactId)) return c;
+            return {
+              ...c,
+              undelivered_sent_count: 0
+            };
+          })
+        : [];
+      try {
+        localStorage.setItem(getContactsKey(), JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+
+    scheduleRefreshContacts();
+  };
+
+  const markReadDeliveredForSelectedContact = useCallback(async () => {
+    if (!isOpen || !selectedUser?.id) return;
+
+    const contactId = selectedUser.id;
+    const key = String(contactId);
+
+    // Anti-debounce: не дергать два раза подряд при быстрых рендерах/выборе
+    if (markReadDeliveredInFlightRef.current[key]) return;
+    markReadDeliveredInFlightRef.current[key] = true;
+
+    try {
+      // Красный пропадает когда мы отметили входящие как delivered
+      // Серый пропадает когда мы отметили наши исходящие как прочитанные (read)
+      await Promise.all([
+        markDeliveredForContact(contactId, true),
+        markReadForContact(contactId, true),
+      ]);
+    } finally {
+      // Небольшая задержка, чтобы не было повторных вызовов в одном тике
+      setTimeout(() => {
+        delete markReadDeliveredInFlightRef.current[key];
+      }, 300);
+    }
+  }, [isOpen, selectedUser, scheduleRefreshContacts]);
 
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
@@ -459,6 +527,21 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
   const mobileShowChat = isMobileView && !!selectedUser;
   const currentMessages = selectedUser ? (conversations[selectedUser.id] || []) : [];
+
+  const sortedContacts = Array.isArray(contacts)
+    ? [...contacts].sort((a, b) => {
+        const aRed = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
+        const bRed = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
+
+        // Красные сверху
+        if (aRed > 0 && bRed === 0) return -1;
+        if (aRed === 0 && bRed > 0) return 1;
+        // Далее внутри красных/всех по последнему timestamp desc
+        const aTs = typeof a.last_timestamp === 'number' ? a.last_timestamp : 0;
+        const bTs = typeof b.last_timestamp === 'number' ? b.last_timestamp : 0;
+        return bTs - aTs;
+      })
+    : [];
 
   return (
     <div
@@ -548,7 +631,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                     </div>
                   ) : (
                     <ul className="users-list contacts-list">
-                      {contacts.map(user => {
+                      {sortedContacts.map(user => {
                             const last = (conversations[user.id] || []).slice(-1)[0];
                             const unreadForUs = typeof user.undelivered_received_count === 'number' ? user.undelivered_received_count : 0;
                             const unreadForThem = typeof user.undelivered_sent_count === 'number' ? user.undelivered_sent_count : 0;
