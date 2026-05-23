@@ -35,6 +35,25 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
 
+  const sortContacts = useCallback((list) => {
+    const safe = Array.isArray(list) ? list : [];
+    return safe
+      .slice()
+      .sort((a, b) => {
+        const ua = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
+        const ub = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
+
+        if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
+        if (ub !== ua) return ub - ua;
+
+        const ta = typeof a.last_timestamp === 'number' ? a.last_timestamp : -1;
+        const tb = typeof b.last_timestamp === 'number' ? b.last_timestamp : -1;
+        if (tb !== ta) return tb - ta;
+
+        return String(a.username || '').localeCompare(String(b.username || ''));
+      });
+  }, []);
+
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
     checkMobile();
@@ -42,21 +61,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    try {
-      const savedContacts = localStorage.getItem(getContactsKey());
-      if (savedContacts) {
-        const parsed = JSON.parse(savedContacts);
-        setContacts(Array.isArray(parsed) ? parsed : []);
-      } else {
-        setContacts([]);
-      }
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    }
-  }, [isOpen]);
+  // Загружаем контакты из localStorage только если сервер недоступен
+  // Основное - всегда с сервера при открытии
 
   const refreshContacts = useCallback(async () => {
     if (!isOpen) return;
@@ -82,44 +88,60 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
             typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0
         }));
 
-        setContacts(nextContacts);
+        // Сортируем сразу
+        const sorted = sortContacts(nextContacts);
+        setContacts(sorted);
 
         try {
-          localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
+          localStorage.setItem(getContactsKey(), JSON.stringify(sorted));
         } catch (e) {
           console.warn('personalContacts localStorage write failed:', e);
         }
       }
     } catch (error) {
       console.error('Error loading contacts from server:', error);
+      // При ошибке пробуем загрузить из localStorage
       try {
         const savedContacts = localStorage.getItem(getContactsKey());
         if (savedContacts) {
           const parsed = JSON.parse(savedContacts);
           if (Array.isArray(parsed)) {
-            setContacts(parsed);
+            setContacts(sortContacts(parsed));
           }
         }
       } catch (_) {}
     } finally {
       setContactsLoading(false);
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      refreshContacts();
-    }
-  }, [isOpen, refreshContacts]);
-
+  }, [isOpen, sortContacts]);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    // Очищаем состояние при открытии
     markedDeliveredRef.current = {};
     markedDeliveredRef.current['_autoSelected'] = false;
 
+    // Загружаем свежие контакты с сервера
+    refreshContacts();
+  }, [isOpen, refreshContacts]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedUser?.id) return;
+    if (markedDeliveredRef.current[selectedUser.id]) return;
+
+    markedDeliveredRef.current[selectedUser.id] = true;
+    markedDeliveredRef.current['_autoSelected'] = false;
+    markDeliveredForContact(selectedUser.id, false);
+  }, [isOpen, selectedUser]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Ждём пока контакты загрузятся, затем выбираем
     if (initialUser?.id) {
       setSelectedUser(initialUser);
+      markedDeliveredRef.current['_autoSelected'] = false;
       isModalOpenRef.current = true;
       return;
     }
@@ -129,7 +151,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       markedDeliveredRef.current['_autoSelected'] = true;
       isModalOpenRef.current = true;
     }
-  }, [isOpen, initialUser, contacts, refreshContacts]);
+  }, [isOpen, initialUser, contacts]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -147,24 +169,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     markedDeliveredRef.current[selectedUser.id] = true;
     markedDeliveredRef.current['_autoSelected'] = false;
     markDeliveredForContact(selectedUser.id, false);
-  }, [isOpen, selectedUser]);
-
-  useEffect(() => {
-    if (!isOpen || !selectedUser?.id) return;
-    setContacts(prev => {
-      if (prev.some(c => c.id === selectedUser.id)) return prev;
-
-      const updated = [
-        ...prev,
-        {
-          ...selectedUser,
-          undelivered_received_count: 0,
-          undelivered_sent_count: typeof selectedUser.undelivered_sent_count === 'number' ? selectedUser.undelivered_sent_count : 0
-        }
-      ];
-      localStorage.setItem(getContactsKey(), JSON.stringify(updated));
-      return updated;
-    });
   }, [isOpen, selectedUser]);
 
   useEffect(() => {
@@ -257,29 +261,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, [selectedUser?.id]);
+  }, [selectedUser?.id, sortContacts]);
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
-  };
-
-  const sortContacts = (list) => {
-    const safe = Array.isArray(list) ? list : [];
-    return safe
-      .slice()
-      .sort((a, b) => {
-        const ua = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
-        const ub = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
-
-        if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
-        if (ub !== ua) return ub - ua;
-
-        const ta = typeof a.last_timestamp === 'number' ? a.last_timestamp : -1;
-        const tb = typeof b.last_timestamp === 'number' ? b.last_timestamp : -1;
-        if (tb !== ta) return tb - ta;
-
-        return String(a.username || '').localeCompare(String(b.username || ''));
-      });
   };
 
   useEffect(() => {
