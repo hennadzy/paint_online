@@ -658,6 +658,7 @@ async function initDb() {
           message TEXT NOT NULL,
           timestamp BIGINT NOT NULL,
           delivered BOOLEAN DEFAULT false,
+          read BOOLEAN DEFAULT false,
           created_at BIGINT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_pm_to_user ON personal_messages(to_user_id, delivered);

@@ -199,6 +199,16 @@
     flex-shrink: 0;
     margin-left: 10px;
     box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.15);
+
+    &--red {
+      background-color: #ff3b30;
+      box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.15);
+    }
+
+    &--gray {
+      background-color: #8e8e93;
+      box-shadow: 0 0 0 2px rgba(142, 142, 147, 0.15);
+    }
   }
 }
 

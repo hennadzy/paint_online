@@ -221,7 +221,6 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
   const { pgPool } = require('../config/db');
 
-  console.log('[LS][contacts] meId=', meId);
 
   const query = `
     WITH me_messages AS (
@@ -231,6 +230,7 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
         pm.message,
         pm.timestamp,
         pm.delivered,
+        pm.read,
         CASE
           WHEN pm.from_user_id = $1 THEN pm.to_user_id
           ELSE pm.from_user_id
@@ -257,13 +257,13 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       GROUP BY pm.from_user_id
     ),
     undelivered_sent AS (
-      -- Непрочитано собеседником (от нас не delivered): from_user_id = meId
+      -- Непрочитано собеседником (от нас не read): from_user_id = meId
       SELECT
         pm.to_user_id AS other_user_id,
         COUNT(*)::int AS undelivered_sent_count
       FROM personal_messages pm
       WHERE pm.from_user_id = $1
-        AND pm.delivered = false
+        AND pm.read = false
       GROUP BY pm.to_user_id
     )
     SELECT
@@ -320,6 +320,27 @@ router.post('/messages/mark-delivered/:userId', authenticate, asyncHandler(async
     .map(m => m.id);
 
   await PersonalMessageStore.markDelivered(toMark);
+
+  res.json({ marked: toMark.length });
+}));
+
+router.post('/messages/mark-read/:userId', authenticate, asyncHandler(async (req, res) => {
+  const meId = req.user.userId;
+  const toUserId = req.params.userId;
+  validateUserId(toUserId);
+  
+  const PersonalMessageStore = require('../services/PersonalMessageStore');
+
+  const { pgPool } = require('../config/db');
+  const result = await pgPool.query(
+    `SELECT id FROM personal_messages
+     WHERE from_user_id = $1 AND to_user_id = $2 AND read = false
+     ORDER BY timestamp ASC`,
+    [meId, toUserId]
+  );
+
+  const toMark = result.rows.map(m => m.id);
+  await PersonalMessageStore.markRead(toMark);
 
   res.json({ marked: toMark.length });
 }));

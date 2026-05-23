@@ -32,6 +32,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const messagesEndRef = useRef(null);
   const searchInputRef = useRef(null);
+  const markedDeliveredRef = useRef({});
+  const isModalOpenRef = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
@@ -78,7 +80,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
               : (typeof c.undelivered_count === 'number' ? c.undelivered_count : 0),
           undelivered_sent_count:
             typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0,
-          // legacy compat
           undelivered_count:
             typeof c.undelivered_count === 'number'
               ? c.undelivered_count
@@ -101,32 +102,47 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    refreshContacts();
+    if (isOpen) {
+      refreshContacts();
+    }
   }, [isOpen, refreshContacts]);
 
-  const markedDeliveredRef = useRef({}); // { [userId]: true }
 
   useEffect(() => {
     if (!isOpen) return;
 
+    markedDeliveredRef.current = {};
+    markedDeliveredRef.current['_autoSelected'] = false;
+
     if (initialUser?.id) {
       setSelectedUser(initialUser);
+      isModalOpenRef.current = true;
       return;
     }
 
-    if (!selectedUser && contacts.length > 0) {
+    if (!selectedUser && contacts.length > 0 && !markedDeliveredRef.current['_autoSelected']) {
       setSelectedUser(contacts[0]);
+      markedDeliveredRef.current['_autoSelected'] = true;
+      isModalOpenRef.current = true;
     }
-  }, [isOpen, initialUser, contacts]);
+  }, [isOpen, initialUser, contacts, refreshContacts]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      isModalOpenRef.current = false;
+      markedDeliveredRef.current = {};
+      markedDeliveredRef.current['_autoSelected'] = false;
+      setSelectedUser(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !selectedUser?.id) return;
-    // При автоподборе контакта (без клика) нужно снять красные метки.
-    // Чтобы не слать запросы постоянно — делаем 1 раз на выбранного пользователя за сессию открытия.
     if (markedDeliveredRef.current[selectedUser.id]) return;
 
     markedDeliveredRef.current[selectedUser.id] = true;
-    markDeliveredForContact(selectedUser.id);
+    markedDeliveredRef.current['_autoSelected'] = false;
+    markDeliveredForContact(selectedUser.id, false);
   }, [isOpen, selectedUser]);
 
   useEffect(() => {
@@ -138,7 +154,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         ...prev,
         {
           ...selectedUser,
-          undelivered_count: typeof selectedUser.undelivered_count === 'number' ? selectedUser.undelivered_count : 0
+          undelivered_received_count: 0,
+          undelivered_sent_count: typeof selectedUser.undelivered_sent_count === 'number' ? selectedUser.undelivered_sent_count : 0,
+          undelivered_count: 0
         }
       ];
       localStorage.setItem(getContactsKey(), JSON.stringify(updated));
@@ -205,14 +223,19 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           is_online: true,
           undelivered_received_count: undeliveredReceived,
           undelivered_sent_count: 0,
-          // legacy compat
-          undelivered_count: undeliveredReceived
+          undelivered_count: undeliveredReceived,
+          last_timestamp: timestamp,
+          last_message: text
         });
       } else {
         const currReceived =
           typeof next[idx].undelivered_received_count === 'number'
             ? next[idx].undelivered_received_count
             : (typeof next[idx].undelivered_count === 'number' ? next[idx].undelivered_count : 0);
+        const currSent =
+          typeof next[idx].undelivered_sent_count === 'number'
+            ? next[idx].undelivered_sent_count
+            : 0;
 
         const nextReceived = isSameChat ? 0 : currReceived + 1;
 
@@ -220,16 +243,17 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           ...next[idx],
           is_online: true,
           undelivered_received_count: nextReceived,
-          undelivered_sent_count: typeof next[idx].undelivered_sent_count === 'number' ? next[idx].undelivered_sent_count : 0,
-          // legacy compat
-          undelivered_count: nextReceived
+          undelivered_sent_count: currSent,
+          undelivered_count: nextReceived,
+          last_timestamp: timestamp,
+          last_message: text
         };
       }
 
       try {
         localStorage.setItem(getContactsKey(), JSON.stringify(next));
       } catch (_) {}
-      return next;
+      return sortContacts(next);
     });
 
     setConversations(prev => {
@@ -238,7 +262,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, [selectedUser?.id]); 
+  }, [selectedUser?.id]);
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
@@ -258,7 +282,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
             ? b.undelivered_received_count
             : (typeof b.undelivered_count === 'number' ? b.undelivered_count : 0);
 
-        // Telegram-like: unread (received by us) on top.
         if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
         if (ub !== ua) return ub - ua;
 
@@ -367,30 +390,34 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     setSearchQuery('');
   };
 
-  const markDeliveredForContact = async (contactId) => {
+  const markDeliveredForContact = async (contactId, refreshFromServer = true) => {
     const token = localStorage.getItem('token');
     if (!token || !contactId) return;
 
-    try {
-      await axios.post(
-        `${API_URL}/api/users/messages/mark-delivered/${encodeURIComponent(contactId)}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch (e) {
-      console.warn('mark-delivered failed:', e);
+    if (refreshFromServer) {
+      try {
+        await axios.post(
+          `${API_URL}/api/users/messages/mark-delivered/${encodeURIComponent(contactId)}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (e) {
+        console.warn('mark-delivered failed:', e);
+      }
     }
 
-    // clear ONLY unread-for-us (red)
     setContacts(prev => {
       const next = Array.isArray(prev)
         ? prev.map(c => {
             if (String(c.id) !== String(contactId)) return c;
+            const currSent = typeof c.undelivered_sent_count === 'number'
+              ? c.undelivered_sent_count
+              : 0;
             return {
               ...c,
               undelivered_received_count: 0,
-              // legacy compat
-              undelivered_count: 0
+              undelivered_count: 0,
+              undelivered_sent_count: currSent
             };
           })
         : [];
@@ -421,6 +448,40 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       await axios.post(
         `${API_URL}/api/users/messages`,
         { toUserId: selectedUser.id, message: trimmed, timestamp },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setContacts(prev => {
+        const next = Array.isArray(prev) ? [...prev] : [];
+        const idx = next.findIndex(c => String(c.id) === String(selectedUser.id));
+        if (idx !== -1) {
+          const currSent = typeof next[idx].undelivered_sent_count === 'number'
+            ? next[idx].undelivered_sent_count
+            : 0;
+          next[idx] = {
+            ...next[idx],
+            undelivered_sent_count: currSent + 1,
+            last_timestamp: timestamp,
+            last_message: trimmed
+          };
+        } else {
+          next.push({
+            ...selectedUser,
+            undelivered_received_count: 0,
+            undelivered_sent_count: 1,
+            last_timestamp: timestamp,
+            last_message: trimmed
+          });
+        }
+        try {
+          localStorage.setItem(getContactsKey(), JSON.stringify(next));
+        } catch (_) {}
+        return sortContacts(next);
+      });
+
+      axios.post(
+        `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(selectedUser.id)}`,
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (error) {
@@ -548,7 +609,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                             className={`user-item${selectedUser?.id === user.id ? ' selected' : ''}`}
                             onClick={() => {
                               setSelectedUser(user);
-                              markDeliveredForContact(user.id);
                             }}
                           >
                             <div className="user-avatar">
