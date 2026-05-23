@@ -260,10 +260,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       return next;
     });
 
-    // Подтянуть unread-счётчики после входящего сообщения,
-    // чтобы серые/красные не "залипали" и обновлялись по серверу.
-    scheduleRefreshContacts();
-  }, [selectedUser?.id, scheduleRefreshContacts]);
+    // Не делаем refreshContacts() глобально: серверный пересчёт может
+    // преждевременно менять unread-счётчики для других контактов.
+    // Локально обновляем индикаторы в setContacts выше.
+  }, [selectedUser?.id]);
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
@@ -454,16 +454,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         return next;
       });
 
-      axios.post(
-        `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(selectedUser.id)}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-        .catch(() => {})
-        .finally(() => {
-          // Подтянуть серые точки (undelivered_sent_count) и красные (undelivered_received_count)
-          scheduleRefreshContacts();
-        });
+      // Не вызываем mark-read при отправке.
+      // Серый unread (undelivered_sent_count) должен исчезать только когда
+      // собеседник прочитал, а не когда мы отправили сообщение.
     } catch (error) {
       console.error('Error sending message:', error);
       setConversations(prev => {
