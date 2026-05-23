@@ -34,6 +34,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const searchInputRef = useRef(null);
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
+  const refreshContactsTimerRef = useRef(null);
+
+  const scheduleRefreshContacts = useCallback(() => {
+    if (!isOpen) return;
+    if (refreshContactsTimerRef.current) clearTimeout(refreshContactsTimerRef.current);
+    refreshContactsTimerRef.current = setTimeout(() => {
+      refreshContacts();
+    }, 150);
+  }, [isOpen, refreshContacts]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
@@ -250,7 +259,11 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
       return next;
     });
-  }, [selectedUser?.id]);
+
+    // Подтянуть unread-счётчики после входящего сообщения,
+    // чтобы серые/красные не "залипали" и обновлялись по серверу.
+    scheduleRefreshContacts();
+  }, [selectedUser?.id, scheduleRefreshContacts]);
 
   const clearNotifications = () => {
     userState.incomingPersonalMessages = [];
@@ -385,6 +398,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       } catch (_) {}
       return next;
     });
+
+    // Важно: подтянуть актуальные unread-счётчики с сервера (с антидребезгом, чтобы не было гонок)
+    scheduleRefreshContacts();
   };
 
   const handleSendMessage = async () => {
@@ -442,7 +458,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(selectedUser.id)}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
-      ).catch(() => {});
+      )
+        .catch(() => {})
+        .finally(() => {
+          // Подтянуть серые точки (undelivered_sent_count) и красные (undelivered_received_count)
+          scheduleRefreshContacts();
+        });
     } catch (error) {
       console.error('Error sending message:', error);
       setConversations(prev => {
