@@ -221,7 +221,6 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
   const { pgPool } = require('../config/db');
 
-
   const query = `
     WITH me_messages AS (
       SELECT
@@ -247,7 +246,6 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       GROUP BY other_user_id
     ),
     undelivered_received AS (
-      -- Непрочитано НАМИ (нам не delivered): to_user_id = meId
       SELECT
         pm.from_user_id AS other_user_id,
         COUNT(*)::int AS undelivered_received_count
@@ -257,7 +255,6 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       GROUP BY pm.from_user_id
     ),
     undelivered_sent AS (
-      -- Непрочитано собеседником (от нас не read): from_user_id = meId
       SELECT
         pm.to_user_id AS other_user_id,
         COUNT(*)::int AS undelivered_sent_count
@@ -274,8 +271,7 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       mm.message AS last_message,
       l.last_timestamp,
       COALESCE(ur.undelivered_received_count, 0) AS undelivered_received_count,
-      COALESCE(us.undelivered_sent_count, 0) AS undelivered_sent_count,
-      COALESCE(ur.undelivered_received_count, 0) AS undelivered_count
+      COALESCE(us.undelivered_sent_count, 0) AS undelivered_sent_count
     FROM last_per_other l
     JOIN me_messages mm
       ON mm.other_user_id = l.other_user_id
@@ -300,8 +296,7 @@ router.get('/contacts', authenticate, asyncHandler(async (req, res) => {
       last_message: row.last_message,
       last_timestamp: row.last_timestamp,
       undelivered_received_count: row.undelivered_received_count,
-      undelivered_sent_count: row.undelivered_sent_count,
-      undelivered_count: row.undelivered_count
+      undelivered_sent_count: row.undelivered_sent_count
     }))
   );
 }));
@@ -331,15 +326,7 @@ router.post('/messages/mark-read/:userId', authenticate, asyncHandler(async (req
   
   const PersonalMessageStore = require('../services/PersonalMessageStore');
 
-  const { pgPool } = require('../config/db');
-  const result = await pgPool.query(
-    `SELECT id FROM personal_messages
-     WHERE from_user_id = $1 AND to_user_id = $2 AND read = false
-     ORDER BY timestamp ASC`,
-    [meId, toUserId]
-  );
-
-  const toMark = result.rows.map(m => m.id);
+  const toMark = await PersonalMessageStore.getOutgoingUnreadMessages(meId, toUserId);
   await PersonalMessageStore.markRead(toMark);
 
   res.json({ marked: toMark.length });

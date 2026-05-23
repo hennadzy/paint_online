@@ -77,13 +77,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           undelivered_received_count:
             typeof c.undelivered_received_count === 'number'
               ? c.undelivered_received_count
-              : (typeof c.undelivered_count === 'number' ? c.undelivered_count : 0),
+              : 0,
           undelivered_sent_count:
-            typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0,
-          undelivered_count:
-            typeof c.undelivered_count === 'number'
-              ? c.undelivered_count
-              : (typeof c.undelivered_received_count === 'number' ? c.undelivered_received_count : 0)
+            typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0
         }));
 
         setContacts(nextContacts);
@@ -96,6 +92,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       }
     } catch (error) {
       console.error('Error loading contacts from server:', error);
+      try {
+        const savedContacts = localStorage.getItem(getContactsKey());
+        if (savedContacts) {
+          const parsed = JSON.parse(savedContacts);
+          if (Array.isArray(parsed)) {
+            setContacts(parsed);
+          }
+        }
+      } catch (_) {}
     } finally {
       setContactsLoading(false);
     }
@@ -110,7 +115,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
   useEffect(() => {
     if (!isOpen) return;
-
     markedDeliveredRef.current = {};
     markedDeliveredRef.current['_autoSelected'] = false;
 
@@ -155,8 +159,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         {
           ...selectedUser,
           undelivered_received_count: 0,
-          undelivered_sent_count: typeof selectedUser.undelivered_sent_count === 'number' ? selectedUser.undelivered_sent_count : 0,
-          undelivered_count: 0
+          undelivered_sent_count: typeof selectedUser.undelivered_sent_count === 'number' ? selectedUser.undelivered_sent_count : 0
         }
       ];
       localStorage.setItem(getContactsKey(), JSON.stringify(updated));
@@ -223,19 +226,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           is_online: true,
           undelivered_received_count: undeliveredReceived,
           undelivered_sent_count: 0,
-          undelivered_count: undeliveredReceived,
           last_timestamp: timestamp,
           last_message: text
         });
       } else {
-        const currReceived =
-          typeof next[idx].undelivered_received_count === 'number'
-            ? next[idx].undelivered_received_count
-            : (typeof next[idx].undelivered_count === 'number' ? next[idx].undelivered_count : 0);
-        const currSent =
-          typeof next[idx].undelivered_sent_count === 'number'
-            ? next[idx].undelivered_sent_count
-            : 0;
+        const currReceived = typeof next[idx].undelivered_received_count === 'number' ? next[idx].undelivered_received_count : 0;
+        const currSent = typeof next[idx].undelivered_sent_count === 'number' ? next[idx].undelivered_sent_count : 0;
 
         const nextReceived = isSameChat ? 0 : currReceived + 1;
 
@@ -244,7 +240,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
           is_online: true,
           undelivered_received_count: nextReceived,
           undelivered_sent_count: currSent,
-          undelivered_count: nextReceived,
           last_timestamp: timestamp,
           last_message: text
         };
@@ -273,14 +268,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     return safe
       .slice()
       .sort((a, b) => {
-        const ua =
-          typeof a.undelivered_received_count === 'number'
-            ? a.undelivered_received_count
-            : (typeof a.undelivered_count === 'number' ? a.undelivered_count : 0);
-        const ub =
-          typeof b.undelivered_received_count === 'number'
-            ? b.undelivered_received_count
-            : (typeof b.undelivered_count === 'number' ? b.undelivered_count : 0);
+        const ua = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
+        const ub = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
 
         if ((ub > 0) !== (ua > 0)) return ub > 0 ? -1 : 1;
         if (ub !== ua) return ub - ua;
@@ -378,7 +367,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         ...prev,
         {
           ...user,
-          undelivered_count: typeof user.undelivered_count === 'number' ? user.undelivered_count : 0
+          undelivered_received_count: 0,
+          undelivered_sent_count: 0
         }
       ];
       localStorage.setItem(getContactsKey(), JSON.stringify(updated));
@@ -410,14 +400,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       const next = Array.isArray(prev)
         ? prev.map(c => {
             if (String(c.id) !== String(contactId)) return c;
-            const currSent = typeof c.undelivered_sent_count === 'number'
-              ? c.undelivered_sent_count
-              : 0;
             return {
               ...c,
-              undelivered_received_count: 0,
-              undelivered_count: 0,
-              undelivered_sent_count: currSent
+              undelivered_received_count: 0
             };
           })
         : [];
@@ -483,7 +468,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(selectedUser.id)}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+      ).catch(() => {});
     } catch (error) {
       console.error('Error sending message:', error);
       setConversations(prev => {
@@ -596,12 +581,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                     <ul className="users-list contacts-list">
                       {sortedContacts.map(user => {
                             const last = (conversations[user.id] || []).slice(-1)[0];
-                            const unreadForUs = typeof user.undelivered_received_count === 'number'
-                              ? user.undelivered_received_count
-                              : (typeof user.undelivered_count === 'number' ? user.undelivered_count : 0);
-                            const unreadForThem = typeof user.undelivered_sent_count === 'number'
-                              ? user.undelivered_sent_count
-                              : 0;
+                            const unreadForUs = typeof user.undelivered_received_count === 'number' ? user.undelivered_received_count : 0;
+                            const unreadForThem = typeof user.undelivered_sent_count === 'number' ? user.undelivered_sent_count : 0;
 
                         return (
                           <li
@@ -627,7 +608,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                             {unreadForUs > 0 && (
                               <span className="pm-unread-dot pm-unread-dot--red" title={`Нам непрочитано: ${unreadForUs}`} />
                             )}
-                            {unreadForThem > 0 && (
+                            {!unreadForUs && unreadForThem > 0 && (
                               <span className="pm-unread-dot pm-unread-dot--gray" title={`Собеседнику непрочитано: ${unreadForThem}`} />
                             )}
                           </li>

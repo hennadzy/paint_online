@@ -57,6 +57,21 @@ class PersonalMessageStore {
     }
   }
 
+  async getOutgoingUnreadMessages(fromUserId, toUserId) {
+    try {
+      const result = await pgPool.query(
+        `SELECT id FROM personal_messages
+         WHERE from_user_id = $1 AND to_user_id = $2 AND read = false
+         ORDER BY timestamp ASC`,
+        [fromUserId, toUserId]
+      );
+      return result.rows.map(r => r.id);
+    } catch (error) {
+      console.error('Error getting outgoing unread messages:', error);
+      return [];
+    }
+  }
+
   async getHistory(userId1, userId2, limit = 100) {
     try {
       const result = await pgPool.query(

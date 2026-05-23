@@ -664,6 +664,8 @@ async function initDb() {
         CREATE INDEX IF NOT EXISTS idx_pm_to_user ON personal_messages(to_user_id, delivered);
         CREATE INDEX IF NOT EXISTS idx_pm_conversation ON personal_messages(from_user_id, to_user_id);
       `);
+      await pgPool.query(`ALTER TABLE personal_messages ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false;`);
+      await pgPool.query(`CREATE INDEX IF NOT EXISTS idx_pm_read ON personal_messages(from_user_id, to_user_id, read);`);
     } catch (_) { }
 
     try {
