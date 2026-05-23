@@ -75,29 +75,22 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
             const existing = Array.isArray(prev) ? prev : [];
             const map = new Map(existing.map(c => [c.id, c]));
 
-            for (const c of response.data) {
-              map.set(c.id, {
-                ...(map.get(c.id) || {}),
-                ...c,
-                undelivered_received_count:
-                  typeof c.undelivered_received_count === 'number'
-                    ? c.undelivered_received_count
-                    : (map.get(c.id)?.undelivered_received_count || 0),
-                undelivered_sent_count:
-                  typeof c.undelivered_sent_count === 'number'
-                    ? c.undelivered_sent_count
-                    : (map.get(c.id)?.undelivered_sent_count || 0),
-                // legacy (compat)
-                undelivered_count:
-                  typeof c.undelivered_count === 'number'
-                    ? c.undelivered_count
-                    : (typeof c.undelivered_received_count === 'number'
-                        ? c.undelivered_received_count
-                        : (map.get(c.id)?.undelivered_count || 0))
-              });
-            }
-
-            const nextContacts = Array.from(map.values()).slice(0, 200);
+            // Чтобы не смешивать старый формат из localStorage,
+            // при загрузке с сервера полностью перезаписываем контакты (до 200).
+            const nextContacts = response.data.slice(0, 200).map(c => ({
+              ...c,
+              undelivered_received_count:
+                typeof c.undelivered_received_count === 'number'
+                  ? c.undelivered_received_count
+                  : (typeof c.undelivered_count === 'number' ? c.undelivered_count : 0),
+              undelivered_sent_count:
+                typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0,
+              // legacy compat (может понадобиться где-то ещё)
+              undelivered_count:
+                typeof c.undelivered_count === 'number'
+                  ? c.undelivered_count
+                  : (typeof c.undelivered_received_count === 'number' ? c.undelivered_received_count : 0)
+            }));
 
             try {
               localStorage.setItem(getContactsKey(), JSON.stringify(nextContacts));
