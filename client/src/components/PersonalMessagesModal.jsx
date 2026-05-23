@@ -410,23 +410,35 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     const token = localStorage.getItem('token');
     if (!token || !contactId) return;
 
-    if (refreshFromServer) {
-      try {
-        await axios.post(
-          `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(contactId)}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (e) {
-        console.warn('mark-read failed:', e);
-      }
-    }
+    if (!refreshFromServer) return;
 
-    // Не обнуляем undelivered_sent_count локально.
-    // Серый маркер должен исчезать только когда собеседник реально прочитал,
-    // что отражается в БД после успешного mark-read на сервере.
-    // Данные обновятся после scheduleRefreshContacts().
-    scheduleRefreshContacts();
+    try {
+      await axios.post(
+        `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(contactId)}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // После успешного read на сервере — обнуляем серый маркер локально,
+      // чтобы он пропадал сразу и не требовался повторный заход/выход.
+      setContacts(prev => {
+        const next = Array.isArray(prev)
+          ? prev.map(c => {
+              if (String(c.id) !== String(contactId)) return c;
+              return {
+                ...c,
+                undelivered_sent_count: 0
+              };
+            })
+          : [];
+        try {
+          localStorage.setItem(getContactsKey(), JSON.stringify(next));
+        } catch (_) {}
+        return next;
+      });
+    } catch (e) {
+      console.warn('mark-read failed:', e);
+    }
   };
 
   const handleSendMessage = async () => {
