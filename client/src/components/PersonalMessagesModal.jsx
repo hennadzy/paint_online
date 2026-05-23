@@ -632,9 +632,15 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                   ) : (
                     <ul className="users-list contacts-list">
                       {sortedContacts.map(user => {
-                            const last = (conversations[user.id] || []).slice(-1)[0];
-                            const unreadForUs = typeof user.undelivered_received_count === 'number' ? user.undelivered_received_count : 0;
-                            const unreadForThem = typeof user.undelivered_sent_count === 'number' ? user.undelivered_sent_count : 0;
+                        const last = (conversations[user.id] || []).slice(-1)[0];
+                        const unreadForUs =
+                          typeof user.undelivered_received_count === 'number'
+                            ? user.undelivered_received_count
+                            : 0;
+                        const unreadForThem =
+                          typeof user.undelivered_sent_count === 'number'
+                            ? user.undelivered_sent_count
+                            : 0;
 
                         return (
                           <li
@@ -645,23 +651,36 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                             }}
                           >
                             <div className="user-avatar">
-                              {user.avatar_url
-                                ? <img src={user.avatar_url} alt={user.username} />
-                                : <span>{user.username.charAt(0).toUpperCase()}</span>}
+                              {user.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.username} />
+                              ) : (
+                                <span>{user.username.charAt(0).toUpperCase()}</span>
+                              )}
                             </div>
+
                             <div className="user-info">
                               <span className="user-name">{user.username}</span>
                               {last && (
                                 <span className="last-message">
-                                  {last.text.length > 20 ? `${last.text.substring(0, 20)}...` : last.text}
+                                  {last.text.length > 20
+                                    ? `${last.text.substring(0, 20)}...`
+                                    : last.text}
                                 </span>
                               )}
                             </div>
+
                             {unreadForUs > 0 && (
-                              <span className="pm-unread-dot pm-unread-dot--red" title={`Нам непрочитано: ${unreadForUs}`} />
+                              <span
+                                className="pm-unread-dot pm-unread-dot--red"
+                                title={`Нам непрочитано: ${unreadForUs}`}
+                              />
                             )}
+
                             {!unreadForUs && unreadForThem > 0 && (
-                              <span className="pm-unread-dot pm-unread-dot--gray" title={`Собеседнику непрочитано: ${unreadForThem}`} />
+                              <span
+                                className="pm-unread-dot pm-unread-dot--gray"
+                                title={`Собеседнику непрочитано: ${unreadForThem}`}
+                              />
                             )}
                           </li>
                         );
