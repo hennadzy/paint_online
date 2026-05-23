@@ -571,11 +571,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                                 </span>
                               )}
                             </div>
-                            {unreadForUs > 0 ? (
+                            {unreadForUs > 0 && (
                               <span className="pm-unread-dot pm-unread-dot--red" title={`Нам непрочитано: ${unreadForUs}`} />
-                            ) : unreadForThem > 0 ? (
+                            )}
+                            {unreadForThem > 0 && (
                               <span className="pm-unread-dot pm-unread-dot--gray" title={`Собеседнику непрочитано: ${unreadForThem}`} />
-                            ) : null}
+                            )}
                           </li>
                         );
                       })}
