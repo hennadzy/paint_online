@@ -402,7 +402,8 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       return next;
     });
 
-    scheduleRefreshContacts();
+    // Важно: не триггерим refreshContacts(), чтобы серый маркер исчезал сразу
+    // (а не перетирался старыми данными с сервера, если read ещё не успел обновиться).
   };
 
   const markReadForContact = async (contactId, refreshFromServer = true) => {
@@ -421,22 +422,10 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       }
     }
 
-    setContacts(prev => {
-      const next = Array.isArray(prev)
-        ? prev.map(c => {
-            if (String(c.id) !== String(contactId)) return c;
-            return {
-              ...c,
-              undelivered_sent_count: 0
-            };
-          })
-        : [];
-      try {
-        localStorage.setItem(getContactsKey(), JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-
+    // Не обнуляем undelivered_sent_count локально.
+    // Серый маркер должен исчезать только когда собеседник реально прочитал,
+    // что отражается в БД после успешного mark-read на сервере.
+    // Данные обновятся после scheduleRefreshContacts().
     scheduleRefreshContacts();
   };
 
