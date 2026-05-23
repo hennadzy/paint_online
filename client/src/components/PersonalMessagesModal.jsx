@@ -36,24 +36,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const isModalOpenRef = useRef(false);
   const refreshContactsTimerRef = useRef(null);
 
-  const scheduleRefreshContacts = useCallback(() => {
-    if (!isOpen) return;
-    if (refreshContactsTimerRef.current) clearTimeout(refreshContactsTimerRef.current);
-    refreshContactsTimerRef.current = setTimeout(() => {
-      refreshContacts();
-    }, 150);
-  }, [isOpen, refreshContacts]);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Загружаем контакты из localStorage только если сервер недоступен
-  // Основное - всегда с сервера при открытии
-
   const refreshContacts = useCallback(async () => {
     if (!isOpen) return;
 
@@ -109,6 +91,24 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       setContactsLoading(false);
     }
   }, [isOpen]);
+
+  const scheduleRefreshContacts = useCallback(() => {
+    if (!isOpen) return;
+    if (refreshContactsTimerRef.current) clearTimeout(refreshContactsTimerRef.current);
+    refreshContactsTimerRef.current = setTimeout(() => {
+      refreshContacts();
+    }, 150);
+  }, [isOpen, refreshContacts]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Загружаем контакты из localStorage только если сервер недоступен
+  // Основное - всегда с сервера при открытии
 
   useEffect(() => {
     if (!isOpen) return;
