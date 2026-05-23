@@ -121,14 +121,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     refreshContacts();
   }, [isOpen, refreshContacts]);
 
-  useEffect(() => {
-    if (!isOpen || !selectedUser?.id) return;
-    if (markedDeliveredRef.current[selectedUser.id]) return;
-
-    markedDeliveredRef.current[selectedUser.id] = true;
-    markedDeliveredRef.current['_autoSelected'] = false;
-    markDeliveredForContact(selectedUser.id, false);
-  }, [isOpen, selectedUser]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -156,15 +148,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       setSelectedUser(null);
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || !selectedUser?.id) return;
-    if (markedDeliveredRef.current[selectedUser.id]) return;
-
-    markedDeliveredRef.current[selectedUser.id] = true;
-    markedDeliveredRef.current['_autoSelected'] = false;
-    markDeliveredForContact(selectedUser.id, false);
-  }, [isOpen, selectedUser]);
 
   useEffect(() => {
     if (!isOpen) return;
