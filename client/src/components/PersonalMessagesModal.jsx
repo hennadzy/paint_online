@@ -528,20 +528,19 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const mobileShowChat = isMobileView && !!selectedUser;
   const currentMessages = selectedUser ? (conversations[selectedUser.id] || []) : [];
 
-  const sortedContacts = Array.isArray(contacts)
-    ? [...contacts].sort((a, b) => {
-        const aRed = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
-        const bRed = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
+  const sortedContacts = Array.isArray(contacts) ? [...contacts].sort((a, b) => {
+    const aRed = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
+    const bRed = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
 
-        // Красные сверху
-        if (aRed > 0 && bRed === 0) return -1;
-        if (aRed === 0 && bRed > 0) return 1;
-        // Далее внутри красных/всех по последнему timestamp desc
-        const aTs = typeof a.last_timestamp === 'number' ? a.last_timestamp : 0;
-        const bTs = typeof b.last_timestamp === 'number' ? b.last_timestamp : 0;
-        return bTs - aTs;
-      })
-    : [];
+    // Красные сверху
+    if (aRed > 0 && bRed === 0) return -1;
+    if (aRed === 0 && bRed > 0) return 1;
+
+    // Далее внутри красных/всех по последнему timestamp desc
+    const aTs = typeof a.last_timestamp === 'number' ? a.last_timestamp : 0;
+    const bTs = typeof b.last_timestamp === 'number' ? b.last_timestamp : 0;
+    return bTs - aTs;
+  }) : [];
 
   return (
     <div
@@ -631,7 +630,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                     </div>
                   ) : (
                     <ul className="users-list contacts-list">
-                      {sortedContacts.map(user => {
+                      {sortedContacts.map((user) => {
                         const last = (conversations[user.id] || []).slice(-1)[0];
                         const unreadForUs =
                           typeof user.undelivered_received_count === 'number'
@@ -642,13 +641,14 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                             ? user.undelivered_sent_count
                             : 0;
 
+                        const showRed = unreadForUs > 0;
+                        const showGray = !showRed && unreadForThem > 0;
+
                         return (
                           <li
                             key={user.id}
                             className={`user-item${selectedUser?.id === user.id ? ' selected' : ''}`}
-                            onClick={() => {
-                              setSelectedUser(user);
-                            }}
+                            onClick={() => setSelectedUser(user)}
                           >
                             <div className="user-avatar">
                               {user.avatar_url ? (
@@ -660,28 +660,26 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
                             <div className="user-info">
                               <span className="user-name">{user.username}</span>
-                              {last && (
+                              {last ? (
                                 <span className="last-message">
-                                  {last.text.length > 20
-                                    ? `${last.text.substring(0, 20)}...`
-                                    : last.text}
+                                  {String(last.text).length > 20
+                                    ? `${String(last.text).substring(0, 20)}...`
+                                    : String(last.text)}
                                 </span>
-                              )}
+                              ) : null}
                             </div>
 
-                            {unreadForUs > 0 && (
+                            {showRed ? (
                               <span
                                 className="pm-unread-dot pm-unread-dot--red"
                                 title={`Нам непрочитано: ${unreadForUs}`}
                               />
-                            )}
-
-                            {!unreadForUs && unreadForThem > 0 && (
+                            ) : showGray ? (
                               <span
                                 className="pm-unread-dot pm-unread-dot--gray"
                                 title={`Собеседнику непрочитано: ${unreadForThem}`}
                               />
-                            )}
+                            ) : null}
                           </li>
                         );
                       })}
