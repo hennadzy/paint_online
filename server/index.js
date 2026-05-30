@@ -266,64 +266,114 @@ const SEO_PAGES = {
   }
 };
 
-function buildSitemapXml({ galleryIds = [] } = {}) {
-  const baseUrl = 'https://risovanie.online';
-  const lastmod = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-  const staticUrls = [
-    `${baseUrl}/`,
-    `${baseUrl}/coloring`,
-    `${baseUrl}/gallery`,
-    `${baseUrl}/help`,
-  ];
-
-  const urlEntries = [
-    ...staticUrls.map((loc) => `
-      <url>
-        <loc>${loc}</loc>
-        <lastmod>${lastmod}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>${loc.endsWith('/') ? '1.0' : '0.8'}</priority>
-        <xhtml:link rel="alternate" hreflang="ru" href="${loc}"/>
-      </url>
-    `),
-    ...galleryIds.map((id) => `
-      <url>
-        <loc>${baseUrl}/gallery/${id}</loc>
-        <lastmod>${lastmod}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-        <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery/${id}"/>
-      </url>
-    `),
-  ];
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${urlEntries.join('')}
-</urlset>`;
-}
-
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const result = await pgPool.query(
-      `SELECT id
+      `SELECT id, approved_at, created_at
        FROM gallery_drawings
        WHERE status = 'approved'
-       ORDER BY id DESC
+       ORDER BY approved_at DESC
        LIMIT 5000`
     );
 
-    const galleryIds = result.rows.map(r => r.id);
+    const drawings = result.rows;
+    const baseUrl = 'https://risovanie.online';
+    const now = new Date().toISOString().split('T')[0];
+
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Статические страницы -->
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/coloring</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/gallery</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/help</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/help"/>
+  </url>`;
+
+    for (const drawing of drawings) {
+      const drawingDate = drawing.approved_at
+        ? new Date(drawing.approved_at).toISOString().split('T')[0]
+        : new Date(drawing.created_at).toISOString().split('T')[0];
+
+      sitemap += `
+  <url>
+    <loc>${baseUrl}/gallery/${drawing.id}</loc>
+    <lastmod>${drawingDate}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery/${drawing.id}"/>
+  </url>`;
+    }
+
+    sitemap += `
+</urlset>`;
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store');
-    res.send(buildSitemapXml({ galleryIds }));
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(sitemap);
   } catch (e) {
+    console.error('Sitemap generation error:', e);
+    const baseUrl = 'https://risovanie.online';
+    const now = new Date().toISOString().split('T')[0];
+    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/coloring</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/gallery</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery"/>
+  </url>
+  <url>
+    <loc>${baseUrl}/help</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/help"/>
+  </url>
+</urlset>`;
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
-    res.send(buildSitemapXml());
+    res.send(fallbackSitemap);
   }
 });
 
