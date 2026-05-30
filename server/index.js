@@ -189,6 +189,34 @@ app.get('/files/coloring_:id.:ext', async (req, res) => {
  }
 });
 
+// Favicon handler
+app.get('/favicon.ico', async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      'SELECT image_data FROM coloring_pages WHERE id = 1 LIMIT 1'
+    );
+
+    if (result.rows.length > 0 && result.rows[0].image_data) {
+      const imageData = result.rows[0].image_data;
+      const match = imageData.match(/^data:image\/(jpeg|png|gif|webp);base64,(.+)$/s);
+      if (match) {
+        const mimeType = match[1] === 'jpg' ? 'image/jpeg' : `image/${match[1]}`;
+        const buffer = Buffer.from(match[2], 'base64');
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.send(buffer);
+      }
+    }
+    
+    // Fallback: redirect to /favicon.png from public folder
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.redirect('/favicon.png');
+  } catch (error) {
+    console.error('Favicon error:', error);
+    res.status(404).send('Not found');
+  }
+});
+
 app.use('/files', (req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -277,6 +305,8 @@ app.get('/sitemap.xml', async (req, res) => {
     );
 
     const drawings = result.rows;
+    console.log('[SITEMAP] Generated sitemap with', drawings.length, 'approved drawings');
+
     const baseUrl = 'https://risovanie.online';
     const now = new Date().toISOString().split('T')[0];
 
@@ -336,7 +366,7 @@ app.get('/sitemap.xml', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(sitemap);
   } catch (e) {
-    console.error('Sitemap generation error:', e);
+    console.error('[SITEMAP] Generation error:', e);
     const baseUrl = 'https://risovanie.online';
     const now = new Date().toISOString().split('T')[0];
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
