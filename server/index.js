@@ -265,6 +265,65 @@ const SEO_PAGES = {
   }
 };
 
+function buildSitemapXml({ galleryIds = [] } = {}) {
+  const baseUrl = 'https://risovanie.online';
+  const lastmod = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  const staticUrls = [
+    `${baseUrl}/`,
+    `${baseUrl}/coloring`,
+    `${baseUrl}/gallery`,
+    `${baseUrl}/help`,
+  ];
+
+  const urlEntries = [
+    ...staticUrls.map((loc) => `
+      <url>
+        <loc>${loc}</loc>
+        <lastmod>${lastmod}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>${loc.endsWith('/') ? '1.0' : '0.8'}</priority>
+        <xhtml:link rel="alternate" hreflang="ru" href="${loc}"/>
+      </url>
+    `),
+    ...galleryIds.map((id) => `
+      <url>
+        <loc>${baseUrl}/gallery/${id}</loc>
+        <lastmod>${lastmod}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+        <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery/${id}"/>
+      </url>
+    `),
+  ];
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${urlEntries.join('')}
+</urlset>`;
+}
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT id
+       FROM gallery_drawings
+       WHERE status = 'approved'
+       ORDER BY id DESC
+       LIMIT 5000`
+    );
+
+    const galleryIds = result.rows.map(r => r.id);
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(buildSitemapXml({ galleryIds }));
+  } catch (e) {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(buildSitemapXml());
+  }
+});
+
 app.get('/coloring', (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
@@ -277,7 +336,7 @@ app.get('/coloring', (req, res) => {
     .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
     .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
     .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/coloring"`);
-  
+
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
 });
@@ -300,6 +359,8 @@ app.get('/gallery', (req, res) => {
 });
 
 app.get('/help', (req, res) => {
+  res.setHeader('X-Robots-Tag', 'index');
+
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
 
@@ -331,6 +392,8 @@ app.get('/gallery/:id', async (req, res) => {
   if (!Number.isFinite(drawingId) || drawingId <= 0) {
     return send404Page(res);
   }
+
+  res.setHeader('X-Robots-Tag', 'index');
 
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
@@ -434,6 +497,8 @@ app.get('*', (req, res) => {
       if (!room) {
         send404Page(res);
       } else {
+        res.setHeader('X-Robots-Tag', 'noindex');
+
         res.sendFile(indexPath);
       }
     })

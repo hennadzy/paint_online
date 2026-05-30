@@ -1,4 +1,0 @@
-- [ ] PersonalMessagesModal.jsx: добавить markReadForContact (серый маркер) по endpoint `/api/users/messages/mark-read/:userId`
-- [ ] PersonalMessagesModal.jsx: при открытии ЛС вызывать оба mark (delivered + read) для выбранного контакта (с антидребезгом, чтобы не спамить)
-- [ ] PersonalMessagesModal.jsx: добавить сортировку контактов telegram-like (красные сверху, затем last_timestamp desc)
-- [ ] PersonalMessagesModal.jsx: использовать отсортированный список в рендере (map по sortedContacts)

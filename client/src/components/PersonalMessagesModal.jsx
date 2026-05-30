@@ -35,7 +35,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
   const refreshContactsTimerRef = useRef(null);
-  const markReadDeliveredInFlightRef = useRef({}); // anti-debounce per contact
+  const markReadDeliveredInFlightRef = useRef({}); 
 
   const refreshContacts = useCallback(async () => {
     if (!isOpen) return;
@@ -61,7 +61,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
             typeof c.undelivered_sent_count === 'number' ? c.undelivered_sent_count : 0
         }));
 
-        // Конвертируем last_timestamp в число если нужно
         const normalizedContacts = nextContacts.map(c => ({
           ...c,
           last_timestamp: typeof c.last_timestamp === 'number' 
@@ -108,17 +107,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Загружаем контакты из localStorage только если сервер недоступен
-  // Основное - всегда с сервера при открытии
-
   useEffect(() => {
     if (!isOpen) return;
 
-    // Очищаем состояние при открытии
     markedDeliveredRef.current = {};
     markedDeliveredRef.current['_autoSelected'] = false;
 
-    // Загружаем свежие контакты с сервера
     refreshContacts();
   }, [isOpen, refreshContacts]);
 
@@ -126,7 +120,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Ждём пока контакты загрузятся, затем выбираем
     if (initialUser?.id) {
       setSelectedUser(initialUser);
       markedDeliveredRef.current['_autoSelected'] = false;
@@ -151,7 +144,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    // Требование: при открытии окна ЛС обновляем маркеры для выбранного контакта
+
     if (!isOpen) return;
     if (!selectedUser?.id) return;
 
@@ -159,9 +152,7 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
     (async () => {
       try {
-        // Красный пропадает когда мы отметили входящие как delivered
         await markDeliveredForContact(contactId, true);
-        // Серый пропадает когда мы отметили наши исходящие как прочитанные (read)
         await markReadForContact(contactId, true);
       } catch (e) {
         console.warn('mark delivered/read failed:', e);
@@ -220,7 +211,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
 
       const isSameChat = selectedUser?.id && String(selectedUser.id) === String(from);
 
-      // Нормализуем timestamp
       const ts = typeof timestamp === 'number' ? timestamp : (timestamp ? new Date(timestamp).getTime() : Date.now());
 
       if (idx === -1) {
@@ -263,9 +253,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       return next;
     });
 
-    // Не делаем refreshContacts() глобально: серверный пересчёт может
-    // преждевременно менять unread-счётчики для других контактов.
-    // Локально обновляем индикаторы в setContacts выше.
   }, [selectedUser?.id]);
 
   const clearNotifications = () => {
@@ -401,9 +388,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
       } catch (_) {}
       return next;
     });
-
-    // Важно: не триггерим refreshContacts(), чтобы серый маркер исчезал сразу
-    // (а не перетирался старыми данными с сервера, если read ещё не успел обновиться).
   };
 
   const markReadForContact = async (contactId, refreshFromServer = true) => {
@@ -418,9 +402,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // После успешного read на сервере — обнуляем серый маркер локально,
-      // чтобы он пропадал сразу и не требовался повторный заход/выход.
       setContacts(prev => {
         const next = Array.isArray(prev)
           ? prev.map(c => {
@@ -492,9 +473,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         return next;
       });
 
-      // Не вызываем mark-read при отправке.
-      // Серый unread (undelivered_sent_count) должен исчезать только когда
-      // собеседник прочитал, а не когда мы отправили сообщение.
     } catch (error) {
       console.error('Error sending message:', error);
       setConversations(prev => {
@@ -519,11 +497,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     const aRed = typeof a.undelivered_received_count === 'number' ? a.undelivered_received_count : 0;
     const bRed = typeof b.undelivered_received_count === 'number' ? b.undelivered_received_count : 0;
 
-    // Красные сверху
     if (aRed > 0 && bRed === 0) return -1;
     if (aRed === 0 && bRed > 0) return 1;
 
-    // Далее внутри красных/всех по последнему timestamp desc
     const aTs = typeof a.last_timestamp === 'number' ? a.last_timestamp : 0;
     const bTs = typeof b.last_timestamp === 'number' ? b.last_timestamp : 0;
     return bTs - aTs;
