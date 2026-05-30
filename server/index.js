@@ -189,7 +189,6 @@ app.get('/files/coloring_:id.:ext', async (req, res) => {
  }
 });
 
-// Favicon handler
 app.get('/favicon.ico', async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -208,7 +207,6 @@ app.get('/favicon.ico', async (req, res) => {
       }
     }
     
-    // Fallback: redirect to /favicon.png from public folder
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return res.redirect('/favicon.png');
   } catch (error) {
@@ -295,7 +293,14 @@ const SEO_PAGES = {
 };
 
 app.get('/sitemap.xml', async (req, res) => {
+  // Sitemap generator - updated 2026-01-17 for gallery drawings support
+  console.log('[SITEMAP] Request received at', new Date().toISOString());
+  
   try {
+    // Проверка подключения к БД
+    await pgPool.query('SELECT 1');
+    console.log('[SITEMAP] DB connection OK');
+
     const result = await pgPool.query(
       `SELECT id, approved_at, created_at
        FROM gallery_drawings
@@ -303,6 +308,9 @@ app.get('/sitemap.xml', async (req, res) => {
        ORDER BY approved_at DESC
        LIMIT 5000`
     );
+
+    console.log('[SITEMAP] Query result:', result.rows.length, 'rows');
+    console.log('[SITEMAP] First 3 drawings:', result.rows.slice(0, 3));
 
     const drawings = result.rows;
     console.log('[SITEMAP] Generated sitemap with', drawings.length, 'approved drawings');
