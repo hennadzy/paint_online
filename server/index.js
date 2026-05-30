@@ -118,6 +118,7 @@ app.use('/api', (req, res, next) => {
 
 app.use(express.json({ limit: '5mb' }));
 
+
 app.get(/^\/help(?:\/.*)?$/, (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   res.sendFile(indexPath, (err) => {
@@ -317,9 +318,11 @@ app.get('/sitemap.xml', async (req, res) => {
     const galleryIds = result.rows.map(r => r.id);
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
     res.send(buildSitemapXml({ galleryIds }));
   } catch (e) {
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
     res.send(buildSitemapXml());
   }
 });
