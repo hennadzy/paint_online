@@ -270,37 +270,9 @@ app.use('/api/admin', adminRouter);
 app.use('/api/gallery', galleryRouter);
 app.use('/api', apiRouter);
 
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-app.use(errorMiddleware);
-
-const SEO_PAGES = {
-  '/coloring': {
-    title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
-    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
-    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски'
-  },
-  '/gallery': {
-    title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
-    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
-    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам'
-  },
-  '/help': {
-    title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
-    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
-    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы'
-  }
-};
-
+// Sitemap BEFORE static files
 app.get('/sitemap.xml', async (req, res) => {
-  // Sitemap generator - updated 2026-01-17 for gallery drawings support
-  console.log('[SITEMAP] Request received at', new Date().toISOString());
-  
   try {
-    // Проверка подключения к БД
-    await pgPool.query('SELECT 1');
-    console.log('[SITEMAP] DB connection OK');
-
     const result = await pgPool.query(
       `SELECT id, approved_at, created_at
        FROM gallery_drawings
@@ -309,12 +281,7 @@ app.get('/sitemap.xml', async (req, res) => {
        LIMIT 5000`
     );
 
-    console.log('[SITEMAP] Query result:', result.rows.length, 'rows');
-    console.log('[SITEMAP] First 3 drawings:', result.rows.slice(0, 3));
-
     const drawings = result.rows;
-    console.log('[SITEMAP] Generated sitemap with', drawings.length, 'approved drawings');
-
     const baseUrl = 'https://risovanie.online';
     const now = new Date().toISOString().split('T')[0];
 
@@ -322,7 +289,6 @@ app.get('/sitemap.xml', async (req, res) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Статические страницы -->
   <url>
     <loc>${baseUrl}/</loc>
     <lastmod>${now}</lastmod>
@@ -374,7 +340,6 @@ app.get('/sitemap.xml', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(sitemap);
   } catch (e) {
-    console.error('[SITEMAP] Generation error:', e);
     const baseUrl = 'https://risovanie.online';
     const now = new Date().toISOString().split('T')[0];
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -414,6 +379,28 @@ app.get('/sitemap.xml', async (req, res) => {
     res.send(fallbackSitemap);
   }
 });
+
+app.use(errorMiddleware);
+
+const SEO_PAGES = {
+  '/coloring': {
+    title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
+    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
+    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски'
+  },
+  '/gallery': {
+    title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
+    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
+    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам'
+  },
+  '/help': {
+    title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
+    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
+    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы'
+  }
+};
+
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 app.get('/coloring', (req, res) => {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
