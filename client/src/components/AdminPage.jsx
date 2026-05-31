@@ -2211,7 +2211,20 @@ const AdminPage = observer(() => {
           >
             {mailChecking && 'Проверка настроек почты…'}
             {!mailChecking && mailReady && '✓ SMTP настроен — рассылка по email доступна.'}
-            {!mailChecking && !mailReady && 'Почта не настроена: нужны SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM / SMTP_FROM или SMTP_USER), при необходимости SMTP_PASS для аутентификации.'}
+            {!mailChecking && !mailReady && (
+              <>
+                <div>Почта не настроена на сервере.</div>
+                <div style={{ marginTop: '6px', color: '#ccc' }}>
+                  Проверьте переменные окружения на сервере:
+                </div>
+                <ul style={{ margin: '6px 0 0', paddingLeft: '20px', color: '#ccc' }}>
+                  <li><code>SMTP_HOST</code> — адрес SMTP-сервера (обязательно)</li>
+                  <li><code>SMTP_USER</code> — логин для аутентификации (обязательно)</li>
+                  <li><code>SMTP_PASS</code> — пароль для аутентификации (обязательно)</li>
+                  <li><code>SMTP_PORT</code> — порт (по умолчанию 587, для SSL — 465)</li>
+                </ul>
+              </>
+            )}
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -2593,7 +2606,7 @@ const AdminPage = observer(() => {
       </header>
 
       <nav className="admin-nav">
-        <button
+        <button 
           className={`admin-nav__item ${adminState.activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('dashboard');
@@ -2602,13 +2615,13 @@ const AdminPage = observer(() => {
         >
           Дашборд
         </button>
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'users' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('users')}
         >
           Пользователи
         </button>
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'rooms' ? 'active' : ''}`}
           onClick={() => adminState.setActiveTab('rooms')}
         >

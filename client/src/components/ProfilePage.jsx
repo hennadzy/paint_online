@@ -106,7 +106,9 @@ useEffect(() => {
   const handleSaveProfile = async () => {
     setPasswordError('');
     try {
+      console.log('[ProfilePage] Saving profile with:', { username, email });
       await userState.updateProfile({ username, email });
+      console.log('[ProfilePage] Profile updated, userState.user:', userState.user);
       if (newPassword.trim()) {
         if (!currentPassword.trim()) {
           setPasswordError('Введите текущий пароль для смены пароля');
@@ -118,6 +120,7 @@ useEffect(() => {
       setCurrentPassword('');
       setNewPassword('');
     } catch (err) {
+      console.error('[ProfilePage] Save profile error:', err);
       setPasswordError(err.response?.data?.error || userState.error || 'Ошибка сохранения');
     }
   };
