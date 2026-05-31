@@ -270,7 +270,6 @@ app.use('/api/admin', adminRouter);
 app.use('/api/gallery', galleryRouter);
 app.use('/api', apiRouter);
 
-// Sitemap BEFORE static files
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const result = await pgPool.query(

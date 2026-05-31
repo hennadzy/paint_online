@@ -194,6 +194,7 @@ const AdminPage = observer(() => {
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
   
+  const [expandedFields, setExpandedFields] = useState(new Set());
   const [usersSortBy, setUsersSortBy] = useState('created_at');
   const [usersSortOrder, setUsersSortOrder] = useState('DESC');
   const [roomsSortBy, setRoomsSortBy] = useState('last_activity');
@@ -320,6 +321,18 @@ const AdminPage = observer(() => {
     setUsersSortOrder(newOrder);
     adminState.setSort(field, newOrder, 'users');
     adminState.fetchUsers(1);
+  };
+
+  const toggleFieldExpand = (fieldId) => {
+    setExpandedFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) {
+        next.delete(fieldId);
+      } else {
+        next.add(fieldId);
+      }
+      return next;
+    });
   };
 
   const handleRoomsSort = (field) => {
@@ -593,40 +606,66 @@ const AdminPage = observer(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  {adminState.users.map(user => (
+                  {adminState.users.map(user => {
+                    const uuidFieldId = `uuid-${user.id}`;
+                    const emailFieldId = `email-${user.id}`;
+                    const isUuidExpanded = expandedFields.has(uuidFieldId);
+                    const isEmailExpanded = expandedFields.has(emailFieldId);
+                    
+                    return (
                     <tr key={user.id}>
                       <td>{user.username}</td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', maxWidth: 320 }}>
-                          <code
-                            style={{
-                              fontSize: 12,
-                              lineHeight: 1.35,
-                              wordBreak: 'break-all',
-                              color: '#b8c5d6',
-                              flex: 1,
-                              minWidth: 0
-                            }}
-                            title={user.id}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', maxWidth: 320 }}>
+                          <div
+                            className={`admin-truncate-field ${isUuidExpanded ? 'expanded' : ''}`}
+                            onClick={() => toggleFieldExpand(uuidFieldId)}
+                            title={isUuidExpanded ? 'Свернуть' : 'Развернуть'}
                           >
-                            {user.id}
-                          </code>
-                          <button
+                            <code
+                              style={{
+                                fontSize: 11,
+                                lineHeight: 1.3,
+                                color: '#b8c5d6',
+                              }}
+                            >
+                              {user.id}
+                            </code>
+                          </div>
+                          <button 
                             type="button"
-                            className="admin-btn admin-btn--secondary"
-                            style={{ flexShrink: 0, padding: '4px 8px', fontSize: 11 }}
+                            className="admin-truncate-toggle"
                             title="Копировать UUID"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (user.id && navigator.clipboard?.writeText) {
                                 navigator.clipboard.writeText(user.id).catch(() => {});
                               }
                             }}
                           >
-                            Копир.
+                            📋
                           </button>
                         </div>
                       </td>
-                      <td>{user.email}</td>
+                      <td style={{ maxWidth: 220 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div
+                            className={`admin-truncate-field ${isEmailExpanded ? 'expanded' : ''}`}
+                            onClick={() => toggleFieldExpand(emailFieldId)}
+                            title={isEmailExpanded ? 'Свернуть' : 'Развернуть'}
+                            style={{ maxWidth: 180 }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 13,
+                                color: '#e0e0e0',
+                              }}
+                            >
+                              {user.email}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
                       <td>
                         <span className={`admin-badge admin-badge--${user.role}`}>
                           {user.role === 'superadmin' ? 'Super Admin' : 
@@ -673,7 +712,8 @@ const AdminPage = observer(() => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                   {adminState.users.length === 0 && (
                     <tr>
                       <td colSpan="8" className="admin-empty">
@@ -2171,7 +2211,7 @@ const AdminPage = observer(() => {
           >
             {mailChecking && 'Проверка настроек почты…'}
             {!mailChecking && mailReady && '✓ SMTP настроен — рассылка по email доступна.'}
-            {!mailChecking && !mailReady && 'Почта не настроена: нужны непустые SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM или часто тот же SMTP_USER), при необходимости SMTP_PASS.'}
+            {!mailChecking && !mailReady && 'Почта не настроена: нужны SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM / SMTP_FROM или SMTP_USER), при необходимости SMTP_PASS для аутентификации.'}
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -2553,7 +2593,7 @@ const AdminPage = observer(() => {
       </header>
 
       <nav className="admin-nav">
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('dashboard');

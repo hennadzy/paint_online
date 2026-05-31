@@ -776,9 +776,22 @@ html, body {
 @media (max-width: 768px) {
   .admin-header {
     padding: 12px 15px;
+    flex-wrap: wrap;
+    gap: 10px;
 
     &__title {
       font-size: 18px;
+    }
+
+    &__user {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    &__logout,
+    &__home {
+      padding: 6px 12px;
+      font-size: 13px;
     }
   }
 
@@ -803,9 +816,19 @@ html, body {
     }
   }
 
+  .admin-table-container {
+    overflow-x: auto;
+  }
+
   .admin-table {
     display: block;
     overflow-x: auto;
+
+    thead, tbody, tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
   }
 
   .admin-toolbar {
@@ -827,6 +850,18 @@ html, body {
   }
 }
 
+@media (max-width: 1024px) {
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .admin-truncate-field {
+    max-width: 100px !important;
+  }
+}
+
 .admin-gallery-preview {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -840,6 +875,41 @@ html, body {
 @media (max-width: 768px) {
   .admin-gallery-preview {
     touch-action: manipulation !important;
+  }
+}
+
+.admin-truncate-field {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  cursor: pointer;
+  transition: max-width 0.2s ease;
+
+  &.expanded {
+    max-width: none;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  &:hover:not(.expanded) {
+    color: #ffd700;
+  }
+}
+
+.admin-truncate-toggle {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #ffd700;
   }
 }
 
