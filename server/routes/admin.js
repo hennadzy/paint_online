@@ -1068,7 +1068,7 @@ router.delete('/gallery/:id', async (req, res) => {
   }
 });
 
-router.get('/broadcast/mail-status', async (req, res) => {
+router.get('/broadcast/mail-status', authenticate, requireSuperAdmin, async (req, res) => {
   try {
     res.json({ configured: isConfigured() });
   } catch (error) {

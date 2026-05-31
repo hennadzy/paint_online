@@ -648,7 +648,7 @@ class AdminState {
 
   async fetchBroadcastMailStatus() {
     try {
-      const response = await axios.get(`${API_URL}/api/admin/broadcast/mail-status`);
+      const response = await axios.get(`${API_URL}/api/admin/broadcast/mail-status`, { headers: getAuthHeaders() });
       runInAction(() => {
         this.broadcastMailConfigured = response.data.configured;
       });
