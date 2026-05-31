@@ -167,7 +167,6 @@
     font-size: 20px;
   }
 
-  /* Уменьшаем "шапку" внутри окна справки */
   .help-page .room-welcome {
     padding: 12px;
     padding-top: calc(12px + env(safe-area-inset-top, 0px));

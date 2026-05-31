@@ -1203,11 +1203,10 @@
    max-height: none !important;
    z-index: 999999 !important;
    padding: 0 !important;
-   padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+   padding-top: calc(0px + env(safe-area-inset-top, 0px)) !important;
    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
    align-items: flex-start !important;
    justify-content: center !important;
-
    background: rgba(0, 0, 0, 1) !important;
  }
 
