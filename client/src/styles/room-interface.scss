@@ -853,10 +853,9 @@
 }
 
 @media (max-width: 768px) {
-  /* Мобилки: уменьшаем "шапки" у модальных окон */
   .room-welcome {
     padding: 12px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    padding-top: calc(0px + env(safe-area-inset-top, 0px));
     padding-bottom: 8px;
     margin-bottom: 12px;
 
@@ -1055,7 +1054,7 @@
    }
 
    .room-welcome {
-     padding: 16px;
+     padding: 2px;
      margin-bottom: 16px;
      margin-top: 0;
      padding-top: calc(16px + env(safe-area-inset-top, 0px));
@@ -1204,11 +1203,8 @@
    max-height: none !important;
    z-index: 999999 !important;
    padding: 0 !important;
-   /* ПК: делаем отступ сверху от края экрана */
    padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-
-   /* ПК: как "окно Справки" — горизонтально по центру, сверху есть отступ */
    align-items: flex-start !important;
    justify-content: center !important;
 
