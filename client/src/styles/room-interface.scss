@@ -853,6 +853,67 @@
 }
 
 @media (max-width: 768px) {
+  /* Мобилки: уменьшаем "шапки" у модальных окон */
+  .room-welcome {
+    padding: 12px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    margin-bottom: 12px;
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .room-close-btn {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 16px;
+    width: 30px;
+    height: 30px;
+    font-size: 22px;
+  }
+
+  .room-tabs {
+    margin-bottom: 15px;
+  }
+
+  .room-tab {
+    font-size: 14px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .room-card {
+    padding: 20px;
+    padding-top: 20px;
+  }
+
+  .room-card-header {
+    margin-bottom: 18px;
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+  }
+
+  .room-join-subtabs {
+    margin-bottom: 12px;
+  }
+
+  .room-join-subtab {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
   .room-item {
     flex-wrap: wrap;
     position: relative;
@@ -1144,8 +1205,11 @@
    padding: 0 !important;
    padding-top: env(safe-area-inset-top, 0px) !important;
    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-   align-items: stretch !important;
-   justify-content: flex-start !important;
+
+   /* ПК: как "окно Справки" — горизонтально по центру, сверху есть отступ */
+   align-items: flex-start !important;
+   justify-content: center !important;
+
    background: rgba(0, 0, 0, 1) !important;
  }
 
