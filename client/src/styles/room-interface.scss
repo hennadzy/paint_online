@@ -857,7 +857,8 @@
   .room-welcome {
     padding: 12px;
     padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    margin-bottom: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
 
     h1 {
       font-size: 18px;
