@@ -106,8 +106,24 @@ useEffect(() => {
   const handleSaveProfile = async () => {
     setPasswordError('');
     try {
-      console.log('[ProfilePage] Saving profile with:', { username, email });
-      await userState.updateProfile({ username, email });
+      console.log('[ProfilePage] Current user:', userState.user);
+      console.log('[ProfilePage] Form values:', { username, email });
+      const updates = {};
+      if (username !== userState.user.username) {
+        updates.username = username;
+      }
+      if (email !== userState.user.email) {
+        updates.email = email;
+      }
+      
+      console.log('[ProfilePage] Updates to send:', updates);
+      
+      if (Object.keys(updates).length === 0) {
+        setPasswordError('Нет изменений');
+        return;
+      }
+      
+      await userState.updateProfile(updates);
       console.log('[ProfilePage] Profile updated, userState.user:', userState.user);
       if (newPassword.trim()) {
         if (!currentPassword.trim()) {

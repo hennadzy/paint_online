@@ -23,7 +23,6 @@ function isConfigured() {
   const user = envTrim('SMTP_USER');
   const pass = envTrim('SMTP_PASS');
   const result = !!(user && pass);
-  // Для отладки
   if (typeof window === 'undefined') {
     console.log('[MailService.isConfigured] SMTP_HOST:', host ? 'set' : 'missing');
     console.log('[MailService.isConfigured] SMTP_USER:', user ? 'set' : 'missing');

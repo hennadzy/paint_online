@@ -49,25 +49,29 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
   
   const updates = {};
 
-  if (username !== undefined) {
-    if (typeof username !== 'string' || username.length < 3 || username.length > 20) {
-      throw new ValidationError('Имя пользователя должно содержать от 3 до 20 символов');
-    }
+  if (username !== undefined && username !== null) {
+    const shouldUpdateUsername = username.trim() !== '';
     
-    const usernameValidation = validateUsername(username);
-    if (!usernameValidation.valid) {
-      throw new ValidationError(usernameValidation.error);
+    if (shouldUpdateUsername) {
+      if (typeof username !== 'string' || username.length < 3 || username.length > 20) {
+        throw new ValidationError('Имя пользователя должно содержать от 3 до 20 символов');
+      }
+      
+      const usernameValidation = validateUsername(username);
+      if (!usernameValidation.valid) {
+        throw new ValidationError(usernameValidation.error);
+      }
+      
+      const existingUser = await User.findByUsername(usernameValidation.username);
+      if (existingUser && existingUser.id !== userId) {
+        throw new ValidationError('Это имя пользователя уже занято');
+      }
+      
+      updates.username = usernameValidation.username;
     }
-    
-    const existingUser = await User.findByUsername(usernameValidation.username);
-    if (existingUser && existingUser.id !== userId) {
-      throw new ValidationError('Это имя пользователя уже занято');
-    }
-    
-    updates.username = usernameValidation.username;
   }
-
-  if (email !== undefined) {
+    
+  if (email !== undefined && email !== null) {
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       throw new ValidationError(emailValidation.error);
