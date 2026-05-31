@@ -11,7 +11,7 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 const { generateToken } = require('../utils/jwt');
 const PersonalMessageStore = require('../services/PersonalMessageStore');
-const MailService = require('../services/MailService');
+const { isEmailConfigured, isConfigured, sendTextEmail } = require('../utils/email');
 const WebSocketHandler = require('../services/WebSocketHandler');
 const { sanitizeBroadcastSubject, sanitizeBroadcastBody } = require('../utils/security');
 const RoleCapabilitiesService = require('../services/RoleCapabilitiesService');
@@ -1070,7 +1070,7 @@ router.delete('/gallery/:id', async (req, res) => {
 
 router.get('/broadcast/mail-status', async (req, res) => {
   try {
-    res.json({ configured: MailService.isConfigured() });
+    res.json({ configured: isConfigured() });
   } catch (error) {
     console.error('Admin mail status error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -1098,7 +1098,7 @@ router.post('/broadcast', async (req, res) => {
       if (!emailSubject) {
         return res.status(400).json({ error: 'Укажите тему письма для рассылки по email' });
       }
-      if (!MailService.isConfigured()) {
+      if (!isConfigured()) {
         return res.status(503).json({
           error: 'Почта не настроена на сервере: нужны SMTP_HOST и адрес отправителя (MAIL_FROM / EMAIL_FROM или SMTP_USER), при необходимости SMTP_PASS.'
         });
@@ -1191,7 +1191,7 @@ router.post('/broadcast', async (req, res) => {
           stats.emailSkippedNoAddress++;
         } else {
           try {
-            await MailService.sendTextEmail({
+            await sendTextEmail({
               to: row.email,
               subject: emailSubject,
               text: dmText

@@ -93,8 +93,14 @@ async function sendWelcomeEmail({ to, username, supportEmail }) {
   return sendMailSafe({ to, subject, text, html });
 }
 
+async function sendTextEmail({ to, subject, text, html }) {
+  return sendMailSafe({ to, subject, text, html });
+}
+
 module.exports = {
   isEmailConfigured,
+  isConfigured: () => isEmailConfigured,
   sendPasswordResetEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendTextEmail
 };
