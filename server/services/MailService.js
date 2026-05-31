@@ -21,7 +21,10 @@ function resolveFromAddress() {
 function isConfigured() {
   const host = envTrim('SMTP_HOST');
   if (!host) return false;
-  return !!resolveFromAddress();
+  // Совместимо с utils/email.js: требуется SMTP_USER и SMTP_PASS
+  const user = envTrim('SMTP_USER');
+  const pass = envTrim('SMTP_PASS');
+  return !!(user && pass);
 }
 
 function getTransporter() {

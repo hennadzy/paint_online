@@ -36,18 +36,21 @@ const ProfilePage = observer(() => {
  const navigate = useNavigate();
  const [editMode, setEditMode] = useState(false);
  const [username, setUsername] = useState('');
- const [currentPassword, setCurrentPassword] = useState('');
+ const [email, setEmail] = useState('');
  const [newPassword, setNewPassword] = useState('');
+ const [currentPassword, setCurrentPassword] = useState('');
  const [showNewPassword, setShowNewPassword] = useState(false);
  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
  const [passwordError, setPasswordError] = useState('');
  const [avatarFile, setAvatarFile] = useState(null);
  const [previewUrl, setPreviewUrl] = useState(null);
  const [uploadError, setUploadError] = useState('');
-  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
-  const fileInputRef = useRef(null);
-  const [fromRoom, setFromRoom] = useState(null);
-  const [imageErrors, setImageErrors] = useState({});
+ const [uploading, setUploading] = useState(false);
+ const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
+ const [fromRoom, setFromRoom] = useState(null);
+
+ const fileInputRef = useRef(null);
+ const { user } = userState;
 
   const handleImageError = (id) => {
     console.log(`[CLIENT-PROFILE] Image load failed for ID=${id}`);
@@ -62,6 +65,7 @@ useEffect(() => {
  navigate('/login');
  } else {
  setUsername(userState.user?.username || '');
+ setEmail(userState.user?.email || '');
  userState.fetchCurrentUser();
  userState.fetchUserRooms();
  userState.fetchGalleryDrawings();
@@ -101,7 +105,7 @@ useEffect(() => {
   const handleSaveProfile = async () => {
     setPasswordError('');
     try {
-      await userState.updateProfile({ username });
+      await userState.updateProfile({ username, email });
       if (newPassword.trim()) {
         if (!currentPassword.trim()) {
           setPasswordError('Введите текущий пароль для смены пароля');
@@ -203,6 +207,16 @@ useEffect(() => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Ваше имя"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    className="profile-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Ваш email"
                   />
                 </div>
                 <div className="form-group">
