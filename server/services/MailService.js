@@ -1,50 +1,45 @@
 const nodemailer = require('nodemailer');
 
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.reg.ru';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || '';
+const FROM_EMAIL = process.env.FROM_EMAIL || process.env.SMTP_USER || '';
+
+const isEmailConfigured = Boolean(SMTP_USER && SMTP_PASS);
+
+console.log('[MailService] Loading module...');
+console.log('[MailService] SMTP_HOST:', SMTP_HOST ? 'set' : 'MISSING');
+console.log('[MailService] SMTP_USER:', SMTP_USER ? 'set' : 'MISSING');
+console.log('[MailService] SMTP_PASS:', SMTP_PASS ? 'set (len=' + SMTP_PASS.length + ')' : 'MISSING');
+console.log('[MailService] FROM_EMAIL:', FROM_EMAIL ? 'set' : 'MISSING');
+console.log('[MailService] isEmailConfigured:', isEmailConfigured);
+
 let transporter = null;
-
-function envTrim(key) {
-  const v = process.env[key];
-  if (v === undefined || v === null) return '';
-  return String(v).trim();
-}
-
-function resolveFromAddress() {
-  return (
-    envTrim('MAIL_FROM') ||
-    envTrim('EMAIL_FROM') ||
-    envTrim('SMTP_FROM') ||
-    envTrim('SMTP_USER')
-  );
-}
-
-function isConfigured() {
-  const host = envTrim('SMTP_HOST');
-  if (!host) return false;
-  const user = envTrim('SMTP_USER');
-  const pass = envTrim('SMTP_PASS');
-  const result = !!(user && pass);
-  if (typeof window === 'undefined') {
-    console.log('[MailService.isConfigured] SMTP_HOST:', host ? 'set' : 'missing');
-    console.log('[MailService.isConfigured] SMTP_USER:', user ? 'set' : 'missing');
-    console.log('[MailService.isConfigured] SMTP_PASS:', pass ? 'set (length=' + pass.length + ')' : 'missing');
-    console.log('[MailService.isConfigured] Result:', result);
-  }
-  return result;
-}
 
 function getTransporter() {
   if (transporter) return transporter;
-  if (!isConfigured()) return null;
-  const port = parseInt(envTrim('SMTP_PORT') || '587', 10);
-  const secure = envTrim('SMTP_SECURE') === 'true' || port === 465;
-  const user = envTrim('SMTP_USER');
+  if (!isEmailConfigured) {
+    console.log('[MailService] Transporter not created - SMTP not configured');
+    return null;
+  }
   transporter = nodemailer.createTransport({
-    host: envTrim('SMTP_HOST'),
-    port,
-    secure,
-    auth: user ? { user, pass: envTrim('SMTP_PASS') } : undefined
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS
+    }
   });
+  console.log('[MailService] Transporter created successfully');
   return transporter;
+}
+
+function isConfigured() {
+  const result = isEmailConfigured;
+  console.log('[MailService.isConfigured] Result:', result);
+  return result;
 }
 
 async function sendTextEmail({ to, subject, text }) {
@@ -52,9 +47,8 @@ async function sendTextEmail({ to, subject, text }) {
   if (!t) {
     throw new Error('SMTP is not configured');
   }
-  const from = resolveFromAddress();
   await t.sendMail({
-    from,
+    from: FROM_EMAIL,
     to,
     subject,
     text,
