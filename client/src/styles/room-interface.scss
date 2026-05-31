@@ -857,7 +857,7 @@
   .room-welcome {
     padding: 12px;
     padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 
     h1 {
       font-size: 18px;
@@ -1203,7 +1203,8 @@
    max-height: none !important;
    z-index: 999999 !important;
    padding: 0 !important;
-   padding-top: env(safe-area-inset-top, 0px) !important;
+   /* ПК: делаем отступ сверху от края экрана */
+   padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 
    /* ПК: как "окно Справки" — горизонтально по центру, сверху есть отступ */
