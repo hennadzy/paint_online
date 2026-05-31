@@ -1162,8 +1162,8 @@
 
   .room-interface-overlay.fullscreen .room-close-btn {
     position: fixed;
-    top: calc(20px + env(safe-area-inset-top, 0px));
-    right: 20px;
+    top: calc(5px + env(safe-area-inset-top, 0px));
+    right: 5px;
   }
 
   .room-interface-overlay.input-dialog-overlay {
