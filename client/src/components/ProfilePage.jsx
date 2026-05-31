@@ -48,6 +48,7 @@ const ProfilePage = observer(() => {
  const [uploading, setUploading] = useState(false);
  const [showPersonalMessagesModal, setShowPersonalMessagesModal] = useState(false);
  const [fromRoom, setFromRoom] = useState(null);
+ const [imageErrors, setImageErrors] = useState({});
 
  const fileInputRef = useRef(null);
  const { user } = userState;

@@ -8,7 +8,6 @@ function envTrim(key) {
   return String(v).trim();
 }
 
-/** Письма «от кого»: MAIL_FROM, иначе частый случай — SMTP_USER как логин и адрес отправителя */
 function resolveFromAddress() {
   return (
     envTrim('MAIL_FROM') ||
@@ -21,7 +20,6 @@ function resolveFromAddress() {
 function isConfigured() {
   const host = envTrim('SMTP_HOST');
   if (!host) return false;
-  // Совместимо с utils/email.js: требуется SMTP_USER и SMTP_PASS
   const user = envTrim('SMTP_USER');
   const pass = envTrim('SMTP_PASS');
   return !!(user && pass);
