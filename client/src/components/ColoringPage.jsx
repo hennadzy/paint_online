@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Fill from '../tools/Fill';
 import { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
@@ -92,6 +92,7 @@ const PRESET_COLORS = [
 const ColoringPage = () => {
   const navigate = useNavigate();
   const { setSeoData } = useSeo();
+  const { sectionSlug, roomSlug } = useParams();
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -99,6 +100,9 @@ const ColoringPage = () => {
 
   const [coloringPages, setColoringPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
+
+  const [rooms, setRooms] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
   const [selectedColor, setSelectedColor] = useState('#FF0000');
 
@@ -121,23 +125,66 @@ const ColoringPage = () => {
   const initialDistanceRef = useRef(0);
 
   useEffect(() => {
-    const fetchPages = async () => {
+    const fetchRoomsAndMaybePages = async () => {
       setIsLoading(true);
       setFetchError('');
+      setSelectedPage(null);
+      setImageLoaded(false);
+
       try {
+        if (sectionSlug && !roomSlug) {
+          const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/rooms`);
+          if (!res.ok) throw new Error('Server error');
+          const data = await res.json();
+          setRooms(Array.isArray(data.rooms) ? data.rooms : []);
+          setSelectedRoom(null);
+          setColoringPages([]);
+          setIsLoading(false);
+          setSeoData(null);
+          return;
+        }
+
+        if (sectionSlug && roomSlug) {
+          const res = await fetch(
+            `${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(roomSlug)}/pages`
+          );
+          if (!res.ok) throw new Error('Server error');
+          const data = await res.json();
+          const pages = Array.isArray(data.pages) ? data.pages : [];
+          setColoringPages(pages);
+          const room = { slug: roomSlug, title: roomSlug, sectionSlug };
+          setSelectedRoom(room);
+          setRooms([]);
+          setIsLoading(false);
+
+          if (pages[0]?.title) {
+            setSeoData({
+              title: `${pages[0].title} - Раскраска онлайн`,
+              description: `Раскраска "${pages[0].title}" — раскрашивайте онлайн бесплатно на Рисование.Онлайн`,
+              keywords: `раскраска ${pages[0].title}, раскраска онлайн`
+            });
+          } else {
+            setSeoData(null);
+          }
+          return;
+        }
+
         const res = await fetch(`${API_URL}/api/coloring-pages`);
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
-        setColoringPages(data);
+        setColoringPages(data.pages || data || []);
+        setSelectedRoom(null);
+        setRooms([]);
+        setIsLoading(false);
+        setSeoData(null);
       } catch (err) {
         setFetchError('Не удалось загрузить список раскрасок');
-      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchPages();
-  }, []);
+    fetchRoomsAndMaybePages();
+  }, [sectionSlug, roomSlug]);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -283,6 +330,13 @@ const ColoringPage = () => {
     setTimeout(() => loadImageToCanvas(page), 50);
   };
 
+  const handleSelectRoom = (room) => {
+    if (!sectionSlug) return;
+    setSelectedPage(null);
+    setImageLoaded(false);
+    navigate(`/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(room.slug)}`);
+  };
+
   const handleCanvasClick = useCallback(
     (e) => {
       if (!imageLoaded || isPinching) return;
@@ -392,13 +446,27 @@ const ColoringPage = () => {
   };
 
   if (!selectedPage) {
+    const onMainBack = () => {
+      if (sectionSlug) {
+        navigate('/coloring');
+        return;
+      }
+      navigate('/');
+    };
+
+    const headerTitle = sectionSlug
+      ? (roomSlug ? '🎨 Комната раскрасок' : '🎨 Раздел раскрасок')
+      : '🎨 Раскраски';
+
+    const showRoomsList = sectionSlug && !roomSlug;
+
     return (
       <div className="coloring-page">
         <div className="coloring-header">
-          <button className="coloring-back-btn" onClick={() => navigate('/')}>
-            ← На главную
+          <button className="coloring-back-btn" onClick={onMainBack}>
+            ← Назад
           </button>
-          <h1 className="coloring-header__title">🎨 Раскраски</h1>
+          <h1 className="coloring-header__title">{headerTitle}</h1>
         </div>
 
         <div className="coloring-selector">
@@ -412,6 +480,53 @@ const ColoringPage = () => {
               <span className="coloring-empty__icon">⚠️</span>
               <p>{fetchError}</p>
             </div>
+          ) : showRoomsList ? (
+            rooms.length === 0 ? (
+              <div className="coloring-empty">
+                <span className="coloring-empty__icon">🧩</span>
+                <p>Комнаты пока не добавлены</p>
+                <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
+              </div>
+            ) : (
+              <div className="coloring-pages-list">
+                <p className="coloring-selector__hint">Выберите комнату:</p>
+                {rooms.map((room) => (
+                  <div
+                    key={room.id}
+                    className="coloring-page-item"
+                    onClick={() => handleSelectRoom(room)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSelectRoom(room)}
+                  >
+                    <div className="coloring-page-item__preview">
+                      <div
+                        style={{
+                          width: 130,
+                          height: 90,
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.06)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#bbb',
+                          fontWeight: 600,
+                          textAlign: 'center',
+                          padding: 8
+                        }}
+                      >
+                        {room.title || room.slug}
+                      </div>
+                    </div>
+                    <div className="coloring-page-item__info">
+                      <h3 className="coloring-page-item__title">{room.title || room.slug}</h3>
+                      <span className="coloring-page-item__cta">Открыть →</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : coloringPages.length === 0 ? (
             <div className="coloring-empty">
               <span className="coloring-empty__icon">🎨</span>
@@ -483,7 +598,7 @@ const ColoringPage = () => {
                 Наша библиотека постоянно пополняется новыми изображениями, поэтому вы всегда найдёте что-то свежее.
                 Добавляйте любимые раскраски в закладки, возвращайтесь к ним позже и делитесь результатами с друзьями.
                 Рисование.Онлайн делает творчество доступным для каждого — просто откройте браузер и начните создавать
-                свои шедевры уже сегодня, без регистрации и сложных настроек. Посетите <a href="/">главную страницу </a> 
+                свои шедевры уже сегодня, без регистрации и сложных настроек. Посетите <a href="/">главную страницу </a>
                 для совместного рисования или загляните в <a href="/gallery">галерею</a>, чтобы увидеть работы других.
               </p>
             </div>
@@ -524,7 +639,7 @@ const ColoringPage = () => {
         </div>
       </div>
 
-      {/* Color Palette */}
+      
       <div className="coloring-palette">
         <div className="coloring-palette__inner">
           <div className="coloring-palette__swatches">
@@ -558,7 +673,7 @@ const ColoringPage = () => {
         </div>
       </div>
 
-      {/* Actions Panel */}
+     
       <div className="coloring-actions">
         <button className="coloring-action-btn" onClick={handleUndo} disabled={!canUndo} title="Отменить">
           <span className="coloring-action-icon">↩</span>
@@ -599,7 +714,7 @@ const ColoringPage = () => {
 
 
 
-      {/* Save Modal */}
+      
       {showSaveModal && (
         <div className="export-modal-overlay" onClick={() => setShowSaveModal(false)}>
           <div className="export-modal" onClick={(e) => e.stopPropagation()}>

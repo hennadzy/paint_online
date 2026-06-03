@@ -227,6 +227,15 @@ const AdminPage = observer(() => {
   const [coloringUploadLoading, setColoringUploadLoading] = useState(false);
   const [coloringUploadSuccess, setColoringUploadSuccess] = useState('');
 
+  const [coloringSectionId, setColoringSectionId] = useState(null);
+  const [coloringRoomId, setColoringRoomId] = useState(null);
+
+  const [showCreateSectionModal, setShowCreateSectionModal] = useState(false);
+  const [createSectionSlug, setCreateSectionSlug] = useState('');
+  const [createSectionTitle, setCreateSectionTitle] = useState('');
+  const [createSectionSeoText, setCreateSectionSeoText] = useState('');
+  const [createSectionError, setCreateSectionError] = useState('');
+
   const [galleryPreviewId, setGalleryPreviewId] = useState(null);
   const [galleryRenameId, setGalleryRenameId] = useState(null);
   const [galleryRenameTitle, setGalleryRenameTitle] = useState('');
@@ -299,6 +308,14 @@ const AdminPage = observer(() => {
     }
     adminState.fetchStats();
   }, [navigate]);
+
+  useEffect(() => {
+    if (coloringSectionId) {
+      adminState.fetchColoringRooms(coloringSectionId);
+    } else {
+      adminState.coloringRooms = [];
+    }
+  }, [coloringSectionId]);
 
   const handleLogout = async () => {
     await userState.logout();
@@ -1243,6 +1260,14 @@ const AdminPage = observer(() => {
     setColoringUploadError('');
     setColoringUploadSuccess('');
 
+    if (!coloringSectionId) {
+      setColoringUploadError('Выберите раздел');
+      return;
+    }
+    if (!coloringRoomId) {
+      setColoringUploadError('Выберите комнату (раздел → комната)');
+      return;
+    }
     if (!coloringUploadTitle.trim()) {
       setColoringUploadError('Введите название раскраски');
       return;
@@ -1258,7 +1283,7 @@ const AdminPage = observer(() => {
     formData.append('alt', (coloringUploadAlt || coloringUploadTitle).trim().substring(0, 200));
     formData.append('image', coloringUploadFile);
 
-    const result = await adminState.uploadColoringPage(formData);
+    const result = await adminState.uploadColoringPage(formData, coloringRoomId);
     setColoringUploadLoading(false);
 
     if (result.success) {
@@ -1283,7 +1308,6 @@ const AdminPage = observer(() => {
 
     return (
       <div>
-        {/* Upload Form */}
         <div className="admin-table-container" style={{ marginBottom: '24px' }}>
           <div className="admin-toolbar">
             <h3 style={{ color: '#ffd700', margin: 0 }}>🎨 Раскраски — добавить новую</h3>
@@ -1298,6 +1322,70 @@ const AdminPage = observer(() => {
                   {coloringUploadSuccess}
                 </div>
               )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                  <label>Раздел</label>
+                  <select
+                    value={coloringSectionId || ''}
+                    onChange={(e) => {
+                      const next = e.target.value ? Number(e.target.value) : null;
+                      setColoringSectionId(next);
+                      setColoringRoomId(null);
+                    }}
+                    style={{ width: '100%', maxWidth: '100%' }}
+                  >
+                    <option value="">Выберите раздел</option>
+                    {adminState.coloringSections.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.title || s.slug || s.id}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--secondary"
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                      onClick={() => {
+                        setCreateSectionSlug('');
+                        setCreateSectionTitle('');
+                        setCreateSectionSeoText('');
+                        setCreateSectionError('');
+                        setShowCreateSectionModal(true);
+                      }}
+                    >
+                      + Создать раздел
+                    </button>
+                  </div>
+                </div>
+
+                <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                  <label>Комната</label>
+                  <select
+                    value={coloringRoomId || ''}
+                    onChange={(e) => {
+                      const next = e.target.value ? Number(e.target.value) : null;
+                      setColoringRoomId(next);
+                    }}
+                    style={{ width: '100%', maxWidth: '100%' }}
+                  >
+                    <option value="">Выберите комнату</option>
+                    {adminState.coloringRooms.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.title || r.slug || r.id}
+                      </option>
+                    ))}
+                  </select>
+                  {adminState.coloringRoomsLoading && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: '#888' }}>Загрузка комнат…</div>
+                  )}
+                  {adminState.coloringRoomsError && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: '#ff6b6b' }}>{adminState.coloringRoomsError}</div>
+                  )}
+                </div>
+              </div>
+
               <div className="admin-form__group" style={{ marginBottom: 0 }}>
                 <label>Название раскраски</label>
                 <input
@@ -1334,6 +1422,7 @@ const AdminPage = observer(() => {
                   </div>
                 )}
               </div>
+
               <button
                 type="submit"
                 className="admin-btn admin-btn--primary"
@@ -1343,10 +1432,110 @@ const AdminPage = observer(() => {
                 {coloringUploadLoading ? 'Загрузка...' : '+ Добавить раскраску'}
               </button>
             </form>
+
+            {showCreateSectionModal && (
+              <div
+                className="admin-modal-overlay"
+                style={{ zIndex: 10000 }}
+                onClick={() => setShowCreateSectionModal(false)}
+              >
+                <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="admin-modal__header">
+                    <h2>Создать SEO-раздел</h2>
+                    <button className="admin-modal__close" onClick={() => setShowCreateSectionModal(false)}>
+                      <CloseIcon />
+                    </button>
+                  </div>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setCreateSectionError('');
+                      if (!createSectionTitle.trim()) {
+                        setCreateSectionError('Введите заголовок раздела');
+                        return;
+                      }
+                      if (!createSectionSlug.trim()) {
+                        setCreateSectionError('Введите slug раздела (латиница, дефисы)');
+                        return;
+                      }
+                      if (!createSectionSeoText.trim() || createSectionSeoText.trim().length < 200) {
+                        setCreateSectionError('SEO-текст слишком короткий (нужно от ~200 символов)');
+                        return;
+                      }
+                      const res = await adminState.createColoringSection({
+                        slug: createSectionSlug.trim(),
+                        title: createSectionTitle.trim(),
+                        seoText: createSectionSeoText.trim()
+                      });
+                      if (!res.success) {
+                        setCreateSectionError(res.error || 'Ошибка создания раздела');
+                        return;
+                      }
+                      if (res.section?.id) {
+                        setColoringSectionId(res.section.id);
+                        setColoringRoomId(null);
+                      }
+                      setShowCreateSectionModal(false);
+                    }}
+                  >
+                    <div className="admin-modal__body">
+                      {createSectionError && (
+                        <div className="admin-form__error" style={{ marginBottom: 12 }}>{createSectionError}</div>
+                      )}
+
+                      <div className="admin-form__group">
+                        <label>Заголовок раздела</label>
+                        <input
+                          type="text"
+                          value={createSectionTitle}
+                          onChange={(e) => setCreateSectionTitle(e.target.value)}
+                          placeholder="Например: Мультфильмы"
+                          maxLength={120}
+                          autoFocus
+                        />
+                      </div>
+
+                      <div className="admin-form__group">
+                        <label>Slug раздела</label>
+                        <input
+                          type="text"
+                          value={createSectionSlug}
+                          onChange={(e) => setCreateSectionSlug(e.target.value)}
+                          placeholder="например: multiki"
+                          maxLength={80}
+                        />
+                      </div>
+
+                      <div className="admin-form__group">
+                        <label>SEO-текст (~2000 знаков)</label>
+                        <textarea
+                          value={createSectionSeoText}
+                          onChange={(e) => setCreateSectionSeoText(e.target.value)}
+                          placeholder="Вставьте SEO-текст…"
+                          rows={10}
+                          style={{ width: '100%', boxSizing: 'border-box', background: '#1a1a1a', border: '1px solid #444', borderRadius: 6, color: '#e0e0e0', padding: '10px 12px', fontSize: 13 }}
+                        />
+                      </div>
+                    </div>
+                    <div className="admin-modal__footer">
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--secondary"
+                        onClick={() => setShowCreateSectionModal(false)}
+                      >
+                        Отмена
+                      </button>
+                      <button type="submit" className="admin-btn admin-btn--primary">
+                        Создать
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Coloring Pages List */}
         <div className="admin-table-container">
           <div className="admin-toolbar">
             <h3 style={{ color: '#ffd700', margin: 0 }}>
@@ -1522,7 +1711,6 @@ const AdminPage = observer(() => {
             <div className="admin-coloring-list">
               {adminState.galleryPending.map(drawing => (
                 <div key={drawing.id} className="admin-coloring-item" style={{ alignItems: 'flex-start', gap: '16px' }}>
-                  {/* Preview */}
                     <div
                       className="admin-coloring-item__preview admin-gallery-preview"
                       style={{ cursor: 'pointer', flexShrink: 0 }}
@@ -1538,7 +1726,6 @@ const AdminPage = observer(() => {
                     </div>
                   </div>
 
-                  {/* Info */}
                   <div className="admin-coloring-item__info" style={{ flex: 1, minWidth: 0 }}>
                     {galleryRenameId === drawing.id ? (
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1581,7 +1768,6 @@ const AdminPage = observer(() => {
                       </span>
                     </div>
 
-                    {/* ALT input */}
                     {galleryAltId === drawing.id ? (
                       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <input
@@ -1627,7 +1813,6 @@ const AdminPage = observer(() => {
                       </div>
                     )}
 
-                    {/* Author signature input */}
                     {galleryAuthorId === drawing.id ? (
                       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <input
@@ -1673,7 +1858,6 @@ const AdminPage = observer(() => {
                       </div>
                     )}
 
-                    {/* Reject reason input */}
                     {galleryRejectId === drawing.id && (
                       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <input
@@ -1707,7 +1891,6 @@ const AdminPage = observer(() => {
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="admin-actions" style={{ flexShrink: 0 }}>
                     <button
                       className="admin-icon-btn admin-icon-btn--success"
@@ -1878,7 +2061,6 @@ const AdminPage = observer(() => {
                         {drawing.approved_at ? new Date(Number(drawing.approved_at)).toLocaleString('ru-RU') : '—'}
                       </span>
 
-                      {/* ALT editor (approved) */}
                       {galleryAltId === drawing.id ? (
                         <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <input
@@ -1934,7 +2116,6 @@ const AdminPage = observer(() => {
                         </div>
                       )}
 
-                      {/* Author name editor (approved) */}
                       {galleryAuthorId === drawing.id ? (
                         <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <input
@@ -2072,7 +2253,6 @@ const AdminPage = observer(() => {
           )}
         </div>
 
-        {/* Full-size preview modal */}
         {galleryPreviewId && (
           <div
             style={{
@@ -2638,6 +2818,9 @@ const AdminPage = observer(() => {
           onClick={() => {
             adminState.setActiveTab('gameModes');
             adminState.fetchColoringPages();
+            adminState.fetchColoringSections();
+            setColoringSectionId(null);
+            setColoringRoomId(null);
           }}
         >
           🎮 Игровые режимы

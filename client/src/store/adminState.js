@@ -48,6 +48,14 @@ class AdminState {
   coloringPagesLoading = false;
   coloringPagesError = null;
 
+  coloringSections = [];
+  coloringSectionsLoading = false;
+  coloringSectionsError = null;
+
+  coloringRooms = [];
+  coloringRoomsLoading = false;
+  coloringRoomsError = null;
+
   galleryPending = [];
   galleryPendingLoading = false;
   galleryPendingError = null;
@@ -446,8 +454,83 @@ class AdminState {
     }
   }
 
-  async uploadColoringPage(formData) {
+  async fetchColoringSections() {
+    this.coloringSectionsLoading = true;
+    this.coloringSectionsError = null;
     try {
+      const response = await axios.get(`${API_URL}/api/admin/coloring-sections`, { headers: getAuthHeaders() });
+      runInAction(() => {
+        this.coloringSections = response.data.sections || [];
+        this.coloringSectionsLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.coloringSectionsError = error.response?.data?.error || 'Ошибка загрузки разделов';
+        this.coloringSectionsLoading = false;
+      });
+    }
+  }
+
+  async fetchColoringRooms(sectionId) {
+    if (!sectionId) {
+      runInAction(() => {
+        this.coloringRooms = [];
+      });
+      return;
+    }
+
+    this.coloringRoomsLoading = true;
+    this.coloringRoomsError = null;
+    try {
+      const response = await axios.get(`${API_URL}/api/admin/coloring-sections/${sectionId}/rooms`, { headers: getAuthHeaders() });
+      runInAction(() => {
+        this.coloringRooms = response.data.rooms || [];
+        this.coloringRoomsLoading = false;
+      });
+    } catch (error) {
+      runInAction(() => {
+        this.coloringRoomsError = error.response?.data?.error || 'Ошибка загрузки комнат';
+        this.coloringRoomsLoading = false;
+      });
+    }
+  }
+
+  async createColoringSection(payload) {
+    try {
+      const response = await axios.post(`${API_URL}/api/admin/coloring-sections`, payload, { headers: getAuthHeaders() });
+      await this.fetchColoringSections();
+      return { success: true, section: response.data.section };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка создания раздела'
+      };
+    }
+  }
+
+  async createColoringRoom(payload) {
+    try {
+      const response = await axios.post(`${API_URL}/api/admin/coloring-rooms`, payload, { headers: getAuthHeaders() });
+      // после создания обновим комнаты для нужного sectionId
+      if (payload?.sectionId) {
+        await this.fetchColoringRooms(payload.sectionId);
+      }
+      return { success: true, room: response.data.room };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка создания комнаты'
+      };
+    }
+  }
+
+  async uploadColoringPage(formData, roomId = null) {
+    try {
+      if (roomId !== undefined && roomId !== null) {
+        const rid = parseInt(roomId, 10);
+        if (Number.isFinite(rid) && rid > 0) formData.append('room_id', rid);
+      }
+
       const response = await axios.post(
         `${API_URL}/api/admin/game-modes/coloring`,
         formData,

@@ -272,15 +272,25 @@ app.use('/api', apiRouter);
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const result = await pgPool.query(
-      `SELECT id, approved_at, created_at
-       FROM gallery_drawings
-       WHERE status = 'approved'
-       ORDER BY approved_at DESC
-       LIMIT 5000`
-    );
+    const [resultDrawings, resultSections] = await Promise.all([
+      pgPool.query(
+        `SELECT id, approved_at, created_at
+         FROM gallery_drawings
+         WHERE status = 'approved'
+         ORDER BY approved_at DESC
+         LIMIT 5000`
+      ),
+      pgPool.query(
+        `SELECT id, slug, created_at
+         FROM coloring_sections
+         ORDER BY created_at DESC
+         LIMIT 5000`
+      )
+    ]);
 
-    const drawings = result.rows;
+    const drawings = resultDrawings.rows;
+    const coloringSections = resultSections.rows;
+
     const baseUrl = 'https://risovanie.online';
     const now = new Date().toISOString().split('T')[0];
 
@@ -317,6 +327,46 @@ app.get('/sitemap.xml', async (req, res) => {
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/help"/>
   </url>`;
+
+    // Coloring sections & rooms
+    for (const section of coloringSections) {
+      const sectionSlug = encodeURIComponent(section.slug);
+      const sectionDate = section.created_at
+        ? new Date(section.created_at).toISOString().split('T')[0]
+        : now;
+
+      sitemap += `
+  <url>
+    <loc>${baseUrl}/coloring/${sectionSlug}</loc>
+    <lastmod>${sectionDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}"/>
+  </url>`;
+
+      const roomsResult = await pgPool.query(
+        `SELECT slug, created_at
+         FROM coloring_rooms
+         WHERE section_id = $1
+         ORDER BY created_at DESC
+         LIMIT 5000`,
+        [section.id]
+      );
+
+      for (const room of roomsResult.rows) {
+        const roomSlug = encodeURIComponent(room.slug);
+        const roomDate = room.created_at ? new Date(room.created_at).toISOString().split('T')[0] : now;
+
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/coloring/${sectionSlug}/${roomSlug}</loc>
+    <lastmod>${roomDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}/${roomSlug}"/>
+  </url>`;
+      }
+    }
 
     for (const drawing of drawings) {
       const drawingDate = drawing.approved_at
@@ -402,21 +452,172 @@ const SEO_PAGES = {
 
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-app.get('/coloring', (req, res) => {
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderColoringSeoPage({ canonicalUrl, h1Text = null, seoOverride = {}, indexableSectionHtml = null }) {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
 
-  const seo = SEO_PAGES['/coloring'];
+  const baseSeo = SEO_PAGES['/coloring'] || {};
+  const seo = {
+    title: seoOverride.title || baseSeo.title || 'Раскраски онлайн',
+    description: seoOverride.description || baseSeo.description || '',
+    keywords: seoOverride.keywords || baseSeo.keywords || ''
+  };
+
   html = html
     .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
     .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
     .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
     .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
     .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
-    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/coloring"`);
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="${canonicalUrl}"`);
+
+  const safeH1 = escapeHtml(h1Text || seo.title);
+  const safeDescription = escapeHtml(seo.description || '');
+
+  const indexableContent = indexableSectionHtml ? `
+    <section style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+      ${indexableSectionHtml}
+    </section>
+  ` : `
+    <section style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+      <h1>${safeH1}</h1>
+      <p>${safeDescription}</p>
+    </section>
+  `;
+
+  // Вставляем скрытый контент перед root
+  html = html.replace('<div id="root"></div>', `${indexableContent}<div id="root"></div>`);
 
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
+}
+
+app.get('/coloring', (req, res) => {
+  const canonical = 'https://risovanie.online/coloring';
+  renderColoringSeoPage({
+    canonicalUrl: canonical,
+    h1Text: 'Раскраски онлайн',
+    seoOverride: {
+      title: SEO_PAGES['/coloring']?.title,
+      description: SEO_PAGES['/coloring']?.description,
+      keywords: SEO_PAGES['/coloring']?.keywords,
+    }
+  });
+});
+
+app.get('/coloring/:sectionSlug', async (req, res) => {
+  const { sectionSlug } = req.params;
+  const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}`;
+
+  try {
+    const sectionRes = await pgPool.query(
+      `SELECT slug, title, seo_text
+       FROM coloring_sections
+       WHERE slug = $1`,
+      [sectionSlug]
+    );
+
+    if (sectionRes.rows.length === 0) {
+      // Если раздела нет — отдаем базовую `/coloring` SEO-подмену.
+      return renderColoringSeoPage({
+        canonicalUrl: canonical,
+        h1Text: `Раскраски: ${sectionSlug}`
+      });
+    }
+
+    const section = sectionRes.rows[0];
+
+    // Внутренняя структура: ссылка на главную и основной каталог
+    const indexableSectionHtml = `
+      <h1>${escapeHtml(section.title)}</h1>
+      <p>${escapeHtml(section.seo_text)}</p>
+      <p>
+        <a href="https://risovanie.online/">Главная</a> ·
+        <a href="https://risovanie.online/coloring">все раскраски</a>
+      </p>
+    `;
+
+    const seoDescription = String(section.seo_text || '').slice(0, 300);
+    const seoKeywords = `раскраски онлайн, ${section.title}`;
+
+    renderColoringSeoPage({
+      canonicalUrl: canonical,
+      h1Text: section.title,
+      seoOverride: {
+        title: section.title,
+        description: seoDescription,
+        keywords: seoKeywords
+      },
+      indexableSectionHtml
+    });
+  } catch (e) {
+    console.error('Coloring section seo error:', e);
+    return send404Page(res);
+  }
+});
+
+app.get('/coloring/:sectionSlug/:roomSlug', async (req, res) => {
+  const { sectionSlug, roomSlug } = req.params;
+  const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(roomSlug)}`;
+
+  try {
+    const roomRes = await pgPool.query(
+      `SELECT
+         cr.slug,
+         cr.title,
+         cr.seo_text,
+         cs.slug AS section_slug,
+         cs.title AS section_title,
+         cs.seo_text AS section_seo_text
+       FROM coloring_rooms cr
+       JOIN coloring_sections cs ON cs.id = cr.section_id
+       WHERE cs.slug = $1 AND cr.slug = $2`,
+      [sectionSlug, roomSlug]
+    );
+
+    if (roomRes.rows.length === 0) {
+      // Раздел/комната не найдены.
+      return send404Page(res);
+    }
+
+    const room = roomRes.rows[0];
+
+    const indexableSectionHtml = `
+      <h1>${escapeHtml(room.title)}</h1>
+      <p>${escapeHtml(room.seo_text)}</p>
+      <p>
+        <a href="https://risovanie.online/">Главная</a> ·
+        <a href="https://risovanie.online/coloring/${escapeHtml(room.section_slug)}">в раздел ${escapeHtml(room.section_title)}</a> ·
+        <a href="https://risovanie.online/coloring">все раскраски</a>
+      </p>
+    `;
+
+    const seoDescription = String(room.seo_text || '').slice(0, 300);
+    const seoKeywords = `раскраски онлайн, ${room.title}, ${room.section_title}`;
+
+    renderColoringSeoPage({
+      canonicalUrl: canonical,
+      h1Text: room.title,
+      seoOverride: {
+        title: room.title,
+        description: seoDescription,
+        keywords: seoKeywords
+      },
+      indexableSectionHtml
+    });
+  } catch (e) {
+    console.error('Coloring room seo error:', e);
+    return send404Page(res);
+  }
 });
 
 app.get('/gallery', (req, res) => {
@@ -702,6 +903,33 @@ async function initDb() {
           is_active BOOLEAN DEFAULT true
         );
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_active ON coloring_pages(is_active);
+
+        -- Room (подборка раскрасок) в рамках SEO-разделов
+        CREATE TABLE IF NOT EXISTS coloring_sections (
+          id SERIAL PRIMARY KEY,
+          slug VARCHAR(80) NOT NULL UNIQUE,
+          title VARCHAR(120) NOT NULL,
+          seo_text TEXT NOT NULL,
+          created_at BIGINT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS coloring_rooms (
+          id SERIAL PRIMARY KEY,
+          section_id INTEGER NOT NULL REFERENCES coloring_sections(id) ON DELETE CASCADE,
+          slug VARCHAR(120) NOT NULL,
+          title VARCHAR(120) NOT NULL,
+          seo_text TEXT NOT NULL,
+          created_at BIGINT NOT NULL,
+          UNIQUE (section_id, slug)
+        );
+
+        -- Привязка раскраски к комнате
+        ALTER TABLE coloring_pages
+          ADD COLUMN IF NOT EXISTS room_id INTEGER REFERENCES coloring_rooms(id) ON DELETE SET NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_coloring_pages_room_id ON coloring_pages(room_id);
+        CREATE INDEX IF NOT EXISTS idx_coloring_pages_active_room ON coloring_pages(room_id, is_active);
+
       `);
     } catch (_) { }
 

@@ -31,6 +31,102 @@ router.get('/capabilities', apiLimiter, asyncHandler(async (req, res) => {
   res.json(RoleCapabilitiesService.getPublicPayload(config));
 }));
 
+router.get('/coloring-sections', asyncHandler(async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT id, slug, title, seo_text, created_at
+       FROM coloring_sections
+       ORDER BY created_at DESC`
+    );
+
+    res.json({
+      sections: result.rows.map(r => ({
+        id: r.id,
+        slug: r.slug,
+        title: r.title,
+        seoText: r.seo_text,
+        createdAt: Number.isFinite(r.created_at) ? r.created_at : toEpochMsSafe(r.created_at)
+      }))
+    });
+  } catch (error) {
+    console.error('Get coloring sections error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}));
+
+function toEpochMsSafe(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return value;
+  try {
+    if (value instanceof Date) return value.getTime();
+  } catch (_) {}
+  return null;
+}
+
+
+router.get('/coloring-sections/:sectionSlug/rooms', asyncHandler(async (req, res) => {
+  try {
+    const { sectionSlug } = req.params;
+
+    const result = await pgPool.query(
+      `SELECT
+         cr.id, cr.section_id, cr.slug, cr.title, cr.seo_text, cr.created_at
+       FROM coloring_rooms cr
+       JOIN coloring_sections cs ON cs.id = cr.section_id
+       WHERE cs.slug = $1
+       ORDER BY cr.created_at DESC`,
+      [sectionSlug]
+    );
+
+    res.json({
+      rooms: result.rows.map(r => ({
+        id: r.id,
+        sectionId: r.section_id,
+        slug: r.slug,
+        title: r.title,
+        seoText: r.seo_text,
+        createdAt: toEpochMsSafe(r.created_at)
+      }))
+    });
+  } catch (error) {
+    console.error('Get coloring rooms error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}));
+
+router.get('/coloring-sections/:sectionSlug/:roomSlug/pages', asyncHandler(async (req, res) => {
+  try {
+    const { sectionSlug, roomSlug } = req.params;
+
+    const result = await pgPool.query(
+      `SELECT
+         cp.id,
+         cp.title,
+         cp.alt,
+         cp.image_url,
+         cp.thumbnail_url,
+         cp.created_at,
+         cp.is_active,
+         cp.room_id
+       FROM coloring_pages cp
+       JOIN coloring_rooms cr ON cr.id = cp.room_id
+       JOIN coloring_sections cs ON cs.id = cr.section_id
+       WHERE cs.slug = $1
+         AND cr.slug = $2
+         AND cp.is_active = true
+       ORDER BY cp.created_at DESC`,
+      [sectionSlug, roomSlug]
+    );
+
+    res.json({
+      pages: result.rows
+    });
+  } catch (error) {
+    console.error('Get coloring section room pages error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+}));
+
 const createRoomLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
@@ -371,6 +467,108 @@ router.get('/coloring-pages', apiLimiter, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Get coloring pages error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/coloring-sections', apiLimiter, async (req, res) => {
+  try {
+    const result = await pgPool.query(
+      `SELECT id, slug, title, seo_text, created_at
+       FROM coloring_sections
+       ORDER BY created_at DESC`
+    );
+
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      seoText: r.seo_text,
+      createdAt: r.created_at
+    })));
+  } catch (error) {
+    console.error('Get coloring sections error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/coloring-sections/:sectionSlug/rooms', apiLimiter, async (req, res) => {
+  try {
+    const sectionSlug = String(req.params.sectionSlug || '').trim().slice(0, 120);
+    if (!sectionSlug) return res.status(400).json({ error: 'Invalid sectionSlug' });
+
+    const result = await pgPool.query(
+      `SELECT
+         cr.id,
+         cr.slug,
+         cr.title,
+         cr.seo_text,
+         cr.created_at,
+         COUNT(cpp.id) FILTER (WHERE cpp.is_active = true) AS pages_count
+       FROM coloring_rooms cr
+       LEFT JOIN coloring_pages cpp ON cpp.room_id = cr.id
+       JOIN coloring_sections cs ON cs.id = cr.section_id
+       WHERE cs.slug = $1
+       GROUP BY cr.id
+       ORDER BY cr.created_at DESC`,
+      [sectionSlug]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Section rooms not found' });
+    }
+
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      seoText: r.seo_text,
+      createdAt: r.created_at,
+      pagesCount: parseInt(r.pages_count || 0, 10)
+    })));
+  } catch (error) {
+    console.error('Get coloring rooms error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/coloring-sections/:sectionSlug/:roomSlug/pages', apiLimiter, async (req, res) => {
+  try {
+    const sectionSlug = String(req.params.sectionSlug || '').trim().slice(0, 120);
+    const roomSlug = String(req.params.roomSlug || '').trim().slice(0, 120);
+
+    if (!sectionSlug || !roomSlug) return res.status(400).json({ error: 'Invalid params' });
+
+    const result = await pgPool.query(
+      `SELECT
+         cpp.id,
+         cpp.title,
+         cpp.alt,
+         cpp.image_url,
+         cpp.thumbnail_url,
+         cpp.created_at
+       FROM coloring_pages cpp
+       JOIN coloring_rooms cr ON cr.id = cpp.room_id
+       JOIN coloring_sections cs ON cs.id = cr.section_id
+       WHERE cs.slug = $1
+         AND cr.slug = $2
+         AND cpp.is_active = true
+       ORDER BY cpp.created_at DESC`,
+      [sectionSlug, roomSlug]
+    );
+
+    res.json({
+      pages: result.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        alt: r.alt,
+        imageUrl: r.image_url,
+        thumbnailUrl: r.thumbnail_url,
+        createdAt: r.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('Get coloring room pages error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

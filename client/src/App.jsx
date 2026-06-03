@@ -39,10 +39,10 @@ const App = observer(() => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const isHelpPageByPath =
-      location.pathname === '/help' ||
-      location.pathname === '/help/' ||
-      location.pathname.startsWith('/help/');
+  const isHelpPageByPath =
+       location.pathname === '/help' ||
+       location.pathname === '/help/' ||
+       location.pathname.startsWith('/help/');
 
     useEffect(() => {
         capabilitiesState.fetch();
@@ -52,8 +52,8 @@ const App = observer(() => {
       || location.pathname === '/gallery'
       || location.pathname.startsWith('/gallery/')
       || location.pathname === '/coloring'
-      || location.pathname.startsWith('/coloring');
-
+      || location.pathname.startsWith('/coloring/');
+  
   usePersonalMessages();
   useRoomValidation(location.pathname, navigate);
 
@@ -65,6 +65,7 @@ const App = observer(() => {
     const isColoringPage = location.pathname === '/coloring';
     const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
     const isHelpPage = location.pathname === '/help';
+    const isColoringSectionOrRoomPage = location.pathname.startsWith('/coloring/') && location.pathname !== '/coloring';
 
 return (
         <SeoProvider>
@@ -85,6 +86,8 @@ return (
                         <Route path='/profile' element={<ProfilePage />} />
                         <Route path='/admin' element={<AdminPage />} />
                         <Route path='/coloring' element={<ColoringPage />} />
+                        <Route path='/coloring/:sectionSlug' element={<ColoringPage />} />
+                        <Route path='/coloring/:sectionSlug/:roomSlug' element={<ColoringPage />} />
                         <Route path='/gallery' element={<GalleryPage />} />
                         <Route path='/gallery/:id' element={<GalleryPage />} />
                         <Route path='/:id' element={<RoomRoute />} />

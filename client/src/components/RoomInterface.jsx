@@ -627,7 +627,7 @@ const handleCreateRoom = async () => {
                       const effectiveSubTab = userState.isAuthenticated ? joinSubTab : 'all';
                       const roomsToShow = effectiveSubTab === 'all' ? publicRooms : effectiveSubTab === 'mine' ? userState.userRooms : userState.activityRooms;
                       const emptyMsg = effectiveSubTab === 'all'
-                        ? { icon: '🎨', text: 'Нет доступных комнат', hint: 'Создайте первую комнату!' }
+                        ? { icon: '🎨', text: 'Список комнат', hint: 'Идет загрузка...' }
                         : effectiveSubTab === 'mine'
                           ? { icon: '🏠', text: 'Вы ещё не создали ни одной комнаты', hint: 'Создайте комнату во вкладке «Создать комнату»' }
                           : { icon: '🖌', text: 'Вы ещё не участвовали ни в одной комнате', hint: 'Зайдите в комнату и начните рисовать!' };
