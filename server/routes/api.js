@@ -67,6 +67,7 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
 router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res) => {
   try {
     const { sectionSlug } = req.params;
+    console.error('DEBUG /api/coloring-sections/:sectionSlug/pages - sectionSlug:', sectionSlug);
 
     // Проверяем существование раздела
     const sectionCheck = await pgPool.query(
@@ -74,9 +75,15 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
       [sectionSlug]
     );
 
+    console.error('DEBUG sectionCheck rows:', sectionCheck.rows);
+    
     if (sectionCheck.rows.length === 0) {
+      console.error('DEBUG Section not found:', sectionSlug);
       return res.status(404).json({ error: 'Раздел не найден' });
     }
+
+    const section = sectionCheck.rows[0];
+    console.error('DEBUG Section found:', section);
 
     const result = await pgPool.query(
       `SELECT
@@ -87,11 +94,12 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
          cp.seo_text,
          cp.created_at
        FROM coloring_pages cp
-       JOIN coloring_sections cs ON cs.id = cp.section_id
-       WHERE cs.slug = $1 AND cp.is_active = true
+       WHERE cp.section_id = $1 AND cp.is_active = true
        ORDER BY cp.created_at DESC`,
-      [sectionSlug]
+      [section.id]
     );
+
+    console.error('DEBUG Pages count:', result.rows.length);
 
     res.json({
       pages: result.rows.map(r => ({
@@ -104,7 +112,8 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
       }))
     });
   } catch (error) {
-    console.error('Get coloring section pages error:', error.message);
+    console.error('Get coloring section pages error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }));
