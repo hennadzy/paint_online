@@ -1578,9 +1578,6 @@ if (res.section?.id) {
                           placeholder="Автогенерация из заголовка (латиница)"
                           maxLength={80}
                         />
-                        <small style={{ color: '#666', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                          Генерируется автоматически из заголовка. Можно изменить вручную. Только a-z, 0-9 и дефисы.
-                        </small>
                       </div>
 
                       <div className="admin-form__group">

@@ -91,7 +91,6 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
          cp.section_id,
          cp.slug,
          cp.title,
-         cp.seo_text,
          cp.created_at
        FROM coloring_pages cp
        WHERE cp.section_id = $1 AND cp.is_active = true
@@ -107,7 +106,6 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
         sectionId: r.section_id,
         slug: r.slug,
         title: r.title,
-        seoText: r.seo_text,
         createdAt: toEpochMsSafe(r.created_at)
       }))
     });
