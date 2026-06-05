@@ -2792,10 +2792,8 @@ if (res.section?.id) {
         </button>
         <button
           className={`admin-nav__item ${adminState.activeTab === 'gameModes' ? 'active' : ''}`}
-onClick={() => {
+           onClick={() => {
              adminState.setActiveTab('gameModes');
-             adminState.fetchColoringPages();
-             adminState.fetchColoringSections();
              setColoringSectionId(null);
            }}
          >

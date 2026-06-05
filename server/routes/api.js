@@ -17,6 +17,15 @@ const router = express.Router();
 const MAX_ROOM_NAME_LENGTH = 20;
 const BCRYPT_ROUNDS = 12;
 
+function toEpochMsSafe(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return value;
+  try {
+    if (value instanceof Date) return value.getTime();
+  } catch (_) {}
+  return null;
+}
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -45,7 +54,7 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
         slug: r.slug,
         title: r.title,
         seoText: r.seo_text,
-        createdAt: Number.isFinite(r.created_at) ? r.created_at : toEpochMsSafe(r.created_at)
+        createdAt: toEpochMsSafe(r.created_at)
       }))
     });
   } catch (error) {
@@ -53,15 +62,6 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 }));
-
-function toEpochMsSafe(value) {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'number') return value;
-  try {
-    if (value instanceof Date) return value.getTime();
-  } catch (_) {}
-  return null;
-}
 
 
 router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res) => {
@@ -473,27 +473,6 @@ router.get('/coloring-pages', apiLimiter, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Get coloring pages error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/coloring-sections', apiLimiter, async (req, res) => {
-  try {
-    const result = await pgPool.query(
-      `SELECT id, slug, title, seo_text, created_at
-       FROM coloring_sections
-       ORDER BY created_at DESC`
-    );
-
-    res.json({ sections: result.rows.map(r => ({
-      id: r.id,
-      slug: r.slug,
-      title: r.title,
-      seoText: r.seo_text,
-      createdAt: r.created_at
-    }))});
-  } catch (error) {
-    console.error('Get coloring sections error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

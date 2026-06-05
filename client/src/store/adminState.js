@@ -82,6 +82,9 @@ class AdminState {
       this.fetchBroadcastMailStatus();
     } else if (tab === 'capabilities') {
       this.fetchRoleCapabilities();
+    } else if (tab === 'gameModes') {
+      this.fetchColoringPages();
+      this.fetchColoringSections();
     }
   }
 
