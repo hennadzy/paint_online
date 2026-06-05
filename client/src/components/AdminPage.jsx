@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -234,6 +234,7 @@ const AdminPage = observer(() => {
   const [createSectionTitle, setCreateSectionTitle] = useState('');
   const [createSectionSeoText, setCreateSectionSeoText] = useState('');
   const [createSectionError, setCreateSectionError] = useState('');
+  const prevTitleRef = useRef('');
 
   const [galleryPreviewId, setGalleryPreviewId] = useState(null);
   const [galleryRenameId, setGalleryRenameId] = useState(null);
@@ -1464,9 +1465,54 @@ if (res.section?.id) {
                           value={createSectionTitle}
                           onChange={(e) => {
                             const newTitle = e.target.value;
+                            const prevTitle = prevTitleRef.current;
+                            
                             setCreateSectionTitle(newTitle);
-                            // Автогенерация slug при вводе заголовка (только если slug пустой или совпадает со старым)
-                            if (!createSectionSlug.trim() || createSectionSlug === createSectionTitle.toLowerCase().replace(/[^a-z0-9\-]/g, '').substring(0, 80)) {
+                            prevTitleRef.current = newTitle;
+                            
+                            // Автогенерация slug только если пользователь не редактировал его вручную
+                            const expectedSlugForPrevTitle = prevTitle
+                              .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
+                              .replace(/й/g, 'i').replace(/Й/g, 'i')
+                              .replace(/ц/g, 'ts').replace(/Ц/g, 'ts')
+                              .replace(/у/g, 'u').replace(/У/g, 'u')
+                              .replace(/к/g, 'k').replace(/К/g, 'k')
+                              .replace(/е/g, 'e').replace(/Е/g, 'e')
+                              .replace(/н/g, 'n').replace(/Н/g, 'n')
+                              .replace(/г/g, 'g').replace(/Г/g, 'g')
+                              .replace(/ш/g, 'sh').replace(/Ш/g, 'sh')
+                              .replace(/щ/g, 'sch').replace(/Щ/g, 'sch')
+                              .replace(/з/g, 'z').replace(/З/g, 'z')
+                              .replace(/х/g, 'h').replace(/Х/g, 'h')
+                              .replace(/ъ/g, "'").replace(/Ъ/g, "'")
+                              .replace(/ф/g, 'f').replace(/Ф/g, 'f')
+                              .replace(/ы/g, 'i').replace(/Ы/g, 'i')
+                              .replace(/в/g, 'v').replace(/В/g, 'v')
+                              .replace(/а/g, 'a').replace(/А/g, 'a')
+                              .replace(/п/g, 'p').replace(/П/g, 'p')
+                              .replace(/р/g, 'r').replace(/Р/g, 'r')
+                              .replace(/о/g, 'o').replace(/О/g, 'o')
+                              .replace(/л/g, 'l').replace(/Л/g, 'l')
+                              .replace(/д/g, 'd').replace(/Д/g, 'd')
+                              .replace(/ж/g, 'zh').replace(/Ж/g, 'zh')
+                              .replace(/э/g, 'e').replace(/Э/g, 'e')
+                              .replace(/я/g, 'ya').replace(/Я/g, 'ya')
+                              .replace(/ч/g, 'ch').replace(/Ч/g, 'ch')
+                              .replace(/с/g, 's').replace(/С/g, 's')
+                              .replace(/м/g, 'm').replace(/М/g, 'm')
+                              .replace(/и/g, 'i').replace(/И/g, 'i')
+                              .replace(/т/g, 't').replace(/Т/g, 't')
+                              .replace(/ь/g, "'").replace(/Ь/g, "'")
+                              .replace(/б/g, 'b').replace(/Б/g, 'b')
+                              .replace(/ю/g, 'yu').replace(/Ю/g, 'yu')
+                              .toLowerCase()
+                              .replace(/[^a-z0-9\-]/g, '-')
+                              .replace(/-+/g, '-')
+                              .replace(/^-|-$/g, '')
+                              .substring(0, 80);
+                            
+                            // Если текущий slug совпадает с ожидаемым для предыдущего заголовка - значит пользователь не редактировал вручную
+                            if (createSectionSlug === expectedSlugForPrevTitle || !createSectionSlug) {
                               const translit = newTitle
                                 .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
                                 .replace(/й/g, 'i').replace(/Й/g, 'i')
