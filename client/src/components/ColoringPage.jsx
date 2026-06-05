@@ -92,7 +92,7 @@ const PRESET_COLORS = [
 const ColoringPage = () => {
   const navigate = useNavigate();
   const { setSeoData } = useSeo();
-  const { sectionSlug, roomSlug } = useParams();
+  const { sectionSlug, pageSlug } = useParams();
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -100,9 +100,6 @@ const ColoringPage = () => {
 
   const [coloringPages, setColoringPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
-
-  const [rooms, setRooms] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
 
   const [selectedColor, setSelectedColor] = useState('#FF0000');
 
@@ -125,47 +122,51 @@ const ColoringPage = () => {
   const initialDistanceRef = useRef(0);
 
   useEffect(() => {
-    const fetchRoomsAndMaybePages = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       setFetchError('');
       setSelectedPage(null);
       setImageLoaded(false);
 
       try {
-        if (sectionSlug && !roomSlug) {
-          const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/rooms`);
-          if (!res.ok) throw new Error('Server error');
-          const data = await res.json();
-          setRooms(Array.isArray(data.rooms) ? data.rooms : []);
-          setSelectedRoom(null);
-          setColoringPages([]);
-          setIsLoading(false);
-          setSeoData(null);
-          return;
-        }
-
-        if (sectionSlug && roomSlug) {
-          const res = await fetch(
-            `${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(roomSlug)}/pages`
-          );
+        if (sectionSlug && !pageSlug) {
+          const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/pages`);
           if (!res.ok) throw new Error('Server error');
           const data = await res.json();
           const pages = Array.isArray(data.pages) ? data.pages : [];
           setColoringPages(pages);
-          const room = { slug: roomSlug, title: roomSlug, sectionSlug };
-          setSelectedRoom(room);
-          setRooms([]);
+          setSeoData(null);
           setIsLoading(false);
+          return;
+        }
 
-          if (pages[0]?.title) {
-            setSeoData({
-              title: `${pages[0].title} - Раскраска онлайн`,
-              description: `Раскраска "${pages[0].title}" — раскрашивайте онлайн бесплатно на Рисование.Онлайн`,
-              keywords: `раскраска ${pages[0].title}, раскраска онлайн`
-            });
+        if (sectionSlug && pageSlug) {
+          const res = await fetch(
+            `${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pageSlug)}`
+          );
+          if (!res.ok) throw new Error('Server error');
+          const data = await res.json();
+          const page = data?.page;
+
+          if (page) {
+            setColoringPages([page]);
+            setSelectedPage(page);
+
+            if (page.title) {
+              setSeoData({
+                title: `${page.title} - Раскраска онлайн`,
+                description: `Раскраска "${page.title}" — раскрашивайте онлайн бесплатно на Рисование.Онлайн`,
+                keywords: `раскраска ${page.title}, раскраска онлайн`,
+              });
+            } else {
+              setSeoData(null);
+            }
           } else {
+            setColoringPages([]);
             setSeoData(null);
           }
+
+          setIsLoading(false);
           return;
         }
 
@@ -173,8 +174,6 @@ const ColoringPage = () => {
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
         setColoringPages(data.pages || data || []);
-        setSelectedRoom(null);
-        setRooms([]);
         setIsLoading(false);
         setSeoData(null);
       } catch (err) {
@@ -183,8 +182,8 @@ const ColoringPage = () => {
       }
     };
 
-    fetchRoomsAndMaybePages();
-  }, [sectionSlug, roomSlug]);
+    fetchData();
+  }, [sectionSlug, pageSlug, setSeoData]);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -235,6 +234,11 @@ const ColoringPage = () => {
 
     img.src = coloringAssetUrl(page.image_url);
   }, []);
+
+  useEffect(() => {
+    if (!selectedPage) return;
+    loadImageToCanvas(selectedPage);
+  }, [selectedPage, loadImageToCanvas]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -327,14 +331,6 @@ const ColoringPage = () => {
 
   const handleSelectPage = (page) => {
     setSelectedPage(page);
-    setTimeout(() => loadImageToCanvas(page), 50);
-  };
-
-  const handleSelectRoom = (room) => {
-    if (!sectionSlug) return;
-    setSelectedPage(null);
-    setImageLoaded(false);
-    navigate(`/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(room.slug)}`);
   };
 
   const handleCanvasClick = useCallback(
@@ -446,124 +442,79 @@ const ColoringPage = () => {
   };
 
   if (!selectedPage) {
-    const onMainBack = () => {
-      if (sectionSlug) {
-        navigate('/coloring');
-        return;
-      }
-      navigate('/');
-    };
+const onMainBack = () => {
+       if (sectionSlug) {
+         navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
+         return;
+       }
+       navigate('/');
+     };
 
-    const headerTitle = sectionSlug
-      ? (roomSlug ? '🎨 Комната раскрасок' : '🎨 Раздел раскрасок')
-      : '🎨 Раскраски';
+     const headerTitle = sectionSlug ? '🎨 Раздел раскрасок' : '🎨 Раскраски';
 
-    const showRoomsList = sectionSlug && !roomSlug;
+     return (
+       <div className="coloring-page">
+         <div className="coloring-header">
+           <button className="coloring-back-btn" onClick={onMainBack}>
+             ← Назад
+           </button>
+           <h1 className="coloring-header__title">{headerTitle}</h1>
+         </div>
 
-    return (
-      <div className="coloring-page">
-        <div className="coloring-header">
-          <button className="coloring-back-btn" onClick={onMainBack}>
-            ← Назад
-          </button>
-          <h1 className="coloring-header__title">{headerTitle}</h1>
-        </div>
-
-        <div className="coloring-selector">
-          {isLoading ? (
-            <div className="coloring-loading">
-              <div className="coloring-spinner" />
-              <span>Загрузка...</span>
-            </div>
-          ) : fetchError ? (
-            <div className="coloring-empty">
-              <span className="coloring-empty__icon">⚠️</span>
-              <p>{fetchError}</p>
-            </div>
-          ) : showRoomsList ? (
-            rooms.length === 0 ? (
-              <div className="coloring-empty">
-                <span className="coloring-empty__icon">🧩</span>
-                <p>Комнаты пока не добавлены</p>
-                <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
-              </div>
-            ) : (
-              <div className="coloring-pages-list">
-                <p className="coloring-selector__hint">Выберите комнату:</p>
-                {rooms.map((room) => (
-                  <div
-                    key={room.id}
-                    className="coloring-page-item"
-                    onClick={() => handleSelectRoom(room)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSelectRoom(room)}
-                  >
-                    <div className="coloring-page-item__preview">
-                      <div
-                        style={{
-                          width: 130,
-                          height: 90,
-                          borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          background: 'rgba(255,255,255,0.06)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#bbb',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          padding: 8
-                        }}
-                      >
-                        {room.title || room.slug}
-                      </div>
-                    </div>
-                    <div className="coloring-page-item__info">
-                      <h3 className="coloring-page-item__title">{room.title || room.slug}</h3>
-                      <span className="coloring-page-item__cta">Открыть →</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : coloringPages.length === 0 ? (
-            <div className="coloring-empty">
-              <span className="coloring-empty__icon">🎨</span>
-              <p>Раскраски пока не добавлены</p>
-              <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
-            </div>
-          ) : (
-            <div className="coloring-pages-list">
-              <p className="coloring-selector__hint">Выберите раскраску для начала:</p>
-              {coloringPages.map((page) => (
-                <div
-                  key={page.id}
-                  className="coloring-page-item"
-                  onClick={() => handleSelectPage(page)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSelectPage(page)}
-                >
-                  <div className="coloring-page-item__preview">
-                    <img
-                      src={coloringAssetUrl(page.thumbnail_url || page.image_url)}
-                      alt={page.title}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML =
-                          '<span class="coloring-page-item__no-img">🎨</span>';
-                      }}
-                    />
-                  </div>
-                  <div className="coloring-page-item__info">
-                    <h3 className="coloring-page-item__title">{page.title}</h3>
-                    <span className="coloring-page-item__cta">Нажмите, чтобы раскрасить →</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+         <div className="coloring-selector">
+           {isLoading ? (
+             <div className="coloring-loading">
+               <div className="coloring-spinner" />
+               <span>Загрузка...</span>
+             </div>
+           ) : fetchError ? (
+             <div className="coloring-empty">
+               <span className="coloring-empty__icon">⚠️</span>
+               <p>{fetchError}</p>
+             </div>
+           ) : coloringPages.length === 0 ? (
+             <div className="coloring-empty">
+               <span className="coloring-empty__icon">🎨</span>
+               <p>Раскраски пока не добавлены</p>
+               <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
+             </div>
+           ) : (
+             <div className="coloring-pages-list">
+               <p className="coloring-selector__hint">Выберите раскраску для начала:</p>
+               {coloringPages.map((page) => (
+                 <div
+                   key={page.id}
+                   className="coloring-page-item"
+onClick={() => {
+                      if (sectionSlug && (page.slug || page.id)) {
+                        navigate(`/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(page.slug || `page-${page.id}`)}`);
+                      } else {
+                        handleSelectPage(page);
+                      }
+                    }}
+                   role="button"
+                   tabIndex={0}
+                   onKeyDown={(e) => e.key === 'Enter' && handleSelectPage(page)}
+                 >
+                   <div className="coloring-page-item__preview">
+                     <img
+                       src={coloringAssetUrl(page.thumbnail_url || page.image_url)}
+                       alt={page.title}
+                       onError={(e) => {
+                         e.target.style.display = 'none';
+                         e.target.parentElement.innerHTML =
+                           '<span class="coloring-page-item__no-img">🎨</span>';
+                       }}
+                     />
+                   </div>
+                   <div className="coloring-page-item__info">
+                     <h3 className="coloring-page-item__title">{page.title}</h3>
+                     <span className="coloring-page-item__cta">Нажмите, чтобы раскрасить →</span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
 
           <section className="coloring-seo-bottom" aria-label="Раскраски — описание">
             <div className="coloring-seo-bottom__text">

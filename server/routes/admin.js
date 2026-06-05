@@ -657,7 +657,7 @@ router.get('/game-modes/coloring', async (req, res) => {
 
 router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, res) => {
   try {
-    const { title, alt, room_id } = req.body;
+    const { title, alt, section_id } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Название обязательно' });
@@ -678,16 +678,16 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
 
     const finalAlt = (alt && typeof alt === 'string' ? alt.trim() : '').substring(0, 200);
 
-    const parsedRoomId = (() => {
-      if (room_id === undefined || room_id === null || room_id === '') return null;
-      const n = parseInt(room_id, 10);
+    const parsedSectionId = (() => {
+      if (section_id === undefined || section_id === null || section_id === '') return null;
+      const n = parseInt(section_id, 10);
       return Number.isFinite(n) && n > 0 ? n : null;
     })();
 
     const insertResult = await pgPool.query(
-      `INSERT INTO coloring_pages (title, alt, image_url, thumbnail_url, image_data, created_at, is_active, room_id)
-       VALUES ($1, $2, '', '', $3, $4, true, $5) RETURNING id`,
-      [title.trim().substring(0, 100), finalAlt || null, imageData, Date.now(), parsedRoomId]
+      `INSERT INTO coloring_pages (title, slug, alt, image_url, thumbnail_url, image_data, created_at, is_active, section_id)
+       VALUES ($1, $2, $3, '', '', $4, $5, true, $6) RETURNING id`,
+      [title.trim().substring(0, 100), (title.trim().toLowerCase().replace(/\s+/g, '-')).substring(0, 160), finalAlt || null, imageData, Date.now(), parsedSectionId]
     );
 
     const id = insertResult.rows[0].id;
@@ -711,7 +711,7 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
 router.put('/game-modes/coloring/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { title, isActive, alt, room_id } = req.body;
+    const { title, isActive, alt, section_id } = req.body;
 
     const setClauses = [];
     const values = [];
@@ -731,14 +731,14 @@ router.put('/game-modes/coloring/:id', async (req, res) => {
       values.push(finalAlt || null);
     }
 
-    if (room_id !== undefined) {
-      const parsedRoomId = (() => {
-        if (room_id === null || room_id === '') return null;
-        const n = parseInt(room_id, 10);
+    if (section_id !== undefined) {
+      const parsedSectionId = (() => {
+        if (section_id === null || section_id === '') return null;
+        const n = parseInt(section_id, 10);
         return Number.isFinite(n) && n > 0 ? n : null;
       })();
-      setClauses.push(`room_id = $${idx++}`);
-      values.push(parsedRoomId);
+      setClauses.push(`section_id = $${idx++}`);
+      values.push(parsedSectionId);
     }
 
     if (setClauses.length === 0) {
@@ -1308,68 +1308,6 @@ router.post('/coloring-sections', async (req, res) => {
     // Уникальный slug: PostgreSQL даёт код 23505
     if (error && error.code === '23505') {
       return res.status(400).json({ error: 'Раздел с таким slug уже существует' });
-    }
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.get('/coloring-sections/:sectionId/rooms', async (req, res) => {
-  try {
-    const sectionId = parseInt(req.params.sectionId, 10);
-    if (!Number.isFinite(sectionId) || sectionId <= 0) return res.status(400).json({ error: 'Invalid sectionId' });
-
-    const result = await pgPool.query(
-      `SELECT id, section_id, slug, title, seo_text, created_at
-       FROM coloring_rooms
-       WHERE section_id = $1
-       ORDER BY created_at DESC`,
-      [sectionId]
-    );
-
-    res.json({
-      rooms: result.rows.map(r => ({
-        id: r.id,
-        sectionId: r.section_id,
-        slug: r.slug,
-        title: r.title,
-        seoText: r.seo_text,
-        createdAt: toEpochMs(r.created_at)
-      }))
-    });
-  } catch (error) {
-    console.error('Admin get coloring rooms error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.post('/coloring-rooms', async (req, res) => {
-  try {
-    const { sectionId, slug, title, seoText } = req.body || {};
-
-    const sid = parseInt(sectionId, 10);
-    if (!Number.isFinite(sid) || sid <= 0) return res.status(400).json({ error: 'sectionId обязателен' });
-
-    if (!slug || typeof slug !== 'string') return res.status(400).json({ error: 'slug обязателен' });
-    if (!SLUG_RE.test(slug.trim().toLowerCase())) return res.status(400).json({ error: 'Некорректный slug (только a-z0-9 и дефисы)' });
-
-    if (!title || typeof title !== 'string' || !title.trim()) return res.status(400).json({ error: 'title обязателен' });
-
-    const finalSlug = slug.trim().toLowerCase().substring(0, 120);
-    const finalTitle = title.trim().substring(0, 120);
-    const finalSeoText = String(seoText || '').trim().slice(0, 20000);
-
-    const insertResult = await pgPool.query(
-      `INSERT INTO coloring_rooms (section_id, slug, title, seo_text, created_at)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, section_id, slug, title, seo_text, created_at`,
-      [sid, finalSlug, finalTitle, finalSeoText, Date.now()]
-    );
-
-    res.json({ room: insertResult.rows[0] });
-  } catch (error) {
-    console.error('Admin create coloring room error:', error);
-    if (error && error.code === '23505') {
-      return res.status(400).json({ error: 'Комната с таким slug в разделе уже существует' });
     }
     res.status(500).json({ error: 'Server error' });
   }

@@ -228,7 +228,6 @@ const AdminPage = observer(() => {
   const [coloringUploadSuccess, setColoringUploadSuccess] = useState('');
 
   const [coloringSectionId, setColoringSectionId] = useState(null);
-  const [coloringRoomId, setColoringRoomId] = useState(null);
 
   const [showCreateSectionModal, setShowCreateSectionModal] = useState(false);
   const [createSectionSlug, setCreateSectionSlug] = useState('');
@@ -308,14 +307,6 @@ const AdminPage = observer(() => {
     }
     adminState.fetchStats();
   }, [navigate]);
-
-  useEffect(() => {
-    if (coloringSectionId) {
-      adminState.fetchColoringRooms(coloringSectionId);
-    } else {
-      adminState.coloringRooms = [];
-    }
-  }, [coloringSectionId]);
 
   const handleLogout = async () => {
     await userState.logout();
@@ -1255,53 +1246,50 @@ const AdminPage = observer(() => {
   };
 
   const renderGameModes = () => {
-  const handleColoringUpload = async (e) => {
-    e.preventDefault();
-    setColoringUploadError('');
-    setColoringUploadSuccess('');
+    const handleColoringUpload = async (e) => {
+      e.preventDefault();
+      setColoringUploadError('');
+      setColoringUploadSuccess('');
 
-    if (!coloringSectionId) {
-      setColoringUploadError('Выберите раздел');
-      return;
-    }
-    if (!coloringRoomId) {
-      setColoringUploadError('Выберите комнату (раздел → комната)');
-      return;
-    }
-    if (!coloringUploadTitle.trim()) {
-      setColoringUploadError('Введите название раскраски');
-      return;
-    }
-    if (!coloringUploadFile) {
-      setColoringUploadError('Выберите изображение');
-      return;
-    }
+      if (!coloringSectionId) {
+        setColoringUploadError('Выберите раздел');
+        return;
+      }
+      if (!coloringUploadTitle.trim()) {
+        setColoringUploadError('Введите название раскраски');
+        return;
+      }
+      if (!coloringUploadFile) {
+        setColoringUploadError('Выберите изображение');
+        return;
+      }
 
-    setColoringUploadLoading(true);
-    const formData = new FormData();
-    formData.append('title', coloringUploadTitle.trim());
-    formData.append('alt', (coloringUploadAlt || coloringUploadTitle).trim().substring(0, 200));
-    formData.append('image', coloringUploadFile);
+      setColoringUploadLoading(true);
+      const formData = new FormData();
+      formData.append('title', coloringUploadTitle.trim());
+      formData.append('alt', (coloringUploadAlt || coloringUploadTitle).trim().substring(0, 200));
+      formData.append('image', coloringUploadFile);
+      formData.append('section_id', coloringSectionId);
 
-    const result = await adminState.uploadColoringPage(formData, coloringRoomId);
-    setColoringUploadLoading(false);
+      const result = await adminState.uploadColoringPage(formData, coloringSectionId);
+      setColoringUploadLoading(false);
 
-    if (result.success) {
-      setColoringUploadTitle('');
-      setColoringUploadAlt('');
-      setColoringUploadFile(null);
-      setColoringUploadSuccess('Раскраска успешно добавлена!');
-      setTimeout(() => setColoringUploadSuccess(''), 3000);
-    } else {
-      setColoringUploadError(result.error);
-    }
-  };
+      if (result.success) {
+        setColoringUploadTitle('');
+        setColoringUploadAlt('');
+        setColoringUploadFile(null);
+        setColoringUploadSuccess('Раскраска успешно добавлена!');
+        setTimeout(() => setColoringUploadSuccess(''), 3000);
+      } else {
+        setColoringUploadError(result.error);
+      }
+    };
 
     const handleToggleActive = async (page) => {
       await adminState.updateColoringPage(page.id, { isActive: !page.is_active });
     };
 
-    const handleDelete = async (page) => {
+const handleDelete = async (page) => {
       if (!window.confirm(`Удалить раскраску "${page.title}"?`)) return;
       await adminState.deleteColoringPage(page.id);
     };
@@ -1323,66 +1311,39 @@ const AdminPage = observer(() => {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="admin-form__group" style={{ marginBottom: 0 }}>
-                  <label>Раздел</label>
-                  <select
-                    value={coloringSectionId || ''}
-                    onChange={(e) => {
-                      const next = e.target.value ? Number(e.target.value) : null;
-                      setColoringSectionId(next);
-                      setColoringRoomId(null);
+              <div className="admin-form__group" style={{ marginBottom: 0 }}>
+                <label>Раздел</label>
+                <select
+                  value={coloringSectionId || ''}
+                  onChange={(e) => {
+                    const next = e.target.value ? Number(e.target.value) : null;
+                    setColoringSectionId(next);
+                  }}
+                  style={{ width: '100%', maxWidth: '100%' }}
+                >
+                  <option value="">Выберите раздел</option>
+                  {adminState.coloringSections.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.title || s.slug || s.id}
+                    </option>
+                  ))}
+                  <option value="" disabled style={{ color: '#888', fontStyle: 'italic' }}>— комнаты убраны — раскрасьте страницу сразу в раздел —</option>
+                </select>
+                <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--secondary"
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                    onClick={() => {
+                      setCreateSectionSlug('');
+                      setCreateSectionTitle('');
+                      setCreateSectionSeoText('');
+                      setCreateSectionError('');
+                      setShowCreateSectionModal(true);
                     }}
-                    style={{ width: '100%', maxWidth: '100%' }}
                   >
-                    <option value="">Выберите раздел</option>
-                    {adminState.coloringSections.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.title || s.slug || s.id}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--secondary"
-                      style={{ padding: '6px 12px', fontSize: '12px' }}
-                      onClick={() => {
-                        setCreateSectionSlug('');
-                        setCreateSectionTitle('');
-                        setCreateSectionSeoText('');
-                        setCreateSectionError('');
-                        setShowCreateSectionModal(true);
-                      }}
-                    >
-                      + Создать раздел
-                    </button>
-                  </div>
-                </div>
-
-                <div className="admin-form__group" style={{ marginBottom: 0 }}>
-                  <label>Комната</label>
-                  <select
-                    value={coloringRoomId || ''}
-                    onChange={(e) => {
-                      const next = e.target.value ? Number(e.target.value) : null;
-                      setColoringRoomId(next);
-                    }}
-                    style={{ width: '100%', maxWidth: '100%' }}
-                  >
-                    <option value="">Выберите комнату</option>
-                    {adminState.coloringRooms.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.title || r.slug || r.id}
-                      </option>
-                    ))}
-                  </select>
-                  {adminState.coloringRoomsLoading && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#888' }}>Загрузка комнат…</div>
-                  )}
-                  {adminState.coloringRoomsError && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#ff6b6b' }}>{adminState.coloringRoomsError}</div>
-                  )}
+                    + Создать раздел
+                  </button>
                 </div>
               </div>
 
@@ -1471,10 +1432,9 @@ const AdminPage = observer(() => {
                         setCreateSectionError(res.error || 'Ошибка создания раздела');
                         return;
                       }
-                      if (res.section?.id) {
-                        setColoringSectionId(res.section.id);
-                        setColoringRoomId(null);
-                      }
+if (res.section?.id) {
+                         setColoringSectionId(res.section.id);
+                       }
                       setShowCreateSectionModal(false);
                     }}
                   >
@@ -2815,14 +2775,13 @@ const AdminPage = observer(() => {
         </button>
         <button
           className={`admin-nav__item ${adminState.activeTab === 'gameModes' ? 'active' : ''}`}
-          onClick={() => {
-            adminState.setActiveTab('gameModes');
-            adminState.fetchColoringPages();
-            adminState.fetchColoringSections();
-            setColoringSectionId(null);
-            setColoringRoomId(null);
-          }}
-        >
+onClick={() => {
+             adminState.setActiveTab('gameModes');
+             adminState.fetchColoringPages();
+             adminState.fetchColoringSections();
+             setColoringSectionId(null);
+           }}
+         >
           🎮 Игровые режимы
         </button>
         <button

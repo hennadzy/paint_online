@@ -65,7 +65,7 @@ const App = observer(() => {
     const isColoringPage = location.pathname === '/coloring';
     const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
     const isHelpPage = location.pathname === '/help';
-    const isColoringSectionOrRoomPage = location.pathname.startsWith('/coloring/') && location.pathname !== '/coloring';
+    const isColoringSectionPage = location.pathname.startsWith('/coloring/') && location.pathname !== '/coloring';
 
 return (
         <SeoProvider>
@@ -74,7 +74,7 @@ return (
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''} ${isColoringSectionPage ? 'main-content--coloring-section' : ''}`}>
                 {isHelpPageByPath ? (
                     <HelpPage />
                 ) : (
@@ -87,7 +87,7 @@ return (
                         <Route path='/admin' element={<AdminPage />} />
                         <Route path='/coloring' element={<ColoringPage />} />
                         <Route path='/coloring/:sectionSlug' element={<ColoringPage />} />
-                        <Route path='/coloring/:sectionSlug/:roomSlug' element={<ColoringPage />} />
+                        <Route path='/coloring/:sectionSlug/:pageSlug' element={<ColoringPage />} />
                         <Route path='/gallery' element={<GalleryPage />} />
                         <Route path='/gallery/:id' element={<GalleryPage />} />
                         <Route path='/:id' element={<RoomRoute />} />

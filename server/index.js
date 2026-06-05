@@ -344,27 +344,27 @@ app.get('/sitemap.xml', async (req, res) => {
     <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}"/>
   </url>`;
 
-      const roomsResult = await pgPool.query(
-        `SELECT slug, created_at
-         FROM coloring_rooms
-         WHERE section_id = $1
+const pagesResult = await pgPool.query(
+         `SELECT slug, created_at
+         FROM coloring_pages
+         WHERE section_id = $1 AND is_active = true
          ORDER BY created_at DESC
          LIMIT 5000`,
-        [section.id]
-      );
+         [section.id]
+       );
 
-      for (const room of roomsResult.rows) {
-        const roomSlug = encodeURIComponent(room.slug);
-        const roomDate = room.created_at ? new Date(room.created_at).toISOString().split('T')[0] : now;
+      for (const page of pagesResult.rows) {
+        const pageSlug = encodeURIComponent(page.slug);
+        const pageDate = page.created_at ? new Date(page.created_at).toISOString().split('T')[0] : now;
 
         sitemap += `
-  <url>
-    <loc>${baseUrl}/coloring/${sectionSlug}/${roomSlug}</loc>
-    <lastmod>${roomDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}/${roomSlug}"/>
-  </url>`;
+   <url>
+     <loc>${baseUrl}/coloring/${sectionSlug}/${pageSlug}</loc>
+     <lastmod>${pageDate}</lastmod>
+     <changefreq>weekly</changefreq>
+     <priority>0.6</priority>
+     <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}/${pageSlug}"/>
+   </url>`;
       }
     }
 
@@ -565,57 +565,56 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
   }
 });
 
-app.get('/coloring/:sectionSlug/:roomSlug', async (req, res) => {
-  const { sectionSlug, roomSlug } = req.params;
-  const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(roomSlug)}`;
+app.get('/coloring/:sectionSlug/:pageSlug', async (req, res) => {
+  const { sectionSlug, pageSlug } = req.params;
+  const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pageSlug)}`;
 
   try {
-    const roomRes = await pgPool.query(
+    const pageRes = await pgPool.query(
       `SELECT
-         cr.slug,
-         cr.title,
-         cr.seo_text,
+         cp.slug,
+         cp.title,
+         cp.seo_text,
          cs.slug AS section_slug,
          cs.title AS section_title,
          cs.seo_text AS section_seo_text
-       FROM coloring_rooms cr
-       JOIN coloring_sections cs ON cs.id = cr.section_id
-       WHERE cs.slug = $1 AND cr.slug = $2`,
-      [sectionSlug, roomSlug]
+       FROM coloring_pages cp
+       JOIN coloring_sections cs ON cs.id = cp.section_id
+       WHERE cs.slug = $1 AND cp.slug = $2 AND cp.is_active = true`,
+      [sectionSlug, pageSlug]
     );
 
-    if (roomRes.rows.length === 0) {
-      // Раздел/комната не найдены.
+    if (pageRes.rows.length === 0) {
       return send404Page(res);
     }
 
-    const room = roomRes.rows[0];
+    const page = pageRes.rows[0];
 
     const indexableSectionHtml = `
-      <h1>${escapeHtml(room.title)}</h1>
-      <p>${escapeHtml(room.seo_text)}</p>
+      <h1>${escapeHtml(page.title)}</h1>
+      <p>${escapeHtml(page.seo_text)}</p>
       <p>
         <a href="https://risovanie.online/">Главная</a> ·
-        <a href="https://risovanie.online/coloring/${escapeHtml(room.section_slug)}">в раздел ${escapeHtml(room.section_title)}</a> ·
+        <a href="https://risovanie.online/coloring/${escapeHtml(page.section_slug)}">в раздел ${escapeHtml(page.section_title)}</a> ·
         <a href="https://risovanie.online/coloring">все раскраски</a>
       </p>
     `;
 
-    const seoDescription = String(room.seo_text || '').slice(0, 300);
-    const seoKeywords = `раскраски онлайн, ${room.title}, ${room.section_title}`;
+    const seoDescription = String(page.seo_text || '').slice(0, 300);
+    const seoKeywords = `раскраски онлайн, ${page.title}, ${page.section_title}`;
 
     renderColoringSeoPage({
       canonicalUrl: canonical,
-      h1Text: room.title,
+      h1Text: page.title,
       seoOverride: {
-        title: room.title,
+        title: page.title,
         description: seoDescription,
         keywords: seoKeywords
       },
       indexableSectionHtml
     });
   } catch (e) {
-    console.error('Coloring room seo error:', e);
+    console.error('Coloring page seo error:', e);
     return send404Page(res);
   }
 });
@@ -896,15 +895,19 @@ async function initDb() {
         CREATE TABLE IF NOT EXISTS coloring_pages (
           id SERIAL PRIMARY KEY,
           title VARCHAR(100) NOT NULL,
+          slug VARCHAR(160) NOT NULL UNIQUE,
           image_url TEXT NOT NULL,
           thumbnail_url TEXT,
           image_data TEXT,
+          alt TEXT,
           created_at BIGINT NOT NULL,
-          is_active BOOLEAN DEFAULT true
+          is_active BOOLEAN DEFAULT true,
+          section_id INTEGER NOT NULL REFERENCES coloring_sections(id) ON DELETE CASCADE
         );
-        CREATE INDEX IF NOT EXISTS idx_coloring_pages_active ON coloring_pages(is_active);
+        CREATE INDEX IF NOT EXISTS idx_coloring_pages_active_section ON coloring_pages(section_id, is_active);
+        CREATE INDEX IF NOT EXISTS idx_coloring_pages_section_id ON coloring_pages(section_id);
 
-        -- Room (подборка раскрасок) в рамках SEO-разделов
+        -- SEO-разделы
         CREATE TABLE IF NOT EXISTS coloring_sections (
           id SERIAL PRIMARY KEY,
           slug VARCHAR(80) NOT NULL UNIQUE,
@@ -912,25 +915,16 @@ async function initDb() {
           seo_text TEXT NOT NULL,
           created_at BIGINT NOT NULL
         );
-
-        CREATE TABLE IF NOT EXISTS coloring_rooms (
-          id SERIAL PRIMARY KEY,
-          section_id INTEGER NOT NULL REFERENCES coloring_sections(id) ON DELETE CASCADE,
-          slug VARCHAR(120) NOT NULL,
-          title VARCHAR(120) NOT NULL,
-          seo_text TEXT NOT NULL,
-          created_at BIGINT NOT NULL,
-          UNIQUE (section_id, slug)
-        );
-
-        -- Привязка раскраски к комнате
-        ALTER TABLE coloring_pages
-          ADD COLUMN IF NOT EXISTS room_id INTEGER REFERENCES coloring_rooms(id) ON DELETE SET NULL;
-
-        CREATE INDEX IF NOT EXISTS idx_coloring_pages_room_id ON coloring_pages(room_id);
-        CREATE INDEX IF NOT EXISTS idx_coloring_pages_active_room ON coloring_pages(room_id, is_active);
-
       `);
+    } catch (_) { }
+
+    // Migration for coloring_pages restructuring (room -> section)
+    try {
+      await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS slug VARCHAR(160) UNIQUE`);
+      await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS section_id INTEGER REFERENCES coloring_sections(id) ON DELETE SET NULL`);
+      await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS alt TEXT`);
+      await pgPool.query(`UPDATE coloring_pages SET slug = LOWER(REPLACE(REPLACE(title, ' ', '-'), '''', '')) WHERE slug IS NULL`);
+      await pgPool.query(`UPDATE coloring_pages SET section_id = (SELECT id FROM coloring_sections ORDER BY id LIMIT 1) WHERE section_id IS NULL AND EXISTS (SELECT 1 FROM coloring_sections)`);
     } catch (_) { }
 
     try {
