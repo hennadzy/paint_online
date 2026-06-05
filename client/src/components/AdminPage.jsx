@@ -1432,16 +1432,13 @@ const handleDelete = async (page) => {
                         setCreateSectionError('Введите заголовок раздела');
                         return;
                       }
-                      if (!createSectionSlug.trim()) {
-                        setCreateSectionError('Введите slug раздела (латиница, дефисы)');
-                        return;
-                      }
+                      // Slug теперь не обязателен - сервер сгенерирует автоматически
                       if (!createSectionSeoText.trim() || createSectionSeoText.trim().length < 200) {
                         setCreateSectionError('SEO-текст слишком короткий (нужно от ~200 символов)');
                         return;
                       }
                       const res = await adminState.createColoringSection({
-                        slug: createSectionSlug.trim(),
+                        slug: createSectionSlug.trim() || undefined,
                         title: createSectionTitle.trim(),
                         seoText: createSectionSeoText.trim()
                       });
@@ -1465,7 +1462,52 @@ if (res.section?.id) {
                         <input
                           type="text"
                           value={createSectionTitle}
-                          onChange={(e) => setCreateSectionTitle(e.target.value)}
+                          onChange={(e) => {
+                            setCreateSectionTitle(e.target.value);
+                            // Автогенерация slug при вводе заголовка
+                            if (!createSectionSlug.trim()) {
+                              const translit = e.target.value
+                                .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
+                                .replace(/й/g, 'i').replace(/Й/g, 'i')
+                                .replace(/ц/g, 'ts').replace(/Ц/g, 'ts')
+                                .replace(/у/g, 'u').replace(/У/g, 'u')
+                                .replace(/к/g, 'k').replace(/К/g, 'k')
+                                .replace(/е/g, 'e').replace(/Е/g, 'e')
+                                .replace(/н/g, 'n').replace(/Н/g, 'n')
+                                .replace(/г/g, 'g').replace(/Г/g, 'g')
+                                .replace(/ш/g, 'sh').replace(/Ш/g, 'sh')
+                                .replace(/щ/g, 'sch').replace(/Щ/g, 'sch')
+                                .replace(/з/g, 'z').replace(/З/g, 'z')
+                                .replace(/х/g, 'h').replace(/Х/g, 'h')
+                                .replace(/ъ/g, "'").replace(/Ъ/g, "'")
+                                .replace(/ф/g, 'f').replace(/Ф/g, 'f')
+                                .replace(/ы/g, 'i').replace(/Ы/g, 'i')
+                                .replace(/в/g, 'v').replace(/В/g, 'v')
+                                .replace(/а/g, 'a').replace(/А/g, 'a')
+                                .replace(/п/g, 'p').replace(/П/g, 'p')
+                                .replace(/р/g, 'r').replace(/Р/g, 'r')
+                                .replace(/о/g, 'o').replace(/О/g, 'o')
+                                .replace(/л/g, 'l').replace(/Л/g, 'l')
+                                .replace(/д/g, 'd').replace(/Д/g, 'd')
+                                .replace(/ж/g, 'zh').replace(/Ж/g, 'zh')
+                                .replace(/э/g, 'e').replace(/Э/g, 'e')
+                                .replace(/я/g, 'ya').replace(/Я/g, 'ya')
+                                .replace(/ч/g, 'ch').replace(/Ч/g, 'ch')
+                                .replace(/с/g, 's').replace(/С/g, 's')
+                                .replace(/м/g, 'm').replace(/М/g, 'm')
+                                .replace(/и/g, 'i').replace(/И/g, 'i')
+                                .replace(/т/g, 't').replace(/Т/g, 't')
+                                .replace(/ь/g, "'").replace(/Ь/g, "'")
+                                .replace(/б/g, 'b').replace(/Б/g, 'b')
+                                .replace(/ю/g, 'yu').replace(/Ю/g, 'yu')
+                                .toLowerCase()
+                                .replace(/[^a-z0-9\-]/g, '-')
+                                .replace(/-+/g, '-')
+                                .replace(/^-|-$/g, '')
+                                .substring(0, 80);
+                              setCreateSectionSlug(translit);
+                            }
+                          }}
                           placeholder="Например: Мультфильмы"
                           maxLength={120}
                           autoFocus
@@ -1473,14 +1515,19 @@ if (res.section?.id) {
                       </div>
 
                       <div className="admin-form__group">
-                        <label>Slug раздела</label>
+                        <label>Slug (URL) раздела</label>
                         <input
                           type="text"
                           value={createSectionSlug}
                           onChange={(e) => setCreateSectionSlug(e.target.value)}
-                          placeholder="например: multiki"
+                          placeholder="Автогенерация из заголовка (латиница)"
                           maxLength={80}
+                          style={{ background: '#1a1a2e', border: '1px solid #555', color: '#888' }}
+                          readOnly
                         />
+                        <small style={{ color: '#666', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                          Генерируется автоматически из заголовка. Только латиница, цифры и дефисы.
+                        </small>
                       </div>
 
                       <div className="admin-form__group">
@@ -2763,7 +2810,7 @@ if (res.section?.id) {
       </header>
 
       <nav className="admin-nav">
-        <button 
+        <button
           className={`admin-nav__item ${adminState.activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => {
             adminState.setActiveTab('dashboard');

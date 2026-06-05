@@ -923,7 +923,10 @@ async function initDb() {
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_active_section ON coloring_pages(section_id, is_active);
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_section_id ON coloring_pages(section_id);
       `);
-    } catch (_) { }
+      console.log('Table coloring_pages ready');
+    } catch (err) {
+      console.error('Warning: Could not create coloring_pages table:', err.message);
+    }
 
     // Migration for coloring_pages restructuring (room -> section)
     try {
@@ -932,6 +935,8 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS alt TEXT`);
       await pgPool.query(`UPDATE coloring_pages SET slug = LOWER(REPLACE(REPLACE(title, ' ', '-'), '''', '')) WHERE slug IS NULL`);
       await pgPool.query(`UPDATE coloring_pages SET section_id = (SELECT id FROM coloring_sections ORDER BY id LIMIT 1) WHERE section_id IS NULL AND EXISTS (SELECT 1 FROM coloring_sections)`);
+      // Fix NOT NULL constraint on section_id - allow NULL
+      await pgPool.query(`ALTER TABLE coloring_pages ALTER COLUMN section_id DROP NOT NULL`);
     } catch (_) { }
 
     try {

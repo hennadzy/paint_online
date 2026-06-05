@@ -20,6 +20,29 @@ const MAX_BROADCAST_RECIPIENTS = 2000;
 const MAX_BROADCAST_SELECTED = 500;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Транслитерация кириллицы в латиницу
+function transliterate(word) {
+  const a = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"'","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"'","б":"b","ю":"yu"};
+  
+  return word.split('').map(function (char) { 
+    return a[char] || char; 
+  }).join("");
+}
+
+// Генерация slug из заголовка
+function generateSlug(title) {
+  if (!title) return '';
+  // Транслитерируем
+  const transliterated = transliterate(title);
+  // Заменяем пробелы и спецсимволы на дефисы
+  return transliterated
+    .toLowerCase()
+    .replace(/[^a-z0-9\-]/g, '-')  // заменяем всё кроме a-z, 0-9, дефиса
+    .replace(/-+/g, '-')           // убираем множественные дефисы
+    .replace(/^-|-$/g, '')         // убираем дефисы по краям
+    .substring(0, 80);
+}
+
 const router = express.Router();
 
 
@@ -1258,8 +1281,6 @@ router.put('/capabilities', async (req, res) => {
 // Coloring SEO sections & rooms (admin)
 // =========================
 
-const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
 router.get('/coloring-sections', async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -1287,11 +1308,31 @@ router.post('/coloring-sections', async (req, res) => {
   try {
     const { slug, title, seoText } = req.body || {};
 
-    if (!slug || typeof slug !== 'string') return res.status(400).json({ error: 'slug обязателен' });
-    if (!SLUG_RE.test(slug.trim().toLowerCase())) return res.status(400).json({ error: 'Некорректный slug (только a-z0-9 и дефисы)' });
-    if (!title || typeof title !== 'string' || !title.trim()) return res.status(400).json({ error: 'title обязателен' });
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'title обязателен' });
+    }
 
-    const finalSlug = slug.trim().toLowerCase().substring(0, 80);
+    // Если slug не указан или содержит кириллицу - генерируем из title
+    let finalSlug;
+    if (!slug || typeof slug !== 'string' || !slug.trim()) {
+      finalSlug = generateSlug(title.trim());
+    } else {
+      // Проверяем, содержит ли slug кириллицу
+      const hasCyrillic = /[а-яА-ЯёЁ]/.test(slug);
+      if (hasCyrillic) {
+        finalSlug = generateSlug(slug);
+      } else {
+        finalSlug = slug.trim().toLowerCase();
+      }
+    }
+
+    // Валидируем slug
+    const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!SLUG_RE.test(finalSlug)) {
+      return res.status(400).json({ error: 'Некорректный slug (только a-z0-9 и дефисы)' });
+    }
+
+    finalSlug = finalSlug.substring(0, 80);
     const finalTitle = title.trim().substring(0, 120);
     const finalSeoText = String(seoText || '').trim().slice(0, 20000);
 
