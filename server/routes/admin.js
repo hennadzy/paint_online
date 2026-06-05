@@ -1313,4 +1313,20 @@ router.post('/coloring-sections', async (req, res) => {
   }
 });
 
+router.delete('/coloring-sections/:id', async (req, res) => {
+  try {
+    const sectionId = parseInt(req.params.id, 10);
+    if (!Number.isFinite(sectionId) || sectionId <= 0) {
+      return res.status(400).json({ error: 'Invalid section id' });
+    }
+
+    await pgPool.query('DELETE FROM coloring_sections WHERE id = $1', [sectionId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Admin delete coloring section error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

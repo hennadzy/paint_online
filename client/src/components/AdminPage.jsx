@@ -1321,7 +1321,7 @@ const handleDelete = async (page) => {
                   }}
                   style={{ width: '100%', maxWidth: '100%' }}
                 >
-                  <option value="">Выберите раздел</option>
+                  <option value="">— выберите раздел —</option>
                   {adminState.coloringSections.map(s => (
                     <option key={s.id} value={s.id}>
                       {s.title || s.slug || s.id}
@@ -1343,6 +1343,24 @@ const handleDelete = async (page) => {
                   >
                     + Создать раздел
                   </button>
+                  {coloringSectionId && (
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--danger"
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                      onClick={async () => {
+                        if (!window.confirm('Удалить выбранный раздел и все раскраски в нём?')) return;
+                        const res = await adminState.deleteColoringSection(coloringSectionId);
+                        if (res.success) {
+                          setColoringSectionId(null);
+                        } else {
+                          alert(res.error || 'Ошибка удаления раздела');
+                        }
+                      }}
+                    >
+                      🗑 Удалить раздел
+                    </button>
+                  )}
                 </div>
               </div>
 

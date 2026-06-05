@@ -485,13 +485,13 @@ router.get('/coloring-sections', apiLimiter, async (req, res) => {
        ORDER BY created_at DESC`
     );
 
-    res.json(result.rows.map(r => ({
+    res.json({ sections: result.rows.map(r => ({
       id: r.id,
       slug: r.slug,
       title: r.title,
       seoText: r.seo_text,
       createdAt: r.created_at
-    })));
+    }))});
   } catch (error) {
     console.error('Get coloring sections error:', error);
     res.status(500).json({ error: 'Server error' });

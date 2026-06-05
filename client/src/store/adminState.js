@@ -480,6 +480,19 @@ class AdminState {
     }
   }
 
+  async deleteColoringSection(sectionId) {
+    try {
+      await axios.delete(`${API_URL}/api/admin/coloring-sections/${sectionId}`, { headers: getAuthHeaders() });
+      await this.fetchColoringSections();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Ошибка удаления раздела'
+      };
+    }
+  }
+
   async uploadColoringPage(formData, sectionId = null) {
     try {
       if (sectionId !== undefined && sectionId !== null) {
