@@ -472,10 +472,13 @@ class AdminState {
 
   async createColoringSection(payload) {
     try {
+      console.log('Creating section:', payload);
       const response = await axios.post(`${API_URL}/api/admin/coloring-sections`, payload, { headers: getAuthHeaders() });
+      console.log('Section created:', response.data);
       await this.fetchColoringSections();
       return { success: true, section: response.data.section };
     } catch (error) {
+      console.error('Create section error:', error.response?.data);
       return {
         success: false,
         error: error.response?.data?.error || 'Ошибка создания раздела'
