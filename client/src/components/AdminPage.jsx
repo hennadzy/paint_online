@@ -1463,10 +1463,11 @@ if (res.section?.id) {
                           type="text"
                           value={createSectionTitle}
                           onChange={(e) => {
-                            setCreateSectionTitle(e.target.value);
-                            // Автогенерация slug при вводе заголовка
-                            if (!createSectionSlug.trim()) {
-                              const translit = e.target.value
+                            const newTitle = e.target.value;
+                            setCreateSectionTitle(newTitle);
+                            // Автогенерация slug при вводе заголовка (только если slug пустой или совпадает со старым)
+                            if (!createSectionSlug.trim() || createSectionSlug === createSectionTitle.toLowerCase().replace(/[^a-z0-9\-]/g, '').substring(0, 80)) {
+                              const translit = newTitle
                                 .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
                                 .replace(/й/g, 'i').replace(/Й/g, 'i')
                                 .replace(/ц/g, 'ts').replace(/Ц/g, 'ts')
@@ -1519,14 +1520,20 @@ if (res.section?.id) {
                         <input
                           type="text"
                           value={createSectionSlug}
-                          onChange={(e) => setCreateSectionSlug(e.target.value)}
+                          onChange={(e) => {
+                            // Разрешаем ручное редактирование, но фильтруем недопустимые символы
+                            const raw = e.target.value;
+                            const filtered = raw
+                              .toLowerCase()
+                              .replace(/[^a-z0-9\-]/g, '')
+                              .substring(0, 80);
+                            setCreateSectionSlug(filtered);
+                          }}
                           placeholder="Автогенерация из заголовка (латиница)"
                           maxLength={80}
-                          style={{ background: '#1a1a2e', border: '1px solid #555', color: '#888' }}
-                          readOnly
                         />
                         <small style={{ color: '#666', fontSize: '11px', marginTop: '4px', display: 'block' }}>
-                          Генерируется автоматически из заголовка. Только латиница, цифры и дефисы.
+                          Генерируется автоматически из заголовка. Можно изменить вручную. Только a-z, 0-9 и дефисы.
                         </small>
                       </div>
 

@@ -42,11 +42,16 @@ router.get('/capabilities', apiLimiter, asyncHandler(async (req, res) => {
 
 router.get('/coloring-sections', asyncHandler(async (req, res) => {
   try {
+    console.log('Getting all coloring sections...');
+    
     const result = await pgPool.query(
       `SELECT id, slug, title, seo_text, created_at
        FROM coloring_sections
        ORDER BY created_at DESC`
     );
+
+    console.log('Sections found:', result.rows.length);
+    console.log('Sections:', result.rows.map(r => ({ id: r.id, slug: r.slug, title: r.title })));
 
     res.json({
       sections: result.rows.map(r => ({
@@ -59,7 +64,13 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Get coloring sections error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint
+    });
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }));
 
@@ -67,6 +78,20 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
 router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res) => {
   try {
     const { sectionSlug } = req.params;
+    console.log('Getting pages for section:', sectionSlug);
+
+    // Проверяем существование раздела
+    const sectionCheck = await pgPool.query(
+      'SELECT id, slug, title FROM coloring_sections WHERE slug = $1',
+      [sectionSlug]
+    );
+
+    if (sectionCheck.rows.length === 0) {
+      console.log('Section not found:', sectionSlug);
+      return res.status(404).json({ error: 'Раздел не найден' });
+    }
+
+    console.log('Section found:', sectionCheck.rows[0]);
 
     const result = await pgPool.query(
       `SELECT
@@ -83,6 +108,8 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
       [sectionSlug]
     );
 
+    console.log('Pages found:', result.rows.length);
+
     res.json({
       pages: result.rows.map(r => ({
         id: r.id,
@@ -95,7 +122,13 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
     });
   } catch (error) {
     console.error('Get coloring section pages error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint
+    });
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }));
 

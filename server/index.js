@@ -937,6 +937,20 @@ async function initDb() {
       await pgPool.query(`UPDATE coloring_pages SET section_id = (SELECT id FROM coloring_sections ORDER BY id LIMIT 1) WHERE section_id IS NULL AND EXISTS (SELECT 1 FROM coloring_sections)`);
       // Fix NOT NULL constraint on section_id - allow NULL
       await pgPool.query(`ALTER TABLE coloring_pages ALTER COLUMN section_id DROP NOT NULL`);
+      
+      // Fix foreign key constraint to use SET NULL instead of CASCADE
+      try {
+        await pgPool.query(`
+          ALTER TABLE coloring_pages 
+          DROP CONSTRAINT IF EXISTS coloring_pages_section_id_fkey;
+          ALTER TABLE coloring_pages 
+          ADD CONSTRAINT coloring_pages_section_id_fkey 
+          FOREIGN KEY (section_id) REFERENCES coloring_sections(id) ON DELETE SET NULL;
+        `);
+        console.log('Fixed coloring_pages foreign key constraint');
+      } catch (fkErr) {
+        console.log('FK constraint already correct or not changeable:', fkErr.message);
+      }
     } catch (_) { }
 
     try {
