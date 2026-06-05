@@ -890,6 +890,22 @@ async function initDb() {
     `);
     console.log('Database tables ready');
 
+    // Создаём таблицу coloring_sections ПЕРЕД использованием
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS coloring_sections (
+          id SERIAL PRIMARY KEY,
+          slug VARCHAR(80) NOT NULL UNIQUE,
+          title VARCHAR(120) NOT NULL,
+          seo_text TEXT NOT NULL,
+          created_at BIGINT NOT NULL
+        );
+      `);
+      console.log('Table coloring_sections ready');
+    } catch (err) {
+      console.error('Warning: Could not create coloring_sections table:', err.message);
+    }
+
     try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS coloring_pages (
@@ -902,19 +918,10 @@ async function initDb() {
           alt TEXT,
           created_at BIGINT NOT NULL,
           is_active BOOLEAN DEFAULT true,
-          section_id INTEGER NOT NULL REFERENCES coloring_sections(id) ON DELETE CASCADE
+          section_id INTEGER REFERENCES coloring_sections(id) ON DELETE SET NULL
         );
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_active_section ON coloring_pages(section_id, is_active);
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_section_id ON coloring_pages(section_id);
-
-        -- SEO-разделы
-        CREATE TABLE IF NOT EXISTS coloring_sections (
-          id SERIAL PRIMARY KEY,
-          slug VARCHAR(80) NOT NULL UNIQUE,
-          title VARCHAR(120) NOT NULL,
-          seo_text TEXT NOT NULL,
-          created_at BIGINT NOT NULL
-        );
       `);
     } catch (_) { }
 
