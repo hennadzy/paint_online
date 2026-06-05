@@ -80,15 +80,6 @@ const GamesModal = observer(() => {
                 )}
               </button>
             ))}
-
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
-              <button
-                className="room-btn room-btn-secondary"
-                onClick={() => canvasState.setShowGamesModal(false)}
-              >
-                Закрыть
-              </button>
-            </div>
           </div>
         </div>
       </div>

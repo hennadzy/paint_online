@@ -1327,7 +1327,6 @@ const handleDelete = async (page) => {
                       {s.title || s.slug || s.id}
                     </option>
                   ))}
-                  <option value="" disabled style={{ color: '#888', fontStyle: 'italic' }}>— комнаты убраны — раскрасьте страницу сразу в раздел —</option>
                 </select>
                 <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
                   <button

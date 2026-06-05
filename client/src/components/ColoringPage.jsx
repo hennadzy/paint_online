@@ -100,6 +100,7 @@ const ColoringPage = () => {
 
   const [coloringPages, setColoringPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
+  const [coloringSections, setColoringSections] = useState([]);
 
   const [selectedColor, setSelectedColor] = useState('#FF0000');
 
@@ -129,6 +130,17 @@ const ColoringPage = () => {
       setImageLoaded(false);
 
       try {
+        if (!sectionSlug) {
+          const res = await fetch(`${API_URL}/api/coloring-sections`);
+          if (!res.ok) throw new Error('Server error');
+          const data = await res.json();
+          setColoringSections(Array.isArray(data.sections) ? data.sections : []);
+          setColoringPages([]);
+          setIsLoading(false);
+          setSeoData(null);
+          return;
+        }
+
         if (sectionSlug && !pageSlug) {
           const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/pages`);
           if (!res.ok) throw new Error('Server error');
@@ -174,6 +186,7 @@ const ColoringPage = () => {
         if (!res.ok) throw new Error('Server error');
         const data = await res.json();
         setColoringPages(data.pages || data || []);
+        setColoringSections([]);
         setIsLoading(false);
         setSeoData(null);
       } catch (err) {
@@ -472,13 +485,58 @@ const onMainBack = () => {
                <span className="coloring-empty__icon">⚠️</span>
                <p>{fetchError}</p>
              </div>
-           ) : coloringPages.length === 0 ? (
-             <div className="coloring-empty">
-               <span className="coloring-empty__icon">🎨</span>
-               <p>Раскраски пока не добавлены</p>
-               <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
-             </div>
-           ) : (
+) : !sectionSlug && coloringSections.length === 0 ? (
+              <div className="coloring-empty">
+                <span className="coloring-empty__icon">📂</span>
+                <p>Разделы пока не добавлены</p>
+                <p className="coloring-empty__hint">Администратор скоро добавит разделы</p>
+              </div>
+            ) : !sectionSlug ? (
+              <div className="coloring-pages-list">
+                <p className="coloring-selector__hint">Выберите раздел:</p>
+                {coloringSections.map((section) => (
+                  <div
+                    key={section.id}
+                    className="coloring-page-item"
+                    onClick={() => navigate(`/coloring/${encodeURIComponent(section.slug)}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/coloring/${encodeURIComponent(section.slug)}`)}
+                  >
+                    <div className="coloring-page-item__preview">
+                      <div
+                        style={{
+                          width: 130,
+                          height: 90,
+                          borderRadius: 10,
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'rgba(255,255,255,0.06)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#bbb',
+                          fontWeight: 600,
+                          textAlign: 'center',
+                          padding: 8
+                        }}
+                      >
+                        {section.title || section.slug}
+                      </div>
+                    </div>
+                    <div className="coloring-page-item__info">
+                      <h3 className="coloring-page-item__title">{section.title || section.slug}</h3>
+                      <span className="coloring-page-item__cta">Открыть раздел →</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : coloringPages.length === 0 ? (
+              <div className="coloring-empty">
+                <span className="coloring-empty__icon">🎨</span>
+                <p>Раскраски пока не добавлены</p>
+                <p className="coloring-empty__hint">Администратор скоро добавит раскраски</p>
+              </div>
+            ) : (
              <div className="coloring-pages-list">
                <p className="coloring-selector__hint">Выберите раскраску для начала:</p>
                {coloringPages.map((page) => (
