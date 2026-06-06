@@ -588,7 +588,7 @@ const handleCreateRoom = async () => {
                           className={`room-join-subtab ${joinSubTab === 'activity' ? 'active' : ''}`}
                           onClick={() => setJoinSubTab('activity')}
                         >
-                          Где я рисовал
+                          Где был
                         </button>
                       </div>
                     )}

@@ -542,7 +542,7 @@ const ColoringPage = () => {
               </div>
             ) : !sectionSlug ? (
               <div className="coloring-pages-list">
-                <p className="coloring-selector__hint">Выберите раздел:</p>
+                <p className="coloring-selector__hint">Выберите категорию:</p>
                 {coloringSections.map((section) => (
                   <div
                     key={section.id}
@@ -586,7 +586,6 @@ const ColoringPage = () => {
                     </div>
                     <div className="coloring-page-item__info">
                       <h3 className="coloring-page-item__title">{section.title || section.slug}</h3>
-                      <span className="coloring-page-item__cta">Открыть раздел →</span>
                     </div>
                   </div>
                 ))}
@@ -599,7 +598,7 @@ const ColoringPage = () => {
               </div>
             ) : (
              <div className="coloring-pages-list">
-               <p className="coloring-selector__hint">Выберите раскраску для начала:</p>
+               <p className="coloring-selector__hint">Выберите раскраску:</p>
                {coloringPages.map((page) => {
                  const pagePathSlug = page.slug || `page-${page.id}`;
                  const openPage = () => {
@@ -632,7 +631,6 @@ const ColoringPage = () => {
                    </div>
                    <div className="coloring-page-item__info">
                      <h3 className="coloring-page-item__title">{page.title}</h3>
-                     <span className="coloring-page-item__cta">Нажмите, чтобы раскрасить →</span>
                    </div>
                  </div>
                );
