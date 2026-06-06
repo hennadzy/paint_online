@@ -44,9 +44,9 @@ router.get('/capabilities', apiLimiter, asyncHandler(async (req, res) => {
 router.get('/coloring-sections', asyncHandler(async (req, res) => {
   try {
     const result = await pgPool.query(
-      `SELECT id, slug, title, image_url, seo_text, created_at
+      `SELECT id, slug, title, image_url, seo_text, sort_order, created_at
        FROM coloring_sections
-       ORDER BY created_at DESC`
+       ORDER BY sort_order ASC, created_at DESC`
     );
 
     res.json({
@@ -56,6 +56,7 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
         title: r.title,
         imageUrl: r.image_url,
         seoText: r.seo_text,
+        sortOrder: r.sort_order || 0,
         createdAt: toEpochMsSafe(r.created_at)
       }))
     });
@@ -125,13 +126,27 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
 router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req, res) => {
   try {
     const { sectionSlug, pageSlug } = req.params;
+    
+    // Сначала находим раздел по slug
+    const sectionResult = await pgPool.query(
+      'SELECT id FROM coloring_sections WHERE slug = $1',
+      [sectionSlug]
+    );
+    
+    if (sectionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Раздел не найден' });
+    }
+    
+    const sectionId = sectionResult.rows[0].id;
+    
+    // Генерируем кандидаты slug для раскраски
     const slugCandidates = [pageSlug];
     const latinSlug = generateSlug(pageSlug);
     if (latinSlug && latinSlug !== pageSlug) {
       slugCandidates.push(latinSlug);
     }
 
-    let pageRow = null;
+    // Ищем раскраску по section_id и slug
     for (const slug of slugCandidates) {
       const result = await pgPool.query(
         `SELECT
@@ -146,26 +161,20 @@ router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req,
            cp.created_at,
            cp.is_active
          FROM coloring_pages cp
-         JOIN coloring_sections cs ON cs.id = cp.section_id
-         WHERE cs.slug = $1 AND cp.slug = $2 AND cp.is_active = true
+         WHERE cp.section_id = $1 AND cp.slug = $2 AND cp.is_active = true
          LIMIT 1`,
-        [sectionSlug, slug]
+        [sectionId, slug]
       );
 
       if (result.rows.length) {
-        pageRow = result.rows[0];
-        break;
+        return res.json({ page: result.rows[0] });
       }
     }
 
-    if (!pageRow) {
-      return res.status(404).json({ error: 'Page not found' });
-    }
-
-    res.json({ page: pageRow });
+    return res.status(404).json({ error: 'Раскраска не найдена' });
   } catch (error) {
     console.error('Get coloring section page error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 }));
 

@@ -922,6 +922,13 @@ async function initDb() {
         ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) DEFAULT NULL;
       `);
       console.log('✅ Migration: Added image_url column to coloring_sections');
+      
+      // Автоматическая миграция: добавляем поле sort_order если его нет
+      await pgPool.query(`
+        ALTER TABLE coloring_sections
+        ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+      `);
+      console.log('✅ Migration: Added sort_order column to coloring_sections');
     } catch (err) {
       console.error('Warning: Could not create coloring_sections table:', err.message);
     }

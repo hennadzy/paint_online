@@ -1643,6 +1643,13 @@ const handleDelete = async (page) => {
         <div className="admin-table-container" style={{ marginBottom: '24px' }}>
           <div className="admin-toolbar">
             <h3 style={{ color: '#ffd700', margin: 0 }}>📁 Разделы раскрасок ({adminState.coloringSections.length})</h3>
+            <button
+              className="admin-btn admin-btn--secondary"
+              onClick={() => adminState.fetchColoringSections()}
+              style={{ marginLeft: 'auto' }}
+            >
+              Обновить
+            </button>
           </div>
 
           {adminState.coloringSectionsLoading ? (
@@ -1655,12 +1662,12 @@ const handleDelete = async (page) => {
             </div>
           ) : (
             <div className="admin-coloring-list">
-              {adminState.coloringSections.map(section => (
+              {adminState.coloringSections.map((section, index) => (
                 <div key={section.id} className="admin-coloring-item">
                   <div className="admin-coloring-item__preview">
                     {section.imageUrl ? (
                       <img
-                        src={`${window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com'}${section.imageUrl}`}
+                        src={`${getAdminApiBase()}${section.imageUrl}?t=${Date.now()}`}
                         alt={section.title}
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
@@ -1674,9 +1681,98 @@ const handleDelete = async (page) => {
                       <span style={{ fontSize: '12px', color: '#666' }}>
                         Slug: {section.slug}
                       </span>
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '10px' }}>
+                        Порядок: {section.sortOrder || 0}
+                      </span>
                     </div>
                   </div>
                   <div className="admin-actions">
+                    <button
+                      className="admin-icon-btn"
+                      onClick={async () => {
+                        // Переместить вверх
+                        if (index === 0) return;
+                        const newSections = [...adminState.coloringSections];
+                        const temp = newSections[index];
+                        newSections[index] = newSections[index - 1];
+                        newSections[index - 1] = temp;
+                        
+                        // Обновляем sortOrder
+                        newSections.forEach((s, i) => s.sortOrder = i);
+                        
+                        try {
+                          const response = await fetch(`${API_URL}/api/admin/coloring-sections/reorder`, {
+                            method: 'PUT',
+                            headers: {
+                              ...getAuthHeaders(),
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              sections: newSections.map(s => ({ id: s.id, sortOrder: s.sortOrder }))
+                            })
+                          });
+                          
+                          const result = await response.json();
+                          if (result.success) {
+                            await adminState.fetchColoringSections();
+                          } else {
+                            alert(result.error || 'Ошибка изменения порядка');
+                          }
+                        } catch (error) {
+                          alert('Ошибка изменения порядка');
+                        }
+                      }}
+                      title="Переместить вверх"
+                      disabled={index === 0}
+                      style={{ opacity: index === 0 ? 0.3 : 1 }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="18,15 12,9 6,15" />
+                      </svg>
+                    </button>
+                    <button
+                      className="admin-icon-btn"
+                      onClick={async () => {
+                        // Переместить вниз
+                        if (index === adminState.coloringSections.length - 1) return;
+                        const newSections = [...adminState.coloringSections];
+                        const temp = newSections[index];
+                        newSections[index] = newSections[index + 1];
+                        newSections[index + 1] = temp;
+                        
+                        // Обновляем sortOrder
+                        newSections.forEach((s, i) => s.sortOrder = i);
+                        
+                        try {
+                          const response = await fetch(`${API_URL}/api/admin/coloring-sections/reorder`, {
+                            method: 'PUT',
+                            headers: {
+                              ...getAuthHeaders(),
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              sections: newSections.map(s => ({ id: s.id, sortOrder: s.sortOrder }))
+                            })
+                          });
+                          
+                          const result = await response.json();
+                          if (result.success) {
+                            await adminState.fetchColoringSections();
+                          } else {
+                            alert(result.error || 'Ошибка изменения порядка');
+                          }
+                        } catch (error) {
+                          alert('Ошибка изменения порядка');
+                        }
+                      }}
+                      title="Переместить вниз"
+                      disabled={index === adminState.coloringSections.length - 1}
+                      style={{ opacity: index === adminState.coloringSections.length - 1 ? 0.3 : 1 }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <polyline points="6,9 12,15 18,9" />
+                      </svg>
+                    </button>
                     <label className="admin-icon-btn" title="Загрузить изображение" style={{ cursor: 'pointer' }}>
                       <input
                         type="file"
@@ -1685,7 +1781,7 @@ const handleDelete = async (page) => {
                         onChange={async (e) => {
                           const file = e.target.files[0];
                           if (!file) return;
-
+                          
                           const formData = new FormData();
                           formData.append('image', file);
                           
