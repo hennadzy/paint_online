@@ -142,9 +142,12 @@ const ColoringPage = () => {
         }
 
         if (sectionSlug && !pageSlug) {
+          console.log('DEBUG: Fetching pages for section:', sectionSlug);
           const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/pages`);
+          console.log('DEBUG: Response status:', res.status);
           if (!res.ok) throw new Error('Server error');
           const data = await res.json();
+          console.log('DEBUG: Pages data:', data);
           const pages = Array.isArray(data.pages) ? data.pages : [];
           setColoringPages(pages);
           setSeoData(null);
@@ -190,6 +193,7 @@ const ColoringPage = () => {
         setIsLoading(false);
         setSeoData(null);
       } catch (err) {
+        console.error('Coloring fetch error:', err);
         setFetchError('Не удалось загрузить список раскрасок');
         setIsLoading(false);
       }
@@ -620,10 +624,10 @@ onClick={() => {
   return (
     <div className="coloring-page coloring-page--active">
       <div className="coloring-header">
-        <button className="coloring-back-btn" onClick={handleBackToSelector}>
-          ← К списку
+        <button className="coloring-back-btn" onClick={() => navigate('/coloring')}>
+          ← К разделам
         </button>
-        <h2 className="coloring-header__title">{selectedPage.title}</h2>
+        <h2 className="coloring-header__title">{selectedPage?.title || 'Раскраски'}</h2>
       </div>
 
       <div className="coloring-workspace" ref={containerRef}>
