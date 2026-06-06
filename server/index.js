@@ -955,6 +955,27 @@ async function initDb() {
     }
 
     try {
+      const { generateSlug, ensureUniqueColoringPageSlug } = require('./utils/slug');
+      const pages = await pgPool.query('SELECT id, title, slug FROM coloring_pages');
+      for (const page of pages.rows) {
+        const expected = generateSlug(page.title);
+        if (!expected) continue;
+
+        const currentSlug = page.slug || '';
+        const hasNonLatinSlug = !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(currentSlug);
+        if (!hasNonLatinSlug && currentSlug === expected) continue;
+
+        const newSlug = await ensureUniqueColoringPageSlug(pgPool, expected, page.id);
+        if (newSlug !== currentSlug) {
+          await pgPool.query('UPDATE coloring_pages SET slug = $1 WHERE id = $2', [newSlug, page.id]);
+        }
+      }
+      console.log('Coloring pages slug transliteration migration done');
+    } catch (err) {
+      console.log('Coloring pages slug transliteration note:', err.message);
+    }
+
+    try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS gallery_drawings (
           id SERIAL PRIMARY KEY,

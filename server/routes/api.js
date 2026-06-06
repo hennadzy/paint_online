@@ -11,6 +11,7 @@ const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { pgPool } = require('../config/db');
 const { asyncHandler, ValidationError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
 const RoleCapabilitiesService = require('../services/RoleCapabilitiesService');
+const { generateSlug } = require('../utils/slug');
 
 const router = express.Router();
 
@@ -91,6 +92,8 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
          cp.section_id,
          cp.slug,
          cp.title,
+         cp.image_url,
+         cp.thumbnail_url,
          cp.created_at
        FROM coloring_pages cp
        WHERE cp.section_id = $1 AND cp.is_active = true
@@ -106,6 +109,8 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
         sectionId: r.section_id,
         slug: r.slug,
         title: r.title,
+        image_url: r.image_url,
+        thumbnail_url: r.thumbnail_url,
         createdAt: toEpochMsSafe(r.created_at)
       }))
     });
@@ -119,31 +124,44 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
 router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req, res) => {
   try {
     const { sectionSlug, pageSlug } = req.params;
+    const slugCandidates = [pageSlug];
+    const latinSlug = generateSlug(pageSlug);
+    if (latinSlug && latinSlug !== pageSlug) {
+      slugCandidates.push(latinSlug);
+    }
 
-    const result = await pgPool.query(
-      `SELECT
-         cp.id,
-         cp.section_id,
-         cp.slug,
-         cp.title,
-         cp.alt,
-         cp.seo_text,
-         cp.image_url,
-         cp.thumbnail_url,
-         cp.created_at,
-         cp.is_active
-       FROM coloring_pages cp
-       JOIN coloring_sections cs ON cs.id = cp.section_id
-       WHERE cs.slug = $1 AND cp.slug = $2 AND cp.is_active = true
-       LIMIT 1`,
-      [sectionSlug, pageSlug]
-    );
+    let pageRow = null;
+    for (const slug of slugCandidates) {
+      const result = await pgPool.query(
+        `SELECT
+           cp.id,
+           cp.section_id,
+           cp.slug,
+           cp.title,
+           cp.alt,
+           cp.seo_text,
+           cp.image_url,
+           cp.thumbnail_url,
+           cp.created_at,
+           cp.is_active
+         FROM coloring_pages cp
+         JOIN coloring_sections cs ON cs.id = cp.section_id
+         WHERE cs.slug = $1 AND cp.slug = $2 AND cp.is_active = true
+         LIMIT 1`,
+        [sectionSlug, slug]
+      );
 
-    if (!result.rows.length) {
+      if (result.rows.length) {
+        pageRow = result.rows[0];
+        break;
+      }
+    }
+
+    if (!pageRow) {
       return res.status(404).json({ error: 'Page not found' });
     }
 
-    res.json({ page: result.rows[0] });
+    res.json({ page: pageRow });
   } catch (error) {
     console.error('Get coloring section page error:', error);
     res.status(500).json({ error: 'Server error' });

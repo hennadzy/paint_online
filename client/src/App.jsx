@@ -62,10 +62,9 @@ const App = observer(() => {
     }
 
     const isAdminPage = location.pathname === '/admin';
-    const isColoringPage = location.pathname === '/coloring';
+    const isColoringRoute = location.pathname === '/coloring' || location.pathname.startsWith('/coloring/');
     const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
     const isHelpPage = location.pathname === '/help';
-    const isColoringSectionPage = location.pathname.startsWith('/coloring/') && location.pathname !== '/coloring';
 
 return (
         <SeoProvider>
@@ -74,7 +73,7 @@ return (
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringPage ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''} ${isColoringSectionPage ? 'main-content--coloring-section' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringRoute ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
                 {isHelpPageByPath ? (
                     <HelpPage />
                 ) : (

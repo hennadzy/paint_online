@@ -164,6 +164,14 @@ const ColoringPage = () => {
           const page = data?.page;
 
           if (page) {
+            if (page.slug && pageSlug && page.slug !== pageSlug) {
+              navigate(
+                `/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(page.slug)}`,
+                { replace: true }
+              );
+              return;
+            }
+
             setColoringPages([page]);
             setSelectedPage(page);
 
@@ -200,7 +208,7 @@ const ColoringPage = () => {
     };
 
     fetchData();
-  }, [sectionSlug, pageSlug, setSeoData]);
+  }, [sectionSlug, pageSlug, setSeoData, navigate]);
 
   useEffect(() => {
     zoomRef.current = zoom;
@@ -456,25 +464,34 @@ const ColoringPage = () => {
   const handleBackToSelector = () => {
     setSelectedPage(null);
     setImageLoaded(false);
+    if (sectionSlug) {
+      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
+    } else {
+      navigate('/coloring');
+    }
+  };
+
+  const onMainBack = () => {
+    if (pageSlug && sectionSlug) {
+      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
+      return;
+    }
+    if (sectionSlug) {
+      navigate('/coloring');
+      return;
+    }
+    navigate('/');
   };
 
   if (!selectedPage) {
-const onMainBack = () => {
-       if (sectionSlug) {
-         navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
-         return;
-       }
-       navigate('/');
-     };
+    const headerTitle = sectionSlug ? '🎨 Раздел раскрасок' : '🎨 Раскраски';
 
-     const headerTitle = sectionSlug ? '🎨 Раздел раскрасок' : '🎨 Раскраски';
-
-     return (
-       <div className="coloring-page">
-         <div className="coloring-header">
-           <button className="coloring-back-btn" onClick={onMainBack}>
-             ← Назад
-           </button>
+    return (
+      <div className="coloring-page">
+        <div className="coloring-header">
+          <button className="coloring-back-btn" onClick={onMainBack}>
+            ← Назад
+          </button>
            <h1 className="coloring-header__title">{headerTitle}</h1>
          </div>
 
@@ -543,20 +560,24 @@ const onMainBack = () => {
             ) : (
              <div className="coloring-pages-list">
                <p className="coloring-selector__hint">Выберите раскраску для начала:</p>
-               {coloringPages.map((page) => (
+               {coloringPages.map((page) => {
+                 const pagePathSlug = page.slug || `page-${page.id}`;
+                 const openPage = () => {
+                   if (sectionSlug) {
+                     navigate(`/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pagePathSlug)}`);
+                   } else {
+                     handleSelectPage(page);
+                   }
+                 };
+
+                 return (
                  <div
                    key={page.id}
                    className="coloring-page-item"
-onClick={() => {
-                      if (sectionSlug && (page.slug || page.id)) {
-                        navigate(`/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(page.slug || `page-${page.id}`)}`);
-                      } else {
-                        handleSelectPage(page);
-                      }
-                    }}
+                   onClick={openPage}
                    role="button"
                    tabIndex={0}
-                   onKeyDown={(e) => e.key === 'Enter' && handleSelectPage(page)}
+                   onKeyDown={(e) => e.key === 'Enter' && openPage()}
                  >
                    <div className="coloring-page-item__preview">
                      <img
@@ -574,7 +595,8 @@ onClick={() => {
                      <span className="coloring-page-item__cta">Нажмите, чтобы раскрасить →</span>
                    </div>
                  </div>
-               ))}
+               );
+               })}
              </div>
            )}
 
@@ -624,8 +646,8 @@ onClick={() => {
   return (
     <div className="coloring-page coloring-page--active">
       <div className="coloring-header">
-        <button className="coloring-back-btn" onClick={() => navigate('/coloring')}>
-          ← К разделам
+        <button className="coloring-back-btn" onClick={handleBackToSelector}>
+          ← Назад
         </button>
         <h2 className="coloring-header__title">{selectedPage?.title || 'Раскраски'}</h2>
       </div>

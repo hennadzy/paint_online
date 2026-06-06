@@ -20,30 +20,7 @@ const MAX_BROADCAST_RECIPIENTS = 2000;
 const MAX_BROADCAST_SELECTED = 500;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-// Транслитерация кириллицы в латиницу
-function transliterate(word) {
-  const a = {"Ё":"YO","Й":"I","Ц":"TS","У":"U","К":"K","Е":"E","Н":"N","Г":"G","Ш":"SH","Щ":"SCH","З":"Z","Х":"H","Ъ":"'","ё":"yo","й":"i","ц":"ts","у":"u","к":"k","е":"e","н":"n","г":"g","ш":"sh","щ":"sch","з":"z","х":"h","ъ":"'","Ф":"F","Ы":"I","В":"V","А":"A","П":"P","Р":"R","О":"O","Л":"L","Д":"D","Ж":"ZH","Э":"E","ф":"f","ы":"i","в":"v","а":"a","п":"p","р":"r","о":"o","л":"l","д":"d","ж":"zh","э":"e","Я":"Ya","Ч":"CH","С":"S","М":"M","И":"I","Т":"T","Ь":"'","Б":"B","Ю":"YU","я":"ya","ч":"ch","с":"s","м":"m","и":"i","т":"t","ь":"'","б":"b","ю":"yu"};
-  
-  return word.split('').map(function (char) { 
-    return a[char] || char; 
-  }).join("");
-}
-
-// Генерация slug из заголовка
-function generateSlug(title) {
-  if (!title) return '';
-  // Транслитерируем
-  const transliterated = transliterate(title);
-  // Заменяем пробелы и спецсимволы на дефисы
-  return transliterated
-    .toLowerCase()
-    .replace(/[^a-z0-9\-]/g, '-')  // заменяем всё кроме a-z, 0-9, дефиса
-    .replace(/-+/g, '-')           // убираем множественные дефисы
-    .replace(/^-|-$/g, '')         // убираем дефисы по краям
-    .substring(0, 80);
-}
-
-const router = express.Router();
+const { generateSlug, ensureUniqueColoringPageSlug, ensureUniqueColoringSectionSlug } = require('../utils/slug');
 
 
 const coloringUpload = multer({
@@ -710,7 +687,7 @@ router.post('/game-modes/coloring', coloringUpload.single('image'), async (req, 
     const insertResult = await pgPool.query(
       `INSERT INTO coloring_pages (title, slug, alt, image_url, thumbnail_url, image_data, created_at, is_active, section_id)
        VALUES ($1, $2, $3, '', '', $4, $5, true, $6) RETURNING id`,
-      [title.trim().substring(0, 100), (title.trim().toLowerCase().replace(/\s+/g, '-')).substring(0, 160), finalAlt || null, imageData, Date.now(), parsedSectionId]
+      [title.trim().substring(0, 100), await ensureUniqueColoringPageSlug(pgPool, generateSlug(title.trim())), finalAlt || null, imageData, Date.now(), parsedSectionId]
     );
 
     const id = insertResult.rows[0].id;
@@ -741,8 +718,12 @@ router.put('/game-modes/coloring/:id', async (req, res) => {
     let idx = 1;
 
     if (title !== undefined) {
+      const trimmedTitle = title.trim().substring(0, 100);
       setClauses.push(`title = $${idx++}`);
-      values.push(title.trim().substring(0, 100));
+      values.push(trimmedTitle);
+      const newSlug = await ensureUniqueColoringPageSlug(pgPool, generateSlug(trimmedTitle), id);
+      setClauses.push(`slug = $${idx++}`);
+      values.push(newSlug);
     }
     if (isActive !== undefined) {
       setClauses.push(`is_active = $${idx++}`);
@@ -1332,6 +1313,7 @@ router.post('/coloring-sections', async (req, res) => {
       return res.status(400).json({ error: 'Некорректный slug (только a-z0-9 и дефисы)' });
     }
 
+    finalSlug = await ensureUniqueColoringSectionSlug(pgPool, finalSlug);
     finalSlug = finalSlug.substring(0, 80);
     const finalTitle = title.trim().substring(0, 120);
     const finalSeoText = String(seoText || '').trim().slice(0, 20000);
