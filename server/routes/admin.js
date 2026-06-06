@@ -1266,7 +1266,7 @@ router.put('/capabilities', async (req, res) => {
 router.get('/coloring-sections', async (req, res) => {
   try {
     const result = await pgPool.query(
-      `SELECT id, slug, title, seo_text, created_at
+      `SELECT id, slug, title, image_url, seo_text, created_at
        FROM coloring_sections
        ORDER BY created_at DESC`
     );
@@ -1276,6 +1276,7 @@ router.get('/coloring-sections', async (req, res) => {
         id: r.id,
         slug: r.slug,
         title: r.title,
+        imageUrl: r.image_url,
         seoText: r.seo_text,
         createdAt: toEpochMs(r.created_at)
       }))
@@ -1288,7 +1289,7 @@ router.get('/coloring-sections', async (req, res) => {
 
 router.post('/coloring-sections', async (req, res) => {
   try {
-    const { slug, title, seoText } = req.body || {};
+    const { slug, title, imageUrl, seoText } = req.body || {};
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'title обязателен' });
@@ -1317,13 +1318,14 @@ router.post('/coloring-sections', async (req, res) => {
     finalSlug = await ensureUniqueColoringSectionSlug(pgPool, finalSlug);
     finalSlug = finalSlug.substring(0, 80);
     const finalTitle = title.trim().substring(0, 120);
+    const finalImageUrl = imageUrl ? String(imageUrl).trim().slice(0, 500) : null;
     const finalSeoText = String(seoText || '').trim().slice(0, 20000);
 
     const insertResult = await pgPool.query(
-      `INSERT INTO coloring_sections (slug, title, seo_text, created_at)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, slug, title, seo_text, created_at`,
-      [finalSlug, finalTitle, finalSeoText, Date.now()]
+      `INSERT INTO coloring_sections (slug, title, image_url, seo_text, created_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, slug, title, image_url, seo_text, created_at`,
+      [finalSlug, finalTitle, finalImageUrl, finalSeoText, Date.now()]
     );
 
     res.json({ section: insertResult.rows[0] });

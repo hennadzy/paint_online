@@ -915,6 +915,13 @@ async function initDb() {
         );
       `);
       console.log('Table coloring_sections ready');
+      
+      // Автоматическая миграция: добавляем поле image_url если его нет
+      await pgPool.query(`
+        ALTER TABLE coloring_sections
+        ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) DEFAULT NULL;
+      `);
+      console.log('✅ Migration: Added image_url column to coloring_sections');
     } catch (err) {
       console.error('Warning: Could not create coloring_sections table:', err.message);
     }
@@ -1077,6 +1084,26 @@ async function initDb() {
         const newCount = await pgPool.query('SELECT COUNT(*) FROM coloring_sections');
         console.log(`✅ Seeded ${newCount.rows[0]?.count || 0} coloring sections`);
       }
+      
+      // Migration: Add default images to sections without image_url
+      const sectionsWithImages = await pgPool.query(`
+        UPDATE coloring_sections
+        SET image_url = CASE
+          WHEN slug = 'multiki' THEN '/uploads/coloring/cartoons-section.jpg'
+          WHEN slug = 'kino' THEN '/uploads/coloring/cinema-section.jpg'
+          WHEN slug = 'games' THEN '/uploads/coloring/games-section.jpg'
+          WHEN slug = 'skazki' THEN '/uploads/coloring/fairytales-section.jpg'
+          WHEN slug = 'priroda' THEN '/uploads/coloring/nature-section.jpg'
+          WHEN slug = 'animals' THEN '/uploads/coloring/animals-section.jpg'
+          WHEN slug = 'mandaly' THEN '/uploads/coloring/mandalas-section.jpg'
+          WHEN slug = 'cosmos' THEN '/uploads/coloring/space-section.jpg'
+          WHEN slug = 'technique' THEN '/uploads/coloring/technique-section.jpg'
+          WHEN slug = 'celebrities' THEN '/uploads/coloring/celebrities-section.jpg'
+          ELSE image_url
+        END
+        WHERE image_url IS NULL;
+      `);
+      console.log(`✅ Migration: Updated ${sectionsWithImages.rowCount || 0} sections with default image URLs`);
     } catch (err) {
       console.error('Warning: Could not seed coloring sections:', err.message);
     }

@@ -132,7 +132,11 @@ const ColoringPage = () => {
       try {
         if (!sectionSlug) {
           const res = await fetch(`${API_URL}/api/coloring-sections`);
-          if (!res.ok) throw new Error('Server error');
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('Failed to fetch sections:', res.status, errorText);
+            throw new Error('Server error: ' + res.status);
+          }
           const data = await res.json();
           setColoringSections(Array.isArray(data.sections) ? data.sections : []);
           setColoringPages([]);
@@ -145,7 +149,11 @@ const ColoringPage = () => {
           console.log('DEBUG: Fetching pages for section:', sectionSlug);
           const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/pages`);
           console.log('DEBUG: Response status:', res.status);
-          if (!res.ok) throw new Error('Server error');
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('Failed to fetch pages:', res.status, errorText);
+            throw new Error('Server error: ' + res.status);
+          }
           const data = await res.json();
           console.log('DEBUG: Pages data:', data);
           const pages = Array.isArray(data.pages) ? data.pages : [];
@@ -159,7 +167,11 @@ const ColoringPage = () => {
           const res = await fetch(
             `${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pageSlug)}`
           );
-          if (!res.ok) throw new Error('Server error');
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('Failed to fetch page:', res.status, errorText);
+            throw new Error('Server error: ' + res.status);
+          }
           const data = await res.json();
           const page = data?.page;
 
@@ -194,7 +206,11 @@ const ColoringPage = () => {
         }
 
         const res = await fetch(`${API_URL}/api/coloring-pages`);
-        if (!res.ok) throw new Error('Server error');
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Failed to fetch pages:', res.status, errorText);
+          throw new Error('Server error: ' + res.status);
+        }
         const data = await res.json();
         setColoringPages(data.pages || data || []);
         setColoringSections([]);
@@ -202,7 +218,7 @@ const ColoringPage = () => {
         setSeoData(null);
       } catch (err) {
         console.error('Coloring fetch error:', err);
-        setFetchError('Не удалось загрузить список раскрасок');
+        setFetchError('Не удалось загрузить список раскрасок. Проверьте соединение с интернетом.');
         setIsLoading(false);
       }
     };
@@ -525,24 +541,36 @@ const ColoringPage = () => {
                     onKeyDown={(e) => e.key === 'Enter' && navigate(`/coloring/${encodeURIComponent(section.slug)}`)}
                   >
                     <div className="coloring-page-item__preview">
-                      <div
-                        style={{
-                          width: 130,
-                          height: 90,
-                          borderRadius: 10,
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          background: 'rgba(255,255,255,0.06)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#bbb',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          padding: 8
-                        }}
-                      >
-                        {section.title || section.slug}
-                      </div>
+                      {section.imageUrl ? (
+                        <img
+                          src={coloringAssetUrl(section.imageUrl)}
+                          alt={section.title || section.slug}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML =
+                              '<span class="coloring-page-item__no-img">🎨</span>';
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 130,
+                            height: 90,
+                            borderRadius: 10,
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(255,255,255,0.06)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#bbb',
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            padding: 8
+                          }}
+                        >
+                          {section.title || section.slug}
+                        </div>
+                      )}
                     </div>
                     <div className="coloring-page-item__info">
                       <h3 className="coloring-page-item__title">{section.title || section.slug}</h3>

@@ -44,7 +44,7 @@ router.get('/capabilities', apiLimiter, asyncHandler(async (req, res) => {
 router.get('/coloring-sections', asyncHandler(async (req, res) => {
   try {
     const result = await pgPool.query(
-      `SELECT id, slug, title, seo_text, created_at
+      `SELECT id, slug, title, image_url, seo_text, created_at
        FROM coloring_sections
        ORDER BY created_at DESC`
     );
@@ -54,6 +54,7 @@ router.get('/coloring-sections', asyncHandler(async (req, res) => {
         id: r.id,
         slug: r.slug,
         title: r.title,
+        imageUrl: r.image_url,
         seoText: r.seo_text,
         createdAt: toEpochMsSafe(r.created_at)
       }))

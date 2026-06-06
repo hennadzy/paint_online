@@ -232,6 +232,7 @@ const AdminPage = observer(() => {
   const [showCreateSectionModal, setShowCreateSectionModal] = useState(false);
   const [createSectionSlug, setCreateSectionSlug] = useState('');
   const [createSectionTitle, setCreateSectionTitle] = useState('');
+  const [createSectionImageUrl, setCreateSectionImageUrl] = useState('');
   const [createSectionSeoText, setCreateSectionSeoText] = useState('');
   const [createSectionError, setCreateSectionError] = useState('');
   const prevTitleRef = useRef('');
@@ -1337,6 +1338,7 @@ const handleDelete = async (page) => {
                     onClick={() => {
                       setCreateSectionSlug('');
                       setCreateSectionTitle('');
+                      setCreateSectionImageUrl('');
                       setCreateSectionSeoText('');
                       setCreateSectionError('');
                       setShowCreateSectionModal(true);
@@ -1441,6 +1443,7 @@ const handleDelete = async (page) => {
                       const res = await adminState.createColoringSection({
                         slug: createSectionSlug.trim() || undefined,
                         title: createSectionTitle.trim(),
+                        imageUrl: createSectionImageUrl.trim() || undefined,
                         seoText: createSectionSeoText.trim()
                       });
                       if (!res.success) {
@@ -1578,6 +1581,27 @@ if (res.section?.id) {
                           placeholder="Автогенерация из заголовка (латиница)"
                           maxLength={80}
                         />
+                      </div>
+
+                      <div className="admin-form__group">
+                        <label>URL изображения превью (необязательно)</label>
+                        <input
+                          type="text"
+                          value={createSectionImageUrl}
+                          onChange={(e) => setCreateSectionImageUrl(e.target.value)}
+                          placeholder="https://example.com/image.jpg или /uploads/section.png"
+                          maxLength={500}
+                        />
+                        {createSectionImageUrl && (
+                          <div style={{ marginTop: '8px' }}>
+                            <img
+                              src={createSectionImageUrl.startsWith('http') ? createSectionImageUrl : `http://localhost:5000${createSectionImageUrl}`}
+                              alt="Предпросмотр"
+                              style={{ maxWidth: '200px', maxHeight: '120px', borderRadius: '6px', border: '1px solid #444' }}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="admin-form__group">
