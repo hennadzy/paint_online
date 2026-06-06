@@ -1,8 +1,9 @@
 User-agent: *
 Allow: /
 Allow: /coloring
+Allow: /coloring/*
 Allow: /gallery
-Allow: /gallery/
+Allow: /gallery/*
 Allow: /help
 
 Disallow: /static/

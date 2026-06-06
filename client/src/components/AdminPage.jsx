@@ -5,11 +5,18 @@ import axios from 'axios';
 import adminState from '../store/adminState';
 import userState from '../store/userState';
 import capabilitiesState from '../store/capabilitiesState';
+import { API_URL } from '../store/canvasState';
 import '../styles/admin.scss';
 
 const getAdminApiBase = () => (window.location.hostname === 'localhost'
   ? 'http://localhost:5000'
   : 'https://paint-online-back.onrender.com');
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const adminGalleryImageCache = new Map();
 
 function AdminGalleryImage({ drawingId, alt, className, wrapperStyle, imgStyle, onImageClick }) {
