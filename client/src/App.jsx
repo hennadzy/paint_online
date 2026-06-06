@@ -85,6 +85,7 @@ return (
                         <Route path='/reset-password' element={<AuthPage />} />
                         <Route path='/profile' element={<ProfilePage />} />
                         <Route path='/admin' element={<AdminPage />} />
+                        <Route path='/help' element={<HelpPage />} />
                         <Route path='/coloring' element={<ColoringPage />} />
                         <Route path='/coloring/:sectionSlug' element={<ColoringPage />} />
                         <Route path='/coloring/:sectionSlug/:pageSlug' element={<ColoringPage />} />
