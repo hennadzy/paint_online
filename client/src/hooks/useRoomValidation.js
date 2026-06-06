@@ -13,6 +13,8 @@ export const useRoomValidation = (pathname, navigate) => {
     const galleryDetailMatch = pathname.match(/^\/gallery\/(\d+)\/?$/);
     if (galleryDetailMatch) return;
 
+    if (pathname.startsWith('/coloring/')) return;
+
     const segments = pathname.slice(1).split('/').filter(Boolean);
     if (segments.length !== 1) {
       navigate('/404', { replace: true });

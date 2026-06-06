@@ -461,7 +461,7 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function renderColoringSeoPage({ canonicalUrl, h1Text = null, seoOverride = {}, indexableSectionHtml = null }) {
+function renderColoringSeoPage(res, { canonicalUrl, h1Text = null, seoOverride = {}, indexableSectionHtml = null }) {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
 
@@ -503,7 +503,7 @@ function renderColoringSeoPage({ canonicalUrl, h1Text = null, seoOverride = {}, 
 
 app.get('/coloring', (req, res) => {
   const canonical = 'https://risovanie.online/coloring';
-  renderColoringSeoPage({
+  renderColoringSeoPage(res, {
     canonicalUrl: canonical,
     h1Text: 'Раскраски онлайн',
     seoOverride: {
@@ -528,7 +528,7 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
 
     if (sectionRes.rows.length === 0) {
       // Если раздела нет — отдаем базовую `/coloring` SEO-подмену.
-      return renderColoringSeoPage({
+      return renderColoringSeoPage(res, {
         canonicalUrl: canonical,
         h1Text: `Раскраски: ${sectionSlug}`
       });
@@ -549,7 +549,7 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
     const seoDescription = String(section.seo_text || '').slice(0, 300);
     const seoKeywords = `раскраски онлайн, ${section.title}`;
 
-    renderColoringSeoPage({
+    renderColoringSeoPage(res, {
       canonicalUrl: canonical,
       h1Text: section.title,
       seoOverride: {
@@ -603,7 +603,7 @@ app.get('/coloring/:sectionSlug/:pageSlug', async (req, res) => {
     const seoDescription = String(page.seo_text || '').slice(0, 300);
     const seoKeywords = `раскраски онлайн, ${page.title}, ${page.section_title}`;
 
-    renderColoringSeoPage({
+    renderColoringSeoPage(res, {
       canonicalUrl: canonical,
       h1Text: page.title,
       seoOverride: {
