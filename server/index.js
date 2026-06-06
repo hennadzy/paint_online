@@ -755,7 +755,19 @@ app.get('*', (req, res) => {
   const normalizedPath = (req.path || '').replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
+  // SPA fallback для роутов React Router.
+  // /coloring/:sectionSlug и /coloring/:sectionSlug/:pageSlug должны обслуживаться клиентом,
+  // если для них не отданы SEO-страницы выше.
   if (normalizedPath === '/help' || normalizedPath.startsWith('/help')) {
+    return res.sendFile(indexPath);
+  }
+
+  if (normalizedPath === '/coloring' || normalizedPath.startsWith('/coloring/')) {
+    return res.sendFile(indexPath);
+  }
+
+  if (normalizedPath === '/gallery' || normalizedPath.startsWith('/gallery/')) {
+    // /gallery/:id уже имеет отдельный handler, но для остальных подойдёт SPA.
     return res.sendFile(indexPath);
   }
 
@@ -784,6 +796,7 @@ app.get('*', (req, res) => {
       send404Page(res);
     });
 });
+
 
 setInterval(async () => {
   try {
