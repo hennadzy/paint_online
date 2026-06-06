@@ -64,13 +64,11 @@ class ColoringHistory {
   }
 }
 
+import { resolveAssetUrl } from '../utils/assetUrl';
+
 const coloringHistoryRef = { current: new ColoringHistory() };
 
-const coloringAssetUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  return `${API_URL}/api${url.startsWith('/') ? url : `/${url}`}`;
-};
+const coloringAssetUrl = resolveAssetUrl;
 
 const PRESET_COLORS = [
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700',

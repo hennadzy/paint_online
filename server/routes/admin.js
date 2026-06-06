@@ -1280,9 +1280,9 @@ const sectionImageUpload = multer({
 router.get('/coloring-sections', async (req, res) => {
   try {
     const result = await pgPool.query(
-      `SELECT id, slug, title, image_url, seo_text, created_at
+      `SELECT id, slug, title, image_url, seo_text, sort_order, created_at
        FROM coloring_sections
-       ORDER BY created_at DESC`
+       ORDER BY sort_order ASC, created_at DESC`
     );
 
     res.json({
@@ -1292,6 +1292,7 @@ router.get('/coloring-sections', async (req, res) => {
         title: r.title,
         imageUrl: r.image_url,
         seoText: r.seo_text,
+        sortOrder: r.sort_order || 0,
         createdAt: toEpochMs(r.created_at)
       }))
     });
@@ -1359,7 +1360,17 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
       [finalSlug, finalTitle, finalImageUrl, finalSeoText, Date.now()]
     );
 
-    res.json({ section: insertResult.rows[0] });
+    res.json({
+      section: {
+        id: insertResult.rows[0].id,
+        slug: insertResult.rows[0].slug,
+        title: insertResult.rows[0].title,
+        imageUrl: insertResult.rows[0].image_url,
+        seoText: insertResult.rows[0].seo_text,
+        sortOrder: insertResult.rows[0].sort_order || 0,
+        createdAt: toEpochMs(insertResult.rows[0].created_at)
+      }
+    });
   } catch (error) {
     console.error('Admin create coloring section error:', error);
     // Уникальный slug: PostgreSQL даёт код 23505
@@ -1419,6 +1430,44 @@ router.post('/coloring-sections/:id/image', sectionImageUpload.single('image'), 
   }
 });
 
+// Изменение порядка разделов (до /:id, иначе Express воспринимает "reorder" как id)
+router.put('/coloring-sections/reorder', async (req, res) => {
+  try {
+    const { sections } = req.body || {};
+    
+    if (!Array.isArray(sections)) {
+      return res.status(400).json({ error: 'sections должен быть массивом' });
+    }
+
+    const client = await pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      for (const section of sections) {
+        if (!section.id || section.sortOrder === undefined) {
+          throw new Error('Каждый раздел должен иметь id и sortOrder');
+        }
+        
+        await client.query(
+          'UPDATE coloring_sections SET sort_order = $1 WHERE id = $2',
+          [section.sortOrder, section.id]
+        );
+      }
+      
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Admin reorder coloring sections error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
 // Обновление раздела
 router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (req, res) => {
   try {
@@ -1431,7 +1480,7 @@ router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (
 
     // Проверяем существование раздела
     const sectionCheck = await pgPool.query(
-      'SELECT id, slug, title FROM coloring_sections WHERE id = $1',
+      'SELECT id, slug, title, image_url, seo_text, sort_order FROM coloring_sections WHERE id = $1',
       [sectionId]
     );
 
@@ -1474,44 +1523,6 @@ router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (
     res.json({ section: updateResult.rows[0] });
   } catch (error) {
     console.error('Admin update coloring section error:', error);
-    res.status(500).json({ error: error.message || 'Server error' });
-  }
-});
-
-// Изменение порядка разделов
-router.put('/coloring-sections/reorder', async (req, res) => {
-  try {
-    const { sections } = req.body || {};
-    
-    if (!Array.isArray(sections)) {
-      return res.status(400).json({ error: 'sections должен быть массивом' });
-    }
-
-    const client = await pgPool.connect();
-    try {
-      await client.query('BEGIN');
-      
-      for (const section of sections) {
-        if (!section.id || section.sortOrder === undefined) {
-          throw new Error('Каждый раздел должен иметь id и sortOrder');
-        }
-        
-        await client.query(
-          'UPDATE coloring_sections SET sort_order = $1 WHERE id = $2',
-          [section.sortOrder, section.id]
-        );
-      }
-      
-      await client.query('COMMIT');
-      res.json({ success: true });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error('Admin reorder coloring sections error:', error);
     res.status(500).json({ error: error.message || 'Server error' });
   }
 });

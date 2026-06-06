@@ -951,6 +951,12 @@ async function initDb() {
         CREATE INDEX IF NOT EXISTS idx_coloring_pages_section_id ON coloring_pages(section_id);
       `);
       console.log('Table coloring_pages ready');
+
+      await pgPool.query(`
+        ALTER TABLE coloring_pages
+        ADD COLUMN IF NOT EXISTS seo_text TEXT;
+      `);
+      console.log('✅ Migration: Added seo_text column to coloring_pages');
     } catch (err) {
       console.error('Warning: Could not create coloring_pages table:', err.message);
     }
@@ -1096,21 +1102,30 @@ async function initDb() {
       const sectionsWithImages = await pgPool.query(`
         UPDATE coloring_sections
         SET image_url = CASE
-          WHEN slug = 'multiki' THEN '/uploads/coloring/cartoons-section.jpg'
-          WHEN slug = 'kino' THEN '/uploads/coloring/cinema-section.jpg'
-          WHEN slug = 'games' THEN '/uploads/coloring/games-section.jpg'
-          WHEN slug = 'skazki' THEN '/uploads/coloring/fairytales-section.jpg'
-          WHEN slug = 'priroda' THEN '/uploads/coloring/nature-section.jpg'
-          WHEN slug = 'animals' THEN '/uploads/coloring/animals-section.jpg'
-          WHEN slug = 'mandaly' THEN '/uploads/coloring/mandalas-section.jpg'
-          WHEN slug = 'cosmos' THEN '/uploads/coloring/space-section.jpg'
-          WHEN slug = 'technique' THEN '/uploads/coloring/technique-section.jpg'
-          WHEN slug = 'celebrities' THEN '/uploads/coloring/celebrities-section.jpg'
+          WHEN slug = 'multiki' THEN '/files/coloring/cartoons-section.jpg'
+          WHEN slug = 'kino' THEN '/files/coloring/cinema-section.jpg'
+          WHEN slug = 'games' THEN '/files/coloring/games-section.jpg'
+          WHEN slug = 'skazki' THEN '/files/coloring/fairytales-section.jpg'
+          WHEN slug = 'priroda' THEN '/files/coloring/nature-section.jpg'
+          WHEN slug = 'animals' THEN '/files/coloring/animals-section.jpg'
+          WHEN slug = 'mandaly' THEN '/files/coloring/mandalas-section.jpg'
+          WHEN slug = 'cosmos' THEN '/files/coloring/space-section.jpg'
+          WHEN slug = 'technique' THEN '/files/coloring/technique-section.jpg'
+          WHEN slug = 'celebrities' THEN '/files/coloring/celebrities-section.jpg'
           ELSE image_url
         END
         WHERE image_url IS NULL;
       `);
       console.log(`✅ Migration: Updated ${sectionsWithImages.rowCount || 0} sections with default image URLs`);
+
+      const legacyPaths = await pgPool.query(`
+        UPDATE coloring_sections
+        SET image_url = REPLACE(image_url, '/uploads/coloring/', '/files/coloring/')
+        WHERE image_url LIKE '/uploads/coloring/%';
+      `);
+      if (legacyPaths.rowCount > 0) {
+        console.log(`✅ Migration: Fixed ${legacyPaths.rowCount} legacy /uploads/ section image paths`);
+      }
     } catch (err) {
       console.error('Warning: Could not seed coloring sections:', err.message);
     }

@@ -6,11 +6,10 @@ import adminState from '../store/adminState';
 import userState from '../store/userState';
 import capabilitiesState from '../store/capabilitiesState';
 import { API_URL } from '../store/canvasState';
+import { getApiBase, resolveAssetUrl } from '../utils/assetUrl';
 import '../styles/admin.scss';
 
-const getAdminApiBase = () => (window.location.hostname === 'localhost'
-  ? 'http://localhost:5000'
-  : 'https://paint-online-back.onrender.com');
+const getAdminApiBase = getApiBase;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -1667,7 +1666,7 @@ const handleDelete = async (page) => {
                   <div className="admin-coloring-item__preview">
                     {section.imageUrl ? (
                       <img
-                        src={`${getAdminApiBase()}${section.imageUrl}?t=${Date.now()}`}
+                        src={`${resolveAssetUrl(section.imageUrl)}?t=${Date.now()}`}
                         alt={section.title}
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
@@ -1850,7 +1849,7 @@ const handleDelete = async (page) => {
                 <div key={page.id} className="admin-coloring-item">
                   <div className="admin-coloring-item__preview">
                         <img
-                      src={`${window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com'}${page.thumbnail_url || page.image_url}`}
+                      src={resolveAssetUrl(page.thumbnail_url || page.image_url)}
                       alt={page.alt || page.title}
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
