@@ -1263,6 +1263,20 @@ router.put('/capabilities', async (req, res) => {
 // Coloring SEO sections & rooms (admin)
 // =========================
 
+// Multer для загрузки изображений разделов
+const sectionImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Неверный тип файла. Разрешены: JPEG, PNG, GIF, WebP'), false);
+    }
+  }
+});
+
 router.get('/coloring-sections', async (req, res) => {
   try {
     const result = await pgPool.query(
@@ -1287,9 +1301,9 @@ router.get('/coloring-sections', async (req, res) => {
   }
 });
 
-router.post('/coloring-sections', async (req, res) => {
+router.post('/coloring-sections', sectionImageUpload.single('image'), async (req, res) => {
   try {
-    const { slug, title, imageUrl, seoText } = req.body || {};
+    const { slug, title, seoText } = req.body || {};
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'title обязателен' });
@@ -1318,8 +1332,25 @@ router.post('/coloring-sections', async (req, res) => {
     finalSlug = await ensureUniqueColoringSectionSlug(pgPool, finalSlug);
     finalSlug = finalSlug.substring(0, 80);
     const finalTitle = title.trim().substring(0, 120);
-    const finalImageUrl = imageUrl ? String(imageUrl).trim().slice(0, 500) : null;
     const finalSeoText = String(seoText || '').trim().slice(0, 20000);
+
+    // Обработка загруженного изображения
+    let finalImageUrl = null;
+    if (req.file) {
+      const filesDir = path.join(__dirname, '../files/coloring');
+      if (!fs.existsSync(filesDir)) {
+        fs.mkdirSync(filesDir, { recursive: true });
+      }
+      
+      const ext = req.file.mimetype === 'image/png' ? 'png' : 
+                  req.file.mimetype === 'image/gif' ? 'gif' :
+                  req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+      const filename = `${finalSlug}-section.${ext}`;
+      const filepath = path.join(filesDir, filename);
+      
+      fs.writeFileSync(filepath, req.file.buffer);
+      finalImageUrl = `/files/coloring/${filename}`;
+    }
 
     const insertResult = await pgPool.query(
       `INSERT INTO coloring_sections (slug, title, image_url, seo_text, created_at)
@@ -1335,7 +1366,114 @@ router.post('/coloring-sections', async (req, res) => {
     if (error && error.code === '23505') {
       return res.status(400).json({ error: 'Раздел с таким slug уже существует' });
     }
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Endpoint для загрузки изображения в существующий раздел
+router.post('/coloring-sections/:id/image', sectionImageUpload.single('image'), async (req, res) => {
+  try {
+    const sectionId = parseInt(req.params.id, 10);
+    if (!Number.isFinite(sectionId) || sectionId <= 0) {
+      return res.status(400).json({ error: 'Invalid section id' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Изображение не загружено' });
+    }
+
+    // Проверяем существование раздела
+    const sectionCheck = await pgPool.query(
+      'SELECT id, slug, title FROM coloring_sections WHERE id = $1',
+      [sectionId]
+    );
+
+    if (sectionCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Раздел не найден' });
+    }
+
+    const section = sectionCheck.rows[0];
+    const filesDir = path.join(__dirname, '../files/coloring');
+    if (!fs.existsSync(filesDir)) {
+      fs.mkdirSync(filesDir, { recursive: true });
+    }
+    
+    const ext = req.file.mimetype === 'image/png' ? 'png' : 
+                req.file.mimetype === 'image/gif' ? 'gif' :
+                req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+    const filename = `${section.slug}-section.${ext}`;
+    const filepath = path.join(filesDir, filename);
+    
+    fs.writeFileSync(filepath, req.file.buffer);
+    const imageUrl = `/files/coloring/${filename}`;
+
+    await pgPool.query(
+      'UPDATE coloring_sections SET image_url = $1 WHERE id = $2',
+      [imageUrl, sectionId]
+    );
+
+    res.json({ success: true, imageUrl });
+  } catch (error) {
+    console.error('Admin upload section image error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
+  }
+});
+
+// Обновление раздела
+router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (req, res) => {
+  try {
+    const sectionId = parseInt(req.params.id, 10);
+    if (!Number.isFinite(sectionId) || sectionId <= 0) {
+      return res.status(400).json({ error: 'Invalid section id' });
+    }
+
+    const { title, seoText } = req.body || {};
+
+    // Проверяем существование раздела
+    const sectionCheck = await pgPool.query(
+      'SELECT id, slug, title FROM coloring_sections WHERE id = $1',
+      [sectionId]
+    );
+
+    if (sectionCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Раздел не найден' });
+    }
+
+    const section = sectionCheck.rows[0];
+    let finalImageUrl = section.image_url;
+
+    // Обработка нового изображения
+    if (req.file) {
+      const filesDir = path.join(__dirname, '../files/coloring');
+      if (!fs.existsSync(filesDir)) {
+        fs.mkdirSync(filesDir, { recursive: true });
+      }
+      
+      const ext = req.file.mimetype === 'image/png' ? 'png' : 
+                  req.file.mimetype === 'image/gif' ? 'gif' :
+                  req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+      const filename = `${section.slug}-section.${ext}`;
+      const filepath = path.join(filesDir, filename);
+      
+      fs.writeFileSync(filepath, req.file.buffer);
+      finalImageUrl = `/files/coloring/${filename}`;
+    }
+
+    const finalTitle = title ? title.trim().substring(0, 120) : section.title;
+    const finalSeoText = seoText !== undefined ? String(seoText).trim().slice(0, 20000) : section.seo_text;
+
+    const updateResult = await pgPool.query(
+      `UPDATE coloring_sections 
+       SET title = $1, image_url = $2, seo_text = $3
+       WHERE id = $4
+       RETURNING id, slug, title, image_url, seo_text, created_at`,
+      [finalTitle, finalImageUrl, finalSeoText, sectionId]
+    );
+
+    res.json({ section: updateResult.rows[0] });
+  } catch (error) {
+    console.error('Admin update coloring section error:', error);
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 

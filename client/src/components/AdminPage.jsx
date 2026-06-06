@@ -232,7 +232,7 @@ const AdminPage = observer(() => {
   const [showCreateSectionModal, setShowCreateSectionModal] = useState(false);
   const [createSectionSlug, setCreateSectionSlug] = useState('');
   const [createSectionTitle, setCreateSectionTitle] = useState('');
-  const [createSectionImageUrl, setCreateSectionImageUrl] = useState('');
+  const [createSectionImageFile, setCreateSectionImageFile] = useState(null);
   const [createSectionSeoText, setCreateSectionSeoText] = useState('');
   const [createSectionError, setCreateSectionError] = useState('');
   const prevTitleRef = useRef('');
@@ -1338,7 +1338,7 @@ const handleDelete = async (page) => {
                     onClick={() => {
                       setCreateSectionSlug('');
                       setCreateSectionTitle('');
-                      setCreateSectionImageUrl('');
+                      setCreateSectionImageFile(null);
                       setCreateSectionSeoText('');
                       setCreateSectionError('');
                       setShowCreateSectionModal(true);
@@ -1435,24 +1435,28 @@ const handleDelete = async (page) => {
                         setCreateSectionError('Введите заголовок раздела');
                         return;
                       }
-                      // Slug теперь не обязателен - сервер сгенерирует автоматически
                       if (!createSectionSeoText.trim() || createSectionSeoText.trim().length < 200) {
                         setCreateSectionError('SEO-текст слишком короткий (нужно от ~200 символов)');
                         return;
                       }
-                      const res = await adminState.createColoringSection({
-                        slug: createSectionSlug.trim() || undefined,
-                        title: createSectionTitle.trim(),
-                        imageUrl: createSectionImageUrl.trim() || undefined,
-                        seoText: createSectionSeoText.trim()
-                      });
+
+                      // Используем FormData для загрузки файла
+                      const formData = new FormData();
+                      formData.append('slug', createSectionSlug.trim() || undefined);
+                      formData.append('title', createSectionTitle.trim());
+                      formData.append('seoText', createSectionSeoText.trim());
+                      if (createSectionImageFile) {
+                        formData.append('image', createSectionImageFile);
+                      }
+
+                      const res = await adminState.createColoringSection(formData);
                       if (!res.success) {
                         setCreateSectionError(res.error || 'Ошибка создания раздела');
                         return;
                       }
-if (res.section?.id) {
-                         setColoringSectionId(res.section.id);
-                       }
+                      if (res.section?.id) {
+                        setColoringSectionId(res.section.id);
+                      }
                       setShowCreateSectionModal(false);
                     }}
                   >
@@ -1584,22 +1588,16 @@ if (res.section?.id) {
                       </div>
 
                       <div className="admin-form__group">
-                        <label>URL изображения превью (необязательно)</label>
+                        <label>Изображение превью раздела (PNG, JPG, WebP — до 5 МБ)</label>
                         <input
-                          type="text"
-                          value={createSectionImageUrl}
-                          onChange={(e) => setCreateSectionImageUrl(e.target.value)}
-                          placeholder="https://example.com/image.jpg или /uploads/section.png"
-                          maxLength={500}
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          onChange={(e) => setCreateSectionImageFile(e.target.files[0] || null)}
+                          style={{ color: '#e0e0e0', padding: '8px 0' }}
                         />
-                        {createSectionImageUrl && (
-                          <div style={{ marginTop: '8px' }}>
-                            <img
-                              src={createSectionImageUrl.startsWith('http') ? createSectionImageUrl : `http://localhost:5000${createSectionImageUrl}`}
-                              alt="Предпросмотр"
-                              style={{ maxWidth: '200px', maxHeight: '120px', borderRadius: '6px', border: '1px solid #444' }}
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
+                        {createSectionImageFile && (
+                          <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                            Выбрано: {createSectionImageFile.name} ({(createSectionImageFile.size / 1024).toFixed(0)} КБ)
                           </div>
                         )}
                       </div>
@@ -1632,6 +1630,100 @@ if (res.section?.id) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Список разделов */}
+        <div className="admin-table-container" style={{ marginBottom: '24px' }}>
+          <div className="admin-toolbar">
+            <h3 style={{ color: '#ffd700', margin: 0 }}>📁 Разделы раскрасок ({adminState.coloringSections.length})</h3>
+          </div>
+
+          {adminState.coloringSectionsLoading ? (
+            <div className="admin-loading">
+              <div className="admin-loading__spinner"></div>
+            </div>
+          ) : adminState.coloringSections.length === 0 ? (
+            <div className="admin-empty">
+              <div className="admin-empty__text">Разделы не добавлены</div>
+            </div>
+          ) : (
+            <div className="admin-coloring-list">
+              {adminState.coloringSections.map(section => (
+                <div key={section.id} className="admin-coloring-item">
+                  <div className="admin-coloring-item__preview">
+                    {section.imageUrl ? (
+                      <img
+                        src={`${window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://paint-online-back.onrender.com'}${section.imageUrl}`}
+                        alt={section.title}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '32px' }}>📁</span>
+                    )}
+                  </div>
+                  <div className="admin-coloring-item__info">
+                    <div className="admin-coloring-item__title">{section.title}</div>
+                    <div className="admin-coloring-item__meta">
+                      <span style={{ fontSize: '12px', color: '#666' }}>
+                        Slug: {section.slug}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="admin-actions">
+                    <label className="admin-icon-btn" title="Загрузить изображение" style={{ cursor: 'pointer' }}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        style={{ display: 'none' }}
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+
+                          const formData = new FormData();
+                          formData.append('image', file);
+                          
+                          try {
+                            const response = await fetch(`${API_URL}/api/admin/coloring-sections/${section.id}/image`, {
+                              method: 'POST',
+                              headers: getAuthHeaders(),
+                              body: formData
+                            });
+                            
+                            const result = await response.json();
+                            if (result.success) {
+                              await adminState.fetchColoringSections();
+                            } else {
+                              alert(result.error || 'Ошибка загрузки');
+                            }
+                          } catch (error) {
+                            alert('Ошибка загрузки изображения');
+                          }
+                        }}
+                      />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21,15 16,10 5,21" />
+                      </svg>
+                    </label>
+                    <button
+                      className="admin-icon-btn admin-icon-btn--danger"
+                      onClick={async () => {
+                        if (!window.confirm(`Удалить раздел "${section.title}" и все раскраски в нём?`)) return;
+                        const res = await adminState.deleteColoringSection(section.id);
+                        if (!res.success) {
+                          alert(res.error || 'Ошибка удаления');
+                        }
+                      }}
+                      title="Удалить"
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="admin-table-container">

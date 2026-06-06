@@ -152,7 +152,13 @@ const ColoringPage = () => {
           if (!res.ok) {
             const errorText = await res.text();
             console.error('Failed to fetch pages:', res.status, errorText);
-            throw new Error('Server error: ' + res.status);
+            if (res.status === 404) {
+              setFetchError('Раздел не найден');
+            } else {
+              throw new Error('Server error: ' + res.status);
+            }
+            setIsLoading(false);
+            return;
           }
           const data = await res.json();
           console.log('DEBUG: Pages data:', data);
@@ -167,11 +173,19 @@ const ColoringPage = () => {
           const res = await fetch(
             `${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pageSlug)}`
           );
+          
           if (!res.ok) {
             const errorText = await res.text();
             console.error('Failed to fetch page:', res.status, errorText);
-            throw new Error('Server error: ' + res.status);
+            if (res.status === 404) {
+              setFetchError('Раскраска не найдена');
+            } else {
+              setFetchError('Не удалось загрузить раскраску. Проверьте соединение с интернетом.');
+            }
+            setIsLoading(false);
+            return;
           }
+          
           const data = await res.json();
           const page = data?.page;
 
@@ -199,6 +213,7 @@ const ColoringPage = () => {
           } else {
             setColoringPages([]);
             setSeoData(null);
+            setFetchError('Раскраска не найдена');
           }
 
           setIsLoading(false);
@@ -218,7 +233,7 @@ const ColoringPage = () => {
         setSeoData(null);
       } catch (err) {
         console.error('Coloring fetch error:', err);
-        setFetchError('Не удалось загрузить список раскрасок. Проверьте соединение с интернетом.');
+        setFetchError('Не удалось загрузить данные. Проверьте соединение с интернетом.');
         setIsLoading(false);
       }
     };

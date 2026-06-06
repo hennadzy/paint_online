@@ -473,7 +473,19 @@ class AdminState {
   async createColoringSection(payload) {
     try {
       console.log('Creating section:', payload);
-      const response = await axios.post(`${API_URL}/api/admin/coloring-sections`, payload, { headers: getAuthHeaders() });
+      
+      // Проверяем, это FormData или обычный объект
+      const isFormData = payload instanceof FormData;
+      const response = await axios.post(
+        `${API_URL}/api/admin/coloring-sections`,
+        payload,
+        {
+          headers: {
+            ...getAuthHeaders(),
+            ...(isFormData ? { 'Content-Type': 'multipart/form-data' } : {})
+          }
+        }
+      );
       console.log('Section created:', response.data);
       await this.fetchColoringSections();
       return { success: true, section: response.data.section };
