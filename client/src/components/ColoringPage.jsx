@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Fill from '../tools/Fill';
 import { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import '../styles/coloring.scss';
 import '../styles/modal.scss';
 
@@ -64,11 +65,9 @@ class ColoringHistory {
   }
 }
 
-import { resolveAssetUrl } from '../utils/assetUrl';
-
 const coloringHistoryRef = { current: new ColoringHistory() };
 
-const coloringAssetUrl = resolveAssetUrl;
+const coloringAssetUrl = (url) => resolveAssetUrl(url);
 
 const PRESET_COLORS = [
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700',
