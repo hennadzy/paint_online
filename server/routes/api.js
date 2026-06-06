@@ -72,7 +72,6 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
     const { sectionSlug } = req.params;
     console.error('DEBUG /api/coloring-sections/:sectionSlug/pages - sectionSlug:', sectionSlug);
 
-    // Проверяем существование раздела
     const sectionCheck = await pgPool.query(
       'SELECT id, slug, title FROM coloring_sections WHERE slug = $1',
       [sectionSlug]
@@ -127,7 +126,6 @@ router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req,
   try {
     const { sectionSlug, pageSlug } = req.params;
     
-    // Сначала находим раздел по slug
     const sectionResult = await pgPool.query(
       'SELECT id FROM coloring_sections WHERE slug = $1',
       [sectionSlug]
@@ -139,14 +137,12 @@ router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req,
     
     const sectionId = sectionResult.rows[0].id;
     
-    // Генерируем кандидаты slug для раскраски
     const slugCandidates = [pageSlug];
     const latinSlug = generateSlug(pageSlug);
     if (latinSlug && latinSlug !== pageSlug) {
       slugCandidates.push(latinSlug);
     }
 
-    // Ищем раскраску по section_id и slug
     for (const slug of slugCandidates) {
       const result = await pgPool.query(
         `SELECT

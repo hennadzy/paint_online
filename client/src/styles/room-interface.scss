@@ -362,6 +362,7 @@
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   box-sizing: border-box;
+  margin-top: 20px;
 
   &:focus {
     outline: none;
@@ -1249,6 +1250,7 @@
 
 .about-section {
   margin-bottom: 20px;
+  margin-top: 20px;
 
   &.auth-highlight {
     border: 1px solid rgba(255, 204, 0, 0.45);

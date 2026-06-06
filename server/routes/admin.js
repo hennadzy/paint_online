@@ -1259,14 +1259,9 @@ router.put('/capabilities', async (req, res) => {
   }
 });
 
-// =========================
-// Coloring SEO sections & rooms (admin)
-// =========================
-
-// Multer для загрузки изображений разделов
 const sectionImageUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, 
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowedTypes.includes(file.mimetype)) {
@@ -1310,12 +1305,10 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
       return res.status(400).json({ error: 'title обязателен' });
     }
 
-    // Если slug не указан или содержит кириллицу - генерируем из title
     let finalSlug;
     if (!slug || typeof slug !== 'string' || !slug.trim()) {
       finalSlug = generateSlug(title.trim());
     } else {
-      // Проверяем, содержит ли slug кириллицу
       const hasCyrillic = /[а-яА-ЯёЁ]/.test(slug);
       if (hasCyrillic) {
         finalSlug = generateSlug(slug);
@@ -1324,7 +1317,6 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
       }
     }
 
-    // Валидируем slug
     const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     if (!SLUG_RE.test(finalSlug)) {
       return res.status(400).json({ error: 'Некорректный slug (только a-z0-9 и дефисы)' });
@@ -1335,7 +1327,6 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
     const finalTitle = title.trim().substring(0, 120);
     const finalSeoText = String(seoText || '').trim().slice(0, 20000);
 
-    // Обработка загруженного изображения
     let finalImageUrl = null;
     if (req.file) {
       const filesDir = path.join(__dirname, '../files/coloring');
@@ -1373,7 +1364,6 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
     });
   } catch (error) {
     console.error('Admin create coloring section error:', error);
-    // Уникальный slug: PostgreSQL даёт код 23505
     if (error && error.code === '23505') {
       return res.status(400).json({ error: 'Раздел с таким slug уже существует' });
     }
@@ -1381,7 +1371,6 @@ router.post('/coloring-sections', sectionImageUpload.single('image'), async (req
   }
 });
 
-// Endpoint для загрузки изображения в существующий раздел
 router.post('/coloring-sections/:id/image', sectionImageUpload.single('image'), async (req, res) => {
   try {
     const sectionId = parseInt(req.params.id, 10);
@@ -1393,7 +1382,6 @@ router.post('/coloring-sections/:id/image', sectionImageUpload.single('image'), 
       return res.status(400).json({ error: 'Изображение не загружено' });
     }
 
-    // Проверяем существование раздела
     const sectionCheck = await pgPool.query(
       'SELECT id, slug, title FROM coloring_sections WHERE id = $1',
       [sectionId]
@@ -1430,7 +1418,6 @@ router.post('/coloring-sections/:id/image', sectionImageUpload.single('image'), 
   }
 });
 
-// Изменение порядка разделов (до /:id, иначе Express воспринимает "reorder" как id)
 router.put('/coloring-sections/reorder', async (req, res) => {
   try {
     const { sections } = req.body || {};
@@ -1468,7 +1455,6 @@ router.put('/coloring-sections/reorder', async (req, res) => {
   }
 });
 
-// Обновление раздела
 router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (req, res) => {
   try {
     const sectionId = parseInt(req.params.id, 10);
@@ -1478,7 +1464,6 @@ router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (
 
     const { title, seoText, sortOrder } = req.body || {};
 
-    // Проверяем существование раздела
     const sectionCheck = await pgPool.query(
       'SELECT id, slug, title, image_url, seo_text, sort_order FROM coloring_sections WHERE id = $1',
       [sectionId]
@@ -1491,7 +1476,6 @@ router.put('/coloring-sections/:id', sectionImageUpload.single('image'), async (
     const section = sectionCheck.rows[0];
     let finalImageUrl = section.image_url;
 
-    // Обработка нового изображения
     if (req.file) {
       const filesDir = path.join(__dirname, '../files/coloring');
       if (!fs.existsSync(filesDir)) {

@@ -494,7 +494,6 @@ function renderColoringSeoPage(res, { canonicalUrl, h1Text = null, seoOverride =
     </section>
   `;
 
-  // Вставляем скрытый контент перед root
   html = html.replace('<div id="root"></div>', `${indexableContent}<div id="root"></div>`);
 
   res.setHeader('Content-Type', 'text/html');
@@ -527,7 +526,6 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
     );
 
     if (sectionRes.rows.length === 0) {
-      // Если раздела нет — отдаем базовую `/coloring` SEO-подмену.
       return renderColoringSeoPage(res, {
         canonicalUrl: canonical,
         h1Text: `Раскраски: ${sectionSlug}`
@@ -536,7 +534,6 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
 
     const section = sectionRes.rows[0];
 
-    // Внутренняя структура: ссылка на главную и основной каталог
     const indexableSectionHtml = `
       <h1>${escapeHtml(section.title)}</h1>
       <p>${escapeHtml(section.seo_text)}</p>
@@ -755,9 +752,6 @@ app.get('*', (req, res) => {
   const normalizedPath = (req.path || '').replace(/\/+$/, '');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
 
-  // SPA fallback для роутов React Router.
-  // /coloring/:sectionSlug и /coloring/:sectionSlug/:pageSlug должны обслуживаться клиентом,
-  // если для них не отданы SEO-страницы выше.
   if (normalizedPath === '/help' || normalizedPath.startsWith('/help')) {
     return res.sendFile(indexPath);
   }
@@ -767,7 +761,6 @@ app.get('*', (req, res) => {
   }
 
   if (normalizedPath === '/gallery' || normalizedPath.startsWith('/gallery/')) {
-    // /gallery/:id уже имеет отдельный handler, но для остальных подойдёт SPA.
     return res.sendFile(indexPath);
   }
 
@@ -903,7 +896,6 @@ async function initDb() {
     `);
     console.log('Database tables ready');
 
-    // Создаём таблицу coloring_sections ПЕРЕД использованием
     try {
       await pgPool.query(`
         CREATE TABLE IF NOT EXISTS coloring_sections (
@@ -916,14 +908,12 @@ async function initDb() {
       `);
       console.log('Table coloring_sections ready');
       
-      // Автоматическая миграция: добавляем поле image_url если его нет
       await pgPool.query(`
         ALTER TABLE coloring_sections
         ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) DEFAULT NULL;
       `);
       console.log('✅ Migration: Added image_url column to coloring_sections');
       
-      // Автоматическая миграция: добавляем поле sort_order если его нет
       await pgPool.query(`
         ALTER TABLE coloring_sections
         ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
@@ -961,14 +951,12 @@ async function initDb() {
       console.error('Warning: Could not create coloring_pages table:', err.message);
     }
 
-    // Migration for coloring_pages restructuring (room -> section)
     try {
       await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS slug VARCHAR(160) UNIQUE`);
       await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS section_id INTEGER REFERENCES coloring_sections(id) ON DELETE SET NULL`);
       await pgPool.query(`ALTER TABLE coloring_pages ADD COLUMN IF NOT EXISTS alt TEXT`);
       await pgPool.query(`UPDATE coloring_pages SET slug = LOWER(REPLACE(REPLACE(title, ' ', '-'), '''', '')) WHERE slug IS NULL`);
       await pgPool.query(`UPDATE coloring_pages SET section_id = (SELECT id FROM coloring_sections ORDER BY id LIMIT 1) WHERE section_id IS NULL AND EXISTS (SELECT 1 FROM coloring_sections)`);
-      // Fix NOT NULL constraint on section_id - allow NULL
       await pgPool.query(`ALTER TABLE coloring_pages ALTER COLUMN section_id DROP NOT NULL`);
     } catch (err) {
       console.log('Coloring pages migration note:', err.message);
@@ -1072,7 +1060,6 @@ async function initDb() {
       await pgPool.query(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`);
     } catch (_) { }
 
-    // Seed coloring sections if table is empty
     try {
       const sectionsCount = await pgPool.query('SELECT COUNT(*) FROM coloring_sections');
       const count = parseInt(sectionsCount.rows[0]?.count || '0', 10);
@@ -1098,7 +1085,6 @@ async function initDb() {
         console.log(`✅ Seeded ${newCount.rows[0]?.count || 0} coloring sections`);
       }
       
-      // Migration: Add default images to sections without image_url
       const sectionsWithImages = await pgPool.query(`
         UPDATE coloring_sections
         SET image_url = CASE

@@ -1446,7 +1446,6 @@ const handleDelete = async (page) => {
                         return;
                       }
 
-                      // Используем FormData для загрузки файла
                       const formData = new FormData();
                       formData.append('slug', createSectionSlug.trim() || undefined);
                       formData.append('title', createSectionTitle.trim());
@@ -1483,7 +1482,6 @@ const handleDelete = async (page) => {
                             setCreateSectionTitle(newTitle);
                             prevTitleRef.current = newTitle;
                             
-                            // Автогенерация slug только если пользователь не редактировал его вручную
                             const expectedSlugForPrevTitle = prevTitle
                               .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
                               .replace(/й/g, 'i').replace(/Й/g, 'i')
@@ -1524,7 +1522,6 @@ const handleDelete = async (page) => {
                               .replace(/^-|-$/g, '')
                               .substring(0, 80);
                             
-                            // Если текущий slug совпадает с ожидаемым для предыдущего заголовка - значит пользователь не редактировал вручную
                             if (createSectionSlug === expectedSlugForPrevTitle || !createSectionSlug) {
                               const translit = newTitle
                                 .replace(/ё/g, 'yo').replace(/Ё/g, 'yo')
@@ -1580,7 +1577,6 @@ const handleDelete = async (page) => {
                           type="text"
                           value={createSectionSlug}
                           onChange={(e) => {
-                            // Разрешаем ручное редактирование, но фильтруем недопустимые символы
                             const raw = e.target.value;
                             const filtered = raw
                               .toLowerCase()
@@ -1638,7 +1634,6 @@ const handleDelete = async (page) => {
           </div>
         </div>
 
-        {/* Список разделов */}
         <div className="admin-table-container" style={{ marginBottom: '24px' }}>
           <div className="admin-toolbar">
             <h3 style={{ color: '#ffd700', margin: 0 }}>📁 Разделы раскрасок ({adminState.coloringSections.length})</h3>
@@ -1689,14 +1684,12 @@ const handleDelete = async (page) => {
                     <button
                       className="admin-icon-btn"
                       onClick={async () => {
-                        // Переместить вверх
                         if (index === 0) return;
                         const newSections = [...adminState.coloringSections];
                         const temp = newSections[index];
                         newSections[index] = newSections[index - 1];
                         newSections[index - 1] = temp;
                         
-                        // Обновляем sortOrder
                         newSections.forEach((s, i) => s.sortOrder = i);
                         
                         try {
@@ -1732,14 +1725,12 @@ const handleDelete = async (page) => {
                     <button
                       className="admin-icon-btn"
                       onClick={async () => {
-                        // Переместить вниз
                         if (index === adminState.coloringSections.length - 1) return;
                         const newSections = [...adminState.coloringSections];
                         const temp = newSections[index];
                         newSections[index] = newSections[index + 1];
                         newSections[index + 1] = temp;
                         
-                        // Обновляем sortOrder
                         newSections.forEach((s, i) => s.sortOrder = i);
                         
                         try {

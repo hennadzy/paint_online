@@ -13,7 +13,6 @@ async function seedColoringSections() {
     
     console.log('✅ Coloring sections and rooms seeded successfully!');
     
-    // Verify
     const sectionsResult = await pgPool.query('SELECT id, slug, title FROM coloring_sections ORDER BY id');
     console.log('\n📁 Created sections:');
     sectionsResult.rows.forEach(row => {

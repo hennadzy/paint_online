@@ -474,7 +474,6 @@ class AdminState {
     try {
       console.log('Creating section:', payload);
       
-      // Проверяем, это FormData или обычный объект
       const isFormData = payload instanceof FormData;
       const response = await axios.post(
         `${API_URL}/api/admin/coloring-sections`,
