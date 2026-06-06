@@ -576,13 +576,13 @@ const handleCreateRoom = async () => {
                           className={`room-join-subtab ${joinSubTab === 'all' ? 'active' : ''}`}
                           onClick={() => setJoinSubTab('all')}
                         >
-                          Все комнаты
+                          Все
                         </button>
                         <button
                           className={`room-join-subtab ${joinSubTab === 'mine' ? 'active' : ''}`}
                           onClick={() => setJoinSubTab('mine')}
                         >
-                          Мои комнаты
+                          Мои
                         </button>
                         <button
                           className={`room-join-subtab ${joinSubTab === 'activity' ? 'active' : ''}`}

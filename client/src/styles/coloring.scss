@@ -71,7 +71,7 @@
  margin:0;
  font-size:20px;
  font-weight:700;
- background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
+ background: linear-gradient(0deg, #ffcc00 0%, #ff6699 100%);
  -webkit-background-clip: text;
  -webkit-text-fill-color: transparent;
  background-clip: text;
@@ -200,12 +200,17 @@
  &__title {
  font-size:18px;
  font-weight:600;
- background: linear-gradient(135deg, #ffcc00 0%, #ff6699 100%);
+ background: linear-gradient(0deg, #ffcc00 0%, #ff6699 100%);
+  -webkit-background-clip: text;
+ -webkit-text-fill-color: transparent;
+ background-clip: text;
  margin:6px;
  white-space: nowrap;
  overflow: hidden;
  text-overflow: ellipsis;
  }
+
+
 }
 
 
@@ -298,7 +303,7 @@
  align-items: center;
  justify-content: center;
  gap:12px;
- background: rgba(17,24,39,0.85);
+ background: #1a1a1a;
  border-radius:8px;
  color: #aaa;
  font-size:14px;

@@ -517,7 +517,7 @@ const ColoringPage = () => {
     return (
       <div className="coloring-page">
         <div className="coloring-header">
-          <button className="coloring-back-btn" onClick={onMainBack}>
+          <button className="coloring-back-btn" onClick={handleBackToSelector}>
             ← Назад
           </button>
            <h1 className="coloring-header__title">{headerTitle}</h1>
