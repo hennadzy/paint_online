@@ -495,13 +495,24 @@ const ColoringPage = () => {
     setSelectedPage(null);
     setImageLoaded(false);
 
-    // ПРАВИЛО:
-    // 1) Назад из конкретной раскраски -> список раскрасок раздела/категории.
+    // Правило (2) и (3) применяются именно здесь, т.к.
+    // это кнопка "← Назад" на экране со списком (когда !selectedPage).
+    //  - если sectionSlug задан => мы на странице раздела => назад в список разделов (/coloring)
+    //  - если sectionSlug не задан => мы на странице категорий => назад в GamesModal (только из игрового режима)
+
     if (sectionSlug) {
-      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
-    } else {
       navigate('/coloring');
+      return;
     }
+
+    if (cameFromGamesModal) {
+      sessionStorage.removeItem('cameFromGamesModal');
+      canvasState.setShowGamesModal(true);
+      navigate('/');
+      return;
+    }
+
+    navigate('/coloring');
   };
 
   const onMainBack = () => {
