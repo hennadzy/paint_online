@@ -200,7 +200,7 @@
  &__title {
  font-size:18px;
  font-weight:600;
- background: linear-gradient(0deg, #ffcc00 0%, #ff6699 100%);
+ background: white;
   -webkit-background-clip: text;
  -webkit-text-fill-color: transparent;
  background-clip: text;
@@ -271,7 +271,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px;
-  background: #111827;
+  background: #1a1a1a;
   min-height: 0;
 
   touch-action: pan-x pan-y;
@@ -303,7 +303,7 @@
  align-items: center;
  justify-content: center;
  gap:12px;
- background: #1a1a1a;
+ background: #1a1a1a !important;
  border-radius:8px;
  color: #aaa;
  font-size:14px;

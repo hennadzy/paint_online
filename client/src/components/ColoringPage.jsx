@@ -489,9 +489,19 @@ const ColoringPage = () => {
     setShowSaveModal(false);
   }, [saveFilename, saveFormat, selectedPage]);
 
+  const cameFromGamesModal = sessionStorage.getItem('cameFromGamesModal') === '1';
+
   const handleBackToSelector = () => {
     setSelectedPage(null);
     setImageLoaded(false);
+
+    if (cameFromGamesModal) {
+      sessionStorage.removeItem('cameFromGamesModal');
+      canvasState.setShowGamesModal(true);
+      navigate('/');
+      return;
+    }
+
     if (sectionSlug) {
       navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
     } else {
@@ -500,6 +510,13 @@ const ColoringPage = () => {
   };
 
   const onMainBack = () => {
+    if (cameFromGamesModal) {
+      sessionStorage.removeItem('cameFromGamesModal');
+      canvasState.setShowGamesModal(true);
+      navigate('/');
+      return;
+    }
+
     if (pageSlug && sectionSlug) {
       navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
       return;

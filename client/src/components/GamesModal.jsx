@@ -29,9 +29,9 @@ const GamesModal = observer(() => {
   const handleGameClick = (game) => {
     if (game.id === 'coloring') {
       canvasState.setShowGamesModal(false);
+      sessionStorage.setItem('cameFromGamesModal', '1');
       navigate('/coloring');
     }
-
   };
 
   return ReactDOM.createPortal(
