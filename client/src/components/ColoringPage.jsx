@@ -143,9 +143,7 @@ const ColoringPage = () => {
         }
 
         if (sectionSlug && !pageSlug) {
-          console.log('DEBUG: Fetching pages for section:', sectionSlug);
           const res = await fetch(`${API_URL}/api/coloring-sections/${encodeURIComponent(sectionSlug)}/pages`);
-          console.log('DEBUG: Response status:', res.status);
           if (!res.ok) {
             const errorText = await res.text();
             console.error('Failed to fetch pages:', res.status, errorText);
@@ -158,8 +156,8 @@ const ColoringPage = () => {
             return;
           }
           const data = await res.json();
-          console.log('DEBUG: Pages data:', data);
           const pages = Array.isArray(data.pages) ? data.pages : [];
+
           setColoringPages(pages);
           setSeoData(null);
           setIsLoading(false);
@@ -495,10 +493,6 @@ const ColoringPage = () => {
     setSelectedPage(null);
     setImageLoaded(false);
 
-    // Правило (2) и (3) применяются именно здесь, т.к.
-    // это кнопка "← Назад" на экране со списком (когда !selectedPage).
-    //  - если sectionSlug задан => мы на странице раздела => назад в список разделов (/coloring)
-    //  - если sectionSlug не задан => мы на странице категорий => назад в GamesModal (только из игрового режима)
 
     if (sectionSlug) {
       navigate('/coloring');
@@ -516,20 +510,17 @@ const ColoringPage = () => {
   };
 
   const onMainBack = () => {
-    // ПРАВИЛО:
-    // 2) Назад со страницы раздела -> список разделов.
+
     if (sectionSlug && !pageSlug) {
       navigate('/coloring');
       return;
     }
 
-    // 1) Назад из конкретной раскраски -> список раскрасок раздела.
     if (pageSlug && sectionSlug) {
       navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
       return;
     }
 
-    // 3) Назад из страницы списка раскрасок (категории) -> GamesModal (только если мы в игровом режиме).
     if (cameFromGamesModal) {
       sessionStorage.removeItem('cameFromGamesModal');
       canvasState.setShowGamesModal(true);
