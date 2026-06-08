@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Fill from '../tools/Fill';
-import { API_URL } from '../store/canvasState';
+import canvasState, { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
 import { resolveAssetUrl } from '../utils/assetUrl';
 import '../styles/coloring.scss';
