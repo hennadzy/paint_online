@@ -495,13 +495,8 @@ const ColoringPage = () => {
     setSelectedPage(null);
     setImageLoaded(false);
 
-    if (cameFromGamesModal) {
-      sessionStorage.removeItem('cameFromGamesModal');
-      canvasState.setShowGamesModal(true);
-      navigate('/');
-      return;
-    }
-
+    // ПРАВИЛО:
+    // 1) Назад из конкретной раскраски -> список раскрасок раздела/категории.
     if (sectionSlug) {
       navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
     } else {
@@ -510,6 +505,20 @@ const ColoringPage = () => {
   };
 
   const onMainBack = () => {
+    // ПРАВИЛО:
+    // 2) Назад со страницы раздела -> список разделов.
+    if (sectionSlug && !pageSlug) {
+      navigate('/coloring');
+      return;
+    }
+
+    // 1) Назад из конкретной раскраски -> список раскрасок раздела.
+    if (pageSlug && sectionSlug) {
+      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
+      return;
+    }
+
+    // 3) Назад из страницы списка раскрасок (категории) -> GamesModal (только если мы в игровом режиме).
     if (cameFromGamesModal) {
       sessionStorage.removeItem('cameFromGamesModal');
       canvasState.setShowGamesModal(true);
@@ -517,14 +526,6 @@ const ColoringPage = () => {
       return;
     }
 
-    if (pageSlug && sectionSlug) {
-      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
-      return;
-    }
-    if (sectionSlug) {
-      navigate('/coloring');
-      return;
-    }
     navigate('/');
   };
 
