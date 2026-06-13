@@ -4,19 +4,24 @@ import canvasState from '../store/canvasState';
 const LOGICAL_WIDTH = 720;
 const LOGICAL_HEIGHT = 480;
 
-export function useCanvasResize(canvasRef, cursorRef, containerRef) {
+export function useCanvasResize(canvasRef, cursorRef, containerRef, selectionOverlayRef) {
   const initialMobileZoomDone = useRef(false);
 
   useEffect(() => {
     const adjustCanvasSize = () => {
       const canvas = canvasRef.current;
       const cursor = cursorRef.current;
+      const selectionOverlay = selectionOverlayRef?.current;
       if (!canvas || !cursor) return;
 
       canvas.width = LOGICAL_WIDTH;
       canvas.height = LOGICAL_HEIGHT;
       cursor.width = LOGICAL_WIDTH;
       cursor.height = LOGICAL_HEIGHT;
+      if (selectionOverlay) {
+        selectionOverlay.width = LOGICAL_WIDTH;
+        selectionOverlay.height = LOGICAL_HEIGHT;
+      }
 
       canvasState.setCanvas(canvas);
       const ctx = canvas.getContext('2d', { willReadFrequently: true });

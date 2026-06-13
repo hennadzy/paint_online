@@ -17,7 +17,8 @@ import {
   useCustomScrollbars,
   useModalBodyClass,
   usePinchZoom,
-  usePageVisibility
+  usePageVisibility,
+  useSelectionOverlay,
 } from '../hooks';
 import { useMobileCanvasFit } from '../hooks/useMobileCanvasFit';
 import { isMobileCanvasView } from '../utils/pinchPanGestures';
@@ -26,6 +27,7 @@ import '../styles/canvas.scss';
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const cursorRef = useRef();
+  const selectionOverlayRef = useRef();
   const containerRef = useRef();
   const wrapperRef = useRef();
   const layoutRef = useRef();
@@ -34,9 +36,10 @@ const Canvas = observer(() => {
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
 
-  useCanvasResize(canvasRef, cursorRef, containerRef);
+  useCanvasResize(canvasRef, cursorRef, containerRef, selectionOverlayRef);
   usePinchZoom(containerRef, wrapperRef);
   useCanvasCursor(canvasRef, cursorRef);
+  useSelectionOverlay(selectionOverlayRef, canvasRef);
   useCanvasKeyboard();
   useModalBodyClass();
   useCustomScrollbars(containerRef, wrapperRef, canvasState.isConnected);
@@ -211,6 +214,7 @@ const Canvas = observer(() => {
               }
             >
               <canvas ref={canvasRef} tabIndex={0} className="main-canvas" willReadFrequently={true} />
+              <canvas ref={selectionOverlayRef} className="selection-overlay" />
               <canvas ref={cursorRef} className="cursor-overlay" />
             </div>
           </div>

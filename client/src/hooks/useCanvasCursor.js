@@ -1,5 +1,23 @@
 import { useEffect } from 'react';
+import { reaction } from 'mobx';
 import toolState from '../store/toolState';
+
+const CURSOR_NONE_TOOLS = ['brush', 'eraser', 'rect', 'circle', 'line', 'arrow', 'polygon'];
+const NAV_TOOLS = ['hand', 'move', 'select', 'lasso', 'transform'];
+
+const TOOL_CURSOR_CLASSES = [
+  'brush-cursor',
+  'eraser-cursor',
+  'rect-cursor',
+  'circle-cursor',
+  'line-cursor',
+  'text-cursor',
+  'hand-cursor',
+  'move-cursor',
+  'select-cursor',
+  'lasso-cursor',
+  'transform-cursor',
+];
 
 function drawCursorOverlay(ctx, canvas, x, y) {
   const diameter = toolState.tool?.lineWidth ?? 1;
@@ -28,6 +46,23 @@ function drawCursorOverlay(ctx, canvas, x, y) {
   }
 }
 
+function applyCanvasCursorClass(canvas, toolName) {
+  TOOL_CURSOR_CLASSES.forEach((cls) => canvas.classList.remove(cls));
+  if (toolName) {
+    canvas.classList.add(`${toolName}-cursor`);
+  }
+
+  if (CURSOR_NONE_TOOLS.includes(toolName)) {
+    canvas.style.cursor = 'none';
+  } else if (NAV_TOOLS.includes(toolName)) {
+    canvas.style.cursor = '';
+  } else if (toolName === 'text') {
+    canvas.style.cursor = '';
+  } else {
+    canvas.style.cursor = 'crosshair';
+  }
+}
+
 export function useCanvasCursor(canvasRef, cursorRef) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,6 +70,8 @@ export function useCanvasCursor(canvasRef, cursorRef) {
     if (!canvas || !cursor) return;
 
     const handleMove = (e) => {
+      if (NAV_TOOLS.includes(toolState.toolName)) return;
+
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
@@ -60,12 +97,26 @@ export function useCanvasCursor(canvasRef, cursorRef) {
       canvas.removeEventListener('mouseleave', clearCursor);
       canvas.removeEventListener('pointerleave', clearCursor);
     };
-  }, []);
+  }, [canvasRef, cursorRef]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.style.cursor = 'none';
-    }
-  }, [toolState.toolName]);
+    const dispose = reaction(
+      () => toolState.toolName,
+      (toolName) => {
+        const canvas = canvasRef.current;
+        const cursor = cursorRef.current;
+        if (!canvas) return;
+
+        applyCanvasCursorClass(canvas, toolName);
+
+        if (cursor) {
+          const ctx = cursor.getContext('2d');
+          ctx.clearRect(0, 0, cursor.width, cursor.height);
+        }
+      },
+      { fireImmediately: true }
+    );
+
+    return dispose;
+  }, [canvasRef, cursorRef]);
 }

@@ -23,12 +23,14 @@ class ToolState {
   };
 
   groups = {
+    navigation: ["hand", "move", "select", "lasso", "transform"],
     brush: ["brush", "line", "arrow"],
     shapes: ["circle", "rect", "polygon"],
     color: ["fill", "pipette"]
   };
 
   lastSelected = {
+    navigation: "hand",
     brush: "brush",
     shapes: "circle",
     color: "fill"

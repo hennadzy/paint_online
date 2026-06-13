@@ -5,3 +5,4 @@ export { useCustomScrollbars } from './useCustomScrollbars';
 export { useModalBodyClass } from './useModalBodyClass';
 export { usePinchZoom } from './usePinchZoom';
 export { usePageVisibility } from './usePageVisibility';
+export { useSelectionOverlay } from './useSelectionOverlay';
