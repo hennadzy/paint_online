@@ -4,6 +4,7 @@ import Fill from '../tools/Fill';
 import canvasState, { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
 import { resolveAssetUrl } from '../utils/assetUrl';
+import { computeRegionMask, drawBrushStrokeInRegion } from '../utils/coloringRegion';
 import '../styles/coloring.scss';
 import '../styles/modal.scss';
 
@@ -70,21 +71,17 @@ const coloringHistoryRef = { current: new ColoringHistory() };
 const coloringAssetUrl = (url) => resolveAssetUrl(url);
 
 const PRESET_COLORS = [
-  '#FF0000', '#FF4500', '#FF8C00', '#FFD700',
-  '#ADFF2F', '#00CC44', '#00BFFF', '#0044FF',
-
-  '#8A2BE2', '#FF1493', '#FF69B4', '#FF6347',
-  '#20B2AA', '#4169E1', '#9370DB', '#DA70D6',
-
-  '#FFB3B3', '#FFD9B3', '#FFFACD', '#B3FFB3',
-  '#B3E5FF', '#D4B3FF', '#FFB3E6', '#C8A882',
-
-  '#8B0000', '#4B2800', '#556B2F', '#2F4F4F',
-  '#1C1C8A', '#4B0082', '#333333', '#000000',
-
-  '#FFFFFF', '#F5F5F5', '#DCDCDC', '#A9A9A9',
-  '#696969', '#808080', '#F5DEB3', '#FFDAB9',
+  '#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#ADFF2F', '#00CC44', '#00BFFF', '#0044FF', '#8A2BE2',
+  '#FF1493', '#FF69B4', '#20B2AA', '#4169E1', '#9370DB', '#FFB3B3', '#B3E5FF', '#D4B3FF', '#C8A882',
+  '#8B0000', '#556B2F', '#2F4F4F', '#4B0082', '#333333', '#000000', '#FFFFFF', '#A9A9A9', '#808080',
 ];
+
+const DEFAULT_COLORING_SEO_PARAGRAPHS = [
+  'Раскраски на Рисование.Онлайн — это простой и удобный способ провести время с пользой: выбрать рисунок по настроению, раскрасить его прямо в браузере и получить готовую картинку без лишних шагов.',
+  'Здесь собраны раскраски разных тем: животные, сказки, сезонные сюжеты и многое другое. Выберите категорию и начните творить — на компьютере или на мобильном устройстве.',
+];
+
+const COLORING_BRUSH_SIZE = 10;
 
 const ColoringPage = () => {
   const navigate = useNavigate();
@@ -98,8 +95,10 @@ const ColoringPage = () => {
   const [coloringPages, setColoringPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
   const [coloringSections, setColoringSections] = useState([]);
+  const [currentSection, setCurrentSection] = useState(null);
 
   const [selectedColor, setSelectedColor] = useState('#FF0000');
+  const [paintMode, setPaintMode] = useState('fill');
 
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -118,6 +117,9 @@ const ColoringPage = () => {
   const zoomRef = useRef(1);
   const initialZoomRef = useRef(1);
   const initialDistanceRef = useRef(0);
+  const isDrawingRef = useRef(false);
+  const regionMaskRef = useRef(null);
+  const brushPointsRef = useRef([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,6 +139,7 @@ const ColoringPage = () => {
           const data = await res.json();
           setColoringSections(Array.isArray(data.sections) ? data.sections : []);
           setColoringPages([]);
+          setCurrentSection(null);
           setIsLoading(false);
           setSeoData(null);
           return;
@@ -159,6 +162,7 @@ const ColoringPage = () => {
           const pages = Array.isArray(data.pages) ? data.pages : [];
 
           setColoringPages(pages);
+          setCurrentSection(data.section || null);
           setSeoData(null);
           setIsLoading(false);
           return;
@@ -384,29 +388,113 @@ const ColoringPage = () => {
     setSelectedPage(page);
   };
 
+  const getCanvasCoords = useCallback((canvas, clientX, clientY) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: Math.floor((clientX - rect.left) * scaleX),
+      y: Math.floor((clientY - rect.top) * scaleY),
+    };
+  }, []);
+
+  const pushHistorySnapshot = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    coloringHistoryRef.current.push(imageData);
+    setCanUndo(coloringHistoryRef.current.canUndo());
+    setCanRedo(coloringHistoryRef.current.canRedo());
+  }, []);
+
   const handleCanvasClick = useCallback(
     (e) => {
-      if (!imageLoaded || isPinching) return;
+      if (!imageLoaded || isPinching || paintMode !== 'fill') return;
       const canvas = canvasRef.current;
       if (!canvas) return;
 
       const ctx = canvas.getContext('2d');
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
+      const { x, y } = getCanvasCoords(canvas, e.clientX, e.clientY);
 
-      const x = Math.floor((e.clientX - rect.left) * scaleX);
-      const y = Math.floor((e.clientY - rect.top) * scaleY);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      coloringHistoryRef.current.push(imageData);
-
-      setCanUndo(coloringHistoryRef.current.canUndo());
-      setCanRedo(coloringHistoryRef.current.canRedo());
-
+      pushHistorySnapshot();
       Fill.staticDraw(ctx, x, y, selectedColor);
     },
-    [imageLoaded, selectedColor, isPinching]
+    [imageLoaded, selectedColor, isPinching, paintMode, getCanvasCoords, pushHistorySnapshot]
+  );
+
+  const finishBrushStroke = useCallback(() => {
+    isDrawingRef.current = false;
+    regionMaskRef.current = null;
+    brushPointsRef.current = [];
+  }, []);
+
+  const handleCanvasPointerDown = useCallback(
+    (e) => {
+      if (!imageLoaded || isPinching || paintMode !== 'brush') return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      e.preventDefault();
+      canvas.setPointerCapture(e.pointerId);
+
+      const ctx = canvas.getContext('2d');
+      const { x, y } = getCanvasCoords(canvas, e.clientX, e.clientY);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const mask = computeRegionMask(imageData, x, y);
+
+      if (!mask.some(Boolean)) {
+        return;
+      }
+
+      pushHistorySnapshot();
+      regionMaskRef.current = mask;
+      brushPointsRef.current = [{ x, y }];
+      isDrawingRef.current = true;
+
+      drawBrushStrokeInRegion(ctx, mask, brushPointsRef.current, selectedColor, COLORING_BRUSH_SIZE);
+    },
+    [imageLoaded, isPinching, paintMode, selectedColor, getCanvasCoords, pushHistorySnapshot]
+  );
+
+  const handleCanvasPointerMove = useCallback(
+    (e) => {
+      if (!isDrawingRef.current || paintMode !== 'brush') return;
+      const canvas = canvasRef.current;
+      const mask = regionMaskRef.current;
+      if (!canvas || !mask) return;
+
+      e.preventDefault();
+      const ctx = canvas.getContext('2d');
+      const { x, y } = getCanvasCoords(canvas, e.clientX, e.clientY);
+      const points = brushPointsRef.current;
+      const lastPoint = points[points.length - 1];
+
+      if (lastPoint && lastPoint.x === x && lastPoint.y === y) {
+        return;
+      }
+
+      points.push({ x, y });
+      drawBrushStrokeInRegion(ctx, mask, points.slice(-2), selectedColor, COLORING_BRUSH_SIZE);
+    },
+    [paintMode, selectedColor, getCanvasCoords]
+  );
+
+  const handleCanvasPointerUp = useCallback(
+    (e) => {
+      const canvas = canvasRef.current;
+      if (canvas && e.pointerId !== undefined) {
+        try {
+          canvas.releasePointerCapture(e.pointerId);
+        } catch {
+          // pointer was not captured
+        }
+      }
+      finishBrushStroke();
+    },
+    [finishBrushStroke]
   );
 
   const handleUndo = useCallback(() => {
@@ -492,7 +580,12 @@ const ColoringPage = () => {
   const handleBackToSelector = () => {
     setSelectedPage(null);
     setImageLoaded(false);
+    finishBrushStroke();
 
+    if (pageSlug && sectionSlug) {
+      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
+      return;
+    }
 
     if (sectionSlug) {
       navigate('/coloring');
@@ -509,30 +602,23 @@ const ColoringPage = () => {
     navigate('/coloring');
   };
 
-  const onMainBack = () => {
+  const renderSeoParagraphs = () => {
+    const seoText = currentSection?.seoText?.trim();
+    const paragraphs = seoText
+      ? seoText.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean)
+      : DEFAULT_COLORING_SEO_PARAGRAPHS;
 
-    if (sectionSlug && !pageSlug) {
-      navigate('/coloring');
-      return;
-    }
-
-    if (pageSlug && sectionSlug) {
-      navigate(`/coloring/${encodeURIComponent(sectionSlug)}`);
-      return;
-    }
-
-    if (cameFromGamesModal) {
-      sessionStorage.removeItem('cameFromGamesModal');
-      canvasState.setShowGamesModal(true);
-      navigate('/');
-      return;
-    }
-
-    navigate('/');
+    return paragraphs.map((paragraph, index) => (
+      <p key={`coloring-seo-${index}`}>{paragraph}</p>
+    ));
   };
 
   if (!selectedPage) {
-    const headerTitle = sectionSlug ? '🎨 Раздел раскрасок' : '🎨 Раскраски';
+    const headerTitle = currentSection?.title
+      ? `🎨 ${currentSection.title}`
+      : sectionSlug
+        ? '🎨 Раздел раскрасок'
+        : '🎨 Раскраски';
 
     return (
       <div className="coloring-page">
@@ -660,40 +746,7 @@ const ColoringPage = () => {
 
           <section className="coloring-seo-bottom" aria-label="Раскраски — описание">
             <div className="coloring-seo-bottom__text">
-              <p>
-                Раскраски на Рисование.Онлайн — это простой и удобный способ провести время с пользой: выбрать рисунок по
-                настроению, раскрасить его прямо в браузере и получить готовую картинку без лишних шагов.
-                Интерфейс помогает быстро разобраться, даже если вы впервые пробуете раскрашивать онлайн.
-                Каждый день можно находить новые сюжеты и темы для творчества, а процесс раскрашивания становится
-                отличным способом расслабиться после рабочего дня или занять детей в свободное время.
-              </p>
-              <p>
-                Здесь собраны раскраски разных тем: животные, сказки, сезонные сюжеты и многое другое. Можно
-                раскрашивать с ребёнком или взрослому — в любом случае получится ярко и приятно.
-                Если вы любите быстрые занятия, делайте по одному рисунку за раз. Если хочется заняться глубже —
-                сохраняйте понравившиеся варианты и возвращайтесь к темам снова.
-                Разнообразие категорий позволяет каждому найти что-то по своему вкусу: от простых контуров для начинающих
-                до сложных детализированных рисунков для опытных художников.
-              </p>
-              <p>
-                Рисовать можно на компьютере и на мобильных устройствах. Поддерживается удобный просмотр, а цвета
-                переключаются легко, чтобы процесс был комфортным и не отвлекал от творчества.
-                Вы можете работать в любое время суток, не тратя деньги на бумагу и краски, а результат всегда остаётся
-                в вашем аккаунте или на устройстве. Это особенно удобно для тех, кто ценит экономию и практичность.
-              </p>
-              <p>
-                Онлайн раскраски подходят для развития мелкой моторики, творческого мышления и концентрации внимания.
-                Дети учатся различать цвета, формы и пропорции, а взрослые находят способ отдохнуть от рутины.
-                Совместное раскрашивание помогает сблизиться с семьёй и провести время качественно.
-                Попробуйте разные техники: от аккуратного заполнения контуров до экспериментов с оттенками.
-              </p>
-              <p>
-                Наша библиотека постоянно пополняется новыми изображениями, поэтому вы всегда найдёте что-то свежее.
-                Добавляйте любимые раскраски в закладки, возвращайтесь к ним позже и делитесь результатами с друзьями.
-                Рисование.Онлайн делает творчество доступным для каждого — просто откройте браузер и начните создавать
-                свои шедевры уже сегодня, без регистрации и сложных настроек. Посетите <a href="/">главную страницу </a>
-                для совместного рисования или загляните в <a href="/gallery">галерею</a>, чтобы увидеть работы других.
-              </p>
+              {renderSeoParagraphs()}
             </div>
           </section>
         </div>
@@ -720,13 +773,18 @@ const ColoringPage = () => {
           )}
           <canvas
             ref={canvasRef}
-            className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''}`}
+            className={`coloring-canvas ${imageLoaded ? 'coloring-canvas--ready' : ''} ${paintMode === 'brush' ? 'coloring-canvas--brush' : ''}`}
             onClick={handleCanvasClick}
+            onPointerDown={handleCanvasPointerDown}
+            onPointerMove={handleCanvasPointerMove}
+            onPointerUp={handleCanvasPointerUp}
+            onPointerCancel={handleCanvasPointerUp}
             willReadFrequently={true}
             style={{
-              cursor: imageLoaded ? 'crosshair' : 'wait',
+              cursor: imageLoaded ? (paintMode === 'brush' ? 'crosshair' : 'crosshair') : 'wait',
               transform: `scale(${zoom})`,
               transformOrigin: 'center center',
+              touchAction: paintMode === 'brush' ? 'none' : 'auto',
             }}
           />
         </div>
@@ -762,6 +820,28 @@ const ColoringPage = () => {
                 title="Выбрать любой цвет"
               />
             </label>
+          </div>
+          <div className="coloring-palette__tools">
+            <button
+              type="button"
+              className={`coloring-tool-btn ${paintMode === 'fill' ? 'coloring-tool-btn--active' : ''}`}
+              onClick={() => setPaintMode('fill')}
+              title="Заливка"
+              aria-label="Режим заливки"
+              aria-pressed={paintMode === 'fill'}
+            >
+              <span className="coloring-tool-icon coloring-tool-icon--fill" />
+            </button>
+            <button
+              type="button"
+              className={`coloring-tool-btn ${paintMode === 'brush' ? 'coloring-tool-btn--active' : ''}`}
+              onClick={() => setPaintMode('brush')}
+              title="Кисть"
+              aria-label="Режим кисти"
+              aria-pressed={paintMode === 'brush'}
+            >
+              <span className="coloring-tool-icon coloring-tool-icon--brush" />
+            </button>
           </div>
         </div>
       </div>

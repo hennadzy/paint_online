@@ -471,22 +471,72 @@
  display: flex;
  align-items: center;
  gap:16px;
- max-width:900px;
+ max-width:960px;
  margin:0 auto;
  flex-wrap: wrap;
 }
 
 .coloring-palette__swatches {
  display: flex;
- flex-wrap: wrap;
- gap:6px;
+ flex-wrap: nowrap;
+ gap:4px;
  flex:1;
  min-width:0;
+ justify-content: center;
+}
+
+.coloring-palette__tools {
+ display: flex;
+ align-items: center;
+ gap:8px;
+ flex-shrink:0;
+}
+
+.coloring-tool-btn {
+ width:40px;
+ height:40px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ background: rgba(255,255,255,0.08);
+ border:1px solid rgba(255,255,255,0.15);
+ border-radius:8px;
+ cursor: pointer;
+ transition: all 0.2s ease;
+ padding:0;
+
+ &:hover {
+ background: rgba(255,255,255,0.15);
+ border-color: rgba(255,255,255,0.35);
+ }
+
+ &--active {
+ background: rgba(255,204,0,0.18);
+ border-color: #ffcc00;
+ box-shadow: 0 0 0 1px rgba(255,204,0,0.35);
+ }
+}
+
+.coloring-tool-icon {
+ display: block;
+ width:22px;
+ height:22px;
+ background-repeat: no-repeat;
+ background-position: center;
+ background-size: contain;
+
+ &--fill {
+ background-image: url('../assets/img/fill.png');
+ }
+
+ &--brush {
+ background-image: url('../assets/img/brush.png');
+ }
 }
 
 .coloring-swatch {
- width:28px;
- height:28px;
+ width:24px;
+ height:24px;
  border-radius:50%;
  border:2px solid rgba(255,255,255,0.15);
  cursor: pointer;
@@ -588,6 +638,11 @@
  &__title {
  font-size:15px;
  }
+ }
+
+ .coloring-palette__swatches {
+ flex-wrap: wrap;
+ justify-content: flex-start;
  }
 
  .coloring-swatch {

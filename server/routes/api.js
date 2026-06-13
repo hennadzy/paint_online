@@ -73,7 +73,7 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
     console.error('DEBUG /api/coloring-sections/:sectionSlug/pages - sectionSlug:', sectionSlug);
 
     const sectionCheck = await pgPool.query(
-      'SELECT id, slug, title FROM coloring_sections WHERE slug = $1',
+      'SELECT id, slug, title, seo_text FROM coloring_sections WHERE slug = $1',
       [sectionSlug]
     );
 
@@ -105,6 +105,12 @@ router.get('/coloring-sections/:sectionSlug/pages', asyncHandler(async (req, res
     console.error('DEBUG Pages count:', result.rows.length);
 
     res.json({
+      section: {
+        id: section.id,
+        slug: section.slug,
+        title: section.title,
+        seoText: section.seo_text,
+      },
       pages: result.rows.map(r => ({
         id: r.id,
         sectionId: r.section_id,
