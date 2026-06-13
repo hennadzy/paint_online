@@ -668,26 +668,33 @@ drawPolygonStroke(ctx, stroke) {
 
     if (this.canvas) {
       const aspectRatio = 720 / 480;
-      let baseWidth, baseHeight;
+      let baseWidth;
+      let baseHeight;
+      const isMobile = window.innerWidth <= 768;
 
-      if (window.innerWidth < 768) {
+      if (isMobile) {
         baseWidth = window.innerWidth;
         baseHeight = baseWidth / aspectRatio;
+        this.canvas.style.width = `${baseWidth}px`;
+        this.canvas.style.height = `${baseHeight}px`;
       } else {
         baseWidth = 720;
         baseHeight = 480;
+        const newWidth = baseWidth * this.zoom;
+        const newHeight = baseHeight * this.zoom;
+        this.canvas.style.width = `${newWidth}px`;
+        this.canvas.style.height = `${newHeight}px`;
       }
-
-      const newWidth = baseWidth * this.zoom;
-      const newHeight = baseHeight * this.zoom;
-
-      this.canvas.style.width = `${newWidth}px`;
-      this.canvas.style.height = `${newHeight}px`;
 
       const cursorOverlay = document.querySelector('.cursor-overlay');
       if (cursorOverlay) {
-        cursorOverlay.style.width = `${newWidth}px`;
-        cursorOverlay.style.height = `${newHeight}px`;
+        if (isMobile) {
+          cursorOverlay.style.width = `${baseWidth}px`;
+          cursorOverlay.style.height = `${baseHeight}px`;
+        } else {
+          cursorOverlay.style.width = `${720 * this.zoom}px`;
+          cursorOverlay.style.height = `${480 * this.zoom}px`;
+        }
       }
     }
 

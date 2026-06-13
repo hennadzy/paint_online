@@ -5,6 +5,7 @@ import axios from 'axios';
 import userState from '../store/userState';
 import { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
+import { attachPinchPanGestures } from '../utils/pinchPanGestures';
 import '../styles/gallery.scss';
 
 const HeartIcon = ({ filled }) => (
@@ -43,10 +44,11 @@ const GalleryPage = observer(() => {
   const [submittingEdit, setSubmittingEdit] = useState(false);
   const [commentLikeLoading, setCommentLikeLoading] = useState({});
   const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const zoomRef = useRef(1);
-  const initialDistanceRef = useRef(0);
-  const initialZoomRef = useRef(1);
+  const panRef = useRef({ x: 0, y: 0 });
   const imageContainerRef = useRef(null);
+  const imageStageRef = useRef(null);
 
   const fetchDrawings = useCallback(async () => {
     setLoading(true);
@@ -135,19 +137,24 @@ const GalleryPage = observer(() => {
       setComments([]);
       setZoom(1);
       zoomRef.current = 1;
+      setPanOffset({ x: 0, y: 0 });
+      panRef.current = { x: 0, y: 0 };
     }
   }, [drawingId, fetchDrawingById, fetchComments]);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    panRef.current = panOffset;
+  }, [panOffset]);
 
   useEffect(() => {
     const container = imageContainerRef.current;
     if (!container || !selectedDrawing) return;
 
     const clampZoom = (value) => Math.max(1, Math.min(3, value));
-    const getDistance = (t1, t2) => {
-      const dx = t2.clientX - t1.clientX;
-      const dy = t2.clientY - t1.clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    };
 
     const handleWheel = (e) => {
       e.preventDefault();
@@ -156,43 +163,29 @@ const GalleryPage = observer(() => {
       setZoom(nextZoom);
     };
 
-    const handleTouchStart = (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
-        initialZoomRef.current = zoomRef.current;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (e.touches.length === 2 && initialDistanceRef.current > 0) {
-        e.preventDefault();
-        const currentDistance = getDistance(e.touches[0], e.touches[1]);
-        const scale = currentDistance / initialDistanceRef.current;
-        const nextZoom = clampZoom(initialZoomRef.current * scale);
-        zoomRef.current = nextZoom;
-        setZoom(nextZoom);
-      }
-    };
-
-    const handleTouchEnd = (e) => {
-      if (e.touches.length < 2) {
-        initialDistanceRef.current = 0;
-      }
-    };
+    const detachPinchPan = attachPinchPanGestures({
+      getTargets: () => {
+        const image = container.querySelector('.gallery-detail__image');
+        return [container, imageStageRef.current, image].filter(Boolean);
+      },
+      getZoom: () => zoomRef.current,
+      setZoom: (value) => {
+        zoomRef.current = value;
+        setZoom(value);
+      },
+      getPan: () => panRef.current,
+      setPan: (pan) => {
+        panRef.current = pan;
+        setPanOffset(pan);
+      },
+      clampZoom,
+    });
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchcancel', handleTouchEnd);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchcancel', handleTouchEnd);
+      detachPinchPan();
     };
   }, [selectedDrawing]);
 
@@ -349,6 +342,8 @@ const GalleryPage = observer(() => {
     navigate('/gallery');
     setZoom(1);
     zoomRef.current = 1;
+    setPanOffset({ x: 0, y: 0 });
+    panRef.current = { x: 0, y: 0 };
   };
 
   if (drawingId) {
@@ -380,13 +375,21 @@ const GalleryPage = observer(() => {
                    <span>🖼️</span>
                  </div>
                ) : (
-                 <img
-                   src={`${API_URL}/api/gallery/image/${selectedDrawing.id}`}
-                   alt={selectedDrawing.title}
-                   className="gallery-detail__image"
-                   style={{ transform: `scale(${zoom})` }}
-                   onError={() => handleImageError(selectedDrawing.id)}
-                 />
+                 <div
+                   ref={imageStageRef}
+                   className="gallery-detail__image-stage"
+                   style={{
+                     transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
+                     transformOrigin: 'center center',
+                   }}
+                 >
+                   <img
+                     src={`${API_URL}/api/gallery/image/${selectedDrawing.id}`}
+                     alt={selectedDrawing.title}
+                     className="gallery-detail__image"
+                     onError={() => handleImageError(selectedDrawing.id)}
+                   />
+                 </div>
                )}
              </div>
             <div className="gallery-detail__meta">

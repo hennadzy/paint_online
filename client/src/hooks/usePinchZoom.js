@@ -1,46 +1,30 @@
 import { useEffect, useRef } from 'react';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
-
-function getDistance(touch1, touch2) {
-  const dx = touch2.clientX - touch1.clientX;
-  const dy = touch2.clientY - touch1.clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
+import {
+  attachPinchPanGestures,
+  getTouchCenter,
+  getTouchDistance,
+  isMobileCanvasView,
+} from '../utils/pinchPanGestures';
 
 function getPinchCenter(touch1, touch2) {
-  return {
-    x: (touch1.clientX + touch2.clientX) / 2,
-    y: (touch1.clientY + touch2.clientY) / 2
-  };
+  return getTouchCenter(touch1, touch2);
 }
 
-export function usePinchZoom(containerRef) {
+export function usePinchZoom(containerRef, wrapperRef) {
   const isPinching = useRef(false);
+  const panRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    panRef.current = { x: canvasState.viewPanX, y: canvasState.viewPanY };
+  }, [canvasState.viewPanX, canvasState.viewPanY]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     window.isPinching = () => isPinching.current;
-
-    let initialDistance = 0;
-    let initialZoom = 1;
-    let initialScrollLeft = 0;
-    let initialScrollTop = 0;
-    let initialCenterX = 0;
-    let initialCenterY = 0;
-
-    const getMinScrollTop = () => {
-      return 0;
-    };
-
-    const handleScroll = () => {
-      const minScrollTop = getMinScrollTop();
-      if (container.scrollTop < minScrollTop) {
-        container.scrollTop = minScrollTop;
-      }
-    };
 
     const cancelDrawing = () => {
       if (toolState.tool && toolState.tool.mouseDown) {
@@ -54,12 +38,50 @@ export function usePinchZoom(containerRef) {
       }
     };
 
+    if (isMobileCanvasView()) {
+      const canvas = container.querySelector('.main-canvas');
+
+      const detach = attachPinchPanGestures({
+        getTargets: () => [container, wrapperRef.current, canvas].filter(Boolean),
+        getZoom: () => canvasState.zoom,
+        setZoom: (value) => canvasState.setZoom(value),
+        getPan: () => panRef.current,
+        setPan: (pan) => {
+          panRef.current = pan;
+          canvasState.setViewPan(pan.x, pan.y);
+        },
+        clampZoom: (value) => Math.max(0.5, Math.min(3, value)),
+        onPinchStart: () => {
+          cancelDrawing();
+          isPinching.current = true;
+        },
+        onPinchEnd: () => {
+          isPinching.current = false;
+        },
+      });
+
+      return detach;
+    }
+
+    let initialDistance = 0;
+    let initialZoom = 1;
+    let initialScrollLeft = 0;
+    let initialScrollTop = 0;
+    let initialCenterX = 0;
+    let initialCenterY = 0;
+
+    const handleScroll = () => {
+      if (container.scrollTop < 0) {
+        container.scrollTop = 0;
+      }
+    };
+
     const handleTouchStart = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
         cancelDrawing();
         isPinching.current = true;
-        initialDistance = getDistance(e.touches[0], e.touches[1]);
+        initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
         initialZoom = canvasState.zoom;
         const center = getPinchCenter(e.touches[0], e.touches[1]);
         initialCenterX = center.x;
@@ -82,7 +104,7 @@ export function usePinchZoom(containerRef) {
         isPinching.current = true;
 
         if (touchCount === 2 && initialDistance > 0) {
-          const currentDistance = getDistance(e.touches[0], e.touches[1]);
+          const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
           const currentCenter = getPinchCenter(e.touches[0], e.touches[1]);
           const containerRect = container.getBoundingClientRect();
           const translationX = currentCenter.x - initialCenterX;
@@ -106,24 +128,11 @@ export function usePinchZoom(containerRef) {
             const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
             const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
 
-            const isMobile = window.innerWidth <= 768;
-            const minScrollTop = isMobile ? 0 : 0;
-
-            const clampedLeft = Math.max(0, Math.min(maxScrollLeft, rawScrollLeft));
-            const clampedTop = Math.max(minScrollTop, Math.min(maxScrollTop, rawScrollTop));
-
-            container.scrollLeft = clampedLeft;
-            container.scrollTop = clampedTop;
-
-            requestAnimationFrame(() => {
-              const maxL = Math.max(0, container.scrollWidth - container.clientWidth);
-              const maxT = Math.max(0, container.scrollHeight - container.clientHeight);
-              container.scrollLeft = Math.max(0, Math.min(maxL, container.scrollLeft));
-              container.scrollTop = Math.max(minScrollTop, Math.min(maxT, container.scrollTop));
-            });
+            container.scrollLeft = Math.max(0, Math.min(maxScrollLeft, rawScrollLeft));
+            container.scrollTop = Math.max(0, Math.min(maxScrollTop, rawScrollTop));
           });
         } else if (touchCount === 2 && initialDistance === 0) {
-          initialDistance = getDistance(e.touches[0], e.touches[1]);
+          initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
           initialZoom = canvasState.zoom;
           const center = getPinchCenter(e.touches[0], e.touches[1]);
           initialCenterX = center.x;
@@ -160,5 +169,5 @@ export function usePinchZoom(containerRef) {
       container.removeEventListener('touchcancel', handleTouchEnd);
       container.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [containerRef, wrapperRef]);
 }

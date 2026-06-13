@@ -39,6 +39,9 @@ class CanvasState {
   personalMessagesTargetUser = null;
   showInactiveModal = false;
   joiningRoom = false;
+  viewPanX = 0;
+  viewPanY = 0;
+  viewZoom = 1;
 
   constructor() {
     makeAutoObservable(this);
@@ -253,12 +256,25 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
   }
   setZoom(zoom) {
     CanvasService.setZoom(zoom);
+    this.viewZoom = CanvasService.zoom;
   }
   zoomIn() {
-    CanvasService.setZoom(CanvasService.zoom + 0.1);
+    this.setZoom(CanvasService.zoom + 0.1);
   }
   zoomOut() {
-    CanvasService.setZoom(CanvasService.zoom - 0.1);
+    this.setZoom(CanvasService.zoom - 0.1);
+  }
+  setViewPan(x, y) {
+    this.viewPanX = x;
+    this.viewPanY = y;
+  }
+  resetViewPan() {
+    this.viewPanX = 0;
+    this.viewPanY = 0;
+  }
+  resetViewTransform() {
+    this.resetViewPan();
+    this.setZoom(1);
   }
   redrawCanvas() {
     CanvasService.redraw();
@@ -742,8 +758,9 @@ setupThumbnailInterval() {
       CanvasService.redraw();
 
       if (savedData.canvasState) {
+        this.resetViewPan();
         if (savedData.canvasState.zoom) {
-          CanvasService.setZoom(savedData.canvasState.zoom);
+          this.setZoom(savedData.canvasState.zoom);
         }
         if (savedData.canvasState.showGrid) {
           CanvasService.toggleGrid();

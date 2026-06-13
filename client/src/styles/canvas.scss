@@ -381,7 +381,7 @@ button:active {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    overflow: auto;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
     padding: 2px;
     padding-bottom: 6px;
@@ -398,13 +398,14 @@ button:active {
   .canvas-container-inner {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
     min-width: 100%;
-    height: max-content;
+    height: 100%;
     min-height: 100%;
     padding: 4px;
     padding-top: 8px;
+    box-sizing: border-box;
   }
 
   .canvas-wrapper {
@@ -414,6 +415,7 @@ button:active {
     flex-shrink: 0;
     min-width: 0;
     min-height: 0;
+    will-change: transform;
   }
 
   .custom-scrollbar {

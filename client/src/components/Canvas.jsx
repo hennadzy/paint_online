@@ -20,12 +20,14 @@ import {
   usePageVisibility
 } from '../hooks';
 import { useMobileCanvasFit } from '../hooks/useMobileCanvasFit';
+import { isMobileCanvasView } from '../utils/pinchPanGestures';
 import '../styles/canvas.scss';
 
 const Canvas = observer(() => {
   const canvasRef = useRef();
   const cursorRef = useRef();
   const containerRef = useRef();
+  const wrapperRef = useRef();
   const layoutRef = useRef();
   const params = useParams();
   const location = useLocation();
@@ -33,7 +35,7 @@ const Canvas = observer(() => {
   const isHome = location.pathname === '/';
 
   useCanvasResize(canvasRef, cursorRef, containerRef);
-  usePinchZoom(containerRef);
+  usePinchZoom(containerRef, wrapperRef);
   useCanvasCursor(canvasRef, cursorRef);
   useCanvasKeyboard();
   useModalBodyClass();
@@ -71,7 +73,7 @@ const Canvas = observer(() => {
 
   const initRoomMode = () => {
     canvasState.setShowRestoreDialog(false);
-    canvasState.setZoom(1);
+    canvasState.resetViewTransform();
     canvasState.setCurrentRoomId(params.id);
     canvasState.setUsername('');
     canvasState.setModalOpen(false);
@@ -165,7 +167,7 @@ const Canvas = observer(() => {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-      canvasState.setZoom(1);
+      canvasState.resetViewTransform();
       if (document.body.style.position === 'fixed') {
         document.body.style.position = '';
         document.body.style.top = '';
@@ -188,13 +190,26 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected]);
 
 
+  const isMobileCanvas = isMobileCanvasView();
+
   return (
     <div className={`canvas ${canvasState.currentRoomId && canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
       <div ref={layoutRef} className={`canvas-layout ${canvasState.currentRoomId && canvasState.isConnected ? 'has-chat' : ''}`}>
 
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-container-inner">
-            <div className="canvas-wrapper">
+            <div
+              ref={wrapperRef}
+              className="canvas-wrapper"
+              style={
+                isMobileCanvas
+                  ? {
+                      transform: `translate(${canvasState.viewPanX}px, ${canvasState.viewPanY}px) scale(${canvasState.viewZoom})`,
+                      transformOrigin: 'center center',
+                    }
+                  : undefined
+              }
+            >
               <canvas ref={canvasRef} tabIndex={0} className="main-canvas" willReadFrequently={true} />
               <canvas ref={cursorRef} className="cursor-overlay" />
             </div>
