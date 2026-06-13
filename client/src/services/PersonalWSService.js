@@ -151,6 +151,12 @@ class PersonalWSService {
           timestamp: message.timestamp
         });
         break;
+      case 'personalMessagesRead':
+        this.emit('personalMessagesRead', {
+          from: message.from,
+          messageIds: message.messageIds
+        });
+        break;
       default:
         break;
     }

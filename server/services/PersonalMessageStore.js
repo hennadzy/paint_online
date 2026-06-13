@@ -72,16 +72,43 @@ class PersonalMessageStore {
     }
   }
 
-  async getHistory(userId1, userId2, limit = 100) {
+  async getIncomingUnreadMessageIds(fromUserId, toUserId) {
     try {
+      const result = await pgPool.query(
+        `SELECT id FROM personal_messages
+         WHERE from_user_id = $1 AND to_user_id = $2 AND read = false
+         ORDER BY timestamp ASC`,
+        [fromUserId, toUserId]
+      );
+      return result.rows.map(r => r.id);
+    } catch (error) {
+      console.error('Error getting incoming unread messages:', error);
+      return [];
+    }
+  }
+
+  async getHistory(userId1, userId2, limit = 50, before = null) {
+    try {
+      const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+      const params = [userId1, userId2];
+      let beforeClause = '';
+
+      if (before != null && !Number.isNaN(Number(before))) {
+        params.push(Number(before));
+        beforeClause = ' AND timestamp < $3';
+      }
+
+      params.push(safeLimit);
+      const limitParam = `$${params.length}`;
+
       const result = await pgPool.query(
         `SELECT id, from_user_id, to_user_id, message, timestamp, delivered, read
          FROM personal_messages
-         WHERE (from_user_id = $1 AND to_user_id = $2)
-            OR (from_user_id = $2 AND to_user_id = $1)
+         WHERE ((from_user_id = $1 AND to_user_id = $2)
+            OR (from_user_id = $2 AND to_user_id = $1))${beforeClause}
          ORDER BY timestamp DESC
-         LIMIT $3`,
-        [userId1, userId2, limit]
+         LIMIT ${limitParam}`,
+        params
       );
       return result.rows.reverse();
     } catch (error) {

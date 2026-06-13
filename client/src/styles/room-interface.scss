@@ -212,8 +212,7 @@
 .room-card {
   background: rgba(103, 103, 103, 0.45);
   border-radius: 20px;
-  padding: 30px;
-  padding-top: calc(0px + env(safe-area-inset-top, 0px));
+  padding: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.1);

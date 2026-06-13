@@ -311,6 +311,19 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     }
   }
 
+  notifyPersonalMessagesRead(senderUserId, readerUserId, messageIds) {
+    if (!senderUserId || !Array.isArray(messageIds) || messageIds.length === 0) return;
+
+    const senderWs = this.userSockets.get(senderUserId);
+    if (senderWs && senderWs.readyState === WebSocket.OPEN) {
+      senderWs.send(JSON.stringify({
+        method: 'personalMessagesRead',
+        from: readerUserId,
+        messageIds
+      }));
+    }
+  }
+
   async deliverPersonalMessageToUser(toUserId, fromUserId, fromUsername, message, timestamp, msgId) {
     const recipientWs = this.userSockets.get(toUserId);
     if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {

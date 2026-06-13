@@ -222,9 +222,17 @@ router.get('/search', authenticate, asyncHandler(async (req, res) => {
 router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
   const targetUserId = req.params.userId;
   validateUserId(targetUserId);
-  
+
+  const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : 50;
+  const before = req.query.before != null ? parseInt(req.query.before, 10) : null;
+
   const PersonalMessageStore = require('../services/PersonalMessageStore');
-  const history = await PersonalMessageStore.getHistory(req.user.userId, targetUserId);
+  const history = await PersonalMessageStore.getHistory(
+    req.user.userId,
+    targetUserId,
+    limit,
+    before
+  );
   res.json(history);
 }));
 
@@ -334,13 +342,18 @@ router.post('/messages/mark-delivered/:userId', authenticate, asyncHandler(async
 
 router.post('/messages/mark-read/:userId', authenticate, asyncHandler(async (req, res) => {
   const meId = req.user.userId;
-  const toUserId = req.params.userId;
-  validateUserId(toUserId);
-  
+  const fromUserId = req.params.userId;
+  validateUserId(fromUserId);
+
   const PersonalMessageStore = require('../services/PersonalMessageStore');
 
-  const toMark = await PersonalMessageStore.getOutgoingUnreadMessages(meId, toUserId);
-  await PersonalMessageStore.markRead(toMark);
+  const toMark = await PersonalMessageStore.getIncomingUnreadMessageIds(fromUserId, meId);
+  if (toMark.length > 0) {
+    await PersonalMessageStore.markRead(toMark);
+
+    const WebSocketHandler = require('../services/WebSocketHandler');
+    WebSocketHandler.notifyPersonalMessagesRead(fromUserId, meId, toMark);
+  }
 
   res.json({ marked: toMark.length });
 }));

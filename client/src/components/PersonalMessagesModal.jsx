@@ -1,11 +1,22 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import userState from '../store/userState';
 import { API_URL } from '../store/canvasState';
 import axios from 'axios';
+import PersonalWSService from '../services/PersonalWSService';
 import '../styles/personal-messages.scss';
 
+const MESSAGES_PAGE_SIZE = 50;
+
 const getContactsKey = () => `personalContacts_${userState.user?.id || 'guest'}`;
+
+const mapApiMessage = (m, myId) => ({
+  id: m.id,
+  sender: m.from_user_id === myId ? myId : m.from_user_id,
+  text: m.message,
+  timestamp: m.timestamp,
+  read: m.read === true
+});
 
 const decodeHtmlEntities = (text) => {
   if (typeof text !== 'string') return '';
@@ -26,11 +37,16 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
   const [contactsLoading, setContactsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [chatReady, setChatReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesListRef = useRef(null);
+  const initialScrollDoneRef = useRef(false);
   const searchInputRef = useRef(null);
   const markedDeliveredRef = useRef({});
   const isModalOpenRef = useRef(false);
@@ -100,6 +116,56 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     }, 150);
   }, [isOpen, refreshContacts]);
 
+  const markDeliveredForContact = useCallback(async (contactId, refreshFromServer = true) => {
+    const token = localStorage.getItem('token');
+    if (!token || !contactId) return;
+
+    if (refreshFromServer) {
+      try {
+        await axios.post(
+          `${API_URL}/api/users/messages/mark-delivered/${encodeURIComponent(contactId)}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (e) {
+        console.warn('mark-delivered failed:', e);
+      }
+    }
+
+    setContacts(prev => {
+      const next = Array.isArray(prev)
+        ? prev.map(c => {
+            if (String(c.id) !== String(contactId)) return c;
+            return {
+              ...c,
+              undelivered_received_count: 0
+            };
+          })
+        : [];
+      try {
+        localStorage.setItem(getContactsKey(), JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+  }, []);
+
+  const markReadForContact = useCallback(async (contactId, refreshFromServer = true) => {
+    const token = localStorage.getItem('token');
+    if (!token || !contactId) return;
+
+    if (!refreshFromServer) return;
+
+    try {
+      await axios.post(
+        `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(contactId)}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (e) {
+      console.warn('mark-read failed:', e);
+    }
+  }, []);
+
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth <= 768);
     checkMobile();
@@ -158,49 +224,33 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
         console.warn('mark delivered/read failed:', e);
       }
     })();
-  }, [isOpen, selectedUser]);
+  }, [isOpen, selectedUser, markDeliveredForContact, markReadForContact]);
+
+  const handleMessagesRead = useCallback((data) => {
+    const { from: readerId, messageIds } = data;
+    if (!readerId || !Array.isArray(messageIds) || messageIds.length === 0) return;
+
+    const idSet = new Set(messageIds);
+
+    setConversations(prev => {
+      const msgs = prev[readerId];
+      if (!msgs) return prev;
+      return {
+        ...prev,
+        [readerId]: msgs.map(m => (idSet.has(m.id) ? { ...m, read: true } : m))
+      };
+    });
+
+    scheduleRefreshContacts();
+  }, [scheduleRefreshContacts]);
 
   useEffect(() => {
     if (!isOpen) return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    const loadAllHistory = async () => {
-      try {
-        const savedContacts = localStorage.getItem(getContactsKey());
-        if (!savedContacts) return;
-        const contactList = JSON.parse(savedContacts);
-        if (!contactList || contactList.length === 0) return;
-
-        const myId = userState.user?.id;
-        const newConversations = {};
-
-        await Promise.all(contactList.map(async (contact) => {
-          try {
-            const response = await axios.get(
-              `${API_URL}/api/users/messages/${contact.id}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (Array.isArray(response.data) && response.data.length > 0) {
-              newConversations[contact.id] = response.data.map(m => ({
-                sender: m.from_user_id === myId ? myId : m.from_user_id,
-                text: m.message,
-                timestamp: m.timestamp
-              }));
-            }
-          } catch (_) {}
-        }));
-
-        if (Object.keys(newConversations).length > 0) {
-          setConversations(prev => ({ ...prev, ...newConversations }));
-        }
-      } catch (error) {
-        console.error('Error loading all history:', error);
-      }
+    PersonalWSService.on('personalMessagesRead', handleMessagesRead);
+    return () => {
+      PersonalWSService.off('personalMessagesRead', handleMessagesRead);
     };
-
-    loadAllHistory();
-  }, [isOpen]);
+  }, [isOpen, handleMessagesRead]);
 
   const handleReceiveMessage = useCallback((data) => {
     const { from, fromUsername, message: text, timestamp } = data;
@@ -249,7 +299,12 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     setConversations(prev => {
       const next = { ...prev };
       if (!next[from]) next[from] = [];
-      next[from] = [...next[from], { sender: from, text, timestamp: timestamp || Date.now() }];
+      next[from] = [...next[from], {
+        sender: from,
+        text,
+        timestamp: timestamp || Date.now(),
+        read: false
+      }];
       return next;
     });
 
@@ -264,32 +319,46 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     if (userState.incomingPersonalMessages.length === 0) return;
     const incoming = userState.consumeIncomingPersonalMessages();
     incoming.forEach(data => handleReceiveMessage(data));
+    const hasFromSelected = incoming.some(
+      data => selectedUser?.id && String(data.from) === String(selectedUser.id)
+    );
+    if (hasFromSelected) {
+      markDeliveredForContact(selectedUser.id, true);
+      markReadForContact(selectedUser.id, true);
+    }
     clearNotifications();
-  }, [isOpen, selectedUser, userState.incomingPersonalMessages.length, handleReceiveMessage]);
+  }, [isOpen, selectedUser, userState.incomingPersonalMessages.length, handleReceiveMessage, markDeliveredForContact, markReadForContact]);
 
   useEffect(() => {
     if (!selectedUser) return;
+
+    const contactId = selectedUser.id;
+    initialScrollDoneRef.current = false;
+    setChatReady(false);
+    setHasMoreOlder(false);
+    setConversations(prev => ({
+      ...prev,
+      [contactId]: []
+    }));
 
     const loadHistory = async () => {
       setHistoryLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/api/users/messages/${selectedUser.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.get(
+          `${API_URL}/api/users/messages/${contactId}?limit=${MESSAGES_PAGE_SIZE}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (Array.isArray(response.data)) {
           const myId = userState.user?.id;
-          const mapped = response.data.map(m => ({
-            sender: m.from_user_id === myId ? myId : m.from_user_id,
-            text: m.message,
-            timestamp: m.timestamp
-          }));
+          const mapped = response.data.map(m => mapApiMessage(m, myId));
 
           setConversations(prev => ({
             ...prev,
-            [selectedUser.id]: mapped
+            [contactId]: mapped
           }));
+          setHasMoreOlder(response.data.length === MESSAGES_PAGE_SIZE);
         }
       } catch (error) {
         console.error('Error loading history:', error);
@@ -301,11 +370,71 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     loadHistory();
   }, [selectedUser]);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  useLayoutEffect(() => {
+    if (!selectedUser || historyLoading || initialScrollDoneRef.current) return;
+    const el = messagesListRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
     }
-  }, [selectedUser, conversations]);
+    initialScrollDoneRef.current = true;
+    setChatReady(true);
+  }, [selectedUser?.id, historyLoading, conversations[selectedUser?.id]]);
+
+  const handleMessagesScroll = useCallback(async () => {
+    const el = messagesListRef.current;
+    if (!el || !selectedUser || loadingOlder || !hasMoreOlder || historyLoading) return;
+    if (el.scrollTop > 80) return;
+
+    const msgs = conversations[selectedUser.id];
+    if (!msgs || msgs.length === 0) return;
+
+    const oldest = msgs[0];
+    if (!oldest?.timestamp) return;
+
+    const prevHeight = el.scrollHeight;
+    const prevScrollTop = el.scrollTop;
+
+    setLoadingOlder(true);
+    try {
+      const token = localStorage.getItem('token');
+      const myId = userState.user?.id;
+      const response = await axios.get(
+        `${API_URL}/api/users/messages/${selectedUser.id}?limit=${MESSAGES_PAGE_SIZE}&before=${oldest.timestamp}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        const older = response.data.map(m => mapApiMessage(m, myId));
+        setConversations(prev => ({
+          ...prev,
+          [selectedUser.id]: [...older, ...(prev[selectedUser.id] || [])]
+        }));
+        setHasMoreOlder(response.data.length === MESSAGES_PAGE_SIZE);
+
+        requestAnimationFrame(() => {
+          if (messagesListRef.current) {
+            messagesListRef.current.scrollTop =
+              messagesListRef.current.scrollHeight - prevHeight + prevScrollTop;
+          }
+        });
+      } else {
+        setHasMoreOlder(false);
+      }
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [selectedUser, loadingOlder, hasMoreOlder, historyLoading, conversations]);
+
+  useEffect(() => {
+    if (!chatReady || !messagesEndRef.current || !messagesListRef.current) return;
+    const el = messagesListRef.current;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (isNearBottom) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [conversations, selectedUser, chatReady]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -357,71 +486,6 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     setSearchQuery('');
   };
 
-  const markDeliveredForContact = async (contactId, refreshFromServer = true) => {
-    const token = localStorage.getItem('token');
-    if (!token || !contactId) return;
-
-    if (refreshFromServer) {
-      try {
-        await axios.post(
-          `${API_URL}/api/users/messages/mark-delivered/${encodeURIComponent(contactId)}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } catch (e) {
-        console.warn('mark-delivered failed:', e);
-      }
-    }
-
-    setContacts(prev => {
-      const next = Array.isArray(prev)
-        ? prev.map(c => {
-            if (String(c.id) !== String(contactId)) return c;
-            return {
-              ...c,
-              undelivered_received_count: 0
-            };
-          })
-        : [];
-      try {
-        localStorage.setItem(getContactsKey(), JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-  };
-
-  const markReadForContact = async (contactId, refreshFromServer = true) => {
-    const token = localStorage.getItem('token');
-    if (!token || !contactId) return;
-
-    if (!refreshFromServer) return;
-
-    try {
-      await axios.post(
-        `${API_URL}/api/users/messages/mark-read/${encodeURIComponent(contactId)}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setContacts(prev => {
-        const next = Array.isArray(prev)
-          ? prev.map(c => {
-              if (String(c.id) !== String(contactId)) return c;
-              return {
-                ...c,
-                undelivered_sent_count: 0
-              };
-            })
-          : [];
-        try {
-          localStorage.setItem(getContactsKey(), JSON.stringify(next));
-        } catch (_) {}
-        return next;
-      });
-    } catch (e) {
-      console.warn('mark-read failed:', e);
-    }
-  };
-
   const handleSendMessage = async () => {
     if (!selectedUser || !message.trim() || loading) return;
 
@@ -432,18 +496,41 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
     setConversations(prev => {
       const next = { ...prev };
       if (!next[selectedUser.id]) next[selectedUser.id] = [];
-      next[selectedUser.id] = [...next[selectedUser.id], { sender: myId, text: trimmed, timestamp }];
+      next[selectedUser.id] = [
+        ...next[selectedUser.id],
+        { sender: myId, text: trimmed, timestamp, read: false }
+      ];
       return next;
     });
     setMessage('');
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/api/users/messages`,
         { toUserId: selectedUser.id, message: trimmed, timestamp },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      if (response.data?.id) {
+        setConversations(prev => {
+          const msgs = prev[selectedUser.id];
+          if (!msgs) return prev;
+          const updated = [...msgs];
+          for (let i = updated.length - 1; i >= 0; i--) {
+            if (
+              updated[i].sender === myId &&
+              updated[i].timestamp === timestamp &&
+              updated[i].text === trimmed &&
+              !updated[i].id
+            ) {
+              updated[i] = { ...updated[i], id: response.data.id };
+              break;
+            }
+          }
+          return { ...prev, [selectedUser.id]: updated };
+        });
+      }
 
       setContacts(prev => {
         const next = Array.isArray(prev) ? [...prev] : [];
@@ -594,7 +681,9 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                   ) : (
                     <ul className="users-list contacts-list">
                       {sortedContacts.map((user) => {
-                        const last = (conversations[user.id] || []).slice(-1)[0];
+                        const last = user.last_message
+                          ? { text: user.last_message }
+                          : (conversations[user.id] || []).slice(-1)[0];
                         const unreadForUs =
                           typeof user.undelivered_received_count === 'number'
                             ? user.undelivered_received_count
@@ -670,17 +759,26 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                 )}
 
                 <>
-                  <div className="messages-list">
-                    {historyLoading ? (
-                      <div className="empty-state"><p>Загрузка истории...</p></div>
-                    ) : currentMessages.length === 0 ? (
+                  {historyLoading && !chatReady && (
+                    <div className="empty-state"><p>Загрузка истории...</p></div>
+                  )}
+                  <div
+                    ref={messagesListRef}
+                    className={`messages-list${chatReady ? ' chat-ready' : ''}`}
+                    onScroll={handleMessagesScroll}
+                  >
+                    {currentMessages.length === 0 && !historyLoading ? (
                       <div className="empty-state">
                         <span className="empty-icon">💬</span>
                         <p>Пока нет сообщений</p>
                         <p className="empty-hint">Начните разговор</p>
                       </div>
                     ) : (
-                      currentMessages.map((msg, index) => {
+                      <>
+                        {loadingOlder && (
+                          <div className="messages-loading-older">Загрузка...</div>
+                        )}
+                        {currentMessages.map((msg, index) => {
                         const isSentByMe = msg.sender === userState.user?.id || msg.sender === 'me';
                         const timestamp = typeof msg.timestamp === 'number' ? msg.timestamp : parseInt(msg.timestamp);
                         const messageDate = !isNaN(timestamp) ? new Date(timestamp) : new Date();
@@ -689,17 +787,26 @@ const PersonalMessagesModal = observer(({ isOpen, onClose, initialUser }) => {
                           ? messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                           : '00:00';
 
+                        const showUnreadDot = isSentByMe && msg.read !== true;
+
                         return (
-                          <div key={index} className={`message ${isSentByMe ? 'sent' : 'received'}`}>
+                          <div
+                            key={msg.id || `${msg.timestamp}-${index}`}
+                            className={`message ${isSentByMe ? 'sent' : 'received'}`}
+                          >
                             <div className="message-content">
                               <p>{decodeHtmlEntities(msg.text)}</p>
-                              <span className="message-time">
-                                {formattedTime}
-                              </span>
+                              <div className="message-time-row">
+                                <span className="message-time">{formattedTime}</span>
+                                {showUnreadDot && (
+                                  <span className="message-read-dot" title="Не прочитано" />
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
-                      })
+                      })}
+                      </>
                     )}
                     <div ref={messagesEndRef} />
                   </div>
