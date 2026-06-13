@@ -120,6 +120,8 @@ const ColoringPage = () => {
   const isDrawingRef = useRef(false);
   const regionMaskRef = useRef(null);
   const brushPointsRef = useRef([]);
+  const finishBrushStrokeRef = useRef(() => {});
+  const isPinchingRef = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -319,8 +321,15 @@ const ColoringPage = () => {
   }, [selectedPage, loadImageToCanvas]);
 
   useEffect(() => {
+    if (!selectedPage) return;
+
     const container = containerRef.current;
     if (!container) return;
+
+    const touchOptions = { passive: false, capture: true };
+
+    const getTouchTargets = () =>
+      [container, wrapperRef.current, canvasRef.current].filter(Boolean);
 
     const handleWheel = (e) => {
       if (Math.abs(e.deltaY) > 0) {
@@ -354,6 +363,7 @@ const ColoringPage = () => {
         initialZoomRef.current = zoomRef.current;
         initialPanRef.current = { ...panRef.current };
         initialCenterRef.current = getCenter(e.touches[0], e.touches[1]);
+        isPinchingRef.current = true;
         setIsPinching(true);
       }
     };
@@ -389,24 +399,38 @@ const ColoringPage = () => {
     const handleTouchEnd = (e) => {
       if (e.touches.length < 2) {
         initialDistanceRef.current = 0;
-        setTimeout(() => setIsPinching(false), 150);
+        if (e.touches.length === 0) {
+          isPinchingRef.current = false;
+          setIsPinching(false);
+        } else {
+          setTimeout(() => {
+            isPinchingRef.current = false;
+            setIsPinching(false);
+          }, 150);
+        }
       }
     };
 
+    const targets = getTouchTargets();
+
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchcancel', handleTouchEnd);
+    targets.forEach((target) => {
+      target.addEventListener('touchstart', handleTouchStart, touchOptions);
+      target.addEventListener('touchmove', handleTouchMove, touchOptions);
+      target.addEventListener('touchend', handleTouchEnd, touchOptions);
+      target.addEventListener('touchcancel', handleTouchEnd, touchOptions);
+    });
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchcancel', handleTouchEnd);
+      targets.forEach((target) => {
+        target.removeEventListener('touchstart', handleTouchStart, touchOptions);
+        target.removeEventListener('touchmove', handleTouchMove, touchOptions);
+        target.removeEventListener('touchend', handleTouchEnd, touchOptions);
+        target.removeEventListener('touchcancel', handleTouchEnd, touchOptions);
+      });
     };
-  }, []);
+  }, [selectedPage, imageLoaded]);
 
   const handleZoomIn = useCallback(() => {
     setZoom((prev) => {
@@ -452,7 +476,7 @@ const ColoringPage = () => {
 
   const handleCanvasClick = useCallback(
     (e) => {
-      if (!imageLoaded || isPinching || paintMode !== 'fill') return;
+      if (!imageLoaded || isPinching || isPinchingRef.current || paintMode !== 'fill') return;
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -471,12 +495,12 @@ const ColoringPage = () => {
     brushPointsRef.current = [];
   }, []);
 
-  const finishBrushStrokeRef = useRef(finishBrushStroke);
   finishBrushStrokeRef.current = finishBrushStroke;
 
   const handleCanvasPointerDown = useCallback(
     (e) => {
-      if (!imageLoaded || isPinching || paintMode !== 'brush') return;
+      if (!imageLoaded || isPinching || isPinchingRef.current || paintMode !== 'brush') return;
+      if (e.pointerType === 'touch' && !e.isPrimary) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -832,7 +856,7 @@ const ColoringPage = () => {
             willReadFrequently={true}
             style={{
               cursor: imageLoaded ? 'crosshair' : 'wait',
-              touchAction: paintMode === 'brush' ? 'none' : 'auto',
+              touchAction: 'none',
             }}
           />
         </div>
