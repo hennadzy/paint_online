@@ -25,6 +25,8 @@ export function getMobileCanvasViewMetrics(container, wrapper, zoom = canvasStat
 
   const panX = canvasState.viewPanX;
   const panY = canvasState.viewPanY;
+  const rawScrollX = panX - minPanX;
+  const rawScrollY = panY - minPanY;
 
   return {
     contentWidth,
@@ -39,8 +41,8 @@ export function getMobileCanvasViewMetrics(container, wrapper, zoom = canvasStat
     maxPanY,
     panX,
     panY,
-    scrollX: panX - minPanX,
-    scrollY: panY - minPanY,
+    scrollX: scrollableX > 0 ? scrollableX - rawScrollX : 0,
+    scrollY: scrollableY > 0 ? scrollableY - rawScrollY : 0,
   };
 }
 
@@ -61,8 +63,8 @@ export function panFromScroll(metrics, scrollX, scrollY) {
   }
 
   return clampPanToMetrics(
-    metrics.minPanX + scrollX,
-    metrics.minPanY + scrollY,
+    metrics.minPanX + (metrics.scrollableX - scrollX),
+    metrics.minPanY + (metrics.scrollableY - scrollY),
     metrics
   );
 }
