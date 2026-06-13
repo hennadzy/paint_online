@@ -3,6 +3,12 @@ import { reaction } from 'mobx';
 import toolState from '../store/toolState';
 import selectionState from '../store/selectionState';
 import { getTransformCursor } from '../utils/selectionSession';
+import {
+  HAND_GRAB_STYLE,
+  LASSO_CURSOR_STYLE,
+  MOVE_CURSOR_STYLE,
+  SELECT_CURSOR_STYLE,
+} from '../utils/toolCursors';
 
 const CURSOR_NONE_TOOLS = ['brush', 'eraser', 'rect', 'circle', 'line', 'arrow', 'polygon'];
 const SELECTION_TOOLS = ['select', 'lasso'];
@@ -46,6 +52,12 @@ function drawCursorOverlay(ctx, canvas, x, y) {
   }
 }
 
+function getSelectionToolCursor(toolName) {
+  if (toolName === 'select') return SELECT_CURSOR_STYLE;
+  if (toolName === 'lasso') return LASSO_CURSOR_STYLE;
+  return 'crosshair';
+}
+
 function applyCanvasCursorClass(canvas, toolName) {
   TOOL_CURSOR_CLASSES.forEach((cls) => canvas.classList.remove(cls));
   if (toolName) {
@@ -54,10 +66,14 @@ function applyCanvasCursorClass(canvas, toolName) {
 
   if (CURSOR_NONE_TOOLS.includes(toolName)) {
     canvas.style.cursor = 'none';
-  } else if (toolName === 'hand' || toolName === 'text') {
+  } else if (toolName === 'hand') {
+    canvas.style.cursor = HAND_GRAB_STYLE;
+  } else if (toolName === 'text') {
     canvas.style.cursor = '';
   } else if (SELECTION_TOOLS.includes(toolName)) {
-    canvas.style.cursor = selectionState.transformSessionActive ? '' : 'crosshair';
+    canvas.style.cursor = selectionState.transformSessionActive
+      ? 'default'
+      : getSelectionToolCursor(toolName);
   } else {
     canvas.style.cursor = 'crosshair';
   }
@@ -88,7 +104,13 @@ export function useCanvasCursor(canvasRef, cursorRef) {
       ) {
         const { x, y } = getCoords(e);
         const transformCursor = getTransformCursor(x, y, canvas.width);
-        canvas.style.cursor = transformCursor || 'default';
+        if (transformCursor === 'move') {
+          canvas.style.cursor = MOVE_CURSOR_STYLE;
+        } else if (transformCursor && transformCursor !== 'default') {
+          canvas.style.cursor = transformCursor;
+        } else {
+          canvas.style.cursor = 'default';
+        }
         return;
       }
 
@@ -140,7 +162,7 @@ export function useCanvasCursor(canvasRef, cursorRef) {
     );
 
     const disposeSelection = reaction(
-      () => selectionState.transformSessionActive,
+      () => [selectionState.transformSessionActive, selectionState.previewX, selectionState.previewY],
       () => {
         const canvas = canvasRef.current;
         if (!canvas || !SELECTION_TOOLS.includes(toolState.toolName)) return;

@@ -1,6 +1,7 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
 import { clampPanToMetrics, getMobileCanvasViewMetrics } from "../utils/canvasViewMetrics";
+import { HAND_GRABBING_STYLE } from "../utils/toolCursors";
 
 export default class Hand extends Tool {
   constructor(canvas, socket, id, username) {
@@ -33,6 +34,7 @@ export default class Hand extends Tool {
     document.removeEventListener("pointerup", this.pointerUpHandlerBound);
     this.isPanning = false;
     this.canvas.classList.remove("hand-grabbing");
+    this.canvas.style.cursor = "";
   }
 
   pointerDownHandler(e) {
@@ -44,6 +46,7 @@ export default class Hand extends Tool {
     this.lastClientX = e.clientX;
     this.lastClientY = e.clientY;
     this.canvas.classList.add("hand-grabbing");
+    this.canvas.style.cursor = HAND_GRABBING_STYLE;
     e.target.setPointerCapture?.(e.pointerId);
   }
 
@@ -62,6 +65,7 @@ export default class Hand extends Tool {
     if (!this.isPanning) return;
     this.isPanning = false;
     this.canvas.classList.remove("hand-grabbing");
+    this.canvas.style.cursor = "";
   }
 
   pan(dx, dy) {

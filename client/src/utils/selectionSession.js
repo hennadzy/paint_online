@@ -5,7 +5,6 @@ import {
   eraseMaskFromBuffer,
   imageDataToCanvas,
   pointInMask,
-  pointInRect,
 } from "./selectionUtils";
 
 export const HANDLE_SIZE = 8;
@@ -96,11 +95,36 @@ function getHandlePositions() {
 
 export function isPointInSelection(px, py, canvasWidth) {
   if (!selectionState.hasSelection) return false;
-  if (selectionState.mask) {
-    return pointInMask(px, py, selectionState.mask, canvasWidth);
+
+  const { x, y, previewX, previewY, width, height, transform, mask } = selectionState;
+  const cx = previewX + width / 2;
+  const cy = previewY + height / 2;
+  const rad = (-transform.angle * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const scaleX = transform.scaleX || 1;
+  const scaleY = transform.scaleY || 1;
+
+  const dx = px - cx;
+  const dy = py - cy;
+  const localX = (dx * cos - dy * sin) / scaleX;
+  const localY = (dx * sin + dy * cos) / scaleY;
+
+  const origCx = x + width / 2;
+  const origCy = y + height / 2;
+  const maskX = origCx + localX;
+  const maskY = origCy + localY;
+
+  if (mask && canvasWidth) {
+    return pointInMask(maskX, maskY, mask, canvasWidth);
   }
-  const bounds = getTransformedBounds();
-  return pointInRect(px, py, bounds);
+
+  return (
+    maskX >= x &&
+    maskX < x + width &&
+    maskY >= y &&
+    maskY < y + height
+  );
 }
 
 export function hitTestTransformTarget(px, py, canvasWidth = 0) {
@@ -293,9 +317,8 @@ export function createTransformSessionHandlers(tool) {
 
 export function getTransformCursor(px, py, canvasWidth) {
   if (!selectionState.transformSessionActive || !selectionState.hasSelection) return null;
-  const hit = hitTestTransformTarget(px, py);
+  const hit = hitTestTransformTarget(px, py, canvasWidth);
   if (hit) return hit.cursor;
-  if (isPointInSelection(px, py, canvasWidth)) return "move";
   return "default";
 }
 
