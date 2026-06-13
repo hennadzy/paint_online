@@ -1,5 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import canvasState from "./canvasState";
+import selectionState from "./selectionState";
+import { commitSelectionSession } from "../utils/selectionSession";
 
 class ToolState {
   tool = null;
@@ -23,7 +25,7 @@ class ToolState {
   };
 
   groups = {
-    navigation: ["hand", "move", "select", "lasso", "transform"],
+    navigation: ["hand", "select", "lasso"],
     brush: ["brush", "line", "arrow"],
     shapes: ["circle", "rect", "polygon"],
     color: ["fill", "pipette"]
@@ -56,6 +58,15 @@ class ToolState {
   }
 
   setTool(tool, toolNameOverride) {
+    if (selectionState.transformSessionActive) {
+      const canvas = canvasState.canvas || this.tool?.canvas;
+      if (canvas) {
+        commitSelectionSession(canvas);
+      } else {
+        selectionState.clear();
+      }
+    }
+
     this.tool?.destroyEvents?.();
 
     this.tool = tool;

@@ -574,13 +574,23 @@ drawPolygonStroke(ctx, stroke) {
       }
 
       const cursorOverlay = document.querySelector('.cursor-overlay');
-      if (cursorOverlay) {
+      const selectionOverlay = document.querySelector('.selection-overlay');
+      const overlaySize = (width, height) => {
+        if (cursorOverlay) {
+          cursorOverlay.style.width = `${width}px`;
+          cursorOverlay.style.height = `${height}px`;
+        }
+        if (selectionOverlay) {
+          selectionOverlay.style.width = `${width}px`;
+          selectionOverlay.style.height = `${height}px`;
+        }
+      };
+
+      if (cursorOverlay || selectionOverlay) {
         if (isMobile) {
-          cursorOverlay.style.width = `${baseWidth}px`;
-          cursorOverlay.style.height = `${baseHeight}px`;
+          overlaySize(baseWidth, baseHeight);
         } else {
-          cursorOverlay.style.width = `${720 * this.zoom}px`;
-          cursorOverlay.style.height = `${480 * this.zoom}px`;
+          overlaySize(720 * this.zoom, 480 * this.zoom);
         }
       }
     }

@@ -1,59 +1,14 @@
 import { useEffect } from "react";
 import { reaction } from "mobx";
 import selectionState from "../store/selectionState";
-import toolState from "../store/toolState";
 import {
   drawMarchingAnts,
   imageDataToCanvas,
 } from "../utils/selectionUtils";
-import { HANDLE_SIZE, ROTATE_HANDLE_OFFSET } from "../tools/Transform";
-
-function drawTransformHandles(ctx, bounds) {
-  const { x, y, width, height } = bounds;
-  const cx = x + width / 2;
-  const cy = y + height / 2;
-  const handles = [
-    { x, y },
-    { x: x + width, y },
-    { x, y: y + height },
-    { x: x + width, y: y + height },
-    { x: cx, y },
-    { x: cx, y: y + height },
-    { x: x + width, y: cy },
-    { x, y: cy },
-    { x: cx, y: y - ROTATE_HANDLE_OFFSET },
-  ];
-
-  ctx.save();
-  ctx.strokeStyle = "#4a90d9";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([]);
-  ctx.strokeRect(x + 0.5, y + 0.5, width, height);
-
-  ctx.strokeStyle = "#4a90d9";
-  ctx.beginPath();
-  ctx.moveTo(cx, y);
-  ctx.lineTo(cx, y - ROTATE_HANDLE_OFFSET);
-  ctx.stroke();
-
-  handles.forEach((handle) => {
-    ctx.fillStyle = "#fff";
-    ctx.strokeStyle = "#4a90d9";
-    ctx.fillRect(
-      handle.x - HANDLE_SIZE / 2,
-      handle.y - HANDLE_SIZE / 2,
-      HANDLE_SIZE,
-      HANDLE_SIZE
-    );
-    ctx.strokeRect(
-      handle.x - HANDLE_SIZE / 2 + 0.5,
-      handle.y - HANDLE_SIZE / 2 + 0.5,
-      HANDLE_SIZE,
-      HANDLE_SIZE
-    );
-  });
-  ctx.restore();
-}
+import {
+  drawTransformHandles,
+  getTransformedBounds,
+} from "../utils/selectionSession";
 
 function drawSelectionPreview(ctx, canvas) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -79,24 +34,24 @@ function drawSelectionPreview(ctx, canvas) {
     return;
   }
 
-  if (!selectionState.hasSelection && !selectionState.draftRect && !selectionState.draftPath) {
+  if (!selectionState.hasSelection) {
     return;
   }
 
-  if (selectionState.hasSelection) {
-    const { previewX, previewY, width, height, imageData, transform, path, type } = selectionState;
+  const { previewX, previewY, width, height, imageData, transform, path, type } = selectionState;
 
-    if (imageData && (selectionState.isDragging || selectionState.isTransforming)) {
-      const srcCanvas = imageDataToCanvas(imageData);
-      ctx.save();
-      ctx.translate(previewX + width / 2, previewY + height / 2);
-      ctx.rotate((transform.angle * Math.PI) / 180);
-      ctx.scale(transform.scaleX, transform.scaleY);
-      ctx.drawImage(srcCanvas, -width / 2, -height / 2);
-      ctx.restore();
-    }
+  if (imageData && selectionState.hasCut) {
+    const srcCanvas = imageDataToCanvas(imageData);
+    ctx.save();
+    ctx.translate(previewX + width / 2, previewY + height / 2);
+    ctx.rotate((transform.angle * Math.PI) / 180);
+    ctx.scale(transform.scaleX, transform.scaleY);
+    ctx.drawImage(srcCanvas, -width / 2, -height / 2);
+    ctx.restore();
+  }
 
-    const rect = { x: previewX, y: previewY, width, height };
+  if (selectionState.transformSessionActive) {
+    const bounds = getTransformedBounds();
     const displayPath =
       type === "lasso" && path.length > 2
         ? path.map((p) => ({
@@ -105,11 +60,11 @@ function drawSelectionPreview(ctx, canvas) {
           }))
         : null;
 
-    drawMarchingAnts(ctx, rect, selectionState.marchingAntsOffset, displayPath);
-
-    if (toolState.toolName === "transform" && selectionState.isTransforming) {
-      drawTransformHandles(ctx, rect);
-    }
+    drawMarchingAnts(ctx, bounds, selectionState.marchingAntsOffset, displayPath);
+    drawTransformHandles(ctx);
+  } else {
+    const rect = { x: previewX, y: previewY, width, height };
+    drawMarchingAnts(ctx, rect, selectionState.marchingAntsOffset);
   }
 }
 
@@ -152,9 +107,9 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
         selectionState.draftRect,
         selectionState.draftPath?.length,
         selectionState.isDragging,
-        selectionState.isTransforming,
+        selectionState.transformSessionActive,
+        selectionState.hasCut,
         selectionState.transform,
-        toolState.toolName,
       ],
       () => {
         const overlay = overlayRef.current;

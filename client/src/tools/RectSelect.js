@@ -10,12 +10,17 @@ import {
   getSelectionMode,
   normalizeRect,
 } from "../utils/selectionUtils";
+import {
+  createTransformSessionHandlers,
+  enterTransformSession,
+} from "../utils/selectionSession";
 
 export default class RectSelect extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.startX = 0;
     this.startY = 0;
+    this.transformSession = createTransformSessionHandlers(this);
   }
 
   listen() {
@@ -34,12 +39,17 @@ export default class RectSelect extends Tool {
     this.canvas.removeEventListener("pointerdown", this.pointerDownHandlerBound);
     document.removeEventListener("pointermove", this.pointerMoveHandlerBound);
     document.removeEventListener("pointerup", this.pointerUpHandlerBound);
+    this.transformSession.destroy();
     selectionState.clearDraft();
   }
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
     if (e.button !== 0) return;
+
+    if (selectionState.transformSessionActive) {
+      if (this.transformSession.pointerDown(e)) return;
+    }
 
     e.preventDefault();
     this.mouseDown = true;
@@ -51,6 +61,11 @@ export default class RectSelect extends Tool {
   }
 
   pointerMoveHandler(e) {
+    if (selectionState.transformSessionActive && this.mouseDown) {
+      this.transformSession.pointerMove(e);
+      return;
+    }
+
     if (!this.mouseDown) return;
 
     const { x, y } = this.getCanvasCoordinates(e);
@@ -58,6 +73,11 @@ export default class RectSelect extends Tool {
   }
 
   pointerUpHandler(e) {
+    if (selectionState.transformSessionActive && this.mouseDown) {
+      this.transformSession.pointerUp();
+      return;
+    }
+
     if (!this.mouseDown) return;
     this.mouseDown = false;
 
@@ -68,6 +88,7 @@ export default class RectSelect extends Tool {
     if (rect.width < 2 || rect.height < 2) return;
 
     this.finalizeSelection(rect, getSelectionMode(e));
+    enterTransformSession();
   }
 
   finalizeSelection(rect, mode) {

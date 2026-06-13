@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { reaction } from 'mobx';
 import toolState from '../store/toolState';
+import selectionState from '../store/selectionState';
+import { getTransformCursor } from '../utils/selectionSession';
 
 const CURSOR_NONE_TOOLS = ['brush', 'eraser', 'rect', 'circle', 'line', 'arrow', 'polygon'];
-const NAV_TOOLS = ['hand', 'move', 'select', 'lasso', 'transform'];
+const SELECTION_TOOLS = ['select', 'lasso'];
 
 const TOOL_CURSOR_CLASSES = [
   'brush-cursor',
@@ -13,10 +15,8 @@ const TOOL_CURSOR_CLASSES = [
   'line-cursor',
   'text-cursor',
   'hand-cursor',
-  'move-cursor',
   'select-cursor',
   'lasso-cursor',
-  'transform-cursor',
 ];
 
 function drawCursorOverlay(ctx, canvas, x, y) {
@@ -54,10 +54,10 @@ function applyCanvasCursorClass(canvas, toolName) {
 
   if (CURSOR_NONE_TOOLS.includes(toolName)) {
     canvas.style.cursor = 'none';
-  } else if (NAV_TOOLS.includes(toolName)) {
+  } else if (toolName === 'hand' || toolName === 'text') {
     canvas.style.cursor = '';
-  } else if (toolName === 'text') {
-    canvas.style.cursor = '';
+  } else if (SELECTION_TOOLS.includes(toolName)) {
+    canvas.style.cursor = selectionState.transformSessionActive ? '' : 'crosshair';
   } else {
     canvas.style.cursor = 'crosshair';
   }
@@ -69,16 +69,38 @@ export function useCanvasCursor(canvasRef, cursorRef) {
     const cursor = cursorRef.current;
     if (!canvas || !cursor) return;
 
-    const handleMove = (e) => {
-      if (NAV_TOOLS.includes(toolState.toolName)) return;
-
+    const getCoords = (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+      };
+    };
+
+    const handleMove = (e) => {
+      if (toolState.toolName === 'hand') return;
+
+      if (
+        SELECTION_TOOLS.includes(toolState.toolName) &&
+        selectionState.transformSessionActive
+      ) {
+        const { x, y } = getCoords(e);
+        const transformCursor = getTransformCursor(x, y, canvas.width);
+        canvas.style.cursor = transformCursor || 'default';
+        return;
+      }
+
+      if (CURSOR_NONE_TOOLS.includes(toolState.toolName) || toolState.toolName === 'text') {
+        const { x, y } = getCoords(e);
+        const ctx = cursor.getContext('2d');
+        drawCursorOverlay(ctx, cursor, x, y);
+        return;
+      }
+
       const ctx = cursor.getContext('2d');
-      drawCursorOverlay(ctx, cursor, x, y);
+      ctx.clearRect(0, 0, cursor.width, cursor.height);
     };
 
     const clearCursor = () => {
@@ -100,7 +122,7 @@ export function useCanvasCursor(canvasRef, cursorRef) {
   }, [canvasRef, cursorRef]);
 
   useEffect(() => {
-    const dispose = reaction(
+    const disposeTool = reaction(
       () => toolState.toolName,
       (toolName) => {
         const canvas = canvasRef.current;
@@ -117,6 +139,18 @@ export function useCanvasCursor(canvasRef, cursorRef) {
       { fireImmediately: true }
     );
 
-    return dispose;
+    const disposeSelection = reaction(
+      () => selectionState.transformSessionActive,
+      () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !SELECTION_TOOLS.includes(toolState.toolName)) return;
+        applyCanvasCursorClass(canvas, toolState.toolName);
+      }
+    );
+
+    return () => {
+      disposeTool();
+      disposeSelection();
+    };
   }, [canvasRef, cursorRef]);
 }

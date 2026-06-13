@@ -210,7 +210,10 @@ const Canvas = observer(() => {
                       transform: `translate(${canvasState.viewPanX}px, ${canvasState.viewPanY}px) scale(${canvasState.viewZoom})`,
                       transformOrigin: 'center center',
                     }
-                  : undefined
+                  : {
+                      transform: `translate(${canvasState.viewPanX}px, ${canvasState.viewPanY}px)`,
+                      transformOrigin: 'center center',
+                    }
               }
             >
               <canvas ref={canvasRef} tabIndex={0} className="main-canvas" willReadFrequently={true} />

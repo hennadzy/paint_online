@@ -8,10 +8,8 @@ import Rect from '../tools/Rect';
 import Circle from '../tools/Circle';
 import Text from '../tools/Text';
 import Hand from '../tools/Hand';
-import Move from '../tools/Move';
 import RectSelect from '../tools/RectSelect';
 import Lasso from '../tools/Lasso';
-import Transform from '../tools/Transform';
 
 const TOOL_MAP = {
   b: [Brush, 'brush'],
@@ -21,10 +19,8 @@ const TOOL_MAP = {
   c: [Circle, 'circle'],
   t: [Text, 'text'],
   h: [Hand, 'hand'],
-  v: [Move, 'move'],
   m: [RectSelect, 'select'],
   q: [Lasso, 'lasso'],
-  w: [Transform, 'transform'],
   и: [Brush, 'brush'],
   у: [Eraser, 'eraser'],
   д: [Line, 'line'],
@@ -32,10 +28,8 @@ const TOOL_MAP = {
   с: [Circle, 'circle'],
   е: [Text, 'text'],
   р: [Hand, 'hand'],
-  м: [Move, 'move'],
   ь: [RectSelect, 'select'],
   й: [Lasso, 'lasso'],
-  ц: [Transform, 'transform'],
 };
 
 export function useCanvasKeyboard() {

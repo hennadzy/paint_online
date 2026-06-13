@@ -9,13 +9,16 @@ import {
   getMaskBounds,
   getSelectionMode,
 } from "../utils/selectionUtils";
-
-const CLOSE_DISTANCE = 12;
+import {
+  createTransformSessionHandlers,
+  enterTransformSession,
+} from "../utils/selectionSession";
 
 export default class Lasso extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.points = [];
+    this.transformSession = createTransformSessionHandlers(this);
   }
 
   listen() {
@@ -34,6 +37,7 @@ export default class Lasso extends Tool {
     this.canvas.removeEventListener("pointerdown", this.pointerDownHandlerBound);
     document.removeEventListener("pointermove", this.pointerMoveHandlerBound);
     document.removeEventListener("pointerup", this.pointerUpHandlerBound);
+    this.transformSession.destroy();
     this.points = [];
     selectionState.clearDraft();
   }
@@ -42,25 +46,24 @@ export default class Lasso extends Tool {
     if (this.isPinchingActive()) return;
     if (e.button !== 0) return;
 
+    if (selectionState.transformSessionActive) {
+      if (this.transformSession.pointerDown(e)) return;
+    }
+
     e.preventDefault();
+    this.mouseDown = true;
     const { x, y } = this.getCanvasCoordinates(e);
-
-    if (!this.mouseDown) {
-      this.mouseDown = true;
-      this.points = [{ x, y }];
-      selectionState.setDraftPath([...this.points]);
-      e.target.setPointerCapture?.(e.pointerId);
-      return;
-    }
-
-    const start = this.points[0];
-    const dist = Math.hypot(x - start.x, y - start.y);
-    if (this.points.length > 2 && dist < CLOSE_DISTANCE) {
-      this.closeSelection(e);
-    }
+    this.points = [{ x, y }];
+    selectionState.setDraftPath([...this.points]);
+    e.target.setPointerCapture?.(e.pointerId);
   }
 
   pointerMoveHandler(e) {
+    if (selectionState.transformSessionActive && this.mouseDown) {
+      this.transformSession.pointerMove(e);
+      return;
+    }
+
     if (!this.mouseDown) return;
 
     const { x, y } = this.getCanvasCoordinates(e);
@@ -72,26 +75,22 @@ export default class Lasso extends Tool {
   }
 
   pointerUpHandler(e) {
-    if (!this.mouseDown) return;
-
-    if (this.points.length > 10) {
-      const { x, y } = this.getCanvasCoordinates(e);
-      const start = this.points[0];
-      if (Math.hypot(x - start.x, y - start.y) < CLOSE_DISTANCE * 2) {
-        this.closeSelection(e);
-        return;
-      }
+    if (selectionState.transformSessionActive && this.mouseDown) {
+      this.transformSession.pointerUp();
+      return;
     }
-  }
 
-  closeSelection(e) {
+    if (!this.mouseDown) return;
     this.mouseDown = false;
+
     const path = [...this.points];
     this.points = [];
     selectionState.clearDraft();
 
     if (path.length < 3) return;
+
     this.finalizeSelection(path, getSelectionMode(e));
+    enterTransformSession();
   }
 
   finalizeSelection(path, mode) {

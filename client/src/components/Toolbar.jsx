@@ -14,10 +14,8 @@ import Pipette from "../tools/Pipette";
 import Polygon from "../tools/Polygon";
 import Arrow from "../tools/Arrow";
 import Hand from "../tools/Hand";
-import Move from "../tools/Move";
 import RectSelect from "../tools/RectSelect";
 import Lasso from "../tools/Lasso";
-import Transform from "../tools/Transform";
 
 const Toolbar = observer(() => {
   const [activeGroup, setActiveGroup] = useState(null);
@@ -29,6 +27,7 @@ const Toolbar = observer(() => {
       const isCanvas =
         event.target.closest(".main-canvas") ||
         event.target.closest(".cursor-overlay") ||
+        event.target.closest(".selection-overlay") ||
         event.target.closest(".canvas-wrapper") ||
         event.target.closest(".canvas-container");
       if (!isToolbar || isCanvas) {
@@ -62,10 +61,8 @@ const Toolbar = observer(() => {
 
   const toolClassMap = {
     hand: Hand,
-    move: Move,
     select: RectSelect,
     lasso: Lasso,
-    transform: Transform,
     brush: Brush,
     line: Line,
     arrow: Arrow,
@@ -80,10 +77,8 @@ const Toolbar = observer(() => {
 
   const navigationLabels = {
     hand: "Рука",
-    move: "Перемещение",
     select: "Выделение",
-    lasso: "Лассо",
-    transform: "Трансформация"
+    lasso: "Лассо"
   };
 
   const handleGroupClick = (group) => {
@@ -117,27 +112,6 @@ const Toolbar = observer(() => {
 
   return (
     <div className="toolbar" data-nosnippet>
-      <div className="toolbar__group">
-        <button
-          type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("navigation")} ${toolState.isToolInGroup(toolState.toolName, "navigation") ? "active" : ""}`}
-          onClick={() => handleGroupClick("navigation")}
-          onMouseDown={(e) => e.target.blur()}
-        >
-          <span className={`icon ${toolState.getLastInGroup("navigation")}`} />
-          <span className="tooltip">
-            {navigationLabels[toolState.getLastInGroup("navigation")]}
-          </span>
-        </button>
-        <div className={`toolbar__submenu ${activeGroup === "navigation" ? "show" : ""}`}>
-          {renderButton("hand", Hand, "Рука (H)")}
-          {renderButton("move", Move, "Перемещение (V)")}
-          {renderButton("select", RectSelect, "Выделение (M)")}
-          {renderButton("lasso", Lasso, "Лассо (Q)")}
-          {renderButton("transform", Transform, "Трансформация (W)")}
-        </div>
-      </div>
-
       <div className="toolbar__group">
         <button
           type="button"
@@ -218,6 +192,25 @@ const Toolbar = observer(() => {
         <span className="icon clear" />
         <span className="tooltip">Очистить</span>
       </button>
+
+      <div className="toolbar__group">
+        <button
+          type="button"
+          className={`toolbar__btn ${toolState.getLastInGroup("navigation")} ${toolState.isToolInGroup(toolState.toolName, "navigation") ? "active" : ""}`}
+          onClick={() => handleGroupClick("navigation")}
+          onMouseDown={(e) => e.target.blur()}
+        >
+          <span className={`icon ${toolState.getLastInGroup("navigation")}`} />
+          <span className="tooltip">
+            {navigationLabels[toolState.getLastInGroup("navigation")]}
+          </span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === "navigation" ? "show" : ""}`}>
+          {renderButton("hand", Hand, "Рука (H)")}
+          {renderButton("select", RectSelect, "Выделение (M)")}
+          {renderButton("lasso", Lasso, "Лассо (Q)")}
+        </div>
+      </div>
 
       <button
         type="button"

@@ -74,9 +74,9 @@ const HelpPage = () => {
             <ul itemProp="featureList">
               <li><strong>Рисование онлайн</strong> — создавайте цифровые рисунки прямо в браузере</li>
               <li><strong>Совместное рисование</strong> — рисуйте вместе с друзьями в реальном времени</li>
-              <li><strong>Богатый набор инструментов</strong>: рука, перемещение, выделение, лассо, трансформация, кисть, ластик, линия, стрелка, круг, прямоугольник, многоугольник, заливка, пипетка, текст</li>
+              <li><strong>Богатый набор инструментов</strong>: рука, выделение, лассо, кисть, ластик, линия, стрелка, круг, прямоугольник, многоугольник, заливка, пипетка, текст</li>
               <li><strong>Настройка инструментов</strong> — выбор цвета, размера, прозрачности для всех инструментов</li>
-              <li><strong>Горячие клавиши</strong> — быстрый доступ к инструментам (H, V, M, Q, W, B, E, L, R, C, T, G) и функциям (Ctrl+Z/Y, +/-)</li>
+              <li><strong>Горячие клавиши</strong> — быстрый доступ к инструментам (H, M, Q, B, E, L, R, C, T, G) и функциям (Ctrl+Z/Y, +/-)</li>
               <li><strong>Сетка и масштабирование</strong> — включайте сетку для точности, масштабируйте холст</li>
               <li><strong>Очистка холста</strong> — быстрое удаление всех элементов одной кнопкой</li>
               <li><strong>Отмена и повтор действий</strong> — полный контроль над процессом рисования</li>
@@ -108,10 +108,9 @@ const HelpPage = () => {
             <h3>Инструменты выделения и навигации</h3>
             <ul>
               <li><strong>Рука (H)</strong> — панорамирование холста. Зажмите ЛКМ и перетаскивайте для перемещения вида. Пиксели не изменяются.</li>
-              <li><strong>Перемещение (V)</strong> — перемещает выделенную область. Работает только при наличии активного выделения.</li>
-              <li><strong>Выделение (M)</strong> — прямоугольная область. Shift — добавить к выделению, Alt — вычесть из выделения.</li>
-              <li><strong>Лассо (Q)</strong> — свободное выделение произвольной формы. Замкните контур, кликнув рядом с начальной точкой.</li>
-              <li><strong>Трансформация (W)</strong> — рамка с узлами для масштабирования, поворота и искажения выделенной области. Alt + перетаскивание узла — искажение.</li>
+              <li><strong>Выделение (M)</strong> — прямоугольная область. После отпускания мыши сразу появляется рамка трансформации. Shift — добавить к выделению, Alt — вычесть. Перетаскивание внутри области перемещает выделение, узлы рамки — масштабируют и поворачивают.</li>
+              <li><strong>Лассо (Q)</strong> — свободное выделение. Контур замыкается при отпускании мыши, затем сразу доступны перемещение и трансформация.</li>
+              <li><strong>Завершение выделения</strong> — клик вне выделенной области или выбор другого инструмента применяет изменения и снимает выделение.</li>
             </ul>
           </div>
 
@@ -124,11 +123,6 @@ const HelpPage = () => {
                 <span className="help-hotkey-desc">— Рука (панорамирование)</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
-                <meta itemProp="name" content="Какая клавиша для перемещения выделения?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="V" />V</span>
-                <span className="help-hotkey-desc">— Перемещение</span>
-              </div>
-              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для прямоугольного выделения?" />
                 <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="M" />M</span>
                 <span className="help-hotkey-desc">— Выделение</span>
@@ -137,11 +131,6 @@ const HelpPage = () => {
                 <meta itemProp="name" content="Какая клавиша для лассо?" />
                 <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Q" />Q</span>
                 <span className="help-hotkey-desc">— Лассо</span>
-              </div>
-              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
-                <meta itemProp="name" content="Какая клавиша для трансформации?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="W" />W</span>
-                <span className="help-hotkey-desc">— Трансформация</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для кисти?" />

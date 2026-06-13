@@ -1,12 +1,12 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
-import { isMobileCanvasView } from "../utils/pinchPanGestures";
 import { clampPanToMetrics, getMobileCanvasViewMetrics } from "../utils/canvasViewMetrics";
 
 export default class Hand extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
     this.container = null;
+    this.wrapper = null;
     this.lastClientX = 0;
     this.lastClientY = 0;
     this.isPanning = false;
@@ -65,17 +65,13 @@ export default class Hand extends Tool {
   }
 
   pan(dx, dy) {
-    if (isMobileCanvasView()) {
-      const metrics = getMobileCanvasViewMetrics(this.container, this.wrapper, canvasState.viewZoom);
-      const clamped = clampPanToMetrics(
-        canvasState.viewPanX + dx,
-        canvasState.viewPanY + dy,
-        metrics
-      );
-      canvasState.setViewPan(clamped.x, clamped.y);
-    } else if (this.container) {
-      this.container.scrollLeft -= dx;
-      this.container.scrollTop -= dy;
-    }
+    const zoom = canvasState.zoom;
+    const metrics = getMobileCanvasViewMetrics(this.container, this.wrapper, zoom);
+    const clamped = clampPanToMetrics(
+      canvasState.viewPanX + dx,
+      canvasState.viewPanY + dy,
+      metrics
+    );
+    canvasState.setViewPan(clamped.x, clamped.y);
   }
 }

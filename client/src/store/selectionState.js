@@ -13,7 +13,8 @@ class SelectionState {
   previewX = 0;
   previewY = 0;
   isDragging = false;
-  isTransforming = false;
+  transformSessionActive = false;
+  hasCut = false;
   transform = {
     angle: 0,
     scaleX: 1,
@@ -33,6 +34,10 @@ class SelectionState {
     return this.active && this.width > 0 && this.height > 0 && this.imageData;
   }
 
+  get isTransforming() {
+    return this.transformSessionActive;
+  }
+
   clear() {
     this.active = false;
     this.type = null;
@@ -46,7 +51,8 @@ class SelectionState {
     this.previewX = 0;
     this.previewY = 0;
     this.isDragging = false;
-    this.isTransforming = false;
+    this.transformSessionActive = false;
+    this.hasCut = false;
     this.transform = { angle: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 };
     this.draftRect = null;
     this.draftPath = null;
@@ -77,8 +83,20 @@ class SelectionState {
     this.imageData = imageData;
     this.previewX = x;
     this.previewY = y;
+    this.hasCut = false;
     this.transform = { angle: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 };
     this.clearDraft();
+  }
+
+  enterTransformSession() {
+    this.transformSessionActive = true;
+    this.hasCut = false;
+  }
+
+  exitTransformSession() {
+    this.transformSessionActive = false;
+    this.isDragging = false;
+    this.hasCut = false;
   }
 
   setPreviewPosition(x, y) {
@@ -90,8 +108,8 @@ class SelectionState {
     this.isDragging = value;
   }
 
-  setTransforming(value) {
-    this.isTransforming = value;
+  setHasCut(value) {
+    this.hasCut = value;
   }
 
   setTransform(transform) {
