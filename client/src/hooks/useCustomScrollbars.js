@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
+import { autorun } from 'mobx';
 import canvasState from '../store/canvasState';
+import {
+  clampPanToMetrics,
+  getMobileCanvasViewMetrics,
+  panFromScroll,
+} from '../utils/canvasViewMetrics';
+import { isMobileCanvasView } from '../utils/pinchPanGestures';
 
 const TRACK_VERTICAL_INSET = 20;
 const TRACK_HORIZONTAL_INSET = 20;
@@ -9,10 +16,13 @@ function getVerticalCornerGap() {
   return 0;
 }
 
-export function useCustomScrollbars(containerRef, isConnected) {
+export function useCustomScrollbars(containerRef, wrapperRef, isConnected) {
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || window.innerWidth > 768 || window.innerHeight < window.innerWidth) return;
+    const wrapper = wrapperRef.current;
+    if (!container || !wrapper || !isMobileCanvasView() || window.innerHeight < window.innerWidth) {
+      return undefined;
+    }
 
     const verticalScrollbar = document.createElement('div');
     verticalScrollbar.className = 'custom-scrollbar vertical';
@@ -34,10 +44,17 @@ export function useCustomScrollbars(containerRef, isConnected) {
     let verticalStartScroll = 0;
     let horizontalStartPos = 0;
     let horizontalStartScroll = 0;
+    let metricsRef = null;
+
+    const readMetrics = () => {
+      metricsRef = getMobileCanvasViewMetrics(container, wrapper, canvasState.viewZoom);
+      return metricsRef;
+    };
 
     const updateScrollbars = () => {
       if (!verticalScrollbar || !horizontalScrollbar || !container) return;
 
+      const metrics = readMetrics();
       const rect = container.getBoundingClientRect();
       const cornerGap = getVerticalCornerGap();
       const vv = window.visualViewport;
@@ -47,35 +64,28 @@ export function useCustomScrollbars(containerRef, isConnected) {
         rect.height - TRACK_VERTICAL_INSET - cornerGap,
         Math.max(0, maxTrackBottom - rect.top)
       );
-      const scrollHeight = container.scrollHeight;
-      const clientHeight = container.clientHeight;
-      const scrollableRange = Math.max(0, scrollHeight - clientHeight);
-      const hasScroll = scrollableRange > 0;
 
-      verticalScrollbar.style.display = hasScroll ? 'block' : 'none';
+      const hasVerticalScroll = Boolean(metrics && metrics.scrollableY > 0);
+      verticalScrollbar.style.display = hasVerticalScroll ? 'block' : 'none';
       verticalScrollbar.style.top = `${rect.top}px`;
       verticalScrollbar.style.height = `${trackHeight}px`;
       verticalScrollbar.style.left = `${rect.right - 20}px`;
       verticalScrollbar.style.right = 'auto';
 
-      if (hasScroll) {
+      if (hasVerticalScroll) {
         const thumbHeight = Math.max(
           MIN_THUMB_SIZE,
-          (clientHeight / scrollHeight) * trackHeight
+          (metrics.viewportHeight / metrics.contentHeight) * trackHeight
         );
         const thumbTravel = Math.max(0, trackHeight - thumbHeight);
-        const scrollRatio = scrollableRange > 0 ? container.scrollTop / scrollableRange : 0;
+        const scrollRatio = metrics.scrollableY > 0 ? metrics.scrollY / metrics.scrollableY : 0;
         const thumbTop = thumbTravel * scrollRatio;
 
         verticalThumb.style.height = `${thumbHeight}px`;
         verticalThumb.style.top = `${thumbTop}px`;
       }
 
-      const scrollWidth = container.scrollWidth;
-      const clientWidth = container.clientWidth;
-      const horizontalScrollableRange = Math.max(0, scrollWidth - clientWidth);
-      const hasHorizontalScroll = horizontalScrollableRange > 0;
-
+      const hasHorizontalScroll = Boolean(metrics && metrics.scrollableX > 0);
       horizontalScrollbar.style.display = hasHorizontalScroll ? 'block' : 'none';
       horizontalScrollbar.style.left = `${rect.left}px`;
       horizontalScrollbar.style.width = `${rect.width - TRACK_HORIZONTAL_INSET}px`;
@@ -87,10 +97,10 @@ export function useCustomScrollbars(containerRef, isConnected) {
         const trackWidth = rect.width - TRACK_HORIZONTAL_INSET;
         const thumbWidth = Math.max(
           MIN_THUMB_SIZE,
-          (clientWidth / scrollWidth) * trackWidth
+          (metrics.viewportWidth / metrics.contentWidth) * trackWidth
         );
         const thumbTravel = Math.max(0, trackWidth - thumbWidth);
-        const scrollRatio = horizontalScrollableRange > 0 ? container.scrollLeft / horizontalScrollableRange : 0;
+        const scrollRatio = metrics.scrollableX > 0 ? metrics.scrollX / metrics.scrollableX : 0;
         const thumbLeft = thumbTravel * scrollRatio;
 
         horizontalThumb.style.width = `${thumbWidth}px`;
@@ -99,10 +109,13 @@ export function useCustomScrollbars(containerRef, isConnected) {
     };
 
     const handleVerticalThumbStart = (e) => {
+      const metrics = readMetrics();
+      if (!metrics || metrics.scrollableY <= 0) return;
+
       isVerticalDragging = true;
       const touch = e.touches?.[0];
       verticalStartPos = touch?.clientY ?? e.clientY;
-      verticalStartScroll = container.scrollTop;
+      verticalStartScroll = metrics.scrollY;
       verticalThumb.classList.add('active');
       e.preventDefault();
       e.stopPropagation();
@@ -110,6 +123,10 @@ export function useCustomScrollbars(containerRef, isConnected) {
 
     const handleVerticalMove = (e) => {
       if (!isVerticalDragging) return;
+
+      const metrics = metricsRef || readMetrics();
+      if (!metrics || metrics.scrollableY <= 0) return;
+
       const touch = e.touches?.[0];
       const currentPos = touch?.clientY ?? e.clientY;
       const delta = currentPos - verticalStartPos;
@@ -117,14 +134,15 @@ export function useCustomScrollbars(containerRef, isConnected) {
       const trackHeight = container.clientHeight - TRACK_VERTICAL_INSET - getVerticalCornerGap();
       const thumbHeight = parseFloat(verticalThumb.style.height) || MIN_THUMB_SIZE;
       const thumbTravel = Math.max(0, trackHeight - thumbHeight);
-      const scrollableRange = container.scrollHeight - container.clientHeight;
 
-      if (thumbTravel > 0 && scrollableRange > 0) {
-        const scrollDelta = (delta / thumbTravel) * scrollableRange;
-        const next = Math.max(0, Math.min(container.scrollHeight - container.clientHeight, verticalStartScroll + scrollDelta));
-        container.scrollTop = next;
+      if (thumbTravel > 0) {
+        const scrollDelta = (delta / thumbTravel) * metrics.scrollableY;
+        const nextScrollY = Math.max(0, Math.min(metrics.scrollableY, verticalStartScroll + scrollDelta));
+        const nextPan = panFromScroll(metrics, metrics.scrollX, nextScrollY);
+        canvasState.setViewPan(canvasState.viewPanX, nextPan.y);
         updateScrollbars();
       }
+
       e.preventDefault();
       e.stopPropagation();
     };
@@ -136,32 +154,40 @@ export function useCustomScrollbars(containerRef, isConnected) {
 
     const handleVerticalTrackClick = (e) => {
       if (e.target !== verticalScrollbar) return;
+
+      const metrics = readMetrics();
+      if (!metrics || metrics.scrollableY <= 0) return;
+
       e.preventDefault();
       e.stopPropagation();
-
-      const scrollableRange = container.scrollHeight - container.clientHeight;
-      if (scrollableRange <= 0) return;
 
       const trackRect = verticalScrollbar.getBoundingClientRect();
       const thumbRect = verticalThumb.getBoundingClientRect();
       const clickY = (e.touches?.[0]?.clientY ?? e.clientY) - trackRect.top;
       const thumbTop = thumbRect.top - trackRect.top;
       const thumbHeight = thumbRect.height;
-      const page = container.clientHeight;
+      const page = metrics.viewportHeight;
 
+      let nextScrollY = metrics.scrollY;
       if (clickY < thumbTop) {
-        container.scrollTop = Math.max(0, container.scrollTop - page);
+        nextScrollY = Math.max(0, metrics.scrollY - page);
       } else if (clickY > thumbTop + thumbHeight) {
-        container.scrollTop = Math.min(scrollableRange, container.scrollTop + page);
+        nextScrollY = Math.min(metrics.scrollableY, metrics.scrollY + page);
       }
+
+      const nextPan = panFromScroll(metrics, metrics.scrollX, nextScrollY);
+      canvasState.setViewPan(canvasState.viewPanX, nextPan.y);
       updateScrollbars();
     };
 
     const handleHorizontalThumbStart = (e) => {
+      const metrics = readMetrics();
+      if (!metrics || metrics.scrollableX <= 0) return;
+
       isHorizontalDragging = true;
       const touch = e.touches?.[0];
       horizontalStartPos = touch?.clientX ?? e.clientX;
-      horizontalStartScroll = container.scrollLeft;
+      horizontalStartScroll = metrics.scrollX;
       horizontalThumb.classList.add('active');
       e.preventDefault();
       e.stopPropagation();
@@ -169,6 +195,10 @@ export function useCustomScrollbars(containerRef, isConnected) {
 
     const handleHorizontalMove = (e) => {
       if (!isHorizontalDragging) return;
+
+      const metrics = metricsRef || readMetrics();
+      if (!metrics || metrics.scrollableX <= 0) return;
+
       const touch = e.touches?.[0];
       const currentPos = touch?.clientX ?? e.clientX;
       const delta = currentPos - horizontalStartPos;
@@ -176,14 +206,15 @@ export function useCustomScrollbars(containerRef, isConnected) {
       const trackWidth = container.clientWidth - TRACK_HORIZONTAL_INSET;
       const thumbWidth = parseFloat(horizontalThumb.style.width) || MIN_THUMB_SIZE;
       const thumbTravel = Math.max(0, trackWidth - thumbWidth);
-      const scrollableRange = container.scrollWidth - container.clientWidth;
 
-      if (thumbTravel > 0 && scrollableRange > 0) {
-        const scrollDelta = (delta / thumbTravel) * scrollableRange;
-        const next = Math.max(0, Math.min(container.scrollWidth - container.clientWidth, horizontalStartScroll + scrollDelta));
-        container.scrollLeft = next;
+      if (thumbTravel > 0) {
+        const scrollDelta = (delta / thumbTravel) * metrics.scrollableX;
+        const nextScrollX = Math.max(0, Math.min(metrics.scrollableX, horizontalStartScroll + scrollDelta));
+        const nextPan = panFromScroll(metrics, nextScrollX, metrics.scrollY);
+        canvasState.setViewPan(nextPan.x, canvasState.viewPanY);
         updateScrollbars();
       }
+
       e.preventDefault();
       e.stopPropagation();
     };
@@ -195,24 +226,29 @@ export function useCustomScrollbars(containerRef, isConnected) {
 
     const handleHorizontalTrackClick = (e) => {
       if (e.target !== horizontalScrollbar) return;
+
+      const metrics = readMetrics();
+      if (!metrics || metrics.scrollableX <= 0) return;
+
       e.preventDefault();
       e.stopPropagation();
-
-      const scrollableRange = container.scrollWidth - container.clientWidth;
-      if (scrollableRange <= 0) return;
 
       const trackRect = horizontalScrollbar.getBoundingClientRect();
       const thumbRect = horizontalThumb.getBoundingClientRect();
       const clickX = (e.touches?.[0]?.clientX ?? e.clientX) - trackRect.left;
       const thumbLeft = thumbRect.left - trackRect.left;
       const thumbWidth = thumbRect.width;
-      const page = container.clientWidth;
+      const page = metrics.viewportWidth;
 
+      let nextScrollX = metrics.scrollX;
       if (clickX < thumbLeft) {
-        container.scrollLeft = Math.max(0, container.scrollLeft - page);
+        nextScrollX = Math.max(0, metrics.scrollX - page);
       } else if (clickX > thumbLeft + thumbWidth) {
-        container.scrollLeft = Math.min(scrollableRange, container.scrollLeft + page);
+        nextScrollX = Math.min(metrics.scrollableX, metrics.scrollX + page);
       }
+
+      const nextPan = panFromScroll(metrics, nextScrollX, metrics.scrollY);
+      canvasState.setViewPan(nextPan.x, canvasState.viewPanY);
       updateScrollbars();
     };
 
@@ -248,37 +284,35 @@ export function useCustomScrollbars(containerRef, isConnected) {
       requestAnimationFrame(updateScrollbars);
     });
     resizeObserver.observe(container);
-
-    const handleScroll = () => {
-      requestAnimationFrame(updateScrollbars);
-    };
-    container.addEventListener('scroll', handleScroll);
+    resizeObserver.observe(wrapper);
 
     const handleViewportChange = () => {
       requestAnimationFrame(updateScrollbars);
     };
     window.visualViewport?.addEventListener('resize', handleViewportChange);
     window.visualViewport?.addEventListener('scroll', handleViewportChange);
+    window.addEventListener('resize', handleViewportChange);
 
-    const updateOnZoom = () => {
-      requestAnimationFrame(() => {
-        setTimeout(updateScrollbars, 50);
-        setTimeout(updateScrollbars, 150);
-      });
-    };
+    const disposeAutorun = autorun(() => {
+      void canvasState.viewPanX;
+      void canvasState.viewPanY;
+      void canvasState.viewZoom;
 
-    const originalSetZoom = canvasState.setZoom;
-    canvasState.setZoom = function(zoom) {
-      const result = originalSetZoom.call(this, zoom);
-      updateOnZoom();
-      return result;
-    };
+      if (!isVerticalDragging && !isHorizontalDragging) {
+        const metrics = readMetrics();
+        const clamped = clampPanToMetrics(canvasState.viewPanX, canvasState.viewPanY, metrics);
+        if (clamped.x !== canvasState.viewPanX || clamped.y !== canvasState.viewPanY) {
+          canvasState.setViewPan(clamped.x, clamped.y);
+        }
+      }
+
+      requestAnimationFrame(updateScrollbars);
+    });
 
     updateScrollbars();
-    const intervalId = setInterval(updateScrollbars, 1000);
 
     return () => {
-      clearInterval(intervalId);
+      disposeAutorun();
 
       verticalThumb.removeEventListener('mousedown', handleVerticalThumbStart);
       verticalThumb.removeEventListener('touchstart', handleVerticalThumbStart);
@@ -295,14 +329,13 @@ export function useCustomScrollbars(containerRef, isConnected) {
       document.removeEventListener('mouseup', handleDocPointerEnd);
       document.removeEventListener('touchend', handleDocPointerEnd);
 
-      container.removeEventListener('scroll', handleScroll);
       window.visualViewport?.removeEventListener('resize', handleViewportChange);
       window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
       resizeObserver.disconnect();
 
       verticalScrollbar.remove();
       horizontalScrollbar.remove();
-      canvasState.setZoom = originalSetZoom;
     };
-  }, [isConnected]);
+  }, [containerRef, wrapperRef, isConnected]);
 }

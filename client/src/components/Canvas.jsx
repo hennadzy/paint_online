@@ -39,7 +39,7 @@ const Canvas = observer(() => {
   useCanvasCursor(canvasRef, cursorRef);
   useCanvasKeyboard();
   useModalBodyClass();
-  useCustomScrollbars(containerRef, canvasState.isConnected);
+  useCustomScrollbars(containerRef, wrapperRef, canvasState.isConnected);
   const isVisible = usePageVisibility();
 
   useMobileCanvasFit(containerRef, canvasState.isConnected);

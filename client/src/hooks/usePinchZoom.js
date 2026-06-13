@@ -7,6 +7,7 @@ import {
   getTouchDistance,
   isMobileCanvasView,
 } from '../utils/pinchPanGestures';
+import { clampPanToMetrics, getMobileCanvasViewMetrics } from '../utils/canvasViewMetrics';
 
 function getPinchCenter(touch1, touch2) {
   return getTouchCenter(touch1, touch2);
@@ -47,8 +48,14 @@ export function usePinchZoom(containerRef, wrapperRef) {
         setZoom: (value) => canvasState.setZoom(value),
         getPan: () => panRef.current,
         setPan: (pan) => {
-          panRef.current = pan;
-          canvasState.setViewPan(pan.x, pan.y);
+          const metrics = getMobileCanvasViewMetrics(
+            containerRef.current,
+            wrapperRef.current,
+            canvasState.viewZoom
+          );
+          const clamped = clampPanToMetrics(pan.x, pan.y, metrics);
+          panRef.current = clamped;
+          canvasState.setViewPan(clamped.x, clamped.y);
         },
         clampZoom: (value) => Math.max(0.5, Math.min(3, value)),
         onPinchStart: () => {
