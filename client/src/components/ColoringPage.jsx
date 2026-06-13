@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Fill from '../tools/Fill';
 import canvasState, { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
+import { MAIN_COLORING_SEO_PARAGRAPHS, seoDescriptionFromText } from '../data/coloringSeoTexts';
 import { resolveAssetUrl } from '../utils/assetUrl';
 import { computeRegionMask, drawBrushStrokeInRegion } from '../utils/coloringRegion';
 import '../styles/coloring.scss';
@@ -74,11 +75,6 @@ const PRESET_COLORS = [
   '#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#ADFF2F', '#00CC44', '#00BFFF', '#0044FF', '#8A2BE2',
   '#FF1493', '#FF69B4', '#20B2AA', '#4169E1', '#9370DB', '#FFB3B3', '#B3E5FF', '#D4B3FF', '#C8A882',
   '#8B0000', '#556B2F', '#2F4F4F', '#4B0082', '#333333', '#000000', '#FFFFFF', '#A9A9A9', '#808080',
-];
-
-const DEFAULT_COLORING_SEO_PARAGRAPHS = [
-  'Раскраски на Рисование.Онлайн — это простой и удобный способ провести время с пользой: выбрать рисунок по настроению, раскрасить его прямо в браузере и получить готовую картинку без лишних шагов.',
-  'Здесь собраны раскраски разных тем: животные, сказки, сезонные сюжеты и многое другое. Выберите категорию и начните творить — на компьютере или на мобильном устройстве.',
 ];
 
 const COLORING_BRUSH_SIZE = 10;
@@ -163,7 +159,20 @@ const ColoringPage = () => {
 
           setColoringPages(pages);
           setCurrentSection(data.section || null);
-          setSeoData(null);
+          if (data.section?.title) {
+            const sectionText = data.section.seoText || '';
+            setSeoData({
+              title: `${data.section.title} — раскраски онлайн бесплатно`,
+              description: seoDescriptionFromText(
+                sectionText,
+                `Раскраски «${data.section.title}» — бесплатно онлайн на Рисование.Онлайн`
+              ),
+              keywords: `раскраски ${data.section.title}, раскраски онлайн, картинки для раскрашивания, ${data.section.title} раскраска`,
+              canonical: `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}`,
+            });
+          } else {
+            setSeoData(null);
+          }
           setIsLoading(false);
           return;
         }
@@ -202,9 +211,13 @@ const ColoringPage = () => {
 
             if (page.title) {
               setSeoData({
-                title: `${page.title} - Раскраска онлайн`,
-                description: `Раскраска "${page.title}" — раскрашивайте онлайн бесплатно на Рисование.Онлайн`,
-                keywords: `раскраска ${page.title}, раскраска онлайн`,
+                title: `${page.title} — раскраска онлайн`,
+                description: seoDescriptionFromText(
+                  page.seoText,
+                  `Раскраска «${page.title}» — раскрашивайте онлайн бесплатно на Рисование.Онлайн`
+                ),
+                keywords: `раскраска ${page.title}, раскраски онлайн, картинки для раскрашивания`,
+                canonical: `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(page.slug || pageSlug)}`,
               });
             } else {
               setSeoData(null);
@@ -606,7 +619,7 @@ const ColoringPage = () => {
     const seoText = currentSection?.seoText?.trim();
     const paragraphs = seoText
       ? seoText.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean)
-      : DEFAULT_COLORING_SEO_PARAGRAPHS;
+      : MAIN_COLORING_SEO_PARAGRAPHS;
 
     return paragraphs.map((paragraph, index) => (
       <p key={`coloring-seo-${index}`}>{paragraph}</p>

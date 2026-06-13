@@ -19,8 +19,8 @@ const SEO_DATA = {
   },
   '/coloring': {
     title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
-    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
-    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски',
+    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере без скачивания. Мультфильмы, животные, природа, мандалы и другие разделы — раскрашивайте на телефоне и ПК.',
+    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски, раскраски без скачивания',
     canonical: 'https://risovanie.online/coloring'
   },
   '/gallery': {
@@ -60,8 +60,19 @@ export function SeoMeta() {
   const { seoData: dynamicSeo } = useContext(SeoContext);
   const hasPaginationQuery = new URLSearchParams(location.search).has('page');
 
-  const seoData = SEO_DATA[path] || (path.startsWith('/gallery/') ? SEO_DATA['/gallery'] : null);
-  const finalData = seoData ? { ...seoData, ...dynamicSeo } : seoData;
+  const staticSeoData = SEO_DATA[path]
+    || (path.startsWith('/gallery/') ? SEO_DATA['/gallery'] : null)
+    || (path.startsWith('/coloring/') ? SEO_DATA['/coloring'] : null);
+
+  const finalData = (staticSeoData || dynamicSeo)
+    ? {
+        ...(staticSeoData || {}),
+        ...(dynamicSeo || {}),
+        canonical: (dynamicSeo && dynamicSeo.canonical)
+          || (staticSeoData && staticSeoData.canonical)
+          || `https://risovanie.online${path}`,
+      }
+    : null;
 
   const isRoomPage = (() => {
     // комнаты роутятся как '/:id', где id — 9 символов A-Z a-z 0-9
@@ -93,13 +104,27 @@ export function SeoMeta() {
       return;
     }
 
-    if (!finalData) return;
+    const shouldIndex = !hasPaginationQuery;
+    const isIndexablePath = path === '/'
+      || path === '/help'
+      || path.startsWith('/help/')
+      || path === '/gallery'
+      || path.startsWith('/gallery/')
+      || path === '/coloring'
+      || path.startsWith('/coloring/');
+
+    if (!finalData) {
+      if (isIndexablePath) {
+        updateMeta('robots', shouldIndex ? 'index, follow' : 'noindex, follow');
+      }
+      return;
+    }
 
     document.title = finalData.title;
 
     updateMeta('description', finalData.description);
     updateMeta('keywords', finalData.keywords);
-    updateMeta('robots', hasPaginationQuery ? 'noindex, follow' : 'index, follow');
+    updateMeta('robots', shouldIndex ? 'index, follow' : 'noindex, follow');
 
     updateMeta('og:title', finalData.title, true);
     updateMeta('og:description', finalData.description, true);

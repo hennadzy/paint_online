@@ -169,7 +169,21 @@ router.get('/coloring-sections/:sectionSlug/:pageSlug', asyncHandler(async (req,
       );
 
       if (result.rows.length) {
-        return res.json({ page: result.rows[0] });
+        const row = result.rows[0];
+        return res.json({
+          page: {
+            id: row.id,
+            sectionId: row.section_id,
+            slug: row.slug,
+            title: row.title,
+            alt: row.alt,
+            seoText: row.seo_text,
+            image_url: row.image_url,
+            thumbnail_url: row.thumbnail_url,
+            createdAt: toEpochMsSafe(row.created_at),
+            isActive: row.is_active,
+          },
+        });
       }
     }
 

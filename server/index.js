@@ -13,6 +13,13 @@ const adminRouter = require('./routes/admin');
 const galleryRouter = require('./routes/gallery');
 const { pgPool } = require('./config/db');
 const { errorMiddleware, setupGlobalErrorHandlers } = require('./utils/errorHandler');
+const { regenerateSitemap, getCachedSitemap } = require('./services/sitemapService');
+const {
+  MAIN_COLORING_SEO_TEXT,
+  MAIN_COLORING_SEO_PARAGRAPHS,
+  SECTION_SEO_TEXTS,
+  seoDescriptionFromText,
+} = require('../client/src/data/coloringSeoTexts');
 
 setupGlobalErrorHandlers();
 
@@ -117,16 +124,6 @@ app.use('/api', (req, res, next) => {
 });
 
 app.use(express.json({ limit: '5mb' }));
-
-
-app.get(/^\/help(?:\/.*)?$/, (req, res) => {
-  const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      res.status(500).send('Internal Server Error');
-    }
-  });
-});
 
 function send404Page(res) {
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
@@ -272,161 +269,18 @@ app.use('/api', apiRouter);
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const [resultDrawings, resultSections] = await Promise.all([
-      pgPool.query(
-        `SELECT id, approved_at, created_at
-         FROM gallery_drawings
-         WHERE status = 'approved'
-         ORDER BY approved_at DESC
-         LIMIT 5000`
-      ),
-      pgPool.query(
-        `SELECT id, slug, created_at
-         FROM coloring_sections
-         ORDER BY created_at DESC
-         LIMIT 5000`
-      )
-    ]);
-
-    const drawings = resultDrawings.rows;
-    const coloringSections = resultSections.rows;
-
-    const baseUrl = 'https://risovanie.online';
-    const now = new Date().toISOString().split('T')[0];
-
-    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-<!-- DYNAMIC SITEMAP - Generated 2026-01-17 -->
-
-  <url>
-    <loc>${baseUrl}/</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/coloring</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/gallery</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/help</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/help"/>
-  </url>`;
-
-    // Coloring sections & rooms
-    for (const section of coloringSections) {
-      const sectionSlug = encodeURIComponent(section.slug);
-      const sectionDate = section.created_at
-        ? new Date(section.created_at).toISOString().split('T')[0]
-        : now;
-
-      sitemap += `
-  <url>
-    <loc>${baseUrl}/coloring/${sectionSlug}</loc>
-    <lastmod>${sectionDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}"/>
-  </url>`;
-
-const pagesResult = await pgPool.query(
-         `SELECT slug, created_at
-         FROM coloring_pages
-         WHERE section_id = $1 AND is_active = true
-         ORDER BY created_at DESC
-         LIMIT 5000`,
-         [section.id]
-       );
-
-      for (const page of pagesResult.rows) {
-        const pageSlug = encodeURIComponent(page.slug);
-        const pageDate = page.created_at ? new Date(page.created_at).toISOString().split('T')[0] : now;
-
-        sitemap += `
-   <url>
-     <loc>${baseUrl}/coloring/${sectionSlug}/${pageSlug}</loc>
-     <lastmod>${pageDate}</lastmod>
-     <changefreq>weekly</changefreq>
-     <priority>0.6</priority>
-     <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring/${sectionSlug}/${pageSlug}"/>
-   </url>`;
-      }
+    let xml = getCachedSitemap();
+    if (!xml) {
+      xml = await regenerateSitemap(pgPool);
     }
-
-    for (const drawing of drawings) {
-      const drawingDate = drawing.approved_at
-        ? new Date(drawing.approved_at).toISOString().split('T')[0]
-        : new Date(drawing.created_at).toISOString().split('T')[0];
-
-      sitemap += `
-  <url>
-    <loc>${baseUrl}/gallery/${drawing.id}</loc>
-    <lastmod>${drawingDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery/${drawing.id}"/>
-  </url>`;
-    }
-
-    sitemap += `
-</urlset>`;
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.send(sitemap);
+    res.send(xml);
   } catch (e) {
-    const baseUrl = 'https://risovanie.online';
-    const now = new Date().toISOString().split('T')[0];
-    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url>
-    <loc>${baseUrl}/</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/coloring</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/coloring"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/gallery</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/gallery"/>
-  </url>
-  <url>
-    <loc>${baseUrl}/help</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="${baseUrl}/help"/>
-  </url>
-</urlset>`;
-    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store');
-    res.send(fallbackSitemap);
+    console.error('Sitemap route error:', e.message);
+    res.status(500).setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
   }
 });
 
@@ -435,8 +289,11 @@ app.use(errorMiddleware);
 const SEO_PAGES = {
   '/coloring': {
     title: 'Раскраски онлайн для детей и взрослых - раскрашивайте бесплатно',
-    description: 'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.',
-    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски'
+    description: seoDescriptionFromText(
+      MAIN_COLORING_SEO_TEXT,
+      'Онлайн раскраски на Рисование.Онлайн: бесплатные картинки для раскрашивания в браузере. Выбирайте сюжет, раскрашивайте на телефоне и ПК, сохраняйте результат.'
+    ),
+    keywords: 'раскраски онлайн, картинки для раскрашивания, раскрашивать в браузере, раскраски для детей и взрослых, бесплатные раскраски, раскраски без скачивания'
   },
   '/gallery': {
     title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
@@ -449,6 +306,29 @@ const SEO_PAGES = {
     keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы'
   }
 };
+
+function renderHelpSeoPage(res) {
+  res.setHeader('X-Robots-Tag', 'index');
+
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  const seo = SEO_PAGES['/help'];
+  html = html
+    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
+    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
+    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
+    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
+    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
+    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/help"`);
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+}
+
+app.get(/^\/help(?:\/.*)?$/, (req, res) => {
+  renderHelpSeoPage(res);
+});
 
 app.use(express.static(path.join(__dirname, '../client/build')));
 
@@ -501,7 +381,13 @@ function renderColoringSeoPage(res, { canonicalUrl, h1Text = null, seoOverride =
 }
 
 app.get('/coloring', (req, res) => {
+  res.setHeader('X-Robots-Tag', 'index');
   const canonical = 'https://risovanie.online/coloring';
+  const indexableSectionHtml = `
+    <h1>Раскраски онлайн</h1>
+    ${MAIN_COLORING_SEO_PARAGRAPHS.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+    <p><a href="https://risovanie.online/">Главная</a></p>
+  `;
   renderColoringSeoPage(res, {
     canonicalUrl: canonical,
     h1Text: 'Раскраски онлайн',
@@ -509,11 +395,13 @@ app.get('/coloring', (req, res) => {
       title: SEO_PAGES['/coloring']?.title,
       description: SEO_PAGES['/coloring']?.description,
       keywords: SEO_PAGES['/coloring']?.keywords,
-    }
+    },
+    indexableSectionHtml,
   });
 });
 
 app.get('/coloring/:sectionSlug', async (req, res) => {
+  res.setHeader('X-Robots-Tag', 'index');
   const { sectionSlug } = req.params;
   const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}`;
 
@@ -543,8 +431,11 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
       </p>
     `;
 
-    const seoDescription = String(section.seo_text || '').slice(0, 300);
-    const seoKeywords = `раскраски онлайн, ${section.title}`;
+    const seoDescription = seoDescriptionFromText(
+      section.seo_text,
+      `Раскраски «${section.title}» — бесплатно онлайн на Рисование.Онлайн`
+    );
+    const seoKeywords = `раскраски онлайн, ${section.title}, картинки для раскрашивания, ${section.title} раскраска`;
 
     renderColoringSeoPage(res, {
       canonicalUrl: canonical,
@@ -563,6 +454,7 @@ app.get('/coloring/:sectionSlug', async (req, res) => {
 });
 
 app.get('/coloring/:sectionSlug/:pageSlug', async (req, res) => {
+  res.setHeader('X-Robots-Tag', 'index');
   const { sectionSlug, pageSlug } = req.params;
   const canonical = `https://risovanie.online/coloring/${encodeURIComponent(sectionSlug)}/${encodeURIComponent(pageSlug)}`;
 
@@ -597,8 +489,10 @@ app.get('/coloring/:sectionSlug/:pageSlug', async (req, res) => {
       </p>
     `;
 
-    const seoDescription = String(page.seo_text || '').slice(0, 300);
-    const seoKeywords = `раскраски онлайн, ${page.title}, ${page.section_title}`;
+    const pageDescriptionSource = page.seo_text
+      || `Раскраска «${page.title}» из раздела «${page.section_title}». Раскрашивайте онлайн бесплатно на Рисование.Онлайн — без скачивания и регистрации.`;
+    const seoDescription = seoDescriptionFromText(pageDescriptionSource);
+    const seoKeywords = `раскраска ${page.title}, раскраски онлайн, ${page.section_title}, картинки для раскрашивания`;
 
     renderColoringSeoPage(res, {
       canonicalUrl: canonical,
@@ -617,6 +511,7 @@ app.get('/coloring/:sectionSlug/:pageSlug', async (req, res) => {
 });
 
 app.get('/gallery', (req, res) => {
+  res.setHeader('X-Robots-Tag', 'index');
   const indexPath = path.join(__dirname, '../client/build', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
   
@@ -631,35 +526,6 @@ app.get('/gallery', (req, res) => {
   
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
-});
-
-app.get('/help', (req, res) => {
-  res.setHeader('X-Robots-Tag', 'index');
-
-  const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  let html = fs.readFileSync(indexPath, 'utf8');
-
-  const seo = SEO_PAGES['/help'];
-  html = html
-    .replace(/<title>.*?<\/title>/, `<title>${seo.title}</title>`)
-    .replace(/<meta name="description" content=".*?"/, `<meta name="description" content="${seo.description}"`)
-    .replace(/<meta name="keywords" content=".*?"/, `<meta name="keywords" content="${seo.keywords}"`)
-    .replace(/<meta property="og:title" content=".*?"/, `<meta property="og:title" content="${seo.title}"`)
-    .replace(/<meta property="og:description" content=".*?"/, `<meta property="og:description" content="${seo.description}"`)
-    .replace(/<link rel="canonical" href=".*?"/, `<link rel="canonical" href="https://risovanie.online/help"`);
-
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-});
-
-app.get('/help/', (req, res) => {
-  const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  return res.sendFile(indexPath);
-});
-
-app.get('/help/*', (req, res) => {
-  const indexPath = path.join(__dirname, '../client/build', 'index.html');
-  return res.sendFile(indexPath);
 });
 
 app.get('/gallery/:id', async (req, res) => {
@@ -1066,21 +932,29 @@ async function initDb() {
       
       if (count === 0) {
         console.log('Seeding coloring sections...');
-        await pgPool.query(`
-          INSERT INTO coloring_sections (slug, title, seo_text, created_at)
-          VALUES
-            ('multiki', 'Мультфильмы', 'Мультфильмы — это любимые герои, яркие сюжеты и радость творчества для детей и взрослых. На странице раскрасок «Мультфильмы» собраны картинки с узнаваемыми персонажами, выразительными эмоциями и динамичными сценами, чтобы процесс раскрашивания был увлекательным.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('kino', 'Кино', 'Раздел раскрасок «Кино» — это возможность создать яркие постеры, героев и фантастические сцены в формате раскраски прямо в браузере. Здесь собраны рисунки, вдохновлённые популярными фильмами и киноисториями: драматичные кадры, волшебные моменты, приключения и киноперсонажи.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('games', 'Игры', 'Раскраски «Игры» — место, где знакомые персонажи, уровни и приключения превращаются в красивый рисунок. Здесь вы найдёте подборки раскрасок по игровым темам: герои, персонажи-помощники, фантастические локации, магические эффекты и яркие сцены.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('skazki', 'Сказки', 'Раздел «Сказки» — это добрые герои, волшебные сцены и захватывающие сюжеты, которые легко и интересно раскрасить в браузере. Здесь собраны раскраски по мотивам сказочных историй: персонажи, домики, лесные тропинки, магические предметы.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('priroda', 'Природа', 'Раскраски «Природа» — это красивые пейзажи, деревья, цветы, сезонные сюжеты и всё, что вдохновляет на спокойное творчество. Здесь собраны рисунки с миром вокруг: лес, поля, закаты, растения и природные элементы.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('animals', 'Животные', 'Раздел «Животные» — это раскраски с любимыми питомцами, дикими зверями и персонажами из мультфильмов про животных. Здесь собраны сюжеты, которые легко раскрасить и приятно рассматривать: кошки, собаки, птицы, морские обитатели и лесные жители.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('mandaly', 'Мандалы', 'Мандалы — это завораживающие узоры, которые помогают расслабиться и погрузиться в спокойный ритм творчества. В разделе «Мандалы» собраны раскраски с круговыми орнаментами, симметричными деталями и красивыми повторяющимися элементами.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('cosmos', 'Космос', 'Раскраски «Космос» — это звёзды, планеты, туманности и фантастические пейзажи, которые хочется раскрашивать снова и снова. На странице вы найдёте сюжеты, вдохновлённые вселенной: от простых контуров с планетами до более детализированных картинок.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('technique', 'Техника', 'Раздел «Техника» — это раскраски про машины, механизмы, детали и изобретения. Здесь собраны рисунки с элементами техники: автомобили, самолёты, роботы, колёса, шестерёнки и интересные механические сцены.', EXTRACT(EPOCH FROM NOW())::BIGINT),
-            ('celebrities', 'Знаменитости', 'Раздел «Знаменитости» создан для тех, кто любит узнаваемые образы и вдохновляющие сюжеты. Здесь собраны раскраски с персонажами в стиле известных людей, образами артистов и яркими портретными мотивами.', EXTRACT(EPOCH FROM NOW())::BIGINT)
-          ON CONFLICT (slug) DO NOTHING;
-        `);
+        const sectionRows = [
+          ['multiki', 'Мультфильмы'],
+          ['kino', 'Кино'],
+          ['games', 'Игры'],
+          ['skazki', 'Сказки'],
+          ['priroda', 'Природа'],
+          ['animals', 'Животные'],
+          ['mandaly', 'Мандалы'],
+          ['cosmos', 'Космос'],
+          ['technique', 'Техника'],
+          ['celebrities', 'Знаменитости'],
+        ];
+
+        for (const [slug, title] of sectionRows) {
+          const seoText = SECTION_SEO_TEXTS[slug] || `${title} — раскраски онлайн на Рисование.Онлайн.`;
+          await pgPool.query(
+            `INSERT INTO coloring_sections (slug, title, seo_text, created_at)
+             VALUES ($1, $2, $3, EXTRACT(EPOCH FROM NOW())::BIGINT)
+             ON CONFLICT (slug) DO NOTHING`,
+            [slug, title, seoText]
+          );
+        }
+
         const newCount = await pgPool.query('SELECT COUNT(*) FROM coloring_sections');
         console.log(`✅ Seeded ${newCount.rows[0]?.count || 0} coloring sections`);
       }
@@ -1168,6 +1042,32 @@ async function initDb() {
           updated_at BIGINT NOT NULL
         );
       `);
+
+      const seoTextsVersion = 3;
+      const versionResult = await pgPool.query(
+        `SELECT value FROM app_config WHERE key = 'coloring_seo_texts_version'`
+      );
+      const currentVersion = parseInt(versionResult.rows[0]?.value?.version || '0', 10);
+
+      if (currentVersion < seoTextsVersion) {
+        console.log('Updating coloring section SEO texts...');
+        for (const [slug, seoText] of Object.entries(SECTION_SEO_TEXTS)) {
+          await pgPool.query(
+            `UPDATE coloring_sections
+             SET seo_text = $1
+             WHERE slug = $2 AND LENGTH(seo_text) < 1500`,
+            [seoText, slug]
+          );
+        }
+
+        await pgPool.query(
+          `INSERT INTO app_config (key, value, updated_at)
+           VALUES ('coloring_seo_texts_version', $1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at`,
+          [JSON.stringify({ version: seoTextsVersion }), Date.now()]
+        );
+        console.log('✅ Coloring section SEO texts updated');
+      }
     } catch (_) { }
 
     const bcrypt = require('bcrypt');
@@ -1200,13 +1100,20 @@ async function initDb() {
   }
 }
 
-initDb().then(() => {
+initDb().then(async () => {
+  try {
+    await regenerateSitemap(pgPool);
+  } catch (err) {
+    console.error('Failed to generate sitemap on startup:', err.message);
+  }
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }).catch(err => {
   console.error('Database connection error:', err.message);
   console.warn('Server will start without database functionality');
+  regenerateSitemap(null).catch(() => {});
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} (without database)`);
   });
