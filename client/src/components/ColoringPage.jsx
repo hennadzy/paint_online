@@ -556,7 +556,6 @@ const ColoringPage = () => {
         try {
           canvas.releasePointerCapture(e.pointerId);
         } catch {
-          // pointer was not captured
         }
       }
       finishBrushStroke();

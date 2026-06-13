@@ -75,7 +75,6 @@ export function SeoMeta() {
     : null;
 
   const isRoomPage = (() => {
-    // комнаты роутятся как '/:id', где id — 9 символов A-Z a-z 0-9
     if (!path || path === '/') return false;
     const parts = path.split('/').filter(Boolean); // ['{id}'] либо []
     if (parts.length !== 1) return false;
