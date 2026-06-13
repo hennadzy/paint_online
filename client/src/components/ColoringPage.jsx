@@ -101,6 +101,7 @@ const ColoringPage = () => {
   const [fetchError, setFetchError] = useState('');
 
   const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPinching, setIsPinching] = useState(false);
 
   const [canUndo, setCanUndo] = useState(false);
@@ -111,8 +112,11 @@ const ColoringPage = () => {
   const [saveFormat, setSaveFormat] = useState('png');
 
   const zoomRef = useRef(1);
+  const panRef = useRef({ x: 0, y: 0 });
   const initialZoomRef = useRef(1);
+  const initialPanRef = useRef({ x: 0, y: 0 });
   const initialDistanceRef = useRef(0);
+  const initialCenterRef = useRef({ x: 0, y: 0 });
   const isDrawingRef = useRef(false);
   const regionMaskRef = useRef(null);
   const brushPointsRef = useRef([]);
@@ -258,6 +262,10 @@ const ColoringPage = () => {
   }, [zoom]);
 
   useEffect(() => {
+    panRef.current = panOffset;
+  }, [panOffset]);
+
+  useEffect(() => {
     if (selectedPage) {
       setSeoData({
         title: `${selectedPage.title} - Раскраска онлайн`,
@@ -278,6 +286,8 @@ const ColoringPage = () => {
 
     setZoom(1);
     zoomRef.current = 1;
+    setPanOffset({ x: 0, y: 0 });
+    panRef.current = { x: 0, y: 0 };
 
     setCanUndo(false);
     setCanRedo(false);
@@ -331,11 +341,19 @@ const ColoringPage = () => {
       return Math.sqrt(dx * dx + dy * dy);
     };
 
+    const getCenter = (t1, t2) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    });
+
     const handleTouchStart = (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
+        finishBrushStrokeRef.current();
         initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
         initialZoomRef.current = zoomRef.current;
+        initialPanRef.current = { ...panRef.current };
+        initialCenterRef.current = getCenter(e.touches[0], e.touches[1]);
         setIsPinching(true);
       }
     };
@@ -347,15 +365,24 @@ const ColoringPage = () => {
         if (initialDistanceRef.current === 0) {
           initialDistanceRef.current = getDistance(e.touches[0], e.touches[1]);
           initialZoomRef.current = zoomRef.current;
+          initialPanRef.current = { ...panRef.current };
+          initialCenterRef.current = getCenter(e.touches[0], e.touches[1]);
           return;
         }
 
         const currentDistance = getDistance(e.touches[0], e.touches[1]);
         const scale = currentDistance / initialDistanceRef.current;
-
         const newZoom = Math.max(0.5, Math.min(3, initialZoomRef.current * scale));
         zoomRef.current = newZoom;
         setZoom(newZoom);
+
+        const currentCenter = getCenter(e.touches[0], e.touches[1]);
+        const newPan = {
+          x: initialPanRef.current.x + (currentCenter.x - initialCenterRef.current.x),
+          y: initialPanRef.current.y + (currentCenter.y - initialCenterRef.current.y),
+        };
+        panRef.current = newPan;
+        setPanOffset(newPan);
       }
     };
 
@@ -443,6 +470,9 @@ const ColoringPage = () => {
     regionMaskRef.current = null;
     brushPointsRef.current = [];
   }, []);
+
+  const finishBrushStrokeRef = useRef(finishBrushStroke);
+  finishBrushStrokeRef.current = finishBrushStroke;
 
   const handleCanvasPointerDown = useCallback(
     (e) => {
@@ -777,7 +807,14 @@ const ColoringPage = () => {
       </div>
 
       <div className="coloring-workspace" ref={containerRef}>
-        <div className="coloring-canvas-wrapper" ref={wrapperRef}>
+        <div
+          className="coloring-canvas-wrapper"
+          ref={wrapperRef}
+          style={{
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
+            transformOrigin: 'center center',
+          }}
+        >
           {!imageLoaded && (
             <div className="coloring-canvas-loading">
               <div className="coloring-spinner" />
@@ -794,9 +831,7 @@ const ColoringPage = () => {
             onPointerCancel={handleCanvasPointerUp}
             willReadFrequently={true}
             style={{
-              cursor: imageLoaded ? (paintMode === 'brush' ? 'crosshair' : 'crosshair') : 'wait',
-              transform: `scale(${zoom})`,
-              transformOrigin: 'center center',
+              cursor: imageLoaded ? 'crosshair' : 'wait',
               touchAction: paintMode === 'brush' ? 'none' : 'auto',
             }}
           />
