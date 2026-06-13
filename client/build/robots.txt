@@ -14,6 +14,7 @@ Disallow: /gallery?page=
 Disallow: /coloring?page=
 Disallow: /login
 Disallow: /register
+Disallow: /reset-password
 Disallow: /profile
 Disallow: /admin
 Disallow: /ws

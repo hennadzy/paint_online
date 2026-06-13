@@ -490,8 +490,8 @@
       scrollbar-width: none;
       flex: 1 1 auto;
       width: 100%;
-      max-height: 22px;
-      padding-bottom: 2px;
+      max-height: 27px;
+      padding: 4px;
 
       &::-webkit-scrollbar {
         display: none;
@@ -505,12 +505,13 @@
 
     .coloring-palette__custom {
       align-items: flex-end;
+      margin-right: 20px;
     }
 
     .coloring-selected-preview {
       width: 28px;
       height: 28px;
-      margin-bottom: 2px;
+      margin-bottom: 10px;
     }
 
     .coloring-custom-input {
@@ -801,7 +802,7 @@
  }
 
  .coloring-palette__controls {
- flex-direction: column;
+
  align-items: center;
  gap:8px;
  }
