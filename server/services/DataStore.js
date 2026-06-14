@@ -275,14 +275,15 @@ async deleteRoom(roomId) {
   }
 
   async saveCancelledStrokes(roomId, username, strokes) {
-    if (!strokes || strokes.length === 0) return true;
     try {
       await pgPool.query(
         'DELETE FROM cancelled_strokes WHERE room_id = $1 AND username = $2',
         [roomId, username]
       );
 
-      const values = strokes.map((s, i) => [
+      if (!strokes || strokes.length === 0) return true;
+
+      const values = strokes.map((s) => [
         roomId,
         JSON.stringify(s),
         username,
