@@ -630,7 +630,7 @@ app.get('/user/:userId', async (req, res) => {
 
   try {
     const userResult = await pgPool.query(
-      `SELECT id, username, created_at
+      `SELECT id, username, created_at, bio
        FROM users
        WHERE id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)`,
       [userId]
@@ -662,6 +662,7 @@ app.get('/user/:userId', async (req, res) => {
       `${buildProfileIndexableHtml({
         username: user.username,
         userId: user.id,
+        bio: user.bio || '',
         drawings: drawingsResult.rows
       })}<div id="root"></div>`
     );
@@ -1119,6 +1120,10 @@ async function initDb() {
     } catch (_) { }
     try {
       await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`);
     } catch (_) { }
 
     try {

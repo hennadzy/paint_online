@@ -1,7 +1,7 @@
 const { pgPool } = require('../config/db');
 const NotificationService = require('./NotificationService');
 
-const PUBLIC_USER_FIELDS = `u.id, u.username, u.avatar_url, u.created_at`;
+const PUBLIC_USER_FIELDS = `u.id, u.username, u.avatar_url, u.created_at, u.bio`;
 
 class FriendService {
   static async getPublicUser(userId) {

@@ -3,6 +3,8 @@ const multer = require('multer');
 const User = require('../models/User');
 const Session = require('../models/Session');
 const WebSocketHandler = require('../services/WebSocketHandler');
+const FriendService = require('../services/FriendService');
+const NotificationService = require('../services/NotificationService');
 const { authenticate } = require('../middleware/auth');
 const { validateUsername, validateEmail, validatePassword, hashPassword, verifyPassword } = require('../utils/auth');
 const { asyncHandler, ValidationError, AuthError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
@@ -173,6 +175,23 @@ router.put('/me/settings', authenticate, asyncHandler(async (req, res) => {
   res.json({ settings: updatedUser.settings });
 }));
 
+router.put('/me/bio', authenticate, asyncHandler(async (req, res) => {
+  const { bio } = req.body;
+  const { sanitizeUserBio } = require('../utils/security');
+  const result = sanitizeUserBio(bio ?? '');
+
+  if (result.error) {
+    throw new ValidationError(result.error);
+  }
+
+  const updatedUser = await User.update(req.user.userId, { bio: result.bio });
+  if (!updatedUser) {
+    throw new NotFoundError('Пользователь не найден');
+  }
+
+  res.json({ bio: updatedUser.bio || '' });
+}));
+
 router.get('/me/rooms', authenticate, asyncHandler(async (req, res) => {
   const { pgPool } = require('../config/db');
   const query = `
@@ -211,16 +230,30 @@ router.get('/search', authenticate, asyncHandler(async (req, res) => {
     return res.json([]);
   }
 
+  const meId = req.user.userId;
   const { pgPool } = require('../config/db');
   const query = `
     SELECT id, username, avatar_url, is_online, is_active, is_verified
     FROM users
-    WHERE username ILIKE $1 AND is_deleted IS NOT TRUE
+    WHERE username ILIKE $1
+      AND is_deleted IS NOT TRUE
+      AND id <> $2
     ORDER BY is_online DESC, username ASC
     LIMIT 20
   `;
-  const result = await pgPool.query(query, [`%${searchQuery}%`]);
-  res.json(result.rows);
+  const result = await pgPool.query(query, [`%${searchQuery.trim()}%`, meId]);
+
+  const users = await Promise.all(
+    result.rows.map(async (user) => {
+      const friendshipStatus = await FriendService.getFriendshipStatus(meId, user.id);
+      return {
+        ...user,
+        friendshipStatus: friendshipStatus.status
+      };
+    })
+  );
+
+  res.json(users);
 }));
 
 router.get('/messages/:userId', authenticate, asyncHandler(async (req, res) => {
@@ -451,8 +484,6 @@ router.delete('/me/favorites/:roomId', authenticate, asyncHandler(async (req, re
   res.json({ message: 'Удалено из избранного' });
 }));
 
-const FriendService = require('../services/FriendService');
-const NotificationService = require('../services/NotificationService');
 
 router.get('/me/friends', authenticate, asyncHandler(async (req, res) => {
   const friends = await FriendService.getFriends(req.user.userId, req.query.q);
@@ -548,7 +579,8 @@ router.get('/:id', optionalPublicUser, asyncHandler(async (req, res) => {
       id: user.id,
       username: user.username,
       avatar_url: user.avatar_url,
-      created_at: user.created_at
+      created_at: user.created_at,
+      bio: user.bio || ''
     },
     friendshipStatus
   });

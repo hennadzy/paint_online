@@ -42,8 +42,9 @@ function buildProfileSeoMeta({ username, userId, drawingsCount = 0 }) {
   };
 }
 
-function buildProfileIndexableHtml({ username, userId, drawings = [] }) {
+function buildProfileIndexableHtml({ username, userId, bio = '', drawings = [] }) {
   const safeName = escapeHtml(username);
+  const safeBio = escapeHtml(bio);
   const profileUrl = `${BASE_URL}/user/${userId}`;
   const drawingsHtml = drawings.length > 0
     ? drawings.map((drawing) => (
@@ -54,6 +55,7 @@ function buildProfileIndexableHtml({ username, userId, drawings = [] }) {
   return `<section style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
       <h1>${safeName} — стена рисунков</h1>
       <p>Публичный профиль пользователя ${safeName} на Рисование.Онлайн.</p>
+      ${safeBio ? `<p>О себе: ${safeBio}</p>` : ''}
       <p><a href="${profileUrl}">Открыть профиль ${safeName}</a></p>
       <h2>Рисунки на стене</h2>
       <ul>${drawingsHtml}</ul>

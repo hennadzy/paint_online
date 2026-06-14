@@ -96,6 +96,40 @@ const sanitizeBroadcastBody = (text, maxLength = 15000) => {
   return sanitized.trim();
 };
 
+const BIO_MAX_LENGTH = 500;
+
+const LINK_PATTERNS = [
+  /https?:\/\/[^\s]+/gi,
+  /www\.[^\s]+/gi,
+  /ftp:\/\/[^\s]+/gi,
+  /[a-z][a-z0-9+.-]*:\/\/[^\s]+/gi,
+  /\[[^\]]+\]\([^)]+\)/g,
+  /<a\b[^>]*href\s*=/gi
+];
+
+const sanitizeUserBio = (text) => {
+  if (text == null) return '';
+
+  let sanitized = sanitizeChatMessage(String(text));
+
+  if (sanitized.length > BIO_MAX_LENGTH) {
+    sanitized = sanitized.slice(0, BIO_MAX_LENGTH);
+  }
+
+  for (const pattern of LINK_PATTERNS) {
+    if (pattern.test(sanitized)) {
+      return { error: 'Ссылки и URL в описании запрещены' };
+    }
+    pattern.lastIndex = 0;
+  }
+
+  if (/javascript\s*:/i.test(sanitized) || /data\s*:/i.test(sanitized)) {
+    return { error: 'Недопустимое содержимое в описании' };
+  }
+
+  return { bio: sanitized };
+};
+
 const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
@@ -204,6 +238,8 @@ module.exports = {
   sanitizeChatMessage,
   sanitizeBroadcastSubject,
   sanitizeBroadcastBody,
+  sanitizeUserBio,
+  BIO_MAX_LENGTH,
   sanitizeUsername,
   validateUsername,
   generateId,

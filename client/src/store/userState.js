@@ -423,6 +423,29 @@ class UserState {
     return this.incomingPersonalMessages.length;
   }
 
+  async searchUsers(query) {
+    if (!query || query.trim().length < 2) return [];
+    try {
+      const response = await api.get('/api/users/search', { params: { q: query.trim() } });
+      return response.data || [];
+    } catch (error) {
+      console.error('Search users error:', error);
+      return [];
+    }
+  }
+
+  async updateBio(bio) {
+    const response = await api.put('/api/users/me/bio', { bio });
+    runInAction(() => {
+      if (this.user) {
+        this.user.bio = response.data.bio;
+        this.saveUserToStorage(this.user);
+      }
+    });
+    this.showToast('Описание сохранено');
+    return response.data.bio;
+  }
+
   async deleteRoom(roomId) {
     await api.delete(`/api/rooms/${roomId}`);
   }

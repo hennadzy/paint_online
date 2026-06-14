@@ -41,6 +41,7 @@ const HeartIcon = ({ filled }) => (
 );
 
 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='80' r='40' fill='%23cccccc'/%3E%3Cpath d='M30 170 Q100 130, 170 170' stroke='%23cccccc' stroke-width='10' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
+const BIO_MAX_LENGTH = 500;
 
 export const ProfileRedirect = observer(() => {
   if (!userState.isAuthenticated) {
@@ -81,6 +82,7 @@ const ProfilePage = observer(() => {
   const [wallLoading, setWallLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [likingId, setLikingId] = useState(null);
+  const [bio, setBio] = useState('');
 
   const fileInputRef = useRef(null);
   const isOwnProfile = userState.isAuthenticated && routeUserId === userState.user?.id;
@@ -125,14 +127,17 @@ const ProfilePage = observer(() => {
               id: userState.user.id,
               username: userState.user.username,
               avatar_url: userState.user.avatar_url,
-              created_at: userState.user.created_at
+              created_at: userState.user.created_at,
+              bio: userState.user.bio || ''
             });
+            setBio(userState.user.bio || '');
             setFriendshipStatus({ status: 'self' });
           }
         } else {
           const data = await userState.fetchPublicUser(routeUserId);
           if (cancelled) return;
           setPublicProfile(data.user);
+          setBio(data.user.bio || '');
           setFriendshipStatus(data.friendshipStatus || { status: 'none' });
         }
         await loadWall(routeUserId);
@@ -186,14 +191,20 @@ const ProfilePage = observer(() => {
       const updates = {};
       if (username !== userState.user.username) updates.username = username;
       if (email !== userState.user.email) updates.email = email;
+      const bioChanged = bio !== (userState.user.bio || '');
 
-      if (Object.keys(updates).length === 0 && !newPassword.trim()) {
+      if (Object.keys(updates).length === 0 && !newPassword.trim() && !bioChanged) {
         setPasswordError('Нет изменений');
         return;
       }
 
       if (Object.keys(updates).length > 0) {
         await userState.updateProfile(updates);
+      }
+      if (bioChanged) {
+        const savedBio = await userState.updateBio(bio);
+        setBio(savedBio);
+        setPublicProfile(prev => ({ ...prev, bio: savedBio }));
       }
       if (newPassword.trim()) {
         if (!currentPassword.trim()) {
@@ -205,7 +216,7 @@ const ProfilePage = observer(() => {
       setEditMode(false);
       setCurrentPassword('');
       setNewPassword('');
-      setPublicProfile(prev => ({ ...prev, username: userState.user.username }));
+      setPublicProfile(prev => ({ ...prev, username: userState.user.username, bio: userState.user.bio || bio }));
     } catch (err) {
       setPasswordError(err.response?.data?.error || userState.error || 'Ошибка сохранения');
     }
@@ -297,7 +308,7 @@ const ProfilePage = observer(() => {
   return (
     <div className="profile-page">
       <SocialHeader
-        title={isOwnProfile ? 'Личный кабинет' : publicProfile.username}
+        title={isOwnProfile ? 'Кабинет' : publicProfile.username}
         backLabel={backLabel}
         backTo={backTo}
       />
@@ -364,6 +375,18 @@ const ProfilePage = observer(() => {
                   <input type="email" className="profile-input" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="form-group">
+                  <label>О себе</label>
+                  <textarea
+                    className="profile-input profile-textarea"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX_LENGTH))}
+                    maxLength={BIO_MAX_LENGTH}
+                    rows={4}
+                    placeholder="Расскажите о себе (без ссылок и HTML)"
+                  />
+                  <div className="profile-bio-hint">{bio.length}/{BIO_MAX_LENGTH} · ссылки запрещены</div>
+                </div>
+                <div className="form-group">
                   <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
                   <div className="password-input-wrapper">
                     <input
@@ -392,7 +415,7 @@ const ProfilePage = observer(() => {
                 {passwordError && <div className="profile-error">{passwordError}</div>}
                 <div className="form-actions">
                   <button className="profile-btn profile-btn-primary" onClick={handleSaveProfile}>Сохранить</button>
-                  <button className="profile-btn profile-btn-secondary" onClick={() => { setEditMode(false); setPasswordError(''); }}>Отмена</button>
+                  <button className="profile-btn profile-btn-secondary" onClick={() => { setEditMode(false); setPasswordError(''); setBio(publicProfile.bio || userState.user?.bio || ''); }}>Отмена</button>
                 </div>
               </div>
             ) : (
@@ -422,6 +445,17 @@ const ProfilePage = observer(() => {
                 )}
               </div>
             )}
+
+            <div className="profile-bio-section">
+              <h3>О себе</h3>
+              {(publicProfile.bio || bio) ? (
+                <p className="profile-bio-text">{publicProfile.bio || bio}</p>
+              ) : (
+                <p className="profile-bio-empty">
+                  {isOwnProfile ? 'Добавьте описание в режиме редактирования профиля' : 'Пользователь пока ничего не написал о себе'}
+                </p>
+              )}
+            </div>
 
             {isOwnProfile && (
               <>
@@ -455,7 +489,7 @@ const ProfilePage = observer(() => {
                   {userState.friendsPreview.length === 0 ? (
                     <p className="profile-empty">
                       У вас пока нет друзей.{' '}
-                      <button type="button" className="profile-friends-preview__link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/friends')}>
+          <button type="button" className="profile-friends-preview__link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/friends?tab=find')}>
                         Найти друзей
                       </button>
                     </p>

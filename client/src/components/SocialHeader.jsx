@@ -32,7 +32,8 @@ const SocialHeader = observer(({
           onClick={handleBack}
           aria-label={backLabel}
         >
-          {backLabel}
+          <span className="social-header__back-icon" aria-hidden="true">←</span>
+          <span className="social-header__back-text">{backLabel}</span>
         </button>
 
         <h1 className="social-header__title">{title}</h1>

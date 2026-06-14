@@ -43,7 +43,7 @@ class User {
 
   static async findById(id) {
     const query = `
-      SELECT id, username, email, role, created_at, last_login, avatar_url, settings, is_active
+      SELECT id, username, email, role, created_at, last_login, avatar_url, settings, is_active, bio
       FROM users WHERE id = $1
     `;
     const result = await pgPool.query(query, [id]);
@@ -77,7 +77,8 @@ class User {
                     key === 'avatarUrl' ? 'avatar_url' :
                     key === 'settings' ? 'settings' :
                     key === 'role' ? 'role' :
-                    key === 'isActive' ? 'is_active' : null;
+                    key === 'isActive' ? 'is_active' :
+                    key === 'bio' ? 'bio' : null;
       if (dbKey) {
         setClause.push(`${dbKey} = $${index}`);
         values.push(value);
@@ -92,7 +93,7 @@ class User {
       UPDATE users
       SET ${setClause.join(', ')}
       WHERE id = $${index}
-      RETURNING id, username, email, role, created_at, last_login, avatar_url, settings, is_active
+      RETURNING id, username, email, role, created_at, last_login, avatar_url, settings, is_active, bio
     `;
 
     const result = await pgPool.query(query, values);
