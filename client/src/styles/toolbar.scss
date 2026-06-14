@@ -119,18 +119,6 @@
  transform: translateX(-50%) translateY(0) scale(1);
  animation: tooltipIn 0.22s ease;
  }
-
- .zoom-text {
- position: relative;
- z-index:1;
- font-size:24px;
- font-weight: bold;
- color: #fff;
- line-height:1;
- display: flex;
- align-items: center;
- justify-content: center;
- }
  }
 
 &__group {
@@ -473,6 +461,14 @@
 
 .icon.grid {
   background-image: url('../assets/img/grid.png');
+}
+
+.icon.plus {
+  background-image: url('../assets/img/plus.png');
+}
+
+.icon.minus {
+  background-image: url('../assets/img/minus.png');
 }
 
 .icon.clear {

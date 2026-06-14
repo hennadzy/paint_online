@@ -233,7 +233,7 @@ const Toolbar = observer(() => {
         onMouseDown={(e) => e.target.blur()}
         title="Уменьшить (Ctrl+-)"
       >
-        <span className="zoom-text">−</span>
+        <span className="icon minus" />
         <span className="tooltip">Уменьшить</span>
       </button>
 
@@ -244,7 +244,7 @@ const Toolbar = observer(() => {
         onMouseDown={(e) => e.target.blur()}
         title="Увеличить (Ctrl++)"
       >
-        <span className="zoom-text">+</span>
+        <span className="icon plus" />
         <span className="tooltip">Увеличить</span>
       </button>
     </div>
