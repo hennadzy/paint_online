@@ -110,19 +110,19 @@ class User {
     let paramIndex = 1;
 
     if (role) {
-      query += ` WHERE role = ${paramIndex}`;
+      query += ` WHERE role = $${paramIndex}`;
       values.push(role);
       paramIndex++;
     }
 
     if (isActive !== undefined) {
-      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = ${paramIndex}`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = $${paramIndex}`;
       values.push(isActive);
       paramIndex++;
     }
 
     if (search) {
-      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE ${paramIndex} OR email ILIKE ${paramIndex})`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
       paramIndex++;
     }
@@ -146,19 +146,19 @@ class User {
     let paramIndex = 1;
 
     if (role) {
-      query += ` WHERE role = ${paramIndex}`;
+      query += ` WHERE role = $${paramIndex}`;
       values.push(role);
       paramIndex++;
     }
 
     if (isActive !== undefined) {
-      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = ${paramIndex}`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` is_active = $${paramIndex}`;
       values.push(isActive);
       paramIndex++;
     }
 
     if (search) {
-      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE ${paramIndex} OR email ILIKE ${paramIndex})`;
+      query += (paramIndex === 1 ? ' WHERE' : ' AND') + ` (username ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
     }
 

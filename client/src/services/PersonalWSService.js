@@ -1,6 +1,4 @@
-const WS_URL = window.location.hostname === 'localhost'
-  ? 'ws://localhost:5000'
-  : 'wss://paint-online-back.onrender.com';
+import { WS_URL } from '../config/urls';
 
 class PersonalWSService {
   constructor() {

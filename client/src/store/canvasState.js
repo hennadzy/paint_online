@@ -4,8 +4,9 @@ import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
 
-export const API_URL = 'https://paint-online-back.onrender.com';
-export const WS_URL = 'wss://paint-online-back.onrender.com';
+import { API_URL, WS_URL } from '../config/urls';
+
+export { API_URL, WS_URL };
  
 class CanvasState {
   currentRoomId = null;

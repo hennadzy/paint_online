@@ -18,7 +18,7 @@ class RoomManager {
     return redis;
   }
 
-startInactivityCheck() {
+  startInactivityCheck() {
     setInterval(() => {
       this.checkInactiveUsers();
     }, 60000);
@@ -26,74 +26,6 @@ startInactivityCheck() {
     setInterval(() => {
       this.cleanupStaleKeys();
     }, 600000);
-  }
-
-  async checkInactiveUsers() {
-    if (!this.redis) return;
-
-    const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
-    const now = Date.now();
-
-    try {
-      const keys = await this.redis.keys('ws:*');
-      if (!keys || keys.length === 0) return;
-
-      for (const key of keys) {
-        try {
-          const data = await this.redis.hgetall(key);
-          if (!data || !data.lastActivity) continue;
-
-          const lastActivity = parseInt(data.lastActivity);
-          const timeSinceLastActivity = now - lastActivity;
-
-          if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
-            const wsId = key.replace('ws:', '');
-            const { roomId, username } = data;
-
-            if (roomId && username) {
-              await this.removeUserByInfo(roomId, username, true);
-              console.log(`Removed inactive user: ${username} from room ${roomId}`);
-            }
-          }
-        } catch (error) {
-          console.error('Error checking inactive user:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error in checkInactiveUsers:', error);
-    }
-  }
-
-  async removeUserByInfo(roomId, username, isInactive = false) {
-    await this.redis.srem(`room:${roomId}:users`, username);
-    await this.redis.del(`ws:${roomId}_${username}`);
-    await this.redis.del(`user:${username}:room`);
-
-    const sockets = this.roomSockets.get(roomId);
-    if (sockets) {
-      const WebSocket = require('ws');
-      const message = JSON.stringify({ 
-        method: isInactive ? 'inactiveDisconnect' : 'disconnection', 
-        username 
-      });
-      sockets.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(message);
-        }
-      });
-
-      const users = await this.getRoomUsers(roomId);
-      const usersMessage = JSON.stringify({ method: 'users', users });
-      sockets.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(usersMessage);
-        }
-      });
-    }
-  }
-
-  get redis() {
-    return require('../config/db').redis;
   }
 
 async getAllRoomStrokes(roomId) {
@@ -453,6 +385,8 @@ async getVerifiedUsers(roomId) {
   }
 
   async checkInactiveUsers() {
+    if (!this.redis) return 0;
+
     const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
     const now = Date.now();
     try {

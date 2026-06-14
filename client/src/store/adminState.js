@@ -206,7 +206,7 @@ class AdminState {
 
   async toggleUserActive(userId) {
     try {
-      const response = await axios.post(`${API_URL}/api/admin/users/${userId}/toggle-active}`, null, { headers: getAuthHeaders() });
+      const response = await axios.post(`${API_URL}/api/admin/users/${userId}/toggle-active`, null, { headers: getAuthHeaders() });
       runInAction(() => {
         const index = this.users.findIndex(u => u.id === userId);
         if (index !== -1) {
