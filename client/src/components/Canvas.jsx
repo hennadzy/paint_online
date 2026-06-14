@@ -66,7 +66,7 @@ const Canvas = observer(() => {
     toolState.setTool(new Brush(canvasRef.current, null, null, 'local'), 'brush');
 
     if (canvasState.returningFromRoom) {
-      canvasState.restoreAutoSave();
+      void canvasState.restoreAutoSave();
       canvasState.returningFromRoom = false;
       canvasState.showRestoreDialog = false;
     } else {
@@ -257,10 +257,10 @@ const Canvas = observer(() => {
 
       <GamesModal />
 
-      <RestoreDialog
+        <RestoreDialog
         show={canvasState.showRestoreDialog}
         timestamp={canvasState.restoreTimestamp}
-        onRestore={() => canvasState.restoreAutoSave()}
+        onRestore={() => { canvasState.restoreAutoSave(); }}
         onDiscard={() => canvasState.discardAutoSave()}
       />
 

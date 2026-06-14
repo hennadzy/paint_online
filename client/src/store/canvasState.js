@@ -525,7 +525,7 @@ setupThumbnailInterval() {
     }
   }
 
-  disconnect(keepLocalSave = false) {
+  async disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
 
     if (this.titleInterval) {
@@ -541,6 +541,11 @@ setupThumbnailInterval() {
     }
 
     this.saveThumbnail();
+
+    if (WebSocketService.isConnected) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+
     WebSocketService.disconnect();
     this.isConnected = false;
     const wasInRoom = this.currentRoomId !== null;
@@ -698,15 +703,29 @@ setupThumbnailInterval() {
   }
 
   setupAutoSave() {
+    AutoSaveService.setSaveCallback(() => {
+      if (!this.isConnected) {
+        this.performAutoSave();
+      }
+    });
+
     setInterval(() => {
       if (AutoSaveService.shouldSave() && !this.isConnected) {
         this.performAutoSave();
       }
     }, 1000);
 
-    window.addEventListener('beforeunload', () => {
-      if (!this.isConnected && AutoSaveService.hasChanges) {
+    const saveOnExit = () => {
+      if (!this.isConnected && HistoryService.getStrokes().length > 0) {
         this.performAutoSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', saveOnExit);
+    window.addEventListener('pagehide', saveOnExit);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveOnExit();
       }
     });
 
@@ -753,24 +772,32 @@ setupThumbnailInterval() {
   restoreAutoSave() {
     const savedData = AutoSaveService.restore(this.currentRoomId);
 
-    if (savedData) {
+    if (!savedData) {
+      this.showRestoreDialog = false;
+      this.restoreTimestamp = null;
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
       HistoryService.setStrokes(savedData.strokes);
-      CanvasService.rebuildBuffer(savedData.strokes);
-      CanvasService.redraw();
 
       if (savedData.canvasState) {
         this.resetViewPan();
         if (savedData.canvasState.zoom) {
           this.setZoom(savedData.canvasState.zoom);
         }
-        if (savedData.canvasState.showGrid) {
+        if (savedData.canvasState.showGrid && !CanvasService.showGrid) {
           CanvasService.toggleGrid();
         }
       }
-    }
 
-    this.showRestoreDialog = false;
-    this.restoreTimestamp = null;
+      CanvasService.rebuildBuffer(savedData.strokes, () => {
+        CanvasService.redraw();
+        this.showRestoreDialog = false;
+        this.restoreTimestamp = null;
+        resolve();
+      });
+    });
   }
 
   discardAutoSave() {

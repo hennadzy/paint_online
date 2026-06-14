@@ -4,7 +4,7 @@ class AutoSaveService {
     this.autosaveInterval = null;
     this.hasChanges = false;
     this.lastSaveTime = 0;
-    this.saveDelay = 5000;
+    this.saveDelay = 1500;
     this.maxBackups = 3;
     this.maxAge = 24 * 60 * 60 * 1000;
   }
@@ -179,6 +179,19 @@ class AutoSaveService {
 
   markChanged() {
     this.hasChanges = true;
+    if (this._debounceTimer) {
+      clearTimeout(this._debounceTimer);
+    }
+    if (this._saveCallback) {
+      this._debounceTimer = setTimeout(() => {
+        this._debounceTimer = null;
+        this._saveCallback();
+      }, 800);
+    }
+  }
+
+  setSaveCallback(callback) {
+    this._saveCallback = callback;
   }
 
   shouldSave() {

@@ -172,6 +172,8 @@ async removeUser(ws) {
     const { roomId, username } = userData;
 
     await this.saveCancelledStrokesToDb(roomId, username);
+    await this.persistActiveStrokes(roomId);
+    await redis.del(`room:${roomId}:cancelled:${username}`);
 
     const multi = redis.multi();
     multi.srem(`room:${roomId}:users`, username);
@@ -191,24 +193,9 @@ async removeUser(ws) {
 
     const remaining = await redis.scard(`room:${roomId}:users`);
     if (remaining === 0) {
-      let strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
-      const allCancelled = await this.getAllCancelledStrokes(roomId);
-      const allCancelledIds = new Set();
-
-      Object.values(allCancelled).forEach(cancelledArray => {
-        cancelledArray.forEach(stroke => {
-          allCancelledIds.add(stroke.id);
-        });
-      });
-
-      if (strokes.length > 0) {
-        const strokesObjects = strokes.map(s => JSON.parse(s));
-        const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
-
-        await DataStore.replaceRoomStrokes(roomId, activeStrokes);
-      }
       await redis.del(`room:${roomId}:strokes`);
 
+      const allCancelled = await this.getAllCancelledStrokes(roomId);
       for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
         if (cancelledStrokes.length > 0) {
           await DataStore.saveCancelledStrokes(roomId, cancelledUsername, cancelledStrokes);
@@ -257,9 +244,9 @@ async removeUser(ws) {
     });
     if (index !== -1) {
       await redis.lrem(`room:${roomId}:strokes`, 1, strokes[index]);
-      return true;
     }
-    return false;
+    await DataStore.deleteStrokeById(roomId, strokeId);
+    return index !== -1;
   }
 
   async addCancelledStroke(roomId, username, stroke) {
@@ -268,19 +255,18 @@ async removeUser(ws) {
 
   async removeCancelledStroke(roomId, username, strokeId) {
     const cancelled = await redis.lrange(`room:${roomId}:cancelled:${username}`, 0, -1);
-    const index = cancelled.findIndex(s => {
+    let removed = false;
+    for (const entry of cancelled) {
       try {
-        const parsed = JSON.parse(s);
-        return parsed.id === strokeId;
+        if (JSON.parse(entry).id === strokeId) {
+          await redis.lrem(`room:${roomId}:cancelled:${username}`, 1, entry);
+          removed = true;
+        }
       } catch {
-        return false;
+        continue;
       }
-    });
-    if (index !== -1) {
-      await redis.lrem(`room:${roomId}:cancelled:${username}`, 1, cancelled[index]);
-      return true;
     }
-    return false;
+    return removed;
   }
 
   async getCancelledStrokes(roomId, username) {
@@ -318,6 +304,23 @@ async removeUser(ws) {
   async saveCancelledStrokesToDb(roomId, username) {
     const cancelled = await this.getCancelledStrokes(roomId, username);
     await DataStore.saveCancelledStrokes(roomId, username, cancelled);
+  }
+
+  async persistActiveStrokes(roomId) {
+    const strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
+    if (strokes.length === 0) {
+      await DataStore.replaceRoomStrokes(roomId, []);
+      return;
+    }
+
+    const strokesObjects = strokes.map(s => JSON.parse(s));
+    const allCancelled = await this.getAllCancelledStrokes(roomId);
+    const allCancelledIds = new Set();
+    Object.values(allCancelled).forEach(cancelledArray => {
+      cancelledArray.forEach(stroke => allCancelledIds.add(stroke.id));
+    });
+    const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
+    await DataStore.replaceRoomStrokes(roomId, activeStrokes);
   }
 
   async loadCancelledStrokesFromDb(roomId, username) {
@@ -433,18 +436,9 @@ async getVerifiedUsers(roomId) {
           const usersMessage = JSON.stringify({ method: 'users', users: remainingUsers });
           roomSockets.forEach(ws => { if (ws.readyState === 1) { try { ws.send(usersMessage); } catch (e) {} } });
           if (remainingUsers.length === 0) {
-            const strokes = await redis.lrange(`room:${user.roomId}:strokes`, 0, -1);
-            const allCancelled = await this.getAllCancelledStrokes(user.roomId);
-            const allCancelledIds = new Set();
-            Object.values(allCancelled).forEach(cancelledArray => {
-              cancelledArray.forEach(stroke => allCancelledIds.add(stroke.id));
-            });
-            if (strokes.length > 0) {
-              const strokesObjects = strokes.map(s => JSON.parse(s));
-              const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
-              await DataStore.replaceRoomStrokes(user.roomId, activeStrokes);
-            }
+            await this.persistActiveStrokes(user.roomId);
             await redis.del(`room:${user.roomId}:strokes`);
+            const allCancelled = await this.getAllCancelledStrokes(user.roomId);
             for (const [cancelledUsername, cancelledStrokes] of Object.entries(allCancelled)) {
               if (cancelledStrokes.length > 0) {
                 await DataStore.saveCancelledStrokes(user.roomId, cancelledUsername, cancelledStrokes);
