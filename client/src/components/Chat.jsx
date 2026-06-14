@@ -79,12 +79,9 @@ const Chat = observer(() => {
   }, []);
 
   useLayoutEffect(() => {
-    if (messagesRef.current) {
-      const lastMessage = messagesRef.current.lastElementChild;
-      if (lastMessage) {
-        lastMessage.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    const container = messagesRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
   }, [canvasState.chatMessages.length]);
 
   if (!canvasState.isConnected) return null;

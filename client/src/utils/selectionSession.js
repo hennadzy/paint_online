@@ -181,16 +181,20 @@ export function commitSelectionSession(canvas) {
   if (!bufferCtx) return;
 
   const transformedImage = applyTransformToImageData(imageData, transform);
+  const centerX = previewX + width / 2;
+  const centerY = previewY + height / 2;
+  const destX = Math.round(centerX - transformedImage.width / 2);
+  const destY = Math.round(centerY - transformedImage.height / 2);
 
   canvasState.pushStroke({
     type: "selection_transform",
     mask: Array.from(mask),
     canvasWidth: canvas.width,
     canvasHeight: canvas.height,
-    x: previewX,
-    y: previewY,
-    width,
-    height,
+    x: destX,
+    y: destY,
+    width: transformedImage.width,
+    height: transformedImage.height,
     imageData: {
       width: transformedImage.width,
       height: transformedImage.height,

@@ -186,21 +186,33 @@ export function imageDataToCanvas(imageData) {
 }
 
 export function applyTransformToImageData(imageData, transform) {
-  const { angle, scaleX, scaleY } = transform;
+  const { angle = 0, scaleX = 1, scaleY = 1, skewX = 0, skewY = 0 } = transform;
   const srcCanvas = imageDataToCanvas(imageData);
   const w = imageData.width;
   const h = imageData.height;
+
+  const rad = (angle * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  const scaledW = w * Math.abs(scaleX);
+  const scaledH = h * Math.abs(scaleY);
+  const skewExpand = 1 + Math.abs(skewX) + Math.abs(skewY);
+
+  const destW = Math.max(1, Math.ceil((scaledW * cos + scaledH * sin) * skewExpand));
+  const destH = Math.max(1, Math.ceil((scaledW * sin + scaledH * cos) * skewExpand));
+
   const destCanvas = document.createElement("canvas");
-  destCanvas.width = w;
-  destCanvas.height = h;
+  destCanvas.width = destW;
+  destCanvas.height = destH;
   const ctx = destCanvas.getContext("2d");
 
-  ctx.translate(w / 2, h / 2);
-  ctx.rotate((angle * Math.PI) / 180);
+  ctx.translate(destW / 2, destH / 2);
+  ctx.rotate(rad);
+  ctx.transform(1, skewY, skewX, 1, 0, 0);
   ctx.scale(scaleX, scaleY);
-  ctx.drawImage(srcCanvas, -w / 2, -h / 2);
+  ctx.drawImage(srcCanvas, -w / 2, -h / 2, w, h);
 
-  return ctx.getImageData(0, 0, w, h);
+  return ctx.getImageData(0, 0, destW, destH);
 }
 
 export function getSelectionMode(e) {

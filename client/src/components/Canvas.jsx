@@ -45,7 +45,7 @@ const Canvas = observer(() => {
   useCustomScrollbars(containerRef, wrapperRef, canvasState.isConnected);
   const isVisible = usePageVisibility();
 
-  useMobileCanvasFit(containerRef, canvasState.isConnected);
+  useMobileCanvasFit(containerRef, canvasState.isConnected, Boolean(params.id));
 
   useEffect(() => {
     canvasState.setPageVisible(isVisible);
@@ -196,10 +196,12 @@ const Canvas = observer(() => {
 
 
   const isMobileCanvas = isMobileCanvasView();
+  const inRoom = Boolean(params.id);
+  const showChat = canvasState.isConnected;
 
   return (
-    <div className={`canvas ${canvasState.currentRoomId && canvasState.isConnected ? 'canvas--has-chat' : ''}`}>
-      <div ref={layoutRef} className={`canvas-layout ${canvasState.currentRoomId && canvasState.isConnected ? 'has-chat' : ''}`}>
+    <div className={`canvas ${inRoom ? 'canvas--has-chat' : ''}`}>
+      <div ref={layoutRef} className={`canvas-layout ${inRoom ? 'has-chat' : ''}`}>
 
         <div className="canvas-container" ref={containerRef}>
           <div className="canvas-container-inner">
@@ -246,8 +248,8 @@ const Canvas = observer(() => {
             </button>
           </div>
         )}
-        <div className={`canvas-side-panel ${canvasState.isConnected ? 'show' : ''}`}>
-          {canvasState.isConnected && <Chat />}
+        <div className={`canvas-side-panel ${inRoom ? 'show' : ''}`}>
+          {showChat && <Chat />}
         </div>
       </div>
 

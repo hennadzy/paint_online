@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import canvasState from '../store/canvasState';
 import { isMobileCanvasView } from '../utils/pinchPanGestures';
 
-export const useMobileCanvasFit = (containerRef, isConnected) => {
+export const useMobileCanvasFit = (containerRef, isConnected, inRoom = false) => {
   useEffect(() => {
     const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
     if (!isMobilePortrait) return;
@@ -27,7 +27,7 @@ export const useMobileCanvasFit = (containerRef, isConnected) => {
       }
     };
 
-    if (!isConnected) {
+    if (!isConnected && !inRoom) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         apply();
         setTimeout(apply, 150);
@@ -36,5 +36,5 @@ export const useMobileCanvasFit = (containerRef, isConnected) => {
     } else {
       apply();
     }
-  }, [isConnected, containerRef]);
+  }, [isConnected, inRoom, containerRef]);
 };
