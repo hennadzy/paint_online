@@ -67,37 +67,13 @@ useEffect(() => {
   }, [canvasState.currentRoomId, navigate]);
 
   useEffect(() => {
-    const connectToRoom = async () => {
-      const { username, currentRoomId: roomId, isConnected, canvas, roomError } = canvasState;
-
-      if (roomError) {
-        return;
-      }
-
-      if (!username || username === 'local' || !roomId || isConnected || !canvas) {
-        return;
-      }
-
-      const token = localStorage.getItem(`room_token_${roomId}`);
-
-      if (!token) {
-        canvasState.setModalOpen(true);
-        return;
-      }
-
-      try {
-        await canvasState.connectToRoom(roomId, username, token);
-        canvasState.setModalOpen(false);
-        canvasState.setShowRoomInterface(false);
-      } catch (error) {
-        localStorage.removeItem(`room_token_${roomId}`);
-        canvasState.setIsConnected(false);
-        canvasState.setModalOpen(true);
-      }
-    };
-
-    if (canvasState.currentRoomId && canvasState.usernameReady && !canvasState.isConnected) {
-      connectToRoom();
+    if (
+      canvasState.currentRoomId &&
+      canvasState.usernameReady &&
+      !canvasState.isConnected &&
+      !canvasState.roomError
+    ) {
+      void canvasState.tryConnectToRoom();
     }
   }, [canvasState.usernameReady, canvasState.isConnected, canvasState.currentRoomId, canvasState.roomError]);
 

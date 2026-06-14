@@ -19,6 +19,16 @@ connect(wsUrl, roomId, username, token) {
     return new Promise((resolve, reject) => {
       try {
         const isReconnecting = this.reconnectAttempts > 0;
+
+        if (this.socket) {
+          this.socket.onclose = null;
+          this.socket.onerror = null;
+          try {
+            this.socket.close();
+          } catch (_) {}
+          this.socket = null;
+          this.isConnected = false;
+        }
         
         this.roomId = roomId;
         this.username = username;

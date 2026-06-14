@@ -422,9 +422,8 @@ router.post('/rooms/:id/join-public', tokenRequestLimiter, asyncHandler(async (r
     throw new ForbiddenError('Room is private');
   }
 
-  const currentUsers = await RoomManager.getRoomUsers(roomId);
-  if (currentUsers.length >= 10) {
-    throw new ForbiddenError('Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.');
+  if (!(await RoomManager.canAcceptNewUser(roomId, username))) {
+    throw new ForbiddenError(`Достигнуто максимальное количество пользователей в комнате (${RoomManager.ROOM_MAX_USERS}). Попробуйте позже.`);
   }
 
   const token = generateToken(roomId, username, true, isPrivileged ? 'admin' : 'user', authUserId);
@@ -452,11 +451,6 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, asyncHandler(async (
 
   if (!roomId) {
     throw new ValidationError('ID комнаты не указан');
-  }
-
-  const currentUsers = await RoomManager.getRoomUsers(roomId);
-  if (currentUsers.length >= 10) {
-    throw new ForbiddenError('Достигнуто максимальное количество пользователей в комнате (10). Попробуйте позже.');
   }
 
   let username;
@@ -492,6 +486,10 @@ router.post('/rooms/:id/join-private', tokenRequestLimiter, asyncHandler(async (
         throw new ForbiddenError('Invalid password');
       }
     }
+  }
+
+  if (!(await RoomManager.canAcceptNewUser(roomId, username))) {
+    throw new ForbiddenError(`Достигнуто максимальное количество пользователей в комнате (${RoomManager.ROOM_MAX_USERS}). Попробуйте позже.`);
   }
 
   const token = generateToken(roomId, username, false, isPrivileged ? 'admin' : 'user', authUserId);

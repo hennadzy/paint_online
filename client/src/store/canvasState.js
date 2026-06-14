@@ -41,6 +41,8 @@ class CanvasState {
   personalMessagesTargetUser = null;
   showInactiveModal = false;
   joiningRoom = false;
+  _connectInProgress = false;
+  _pendingRoomConnect = null;
   viewPanX = 0;
   viewPanY = 0;
   viewZoom = 1;
@@ -258,6 +260,9 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
 
   setCanvas(canvas) {
     CanvasService.initialize(canvas);
+    if (this.currentRoomId || this._pendingRoomConnect) {
+      void this.tryConnectToRoom();
+    }
   }
   toggleGrid() {
     CanvasService.toggleGrid();
@@ -474,6 +479,55 @@ sendChatMessage(message) {
     }
   }
 
+  prepareAndConnectRoom(roomId, username, token) {
+    localStorage.setItem(`room_token_${roomId}`, token);
+    this.joiningRoom = true;
+    this._pendingRoomConnect = { roomId, username, token };
+    this.setUsername(username);
+    this.setModalOpen(false);
+    this.setShowRoomInterface(false);
+    return this.tryConnectToRoom();
+  }
+
+  async tryConnectToRoom() {
+    if (this._connectInProgress || this.isConnected || this.roomError) {
+      return;
+    }
+
+    const pending = this._pendingRoomConnect;
+    const roomId = pending?.roomId || this.currentRoomId;
+    if (!roomId) {
+      return;
+    }
+
+    const username = pending?.username || this.username;
+    if (!username || username === 'local') {
+      return;
+    }
+
+    if (!this.canvas) {
+      return;
+    }
+
+    const token = pending?.token || localStorage.getItem(`room_token_${roomId}`);
+    if (!token) {
+      this.setModalOpen(true);
+      return;
+    }
+
+    this._connectInProgress = true;
+    try {
+      await this.connectToRoom(roomId, username, token);
+      this._pendingRoomConnect = null;
+    } catch (_) {
+      localStorage.removeItem(`room_token_${roomId}`);
+      this.setIsConnected(false);
+      this.setModalOpen(true);
+    } finally {
+      this._connectInProgress = false;
+    }
+  }
+
   async connectToRoom(roomId, username, token) {
     await WebSocketService.connect(WS_URL, roomId, username, token);
     this.setCurrentRoomId(roomId);
@@ -572,6 +626,8 @@ setupThumbnailInterval() {
     this.currentRoomId = null;
     this.username = "local";
     this.usernameReady = false;
+    this._pendingRoomConnect = null;
+    this._connectInProgress = false;
     HistoryService.clearStrokes();
     this.users = [];
     this.chatMessages = [];

@@ -84,7 +84,7 @@ const Canvas = observer(() => {
     const adminToken = localStorage.getItem('adminJoinToken');
     if (adminToken) {
       localStorage.removeItem('adminJoinToken');
-      canvasState.connectToRoom(params.id, 'Admin', adminToken);
+      void canvasState.prepareAndConnectRoom(params.id, 'Admin', adminToken);
     }
   };
 

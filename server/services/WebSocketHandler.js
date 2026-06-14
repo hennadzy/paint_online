@@ -46,6 +46,26 @@ class WebSocketHandler {
     this.userSockets.delete(userId);
   }
 
+  closeStaleRoomSockets(userId, currentWs) {
+    if (!userId) return;
+
+    const sockets = this.userRoomSockets.get(userId);
+    if (!sockets) return;
+
+    for (const oldWs of sockets) {
+      if (oldWs !== currentWs && oldWs.readyState === WebSocket.OPEN) {
+        oldWs.close(1000, 'Replaced by new connection');
+      }
+    }
+  }
+
+  closeStalePersonalSocket(userId, currentWs) {
+    const existingWs = this.userSockets.get(userId);
+    if (existingWs && existingWs !== currentWs && existingWs.readyState === WebSocket.OPEN) {
+      existingWs.close(1000, 'Replaced by new connection');
+    }
+  }
+
   checkRateLimit(ws) {
     const now = Date.now();
     const limit = this.wsMessageLimits.get(ws) || { count: 0, resetTime: now + 1000 };
@@ -74,6 +94,7 @@ class WebSocketHandler {
         try {
           ws.send(messageString);
         } catch (error) {
+          console.error('WebSocket broadcast send error:', error);
         }
       }
     });
@@ -134,6 +155,7 @@ async handleConnection(ws, msg) {
     ws._isReconnecting = isReconnecting;
 
     if (userId) {
+      this.closeStaleRoomSockets(userId, ws);
       if (!this.userRoomSockets.has(userId)) {
         this.userRoomSockets.set(userId, new Set());
       }
@@ -417,7 +439,7 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     }
   }
 
-  handleMessage(ws, msgStr) {
+  async handleMessage(ws, msgStr) {
     try {
       if (!this.checkRateLimit(ws)) {
         ws.close(1008, 'Rate limit exceeded');
@@ -426,27 +448,26 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
       const msg = JSON.parse(msgStr);
       switch (msg.method) {
         case "connection":
-          this.handleConnection(ws, msg);
+          await this.handleConnection(ws, msg);
           break;
         case "draw":
-          this.handleDraw(ws, msg);
+          await this.handleDraw(ws, msg);
           break;
         case "clear":
-          this.handleClear(ws, msg);
+          await this.handleClear(ws, msg);
           break;
         case "syncStrokes":
-          this.handleSyncStrokes(ws, msg).catch((err) => {
-            console.error('syncStrokes error:', err);
-          });
+          await this.handleSyncStrokes(ws, msg);
           break;
         case "chat":
-          this.handleChat(ws, msg);
+          await this.handleChat(ws, msg);
           break;
         case "personalMessage":
-          this.handlePersonalMessage(ws, msg);
+          await this.handlePersonalMessage(ws, msg);
           break;
       }
     } catch (error) {
+      console.error('WebSocket message error:', error);
     }
   }
 
@@ -486,7 +507,11 @@ async handleClose(ws) {
     const randomId = crypto.randomBytes(9).toString('hex').slice(0, 9);
     ws._id = `ws_${Date.now()}_${randomId}`;
 
-    ws.on('message', (msgStr) => this.handleMessage(ws, msgStr));
+    ws.on('message', (msgStr) => {
+      this.handleMessage(ws, msgStr).catch((error) => {
+        console.error('Unhandled WebSocket message error:', error);
+      });
+    });
     ws.on('close', () => this.handleClose(ws));
     ws.on('error', () => {});
   }
@@ -496,12 +521,16 @@ async handleClose(ws) {
     ws._id = `ws_personal_${Date.now()}_${randomId}`;
     ws._isPersonalConnection = true;
 
-    ws.on('message', (msgStr) => this.handlePersonalConnectionMessage(ws, msgStr));
+    ws.on('message', (msgStr) => {
+      this.handlePersonalConnectionMessage(ws, msgStr).catch((error) => {
+        console.error('Unhandled personal WebSocket message error:', error);
+      });
+    });
     ws.on('close', () => this.handlePersonalConnectionClose(ws));
     ws.on('error', () => {});
   }
 
-  handlePersonalConnectionMessage(ws, msgStr) {
+  async handlePersonalConnectionMessage(ws, msgStr) {
     try {
       if (!this.checkRateLimit(ws)) {
         ws.close(1008, 'Rate limit exceeded');
@@ -510,15 +539,17 @@ async handleClose(ws) {
       const msg = JSON.parse(msgStr);
       switch (msg.method) {
         case 'auth':
-          this.handlePersonalAuth(ws, msg);
+          await this.handlePersonalAuth(ws, msg);
           break;
         case 'personalMessage':
           if (ws._userId) {
-            this.handlePersonalMessage(ws, msg);
+            await this.handlePersonalMessage(ws, msg);
           }
           break;
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error('Personal WebSocket message error:', error);
+    }
   }
 
   async handlePersonalAuth(ws, msg) {
@@ -539,6 +570,7 @@ async handleClose(ws) {
     ws._userId = payload.userId;
     ws._username = payload.username || payload.userId;
 
+    this.closeStalePersonalSocket(payload.userId, ws);
     this.userSockets.set(payload.userId, ws);
 
     await this.deliverPendingMessages(ws, payload.userId);

@@ -3,6 +3,22 @@ const DataStore = require('./DataStore');
 const { isStrokePayloadTooLarge } = require('../utils/security');
 
 const USE_REDIS = process.env.REDIS_URL && process.env.REDIS_URL.startsWith('redis');
+const ROOM_MAX_USERS = 10;
+const ROOM_FULL_ERROR = 'Достигнуто максимальное количество пользователей в комнате';
+
+const RESERVE_ROOM_SLOT_LUA = `
+local usersKey = KEYS[1]
+local maxUsers = tonumber(ARGV[1])
+local username = ARGV[2]
+if redis.call('SISMEMBER', usersKey, username) == 1 then
+  return 2
+end
+if redis.call('SCARD', usersKey) >= maxUsers then
+  return 0
+end
+redis.call('SADD', usersKey, username)
+return 1
+`;
 
 class RoomManager {
   constructor() {
@@ -66,20 +82,61 @@ async getAllRoomStrokes(roomId) {
     }
   }
 
-async addUser(roomId, username, ws, isVerified = false, userId = null) {
-    const userCount = await redis.scard(`room:${roomId}:users`);
-    if (userCount >= 10) {
-      throw new Error('Достигнуто максимальное количество пользователей в комнате');
+  async canAcceptNewUser(roomId, username) {
+    if (!USE_REDIS || !redis) {
+      const users = await this.getRoomUsers(roomId);
+      const usernames = users.map((user) => user.username || user);
+      if (username && usernames.includes(username)) {
+        return true;
+      }
+      return usernames.length < ROOM_MAX_USERS;
     }
 
-    const onlineUsers = await this.getRoomUsers(roomId);
+    if (username) {
+      const isMember = await redis.sismember(`room:${roomId}:users`, username);
+      if (isMember) {
+        return true;
+      }
+    }
+
+    const count = await redis.scard(`room:${roomId}:users`);
+    return count < ROOM_MAX_USERS;
+  }
+
+  async _reserveRoomSlot(roomId, username) {
+    if (!USE_REDIS || !redis) {
+      const users = await this.getRoomUsers(roomId);
+      const usernames = users.map((user) => user.username || user);
+      if (usernames.includes(username)) {
+        return true;
+      }
+      if (usernames.length >= ROOM_MAX_USERS) {
+        return false;
+      }
+      return true;
+    }
+
+    const slotResult = await redis.eval(
+      RESERVE_ROOM_SLOT_LUA,
+      1,
+      `room:${roomId}:users`,
+      ROOM_MAX_USERS,
+      username
+    );
+    return slotResult !== 0;
+  }
+
+async addUser(roomId, username, ws, isVerified = false, userId = null) {
+    const slotReserved = await this._reserveRoomSlot(roomId, username);
+    if (!slotReserved) {
+      throw new Error(ROOM_FULL_ERROR);
+    }
 
     await this.loadCancelledStrokesFromDb(roomId, username);
 
     const wsId = this._getWsId(ws);
 
     const multi = redis.multi();
-    multi.sadd(`room:${roomId}:users`, username);
     const wsFields = ['roomId', roomId, 'username', username, 'lastActivity', Date.now(), 'isVerified', isVerified ? '1' : '0'];
     if (userId) wsFields.push('userId', String(userId));
     multi.hset(`ws:${wsId}`, ...wsFields);
@@ -550,4 +607,7 @@ async cleanupStaleKeys() {
   }
 }
 
-module.exports = new RoomManager();
+const roomManager = new RoomManager();
+roomManager.ROOM_MAX_USERS = ROOM_MAX_USERS;
+roomManager.ROOM_FULL_ERROR = ROOM_FULL_ERROR;
+module.exports = roomManager;
