@@ -118,7 +118,7 @@ export function SeoMeta() {
       if (!meta) {
         meta = document.createElement('meta');
         if (isProperty) {
-          meta.setProperty('property', name);
+          meta.setAttribute('property', name);
         } else {
           meta.setAttribute('name', name);
         }
