@@ -92,7 +92,7 @@ const Canvas = observer(() => {
     if (params.id) {
       canvasState.disconnect(true);
     } else if (!canvasState.isConnected) {
-      canvasState.performAutoSave();
+      canvasState.performAutoSaveOnExit();
     }
     canvasState.strokeList = [];
     canvasState.redoStacks.clear();

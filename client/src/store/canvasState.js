@@ -724,20 +724,20 @@ setupThumbnailInterval() {
     }
     this._localSaveTimer = setTimeout(() => {
       this._localSaveTimer = null;
-      this.performAutoSave();
+      this.saveLocalCanvasSnapshot();
     }, 200);
   }
 
   setupAutoSave() {
     AutoSaveService.setSaveCallback(() => {
       if (!this.isConnected) {
-        this.performAutoSave();
+        this.saveLocalCanvasSnapshot();
       }
     });
 
     setInterval(() => {
       if (AutoSaveService.shouldSave() && !this.isConnected) {
-        this.performAutoSave();
+        this.saveLocalCanvasSnapshot();
       }
     }, 1000);
 
@@ -747,7 +747,17 @@ setupThumbnailInterval() {
         this._localSaveTimer = null;
       }
       if (!this.isConnected && HistoryService.getStrokes().length > 0) {
-        this.performAutoSave();
+        this.performAutoSaveOnExit();
+      }
+    };
+
+    const saveOnHide = () => {
+      if (this._localSaveTimer) {
+        clearTimeout(this._localSaveTimer);
+        this._localSaveTimer = null;
+      }
+      if (!this.isConnected && HistoryService.getStrokes().length > 0) {
+        this.saveLocalCanvasSnapshot();
       }
     };
 
@@ -755,7 +765,7 @@ setupThumbnailInterval() {
     window.addEventListener('pagehide', saveOnExit);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        saveOnExit();
+        saveOnHide();
       }
     });
 
@@ -804,7 +814,6 @@ setupThumbnailInterval() {
   }
 
   performAutoSave() {
-    this.flushPendingLocalStroke();
     if (!this.isConnected) {
       this.saveLocalCanvasSnapshot();
       return;
@@ -826,6 +835,16 @@ setupThumbnailInterval() {
     };
 
     AutoSaveService.save(data, storageKey);
+  }
+
+  performAutoSaveOnExit() {
+    if (!this.isConnected) {
+      this.flushPendingLocalStroke();
+      this.saveLocalCanvasSnapshot();
+      return;
+    }
+
+    this.performAutoSave();
   }
 
   checkForAutoSave() {

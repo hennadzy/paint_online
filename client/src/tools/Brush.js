@@ -30,29 +30,39 @@ export default class Brush extends Tool {
       this.pointerDownHandlerBound = this.pointerDownHandler.bind(this);
       this.pointerMoveHandlerBound = this.pointerMoveHandler.bind(this);
       this.pointerUpHandlerBound = this.pointerUpHandler.bind(this);
+      this.lostPointerCaptureHandlerBound = this.lostPointerCaptureHandler.bind(this);
     }
 
     const ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     ctx.globalCompositeOperation = "source-over";
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
-    document.addEventListener("pointermove", this.pointerMoveHandlerBound);
-    document.addEventListener("pointerup", this.pointerUpHandlerBound);
-    this.listenGlobalEndEvents();
+    this.canvas.addEventListener("pointermove", this.pointerMoveHandlerBound);
+    this.canvas.addEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.addEventListener("pointercancel", this.pointerUpHandlerBound);
+    this.canvas.addEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
   }
 
   destroyEvents() {
     this.canvas.removeEventListener("pointerdown", this.pointerDownHandlerBound);
-    document.removeEventListener("pointermove", this.pointerMoveHandlerBound);
-    document.removeEventListener("pointerup", this.pointerUpHandlerBound);
-    this.removeGlobalEndEvents();
+    this.canvas.removeEventListener("pointermove", this.pointerMoveHandlerBound);
+    this.canvas.removeEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.removeEventListener("pointercancel", this.pointerUpHandlerBound);
+    this.canvas.removeEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
+  }
+
+  lostPointerCaptureHandler(e) {
+    if (!this.mouseDown || this._hasCommitted) return;
+    try {
+      this.canvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
   }
 
   pointerDownHandler(e) {
     if (this.isPinchingActive()) return;
 
     e.preventDefault();
-    e.target.setPointerCapture(e.pointerId);
+    this.canvas.setPointerCapture(e.pointerId);
     this.mouseDown = true;
     this._hasCommitted = false;
     canvasState.isDrawing = true;
@@ -67,6 +77,7 @@ export default class Brush extends Tool {
       pt.w = this.getPressureAdjustedLineWidth(e);
     }
     this.points.push(pt);
+    canvasState.redrawCanvas();
     this.drawDot();
   }
 
@@ -92,16 +103,26 @@ export default class Brush extends Tool {
     this.lastX = smoothed.x;
     this.lastY = smoothed.y;
 
-    canvasState.redrawCanvas();
-    this.drawStroke();
+    this.drawSegment();
   }
 
   pointerUpHandler(e) {
-    if (this.mouseDown && !this._hasCommitted) {
-      this._hasCommitted = true;
-      this.mouseDown = false;
-      this.commitStroke();
+    if (!this.mouseDown) {
+      if (this._hasCommitted) {
+        canvasState.isDrawing = false;
+      }
+      return;
     }
+
+    if (this._hasCommitted) return;
+
+    if (this.canvas.hasPointerCapture?.(e.pointerId)) {
+      this.canvas.releasePointerCapture(e.pointerId);
+    }
+
+    this._hasCommitted = true;
+    this.mouseDown = false;
+    this.commitStroke();
   }
 
   interpolate(x1, y1, x2, y2, smoothing = 0.5) {
