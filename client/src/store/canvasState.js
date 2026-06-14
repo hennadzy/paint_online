@@ -404,6 +404,10 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
     this.username = username;
     this.usernameReady = username && username !== 'local';
   }
+  getAutoSaveStorageKey() {
+    return this.isConnected ? this.currentRoomId : null;
+  }
+
   setCurrentRoomId(id) {
     this.currentRoomId = id;
   }
@@ -752,10 +756,10 @@ setupThumbnailInterval() {
 
   performAutoSave() {
     const strokes = HistoryService.getStrokes();
-    const roomId = this.currentRoomId;
+    const storageKey = this.getAutoSaveStorageKey();
 
     if (!this.isConnected) {
-      const existing = AutoSaveService.restore(roomId);
+      const existing = AutoSaveService.restore(storageKey);
       if (strokes.length === 0 && existing?.strokes?.length > 0) {
         return;
       }
@@ -773,12 +777,12 @@ setupThumbnailInterval() {
       sessionId: WebSocketService.sessionId
     };
 
-    AutoSaveService.save(data, roomId);
+    AutoSaveService.save(data, storageKey);
   }
 
   checkForAutoSave() {
     try {
-      const savedData = AutoSaveService.restore(this.currentRoomId);
+      const savedData = AutoSaveService.restore(this.getAutoSaveStorageKey());
 
       if (savedData && savedData.strokes && savedData.strokes.length > 0 && savedData.timestamp) {
         this.restoreTimestamp = savedData.timestamp;
@@ -792,13 +796,13 @@ setupThumbnailInterval() {
     } catch (error) {
       this.showRestoreDialog = false;
       this.restoreTimestamp = null;
-      AutoSaveService.clear(this.currentRoomId);
+      AutoSaveService.clear(this.getAutoSaveStorageKey());
       return null;
     }
   }
 
   restoreAutoSave() {
-    const savedData = AutoSaveService.restore(this.currentRoomId);
+    const savedData = AutoSaveService.restore(this.getAutoSaveStorageKey());
 
     if (!savedData) {
       this.showRestoreDialog = false;
@@ -823,13 +827,14 @@ setupThumbnailInterval() {
         CanvasService.redraw();
         this.showRestoreDialog = false;
         this.restoreTimestamp = null;
+        this.performAutoSave();
         resolve();
       });
     });
   }
 
   discardAutoSave() {
-    AutoSaveService.clear(this.currentRoomId);
+    AutoSaveService.clear(this.getAutoSaveStorageKey());
     this.showRestoreDialog = false;
     this.restoreTimestamp = null;
   }

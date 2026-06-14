@@ -91,6 +91,8 @@ const Canvas = observer(() => {
   const cleanup = () => {
     if (params.id) {
       canvasState.disconnect(true);
+    } else if (!canvasState.isConnected) {
+      canvasState.performAutoSave();
     }
     canvasState.strokeList = [];
     canvasState.redoStacks.clear();

@@ -38,15 +38,16 @@ class AutoSaveService {
 
     try {
       const key = this.getStorageKey(roomId);
+      const serialized = JSON.stringify(saveData);
+      const previous = localStorage.getItem(key);
 
-      const existing = localStorage.getItem(key);
-      if (existing) {
-        this.rotateBackups(roomId);
-      }
-
-      localStorage.setItem(key, JSON.stringify(saveData));
+      localStorage.setItem(key, serialized);
       this.hasChanges = false;
       this.lastSaveTime = Date.now();
+
+      if (previous && previous !== serialized) {
+        localStorage.setItem(this.getBackupKey(roomId, 0), previous);
+      }
 
       return true;
     } catch (error) {
