@@ -6,8 +6,6 @@ import {
   applyTransformToImageData,
   buildSelectionEraseStroke,
   cloneImageData,
-  createMask,
-  fillRectMask,
   imageDataToCanvas,
 } from "./selectionUtils";
 import {
@@ -125,18 +123,16 @@ export function pasteSelection(canvas) {
     Math.min(canvas.height - h, Math.round((canvas.height - h) / 2) + offset)
   );
 
-  const mask = createMask(canvas.width, canvas.height);
-  fillRectMask(mask, canvas.width, x, y, w, h);
-
   selectionState.applySelection({
-    type: "rect",
+    type: "paste",
     x,
     y,
     width: w,
     height: h,
     path: [],
-    mask,
+    mask: null,
     imageData,
+    floatingOnly: true,
   });
   enterTransformSession();
   return true;

@@ -15,6 +15,7 @@ class SelectionState {
   isDragging = false;
   transformSessionActive = false;
   hasCut = false;
+  floatingOnly = false;
   transform = {
     angle: 0,
     scaleX: 1,
@@ -53,6 +54,7 @@ class SelectionState {
     this.isDragging = false;
     this.transformSessionActive = false;
     this.hasCut = false;
+    this.floatingOnly = false;
     this.transform = { angle: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 };
     this.draftRect = null;
     this.draftPath = null;
@@ -71,7 +73,7 @@ class SelectionState {
     this.draftPath = null;
   }
 
-  applySelection({ type, x, y, width, height, path, mask, imageData }) {
+  applySelection({ type, x, y, width, height, path, mask, imageData, floatingOnly = false }) {
     this.active = true;
     this.type = type;
     this.x = x;
@@ -83,14 +85,17 @@ class SelectionState {
     this.imageData = imageData;
     this.previewX = x;
     this.previewY = y;
-    this.hasCut = false;
+    this.floatingOnly = floatingOnly;
+    this.hasCut = floatingOnly;
     this.transform = { angle: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 };
     this.clearDraft();
   }
 
   enterTransformSession() {
     this.transformSessionActive = true;
-    this.hasCut = false;
+    if (!this.floatingOnly) {
+      this.hasCut = false;
+    }
   }
 
   exitTransformSession() {

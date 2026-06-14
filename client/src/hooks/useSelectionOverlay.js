@@ -40,13 +40,15 @@ function drawSelectionPreview(ctx, canvas) {
 
   const { previewX, previewY, width, height, imageData, transform, path, type } = selectionState;
 
-  if (imageData && selectionState.hasCut) {
+  if (imageData && (selectionState.hasCut || selectionState.floatingOnly)) {
     const srcCanvas = imageDataToCanvas(imageData);
+    const drawW = imageData.width;
+    const drawH = imageData.height;
     ctx.save();
     ctx.translate(previewX + width / 2, previewY + height / 2);
     ctx.rotate((transform.angle * Math.PI) / 180);
     ctx.scale(transform.scaleX, transform.scaleY);
-    ctx.drawImage(srcCanvas, -width / 2, -height / 2);
+    ctx.drawImage(srcCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
   }
 
@@ -109,6 +111,7 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
         selectionState.isDragging,
         selectionState.transformSessionActive,
         selectionState.hasCut,
+        selectionState.floatingOnly,
         selectionState.transform,
       ],
       () => {

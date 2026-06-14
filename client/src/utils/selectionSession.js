@@ -155,7 +155,7 @@ export function enterTransformSession() {
 }
 
 export function cutSelectionFromBuffer(canvas) {
-  if (selectionState.hasCut) return;
+  if (selectionState.hasCut || selectionState.floatingOnly) return;
   const { mask } = selectionState;
   const bufferCtx = canvasState.bufferCtx;
   if (!mask || !bufferCtx) return;
@@ -181,9 +181,15 @@ export function commitSelectionSession(canvas) {
     previewY,
     transform,
     imageData,
+    floatingOnly,
   } = selectionState;
 
-  if (!mask || !imageData || !canvasState.bufferCtx) {
+  if (!imageData || !canvasState.bufferCtx) {
+    selectionState.clear();
+    return;
+  }
+
+  if (!floatingOnly && !mask) {
     selectionState.clear();
     return;
   }
@@ -199,7 +205,7 @@ export function commitSelectionSession(canvas) {
     previewY,
     transform: { ...transform },
     imageData,
-    mask,
+    mask: floatingOnly ? null : mask,
   };
 
   selectionState.clear();
