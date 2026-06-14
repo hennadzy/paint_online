@@ -5,7 +5,7 @@ import Text from "../tools/Text";
 import Polygon from "../tools/Polygon";
 import Arrow from "../tools/Arrow";
 import { floodFillImageData } from "../utils/floodFill";
-import { eraseMaskFromBuffer } from "../utils/selectionUtils";
+import { eraseMaskFromBuffer, eraseMaskRegionFromBuffer } from "../utils/selectionUtils";
 
 class CanvasService {
   constructor() {
@@ -125,10 +125,15 @@ drawImagePlaceholder(ctx, stroke) {
 }
 
 drawSelectionTransform(ctx, stroke) {
-  const { mask, canvasWidth, canvasHeight } = stroke;
-  if (mask && canvasWidth && canvasHeight) {
-    const maskArr = mask instanceof Uint8Array ? mask : new Uint8Array(mask);
-    eraseMaskFromBuffer(ctx, maskArr, canvasWidth, canvasHeight);
+  if (stroke.maskRegion) {
+    eraseMaskRegionFromBuffer(ctx, stroke.maskRegion);
+  } else if (stroke.eraseRect) {
+    const { x, y, width, height } = stroke.eraseRect;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x, y, width, height);
+  } else if (stroke.mask && stroke.canvasWidth && stroke.canvasHeight) {
+    const maskArr = stroke.mask instanceof Uint8Array ? stroke.mask : new Uint8Array(stroke.mask);
+    eraseMaskFromBuffer(ctx, maskArr, stroke.canvasWidth, stroke.canvasHeight);
   }
   return this.drawImagePlaceholder(ctx, stroke);
 }

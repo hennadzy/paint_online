@@ -1,5 +1,6 @@
 const { redis } = require('../config/db');
 const DataStore = require('./DataStore');
+const { isStrokePayloadTooLarge } = require('../utils/security');
 
 const USE_REDIS = process.env.REDIS_URL && process.env.REDIS_URL.startsWith('redis');
 
@@ -210,6 +211,11 @@ async removeUser(ws) {
   }
 
   async addStroke(roomId, stroke) {
+    if (!stroke || isStrokePayloadTooLarge(stroke)) {
+      console.warn(`Rejected oversized stroke in room ${roomId}`);
+      return false;
+    }
+
     const existing = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
     const isDuplicate = existing.some(s => {
       try {

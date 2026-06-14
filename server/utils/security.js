@@ -216,6 +216,20 @@ const generateId = () => {
   return bytes.toString('hex').slice(0, 9);
 };
 
+const MAX_STROKE_JSON_BYTES = 1.5 * 1024 * 1024;
+
+const getStrokePayloadSize = (stroke) => {
+  try {
+    return Buffer.byteLength(JSON.stringify(stroke), 'utf8');
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+};
+
+const isStrokePayloadTooLarge = (stroke) => {
+  return getStrokePayloadSize(stroke) > MAX_STROKE_JSON_BYTES;
+};
+
 module.exports = {
   sanitizeInput,
   sanitizeChatMessage,
@@ -224,5 +238,8 @@ module.exports = {
   sanitizeUsername,
   validateUsername,
   checkSpam,
-  generateId
+  generateId,
+  getStrokePayloadSize,
+  isStrokePayloadTooLarge,
+  MAX_STROKE_JSON_BYTES,
 };

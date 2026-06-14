@@ -130,6 +130,120 @@ export function eraseMaskFromBuffer(bufferCtx, mask, canvasWidth, canvasHeight) 
   bufferCtx.putImageData(imageData, 0, 0);
 }
 
+export function extractMaskRegion(mask, canvasWidth, originX, originY, width, height) {
+  const data = new Uint8Array(width * height);
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const maskIndex = (originY + row) * canvasWidth + (originX + col);
+      data[row * width + col] = mask[maskIndex] ? 1 : 0;
+    }
+  }
+  return { x: originX, y: originY, width, height, data };
+}
+
+export function eraseMaskRegionFromBuffer(bufferCtx, maskRegion) {
+  if (!maskRegion || !bufferCtx) return;
+
+  const { x: originX, y: originY, width, height } = maskRegion;
+  const data = decodeMaskRegionData(maskRegion.data);
+  if (!data || data.length < width * height) return;
+
+  const imageData = bufferCtx.getImageData(originX, originY, width, height);
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (data[row * width + col]) {
+        const idx = (row * width + col) * 4;
+        imageData.data[idx] = 255;
+        imageData.data[idx + 1] = 255;
+        imageData.data[idx + 2] = 255;
+        imageData.data[idx + 3] = 255;
+      }
+    }
+  }
+  bufferCtx.putImageData(imageData, originX, originY);
+}
+
+export function encodeMaskRegionData(bytes) {
+  if (bytes instanceof Uint8Array) {
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+  if (Array.isArray(bytes)) {
+    return encodeMaskRegionData(new Uint8Array(bytes));
+  }
+  return bytes;
+}
+
+export function decodeMaskRegionData(encoded) {
+  if (!encoded) return null;
+  if (encoded instanceof Uint8Array) return encoded;
+  if (Array.isArray(encoded)) return new Uint8Array(encoded);
+  if (typeof encoded !== "string") return null;
+
+  try {
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+export function imageDataToDataUrl(imageData, mimeType = "image/png") {
+  const canvas = imageDataToCanvas(imageData);
+  return canvas.toDataURL(mimeType);
+}
+
+export function buildSelectionTransformStroke({
+  canvasWidth,
+  selectionType,
+  originX,
+  originY,
+  selectionWidth,
+  selectionHeight,
+  previewX,
+  previewY,
+  transform,
+  imageData,
+  mask,
+}) {
+  const transformedImage = applyTransformToImageData(imageData, transform);
+  const centerX = previewX + selectionWidth / 2;
+  const centerY = previewY + selectionHeight / 2;
+  const destX = Math.round(centerX - transformedImage.width / 2);
+  const destY = Math.round(centerY - transformedImage.height / 2);
+
+  const stroke = {
+    type: "selection_transform",
+    selectionType,
+    x: destX,
+    y: destY,
+    width: transformedImage.width,
+    height: transformedImage.height,
+    imageData: imageDataToDataUrl(transformedImage, "image/png"),
+  };
+
+  if (mask) {
+    const region = extractMaskRegion(mask, canvasWidth, originX, originY, selectionWidth, selectionHeight);
+    stroke.maskRegion = {
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+      data: encodeMaskRegionData(region.data),
+    };
+  }
+
+  return stroke;
+}
+
 export function pointInRect(px, py, rect) {
   return px >= rect.x && px <= rect.x + rect.width && py >= rect.y && py <= rect.y + rect.height;
 }

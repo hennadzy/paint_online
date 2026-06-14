@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const crypto = require('crypto');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
-const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam } = require('../utils/security');
+const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam, isStrokePayloadTooLarge } = require('../utils/security');
 const { verifyToken } = require('../utils/jwt');
 
 class WebSocketHandler {
@@ -200,6 +200,14 @@ async handleConnection(ws, msg) {
         const stroke = msg.figure.stroke;
         if (!stroke) return;
 
+        if (isStrokePayloadTooLarge(stroke)) {
+          ws.send(JSON.stringify({
+            method: "error",
+            message: "Слишком большой штрих для сохранения"
+          }));
+          return;
+        }
+
         await RoomManager.addStroke(roomId, stroke);
         await RoomManager.removeStrokeFromAllCancelled(roomId, stroke.id);
 
@@ -213,6 +221,14 @@ async handleConnection(ws, msg) {
         return;
       }
       else {
+        if (isStrokePayloadTooLarge(msg.figure)) {
+          ws.send(JSON.stringify({
+            method: "error",
+            message: "Слишком большой штрих для сохранения"
+          }));
+          return;
+        }
+
         await RoomManager.addStroke(roomId, msg.figure);
         this.broadcast(roomId, { ...msg, username }, ws);
       }

@@ -1,7 +1,7 @@
 import canvasState from "../store/canvasState";
 import selectionState from "../store/selectionState";
 import {
-  applyTransformToImageData,
+  buildSelectionTransformStroke,
   eraseMaskFromBuffer,
   pointInMask,
 } from "./selectionUtils";
@@ -170,39 +170,45 @@ export function commitSelectionSession(canvas) {
     return;
   }
 
-  const { mask, width, height, previewX, previewY, transform } = selectionState;
-  let { imageData } = selectionState;
-  if (!mask || !imageData) {
+  const {
+    type: selectionType,
+    x: originX,
+    y: originY,
+    width: selectionWidth,
+    height: selectionHeight,
+    mask,
+    previewX,
+    previewY,
+    transform,
+    imageData,
+  } = selectionState;
+
+  if (!mask || !imageData || !canvasState.bufferCtx) {
     selectionState.clear();
     return;
   }
 
-  const bufferCtx = canvasState.bufferCtx;
-  if (!bufferCtx) return;
-
-  const transformedImage = applyTransformToImageData(imageData, transform);
-  const centerX = previewX + width / 2;
-  const centerY = previewY + height / 2;
-  const destX = Math.round(centerX - transformedImage.width / 2);
-  const destY = Math.round(centerY - transformedImage.height / 2);
-
-  canvasState.pushStroke({
-    type: "selection_transform",
-    mask: Array.from(mask),
+  const payload = {
     canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    x: destX,
-    y: destY,
-    width: transformedImage.width,
-    height: transformedImage.height,
-    imageData: {
-      width: transformedImage.width,
-      height: transformedImage.height,
-      data: Array.from(transformedImage.data),
-    },
-  });
+    selectionType,
+    originX,
+    originY,
+    selectionWidth,
+    selectionHeight,
+    previewX,
+    previewY,
+    transform: { ...transform },
+    imageData,
+    mask,
+  };
 
   selectionState.clear();
+
+  void (async () => {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const stroke = buildSelectionTransformStroke(payload);
+    await canvasState.pushStroke(stroke);
+  })();
 }
 
 export function createTransformSessionHandlers(tool) {
