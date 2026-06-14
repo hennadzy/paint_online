@@ -3,7 +3,6 @@ import selectionState from "../store/selectionState";
 import {
   applyTransformToImageData,
   eraseMaskFromBuffer,
-  imageDataToCanvas,
   pointInMask,
 } from "./selectionUtils";
 
@@ -183,15 +182,11 @@ export function commitSelectionSession(canvas) {
 
   const transformedImage = applyTransformToImageData(imageData, transform);
 
-  if (!selectionState.hasCut) {
-    eraseMaskFromBuffer(bufferCtx, mask, canvas.width, canvas.height);
-  }
-
-  const srcCanvas = imageDataToCanvas(transformedImage);
-  bufferCtx.drawImage(srcCanvas, previewX, previewY);
-
   canvasState.pushStroke({
-    type: "image_placeholder",
+    type: "selection_transform",
+    mask: Array.from(mask),
+    canvasWidth: canvas.width,
+    canvasHeight: canvas.height,
     x: previewX,
     y: previewY,
     width,
@@ -204,7 +199,6 @@ export function commitSelectionSession(canvas) {
   });
 
   selectionState.clear();
-  canvasState.redrawCanvas();
 }
 
 export function createTransformSessionHandlers(tool) {
