@@ -96,37 +96,6 @@ const sanitizeBroadcastBody = (text, maxLength = 15000) => {
   return sanitized.trim();
 };
 
-const checkSpam = (text, username, messageHistory = []) => {
-  if (typeof text !== 'string') return { isSpam: false };
-
-  const upperCaseCount = (text.match(/[A-ZА-ЯЁ]/g) || []).length;
-  const totalLetters = (text.match(/[A-Za-zА-Яа-яЁё]/g) || []).length;
-  if (totalLetters > 0 && (upperCaseCount / totalLetters) > 0.7) {
-    return { isSpam: true, reason: 'Слишком много заглавных букв' };
-  }
-
-  const repeatingPattern = /(.)\1{9,}/;
-  if (repeatingPattern.test(text)) {
-    return { isSpam: true, reason: 'Повторяющиеся символы' };
-  }
-
-  const emojiPattern = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
-  const emojiCount = (text.match(emojiPattern) || []).length;
-  if (emojiCount > 10) {
-    return { isSpam: true, reason: 'Слишком много эмодзи' };
-  }
-
-  const now = Date.now();
-  const recentMessages = messageHistory.filter(msg =>
-    msg.username === username && (now - msg.timestamp) < 3000
-  );
-  if (recentMessages.length >= 3) {
-    return { isSpam: true, reason: 'Слишком частые сообщения' };
-  }
-
-  return { isSpam: false };
-};
-
 const validateUsername = (username) => {
   if (typeof username !== 'string') {
     return { valid: false, error: 'Имя должно быть текстом' };
@@ -237,7 +206,6 @@ module.exports = {
   sanitizeBroadcastBody,
   sanitizeUsername,
   validateUsername,
-  checkSpam,
   generateId,
   getStrokePayloadSize,
   isStrokePayloadTooLarge,

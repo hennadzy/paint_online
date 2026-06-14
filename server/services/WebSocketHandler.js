@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const crypto = require('crypto');
 const RoomManager = require('./RoomManager');
 const DataStore = require('./DataStore');
-const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam, isStrokePayloadTooLarge } = require('../utils/security');
+const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, isStrokePayloadTooLarge } = require('../utils/security');
 const { verifyToken } = require('../utils/jwt');
 
 const ALLOWED_ORIGINS = [

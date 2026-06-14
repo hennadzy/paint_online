@@ -76,7 +76,7 @@ export function SeoMeta() {
 
   const isRoomPage = (() => {
     if (!path || path === '/') return false;
-    const parts = path.split('/').filter(Boolean); // ['{id}'] либо []
+    const parts = path.split('/').filter(Boolean);
     if (parts.length !== 1) return false;
     return isValidRoomId(parts[0]);
   })();

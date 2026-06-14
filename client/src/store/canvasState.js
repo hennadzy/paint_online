@@ -4,6 +4,7 @@ import toolState from "./toolState";
 import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
+import userState from "./userState";
 
 import { API_URL, WS_URL } from '../config/urls';
 
@@ -90,7 +91,6 @@ WebSocketService.on('usersList', ({ users }) => {
       });
     });
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
-      console.log('drawsReceived, joiningRoom:', this.joiningRoom, 'strokes:', strokes?.length || 0);
       HistoryService.clearStrokes();
 
       if (CanvasService.bufferCtx) {
@@ -119,8 +119,6 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
           uniqueStrokeIds.add(s.id);
           return true;
         });
-
-      console.log('Filtered strokes count:', filteredStrokes.length);
 
       HistoryService.setStrokes(filteredStrokes);
 
@@ -459,8 +457,6 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
   }
 sendChatMessage(message) {
     if (WebSocketService.isConnected) {
-      const userState = require('./userState').default;
-      
       if (this._lastSentMessage === message && Date.now() - this._lastSentTime < 2000) {
         return;
       }

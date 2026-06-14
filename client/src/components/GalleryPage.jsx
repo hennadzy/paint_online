@@ -324,7 +324,6 @@ const GalleryPage = observer(() => {
   };
 
   const handleImageError = (id) => {
-    console.log(`[CLIENT-GALLERY] Image load failed for ID=${id}`);
     setImageErrors(prev => ({ ...prev, [id]: true }));
   };
 

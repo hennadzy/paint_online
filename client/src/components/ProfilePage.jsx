@@ -54,7 +54,6 @@ const ProfilePage = observer(() => {
  const { user } = userState;
 
   const handleImageError = (id) => {
-    console.log(`[CLIENT-PROFILE] Image load failed for ID=${id}`);
     setImageErrors(prev => ({ ...prev, [id]: true }));
   };
 
@@ -106,8 +105,6 @@ useEffect(() => {
   const handleSaveProfile = async () => {
     setPasswordError('');
     try {
-      console.log('[ProfilePage] Current user:', userState.user);
-      console.log('[ProfilePage] Form values:', { username, email });
       const updates = {};
       if (username !== userState.user.username) {
         updates.username = username;
@@ -116,15 +113,12 @@ useEffect(() => {
         updates.email = email;
       }
       
-      console.log('[ProfilePage] Updates to send:', updates);
-      
       if (Object.keys(updates).length === 0) {
         setPasswordError('Нет изменений');
         return;
       }
       
       await userState.updateProfile(updates);
-      console.log('[ProfilePage] Profile updated, userState.user:', userState.user);
       if (newPassword.trim()) {
         if (!currentPassword.trim()) {
           setPasswordError('Введите текущий пароль для смены пароля');

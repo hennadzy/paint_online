@@ -101,7 +101,6 @@ export default class Tool {
     }
 
     const t = Math.min(1, Math.max(0, p));
-    // Ease-out: больше контроля в лёгкой зоне, как у стандартной кисти в Procreate
     const curved = 1 - Math.pow(1 - t, 3.15);
     const minRatio = 0.04;
     let ratio = minRatio + (1 - minRatio) * curved;

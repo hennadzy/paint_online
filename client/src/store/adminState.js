@@ -472,8 +472,6 @@ class AdminState {
 
   async createColoringSection(payload) {
     try {
-      console.log('Creating section:', payload);
-      
       const isFormData = payload instanceof FormData;
       const response = await axios.post(
         `${API_URL}/api/admin/coloring-sections`,
@@ -485,7 +483,6 @@ class AdminState {
           }
         }
       );
-      console.log('Section created:', response.data);
       await this.fetchColoringSections();
       return { success: true, section: response.data.section };
     } catch (error) {
