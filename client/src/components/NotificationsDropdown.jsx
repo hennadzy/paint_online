@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useReducer } from 'react';
+import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import userState from '../store/userState';
@@ -21,7 +22,32 @@ const notificationText = (n) => {
 const NotificationsDropdown = observer(() => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [, bumpPosition] = useReducer((n) => n + 1, 0);
   const ref = useRef(null);
+  const buttonRef = useRef(null);
+
+  const getPanelStyle = useCallback(() => {
+    if (!buttonRef.current) {
+      return {
+        top: '72px',
+        right: '12px',
+        left: 'auto',
+        width: `${Math.min(360, window.innerWidth - 24)}px`
+      };
+    }
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const panelWidth = Math.min(360, window.innerWidth - 24);
+    let left = rect.right - panelWidth;
+    left = Math.max(12, Math.min(left, window.innerWidth - panelWidth - 12));
+    const top = rect.bottom + 8;
+
+    return {
+      top: `${top}px`,
+      left: `${left}px`,
+      width: `${panelWidth}px`
+    };
+  }, []);
 
   useEffect(() => {
     if (!userState.isAuthenticated) return;
@@ -32,12 +58,27 @@ const NotificationsDropdown = observer(() => {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
+        const panel = document.getElementById('notifications-dropdown-panel');
+        if (panel && panel.contains(e.target)) return;
         setOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const syncPosition = () => bumpPosition();
+    window.addEventListener('resize', syncPosition);
+    window.addEventListener('scroll', syncPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', syncPosition);
+      window.removeEventListener('scroll', syncPosition, true);
+    };
+  }, [open]);
 
   const handleOpen = () => {
     const next = !open;
@@ -66,9 +107,75 @@ const NotificationsDropdown = observer(() => {
     await userState.fetchIncomingFriendRequestsCount();
   };
 
+  const panel = open ? (
+    <div
+      id="notifications-dropdown-panel"
+      className="notifications-dropdown__panel"
+      style={getPanelStyle()}
+      role="dialog"
+      aria-label="Уведомления"
+    >
+      <div className="notifications-dropdown__head">
+        <span>Уведомления</span>
+        {userState.unreadNotificationsCount > 0 && (
+          <button
+            type="button"
+            className="notifications-dropdown__read-all"
+            onClick={() => userState.markAllNotificationsRead()}
+          >
+            Прочитать все
+          </button>
+        )}
+      </div>
+
+      {userState.notifications.length === 0 ? (
+        <div className="notifications-dropdown__empty">Пока нет уведомлений</div>
+      ) : (
+        <ul className="notifications-dropdown__list">
+          {userState.notifications.map((n) => (
+            <li key={n.id}>
+              <button
+                type="button"
+                className={`notifications-dropdown__item ${n.isRead ? '' : 'unread'}`}
+                onClick={() => handleNotificationClick(n)}
+              >
+                <img
+                  src={n.actorAvatarUrl || defaultAvatar}
+                  alt=""
+                  className="notifications-dropdown__avatar"
+                />
+                <div className="notifications-dropdown__content">
+                  <span className="notifications-dropdown__text">
+                    <strong>{n.actorUsername}</strong> {notificationText(n)}
+                  </span>
+                  {n.type === 'friend_request' && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="notifications-dropdown__accept"
+                      onClick={(e) => handleAcceptFriend(e, n.actorId)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleAcceptFriend(e, n.actorId);
+                        }
+                      }}
+                    >
+                      ✓ Подтвердить
+                    </span>
+                  )}
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="notifications-dropdown" ref={ref}>
       <button
+        ref={buttonRef}
         type="button"
         className={`social-header__icon-btn ${userState.unreadNotificationsCount > 0 ? 'has-badge' : ''}`}
         onClick={handleOpen}
@@ -85,64 +192,7 @@ const NotificationsDropdown = observer(() => {
         )}
       </button>
 
-      {open && (
-        <div className="notifications-dropdown__panel">
-          <div className="notifications-dropdown__head">
-            <span>Уведомления</span>
-            {userState.unreadNotificationsCount > 0 && (
-              <button
-                type="button"
-                className="notifications-dropdown__read-all"
-                onClick={() => userState.markAllNotificationsRead()}
-              >
-                Прочитать все
-              </button>
-            )}
-          </div>
-
-          {userState.notifications.length === 0 ? (
-            <div className="notifications-dropdown__empty">Пока нет уведомлений</div>
-          ) : (
-            <ul className="notifications-dropdown__list">
-              {userState.notifications.map((n) => (
-                <li key={n.id}>
-                  <button
-                    type="button"
-                    className={`notifications-dropdown__item ${n.isRead ? '' : 'unread'}`}
-                    onClick={() => handleNotificationClick(n)}
-                  >
-                    <img
-                      src={n.actorAvatarUrl || defaultAvatar}
-                      alt=""
-                      className="notifications-dropdown__avatar"
-                    />
-                    <div className="notifications-dropdown__content">
-                      <span className="notifications-dropdown__text">
-                        <strong>{n.actorUsername}</strong> {notificationText(n)}
-                      </span>
-                      {n.type === 'friend_request' && (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className="notifications-dropdown__accept"
-                          onClick={(e) => handleAcceptFriend(e, n.actorId)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              handleAcceptFriend(e, n.actorId);
-                            }
-                          }}
-                        >
-                          ✓ Подтвердить
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {panel && createPortal(panel, document.body)}
     </div>
   );
 });
