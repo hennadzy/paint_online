@@ -97,9 +97,10 @@ export default class Brush extends Tool {
   }
 
   pointerUpHandler(e) {
-    if (this.mouseDown) {
-      this.commitStroke();
+    if (this.mouseDown && !this._hasCommitted) {
+      this._hasCommitted = true;
       this.mouseDown = false;
+      this.commitStroke();
     }
   }
 
@@ -203,15 +204,21 @@ export default class Brush extends Tool {
   }
 
   commitStroke() {
+    if (this.points.length === 0) {
+      canvasState.isDrawing = false;
+      return;
+    }
+
     const stroke = {
       type: "brush",
-      points: this.points,
+      points: [...this.points],
       strokeStyle: this.strokeStyle,
       strokeOpacity: this.strokeOpacity,
       lineWidth: this.lineWidth,
       username: this.username
     };
 
+    this.points = [];
     canvasState.pushStroke(stroke);
     this.saveImage();
 

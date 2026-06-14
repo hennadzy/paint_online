@@ -1,5 +1,6 @@
 import { makeAutoObservable } from "mobx";
 import CanvasService from "../services/CanvasService";
+import toolState from "./toolState";
 import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
@@ -217,11 +218,17 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
       CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
       this.scheduleThumbnailSave();
+      if (!this.isConnected) {
+        this.saveLocalCanvasSnapshot();
+      }
     });
-    HistoryService.on('strokeRedone', async ({ stroke }) => {
-      await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+    HistoryService.on('strokeRedone', () => {
+      CanvasService.rebuildBuffer(HistoryService.getStrokes());
       CanvasService.redraw();
       this.scheduleThumbnailSave();
+      if (!this.isConnected) {
+        this.saveLocalCanvasSnapshot();
+      }
     });
     HistoryService.on('strokesCleared', () => {
       CanvasService.rebuildBuffer([]);
@@ -304,6 +311,10 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
   async pushStroke(stroke) {
     const added = HistoryService.addStroke(stroke, this.username);
     if (added) {
+      if (!WebSocketService.isConnected) {
+        this.saveLocalCanvasSnapshot();
+      }
+
       await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       CanvasService.redraw();
       AutoSaveService.markChanged();
@@ -340,9 +351,6 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
 
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw({ type: "redo", stroke: restored });
-      } else {
-        await CanvasService.drawStroke(CanvasService.bufferCtx, restored);
-        CanvasService.redraw();
       }
 
       AutoSaveService.markChanged();
@@ -754,16 +762,56 @@ setupThumbnailInterval() {
     AutoSaveService.cleanupAllOldSaves();
   }
 
-  performAutoSave() {
+  flushPendingLocalStroke() {
+    if (this.isConnected || this._flushingStroke) return;
+
+    const tool = toolState.tool;
+    if (!tool || typeof tool.commitStroke !== 'function') return;
+
+    const hasPendingBrush = tool.mouseDown && Array.isArray(tool.points) && tool.points.length > 0;
+    const hasPendingShape = tool.isDrawing && Array.isArray(tool.points) && tool.points.length > 0;
+
+    if ((hasPendingBrush || hasPendingShape) && !tool._hasCommitted) {
+      this._flushingStroke = true;
+      tool._hasCommitted = true;
+      tool.mouseDown = false;
+      tool.isDrawing = false;
+      tool.commitStroke();
+      this._flushingStroke = false;
+    }
+  }
+
+  saveLocalCanvasSnapshot() {
     const strokes = HistoryService.getStrokes();
     const storageKey = this.getAutoSaveStorageKey();
+    const existing = AutoSaveService.restore(storageKey);
 
-    if (!this.isConnected) {
-      const existing = AutoSaveService.restore(storageKey);
-      if (strokes.length === 0 && existing?.strokes?.length > 0) {
-        return;
-      }
+    if (strokes.length === 0 && existing?.strokes?.length > 0) {
+      return;
     }
+
+    AutoSaveService.save({
+      strokes,
+      zoom: CanvasService.zoom,
+      showGrid: CanvasService.showGrid,
+      toolName: 'brush',
+      strokeColor: '#000000',
+      fillColor: '#000000',
+      lineWidth: 1,
+      strokeOpacity: 1,
+      sessionId: WebSocketService.sessionId
+    }, storageKey);
+  }
+
+  performAutoSave() {
+    this.flushPendingLocalStroke();
+    if (!this.isConnected) {
+      this.saveLocalCanvasSnapshot();
+      return;
+    }
+
+    const strokes = HistoryService.getStrokes();
+    const storageKey = this.getAutoSaveStorageKey();
 
     const data = {
       strokes,
@@ -827,7 +875,7 @@ setupThumbnailInterval() {
         CanvasService.redraw();
         this.showRestoreDialog = false;
         this.restoreTimestamp = null;
-        this.performAutoSave();
+        this.saveLocalCanvasSnapshot();
         resolve();
       });
     });
