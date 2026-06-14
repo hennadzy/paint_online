@@ -254,10 +254,18 @@ app.use('/files', (req, res, next) => {
 }));
 
 app.ws('/', (ws, req) => {
+  if (!WebSocketHandler.isAllowedOrigin(req.headers.origin)) {
+    ws.close(1008, 'Origin not allowed');
+    return;
+  }
   WebSocketHandler.setupConnection(ws);
 });
 
 app.ws('/ws/personal', (ws, req) => {
+  if (!WebSocketHandler.isAllowedOrigin(req.headers.origin)) {
+    ws.close(1008, 'Origin not allowed');
+    return;
+  }
   WebSocketHandler.setupPersonalConnection(ws);
 });
 

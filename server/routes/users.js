@@ -1,6 +1,8 @@
 const express = require('express');
 const multer = require('multer');
 const User = require('../models/User');
+const Session = require('../models/Session');
+const WebSocketHandler = require('../services/WebSocketHandler');
 const { authenticate } = require('../middleware/auth');
 const { validateUsername, validateEmail, validatePassword, hashPassword, verifyPassword } = require('../utils/auth');
 const { asyncHandler, ValidationError, AuthError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
@@ -125,6 +127,8 @@ router.put('/me/password', authenticate, asyncHandler(async (req, res) => {
   
   const newHash = await hashPassword(newPassword);
   await User.changePassword(userId, newHash);
+  await Session.deleteAllForUser(userId);
+  WebSocketHandler.invalidateUserSockets(userId);
   res.json({ message: 'Пароль изменён' });
 }));
 

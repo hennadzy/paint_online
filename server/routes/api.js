@@ -6,10 +6,10 @@ const rateLimit = require('express-rate-limit');
 const DataStore = require('../services/DataStore');
 const RoomManager = require('../services/RoomManager');
 const { sanitizeInput, sanitizeUsername, validateUsername, generateId } = require('../utils/security');
-const { generateToken } = require('../utils/jwt');
+const { generateToken, verifyToken: verifyRoomToken } = require('../utils/jwt');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { pgPool } = require('../config/db');
-const { asyncHandler, ValidationError, NotFoundError, ForbiddenError } = require('../utils/errorHandler');
+const { asyncHandler, ValidationError, NotFoundError, ForbiddenError, AuthError } = require('../utils/errorHandler');
 const RoleCapabilitiesService = require('../services/RoleCapabilitiesService');
 const { generateSlug } = require('../utils/slug');
 
@@ -249,7 +249,18 @@ router.post('/image', imageSaveLimiter, asyncHandler(async (req, res) => {
     return res.sendStatus(204);
   }
 
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new AuthError('Room token required');
+  }
+
   const id = sanitizeInput(String(req.query.id || ''), 50).replace(/[^a-zA-Z0-9_-]/g, '') || 'image';
+  const roomToken = authHeader.split(' ')[1];
+  const roomPayload = verifyRoomToken(roomToken);
+  if (!roomPayload || roomPayload.roomId !== id) {
+    throw new AuthError('Invalid room token');
+  }
+
   const img = req.body?.img;
   if (!img || typeof img !== 'string') {
     throw new ValidationError('Invalid image data');

@@ -500,9 +500,14 @@ sendChatMessage(message) {
       thumbCtx.fillRect(0, 0, 240, 160);
       thumbCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, 240, 160);
       const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
+      const roomToken = localStorage.getItem(`room_token_${roomId}`);
+      if (!roomToken) return;
       fetch(`${API_URL}/api/image?id=${roomId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${roomToken}`
+        },
         body: JSON.stringify({ img: dataUrl })
       }).catch(() => { });
     } catch (_) { }

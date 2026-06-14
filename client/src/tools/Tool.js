@@ -129,7 +129,13 @@ export default class Tool {
 
   saveImage() {
     if (this.id) {
-      axios.post(`${API_URL}/api/image?id=${this.id}`, { img: this.canvas.toDataURL() });
+      const roomToken = localStorage.getItem(`room_token_${this.id}`);
+      if (!roomToken) return;
+      axios.post(
+        `${API_URL}/api/image?id=${this.id}`,
+        { img: this.canvas.toDataURL() },
+        { headers: { Authorization: `Bearer ${roomToken}` } }
+      );
     }
   }
 }

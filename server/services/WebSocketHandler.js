@@ -5,6 +5,19 @@ const DataStore = require('./DataStore');
 const { sanitizeInput, sanitizeChatMessage, sanitizeUsername, checkSpam, isStrokePayloadTooLarge } = require('../utils/security');
 const { verifyToken } = require('../utils/jwt');
 
+const ALLOWED_ORIGINS = [
+  'https://risovanie.online',
+  'http://localhost:3000',
+  'https://paint-online-back.onrender.com'
+];
+
+function isAllowedOrigin(origin) {
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER_EXTERNAL_URL) {
+    return !origin || ALLOWED_ORIGINS.includes(origin);
+  }
+  return !origin || ALLOWED_ORIGINS.includes(origin);
+}
+
 class WebSocketHandler {
   constructor() {
     this.wsMessageLimits = new Map();
@@ -547,4 +560,6 @@ async handleClose(ws) {
   }
 }
 
-module.exports = new WebSocketHandler();
+const handler = new WebSocketHandler();
+handler.isAllowedOrigin = isAllowedOrigin;
+module.exports = handler;

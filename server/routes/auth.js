@@ -230,6 +230,15 @@ const verifyResetTokenLimiter = rateLimit({
   validate: { xForwardedForHeader: false }
 });
 
+const resetPasswordSubmitLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Слишком много попыток сброса пароля, пожалуйста, попробуйте позже.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
+});
+
 
 router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -277,7 +286,7 @@ router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (req, r
   res.json({ message: 'Инструкция по восстановлению пароля отправлена на email' });
 }));
 
-router.post('/reset-password', asyncHandler(async (req, res) => {
+router.post('/reset-password', resetPasswordSubmitLimiter, asyncHandler(async (req, res) => {
   const { token, newPassword } = req.body;
 
   if (!token || typeof token !== 'string') {
