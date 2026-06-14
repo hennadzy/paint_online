@@ -308,6 +308,7 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
       CanvasService.redraw();
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
+      this.scheduleLocalAutoSave();
 
       if (WebSocketService.isConnected) {
         WebSocketService.sendDraw(stroke);
@@ -328,6 +329,7 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
 
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
+      this.scheduleLocalAutoSave();
     }
   }
 
@@ -345,6 +347,7 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
 
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
+      this.scheduleLocalAutoSave();
     }
   }
 
@@ -540,11 +543,11 @@ setupThumbnailInterval() {
       this.returningFromRoom = true;
     }
 
-    this.saveThumbnail();
-
-    if (WebSocketService.isConnected) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
+    if (WebSocketService.isConnected && this.currentRoomId) {
+      await WebSocketService.sendSyncStrokes(HistoryService.getStrokes());
     }
+
+    this.saveThumbnail();
 
     WebSocketService.disconnect();
     this.isConnected = false;
@@ -702,6 +705,17 @@ setupThumbnailInterval() {
     CanvasService.renderBrushStroke(ctx, stroke, isEraser);
   }
 
+  scheduleLocalAutoSave() {
+    if (this.isConnected) return;
+    if (this._localSaveTimer) {
+      clearTimeout(this._localSaveTimer);
+    }
+    this._localSaveTimer = setTimeout(() => {
+      this._localSaveTimer = null;
+      this.performAutoSave();
+    }, 200);
+  }
+
   setupAutoSave() {
     AutoSaveService.setSaveCallback(() => {
       if (!this.isConnected) {
@@ -716,6 +730,10 @@ setupThumbnailInterval() {
     }, 1000);
 
     const saveOnExit = () => {
+      if (this._localSaveTimer) {
+        clearTimeout(this._localSaveTimer);
+        this._localSaveTimer = null;
+      }
       if (!this.isConnected && HistoryService.getStrokes().length > 0) {
         this.performAutoSave();
       }
@@ -733,8 +751,18 @@ setupThumbnailInterval() {
   }
 
   performAutoSave() {
+    const strokes = HistoryService.getStrokes();
+    const roomId = this.currentRoomId;
+
+    if (!this.isConnected) {
+      const existing = AutoSaveService.restore(roomId);
+      if (strokes.length === 0 && existing?.strokes?.length > 0) {
+        return;
+      }
+    }
+
     const data = {
-      strokes: HistoryService.getStrokes(),
+      strokes,
       zoom: CanvasService.zoom,
       showGrid: CanvasService.showGrid,
       toolName: this.canvas ? 'brush' : 'brush',
@@ -745,7 +773,7 @@ setupThumbnailInterval() {
       sessionId: WebSocketService.sessionId
     };
 
-    AutoSaveService.save(data, this.currentRoomId);
+    AutoSaveService.save(data, roomId);
   }
 
   checkForAutoSave() {

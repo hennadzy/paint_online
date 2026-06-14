@@ -4,7 +4,7 @@ class AutoSaveService {
     this.autosaveInterval = null;
     this.hasChanges = false;
     this.lastSaveTime = 0;
-    this.saveDelay = 1500;
+    this.saveDelay = 500;
     this.maxBackups = 3;
     this.maxAge = 24 * 60 * 60 * 1000;
   }
@@ -186,7 +186,7 @@ class AutoSaveService {
       this._debounceTimer = setTimeout(() => {
         this._debounceTimer = null;
         this._saveCallback();
-      }, 800);
+      }, 200);
     }
   }
 

@@ -231,6 +231,24 @@ async handleConnection(ws, msg) {
     await RoomManager.updateUserActivity(ws);
   }
 
+  async handleSyncStrokes(ws, msg) {
+    const userInfo = await RoomManager.getUserInfo(ws);
+    if (!userInfo) return;
+    const { roomId, username } = userInfo;
+
+    const rawStrokes = Array.isArray(msg.strokes) ? msg.strokes : [];
+    const strokes = rawStrokes
+      .filter(s => s && typeof s === 'object' && s.id)
+      .slice(-5000);
+
+    await RoomManager.replaceActiveStrokes(roomId, strokes);
+    await RoomManager.clearUserCancelledStrokes(roomId, username);
+
+    if (ws.readyState === 1) {
+      ws.send(JSON.stringify({ method: 'syncAck' }));
+    }
+  }
+
 async handleChat(ws, msg) {
     const userInfo = await RoomManager.getUserInfo(ws);
     if (!userInfo) return;
@@ -386,6 +404,11 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
           break;
         case "clear":
           this.handleClear(ws, msg);
+          break;
+        case "syncStrokes":
+          this.handleSyncStrokes(ws, msg).catch((err) => {
+            console.error('syncStrokes error:', err);
+          });
           break;
         case "chat":
           this.handleChat(ws, msg);

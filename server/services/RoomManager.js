@@ -308,19 +308,45 @@ async removeUser(ws) {
 
   async persistActiveStrokes(roomId) {
     const strokes = await redis.lrange(`room:${roomId}:strokes`, 0, -1);
-    if (strokes.length === 0) {
-      await DataStore.replaceRoomStrokes(roomId, []);
-      return;
-    }
-
-    const strokesObjects = strokes.map(s => JSON.parse(s));
     const allCancelled = await this.getAllCancelledStrokes(roomId);
     const allCancelledIds = new Set();
     Object.values(allCancelled).forEach(cancelledArray => {
       cancelledArray.forEach(stroke => allCancelledIds.add(stroke.id));
     });
+
+    if (strokes.length === 0) {
+      if (allCancelledIds.size > 0) {
+        await DataStore.replaceRoomStrokes(roomId, []);
+      }
+      return;
+    }
+
+    const strokesObjects = strokes.map(s => JSON.parse(s));
     const activeStrokes = strokesObjects.filter(s => !allCancelledIds.has(s.id));
     await DataStore.replaceRoomStrokes(roomId, activeStrokes);
+  }
+
+  async replaceActiveStrokes(roomId, strokes) {
+    if (!Array.isArray(strokes)) return;
+
+    const capped = strokes.slice(-5000);
+
+    await redis.del(`room:${roomId}:strokes`);
+    if (capped.length > 0) {
+      const multi = redis.multi();
+      for (const stroke of capped) {
+        multi.rpush(`room:${roomId}:strokes`, JSON.stringify(stroke));
+      }
+      await multi.exec();
+      await redis.ltrim(`room:${roomId}:strokes`, -5000, -1);
+    }
+
+    await DataStore.replaceRoomStrokes(roomId, capped);
+  }
+
+  async clearUserCancelledStrokes(roomId, username) {
+    await redis.del(`room:${roomId}:cancelled:${username}`);
+    await DataStore.saveCancelledStrokes(roomId, username, []);
   }
 
   async loadCancelledStrokesFromDb(roomId, username) {

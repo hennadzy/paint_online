@@ -128,6 +128,32 @@ connect(wsUrl, roomId, username, token) {
     });
   }
 
+  sendSyncStrokes(strokes) {
+    return new Promise((resolve) => {
+      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+        resolve();
+        return;
+      }
+
+      const timeout = setTimeout(resolve, 2000);
+      const onMessage = (message) => {
+        if (message.method === 'syncAck') {
+          clearTimeout(timeout);
+          this.off('message', onMessage);
+          resolve();
+        }
+      };
+
+      this.on('message', onMessage);
+      const sent = this.send({ method: 'syncStrokes', strokes });
+      if (!sent) {
+        clearTimeout(timeout);
+        this.off('message', onMessage);
+        resolve();
+      }
+    });
+  }
+
   sendClear() {
     return this.send({
       method: "clear",
@@ -209,6 +235,8 @@ connect(wsUrl, roomId, username, token) {
 
       case 'syncCancelled':
         this.emit('syncCancelled', { cancelledStrokeIds: message.cancelledStrokeIds });
+        break;
+      case 'syncAck':
         break;
       case 'error':
         this.emit('roomError', { message: message.message });
