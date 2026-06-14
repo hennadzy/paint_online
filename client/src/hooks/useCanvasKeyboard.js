@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
+import selectionState from '../store/selectionState';
+import {
+  copySelection,
+  cutSelection,
+  hasClipboardContent,
+  pasteSelection,
+} from '../utils/selectionClipboard';
 import Brush from '../tools/Brush';
 import Eraser from '../tools/Eraser';
 import Line from '../tools/Line';
@@ -53,6 +60,30 @@ export function useCanvasKeyboard() {
           ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'н'))) {
         e.preventDefault();
         canvasState.redo();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === 'KeyC') {
+        if (selectionState.hasSelection) {
+          e.preventDefault();
+          copySelection();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === 'KeyX') {
+        if (selectionState.hasSelection) {
+          e.preventDefault();
+          cutSelection(canvas);
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === 'KeyV') {
+        if (hasClipboardContent()) {
+          e.preventDefault();
+          pasteSelection(canvas);
+        }
         return;
       }
 

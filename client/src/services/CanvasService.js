@@ -135,6 +135,11 @@ drawSelectionTransform(ctx, stroke) {
     const maskArr = stroke.mask instanceof Uint8Array ? stroke.mask : new Uint8Array(stroke.mask);
     eraseMaskFromBuffer(ctx, maskArr, stroke.canvasWidth, stroke.canvasHeight);
   }
+
+  if (!stroke.imageData) {
+    return Promise.resolve();
+  }
+
   return this.drawImagePlaceholder(ctx, stroke);
 }
 

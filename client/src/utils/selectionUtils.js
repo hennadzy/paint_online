@@ -244,7 +244,45 @@ export function buildSelectionTransformStroke({
   return stroke;
 }
 
-export function pointInRect(px, py, rect) {
+export function buildSelectionEraseStroke({
+  canvasWidth,
+  originX,
+  originY,
+  selectionWidth,
+  selectionHeight,
+  mask,
+}) {
+  const stroke = {
+    type: "selection_transform",
+    selectionType: "cut",
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    imageData: null,
+  };
+
+  if (mask) {
+    const region = extractMaskRegion(mask, canvasWidth, originX, originY, selectionWidth, selectionHeight);
+    stroke.maskRegion = {
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+      data: encodeMaskRegionData(region.data),
+    };
+  }
+
+  return stroke;
+}
+
+export function cloneImageData(imageData) {
+  return new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+}
   return px >= rect.x && px <= rect.x + rect.width && py >= rect.y && py <= rect.y + rect.height;
 }
 
