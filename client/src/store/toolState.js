@@ -25,17 +25,19 @@ class ToolState {
   };
 
   groups = {
-    navigation: ["hand", "select", "lasso"],
+    selection: ["select", "lasso"],
     brush: ["brush", "line", "arrow"],
     shapes: ["circle", "rect", "polygon"],
-    color: ["fill", "pipette"]
+    color: ["fill", "pipette"],
+    eraser: ["eraser"],
   };
 
   lastSelected = {
-    navigation: "hand",
+    selection: "select",
     brush: "brush",
     shapes: "circle",
-    color: "fill"
+    color: "fill",
+    eraser: "eraser",
   };
 
   constructor() {

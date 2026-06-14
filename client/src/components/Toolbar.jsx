@@ -75,8 +75,7 @@ const Toolbar = observer(() => {
     text: Text
   };
 
-  const navigationLabels = {
-    hand: "Рука",
+  const selectionLabels = {
     select: "Выделение",
     lasso: "Лассо"
   };
@@ -90,7 +89,7 @@ const Toolbar = observer(() => {
     const ToolClass = toolClassMap[toolName];
     changeTool(ToolClass, toolName);
     toggleGroup(group);
-  }
+  };
 
   const renderButton = (toolName, ToolClass, label) => (
     <button
@@ -108,6 +107,7 @@ const Toolbar = observer(() => {
     action();
     setClickAnimation(buttonId);
     setTimeout(() => setClickAnimation(null), 1000);
+    setActiveGroup(null);
   };
 
   return (
@@ -168,7 +168,31 @@ const Toolbar = observer(() => {
         </div>
       </div>
 
-      {renderButton("eraser", Eraser, "Ластик")}
+      <div className="toolbar__group">
+        <button
+          type="button"
+          className={`toolbar__btn eraser ${toolState.isToolInGroup(toolState.toolName, "eraser") ? "active" : ""}`}
+          onClick={() => handleGroupClick("eraser")}
+          onMouseDown={(e) => e.target.blur()}
+        >
+          <span className="icon eraser" />
+          <span className="tooltip">Ластик</span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === "eraser" ? "show" : ""}`}>
+          {renderButton("eraser", Eraser, "Ластик")}
+          <button
+            type="button"
+            className={`toolbar__btn ${clickAnimation === "clear" ? "click-animation" : ""}`}
+            onClick={() => handleActionClick(() => canvasState.clearCanvas(), "clear")}
+            onMouseDown={(e) => e.target.blur()}
+            title="Очистить холст"
+          >
+            <span className="icon clear" />
+            <span className="tooltip">Очистить</span>
+          </button>
+        </div>
+      </div>
+
       {renderButton("text", Text, "Текст")}
 
       <button
@@ -182,35 +206,25 @@ const Toolbar = observer(() => {
         <span className="tooltip">Сетка</span>
       </button>
 
-      <button
-        type="button"
-        className={`toolbar__btn ${clickAnimation === "clear" ? "click-animation" : ""}`}
-        onClick={() => handleActionClick(() => canvasState.clearCanvas(), "clear")}
-        onMouseDown={(e) => e.target.blur()}
-        title="Очистить холст"
-      >
-        <span className="icon clear" />
-        <span className="tooltip">Очистить</span>
-      </button>
-
       <div className="toolbar__group">
         <button
           type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("navigation")} ${toolState.isToolInGroup(toolState.toolName, "navigation") ? "active" : ""}`}
-          onClick={() => handleGroupClick("navigation")}
+          className={`toolbar__btn ${toolState.getLastInGroup("selection")} ${toolState.isToolInGroup(toolState.toolName, "selection") ? "active" : ""}`}
+          onClick={() => handleGroupClick("selection")}
           onMouseDown={(e) => e.target.blur()}
         >
-          <span className={`icon ${toolState.getLastInGroup("navigation")}`} />
+          <span className={`icon ${toolState.getLastInGroup("selection")}`} />
           <span className="tooltip">
-            {navigationLabels[toolState.getLastInGroup("navigation")]}
+            {selectionLabels[toolState.getLastInGroup("selection")]}
           </span>
         </button>
-        <div className={`toolbar__submenu ${activeGroup === "navigation" ? "show" : ""}`}>
-          {renderButton("hand", Hand, "Рука (H)")}
+        <div className={`toolbar__submenu ${activeGroup === "selection" ? "show" : ""}`}>
           {renderButton("select", RectSelect, "Выделение (M)")}
           {renderButton("lasso", Lasso, "Лассо (Q)")}
         </div>
       </div>
+
+      {renderButton("hand", Hand, "Рука (H)")}
 
       <button
         type="button"
