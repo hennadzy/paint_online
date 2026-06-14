@@ -915,6 +915,13 @@ router.put('/gallery/:id/approve', async (req, res) => {
       [Date.now(), id]
     );
 
+    try {
+      const { regenerateSitemap } = require('../services/sitemapService');
+      regenerateSitemap(pgPool).catch((err) => {
+        console.error('Sitemap regen after gallery approve:', err.message);
+      });
+    } catch (_) { }
+
     const adminId = req.user.userId;
     const userId = drawing.rows[0].user_id;
     const title = drawing.rows[0].title;

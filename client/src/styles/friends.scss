@@ -1,0 +1,187 @@
+.friends-page {
+  flex-direction: column;
+  padding: 0;
+}
+
+.friends-container {
+  margin-top: 20px;
+}
+
+.friends-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.friends-tab {
+  position: relative;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 14px;
+
+  &.active {
+    background: rgba(255, 204, 0, 0.15);
+    border-color: rgba(255, 204, 0, 0.4);
+    color: #ffcc00;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ff6699;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.friends-search {
+  margin-bottom: 16px;
+}
+
+.friends-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.friends-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.friends-list__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+
+  &:hover .friends-list__name {
+    color: #ffcc00;
+  }
+}
+
+.friends-list__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.friends-list__name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.friend-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.friend-action-btn {
+  &--danger {
+    background: rgba(255, 80, 80, 0.15) !important;
+    border-color: rgba(255, 80, 80, 0.4) !important;
+    color: #ff8888 !important;
+  }
+}
+
+.profile-friends-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.profile-friends-preview__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 204, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.05);
+    border-color: #ffcc00;
+  }
+}
+
+.profile-friends-preview__link {
+  color: #ffcc00;
+  text-decoration: none;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.profile-wall-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.profile-wall-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+
+  &.liked {
+    color: #ff6699;
+    border-color: rgba(255, 102, 153, 0.4);
+    background: rgba(255, 102, 153, 0.1);
+  }
+}
+
+.profile-wall-remove-btn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8888;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.profile-other-actions {
+  margin-bottom: 20px;
+}
+
+.profile-message-link-btn {
+  margin-top: 10px;
+}

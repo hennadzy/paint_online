@@ -15,6 +15,12 @@ const { pgPool } = require('./config/db');
 const { errorMiddleware, setupGlobalErrorHandlers } = require('./utils/errorHandler');
 const { regenerateSitemap, getCachedSitemap } = require('./services/sitemapService');
 const {
+  isValidUserUuid,
+  buildProfileSeoMeta,
+  buildProfileIndexableHtml,
+  injectSeoIntoHtml
+} = require('./utils/profileSeo');
+const {
   MAIN_COLORING_SEO_TEXT,
   MAIN_COLORING_SEO_PARAGRAPHS,
   SECTION_SEO_TEXTS,
@@ -305,13 +311,13 @@ const SEO_PAGES = {
   },
   '/gallery': {
     title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
-    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
-    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам'
+    description: 'Галерея рисунков пользователей: смотрите работы авторов, открывайте профили и стены художников, ставьте лайки и комментируйте. Добавляйте друзей и следите за их новыми рисунками.',
+    keywords: 'галерея рисунков пользователей, рисунки онлайн, стена рисунков, профили художников, лайки рисунков, комментарии к рисункам, друзья художников'
   },
   '/help': {
     title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
-    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
-    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы'
+    description: 'Справка по рисованию онлайн: инструменты, комнаты, галерея, друзья, профили, стена рисунков, личные сообщения и уведомления. Ответы на частые вопросы.',
+    keywords: 'справка рисование онлайн, как рисовать, галерея, друзья, профиль, стена рисунков, личные сообщения, уведомления, частые вопросы'
   }
 };
 
@@ -555,7 +561,7 @@ app.get('/gallery/:id', async (req, res) => {
 
   try {
     const result = await pgPool.query(
-      `SELECT gd.id, gd.title, gd.created_at, gd.approved_at, u.username AS author_name
+      `SELECT gd.id, gd.title, gd.created_at, gd.approved_at, u.username AS author_name, u.id AS author_id
        FROM gallery_drawings gd
        JOIN users u ON u.id = gd.user_id
        WHERE gd.id = $1 AND gd.status = 'approved'`,
@@ -576,10 +582,10 @@ app.get('/gallery/:id', async (req, res) => {
        LIMIT 50`,
       [drawingId]
     );
-    const seoTitle = `${drawing.title} - рисунок в галерее Рисование.Онлайн`;
-    const seoDescription = `Рисунок "${drawing.title}" автора ${drawing.author_name}. Смотрите изображение и комментарии к работе в галерее Рисование.Онлайн.`;
+    const seoTitle = `${drawing.title} - рисунок ${drawing.author_name} | Рисование.Онлайн`;
+    const seoDescription = `Рисунок «${drawing.title}» автора ${drawing.author_name}. Смотрите изображение, комментарии и профиль художника на Рисование.Онлайн.`;
     const canonical = `https://risovanie.online/gallery/${drawing.id}`;
-    const seoKeywords = `рисунок ${drawing.title}, галерея рисунков, комментарии к рисунку, ${drawing.author_name}`;
+    const seoKeywords = `рисунок ${drawing.title}, ${drawing.author_name}, галерея рисунков, стена рисунков, профиль художника`;
 
     html = html
       .replace(/<title>.*?<\/title>/, `<title>${seoTitle}</title>`)
@@ -596,7 +602,7 @@ app.get('/gallery/:id', async (req, res) => {
 
     const indexableContent = `<section style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
       <h1>${escapeHtml(drawing.title)}</h1>
-      <p>Автор: ${escapeHtml(drawing.author_name)}</p>
+      <p>Автор: <a href="https://risovanie.online/user/${drawing.author_id}">${escapeHtml(drawing.author_name)}</a></p>
       <h2>Комментарии к рисунку</h2>
       <ul>${commentsHtml || '<li>Комментариев пока нет.</li>'}</ul>
     </section>`;
@@ -609,6 +615,69 @@ app.get('/gallery/:id', async (req, res) => {
 
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
+});
+
+app.get('/user/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  if (!isValidUserUuid(userId)) {
+    return send404Page(res);
+  }
+
+  res.setHeader('X-Robots-Tag', 'index, follow');
+
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  try {
+    const userResult = await pgPool.query(
+      `SELECT id, username, created_at
+       FROM users
+       WHERE id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)`,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return send404Page(res);
+    }
+
+    const user = userResult.rows[0];
+    const drawingsResult = await pgPool.query(
+      `SELECT id, title, likes_count, approved_at
+       FROM gallery_drawings
+       WHERE user_id = $1 AND status = 'approved'
+       ORDER BY approved_at DESC NULLS LAST, created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    const seo = buildProfileSeoMeta({
+      username: user.username,
+      userId: user.id,
+      drawingsCount: drawingsResult.rows.length
+    });
+
+    html = injectSeoIntoHtml(html, seo);
+    html = html.replace(
+      '<div id="root"></div>',
+      `${buildProfileIndexableHtml({
+        username: user.username,
+        userId: user.id,
+        drawings: drawingsResult.rows
+      })}<div id="root"></div>`
+    );
+  } catch (error) {
+    console.error('User profile seo error:', error);
+    return send404Page(res);
+  }
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/friends', (req, res) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  const indexPath = path.join(__dirname, '../client/build', 'index.html');
+  res.sendFile(indexPath);
 });
 
 const CLIENT_ROUTES = ['/', '/login', '/register', '/reset-password', '/profile', '/404', '/coloring', '/gallery', '/help'];
@@ -635,6 +704,15 @@ app.get('*', (req, res) => {
   }
 
   if (normalizedPath === '/gallery' || normalizedPath.startsWith('/gallery/')) {
+    return res.sendFile(indexPath);
+  }
+
+  if (normalizedPath === '/friends' || normalizedPath.startsWith('/friends/')) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    return res.sendFile(indexPath);
+  }
+
+  if (normalizedPath === '/user' || normalizedPath.startsWith('/user/')) {
     return res.sendFile(indexPath);
   }
 
@@ -922,6 +1000,41 @@ async function initDb() {
 
     try {
       await pgPool.query(`ALTER TABLE gallery_drawings ADD COLUMN IF NOT EXISTS author_name TEXT`);
+    } catch (_) { }
+
+    try {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS friend_requests (
+          id SERIAL PRIMARY KEY,
+          from_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          status VARCHAR(20) NOT NULL DEFAULT 'pending',
+          created_at BIGINT NOT NULL,
+          updated_at BIGINT NOT NULL,
+          UNIQUE(from_user_id, to_user_id)
+        );
+        CREATE TABLE IF NOT EXISTS user_friends (
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at BIGINT NOT NULL,
+          PRIMARY KEY (user_id, friend_id)
+        );
+        CREATE TABLE IF NOT EXISTS notifications (
+          id SERIAL PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          type VARCHAR(40) NOT NULL,
+          actor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          entity_id TEXT,
+          entity_title TEXT,
+          is_read BOOLEAN DEFAULT false,
+          created_at BIGINT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_friend_requests_to_status ON friend_requests(to_user_id, status);
+        CREATE INDEX IF NOT EXISTS idx_friend_requests_from_status ON friend_requests(from_user_id, status);
+        CREATE INDEX IF NOT EXISTS idx_user_friends_user ON user_friends(user_id);
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+      `);
     } catch (_) { }
 
     try {

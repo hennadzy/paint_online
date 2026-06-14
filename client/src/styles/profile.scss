@@ -5,9 +5,10 @@
   width: 100%;
   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 20px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0 0 40px;
   overflow-y: auto;
   box-sizing: border-box;
   font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
@@ -45,6 +46,10 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+  margin-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  box-sizing: border-box;
 }
 
 .profile-header {

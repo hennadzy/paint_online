@@ -6,12 +6,14 @@ import "./styles/not-found.scss"
 import "./styles/admin.scss"
 import "./styles/coloring.scss"
 import "./styles/gallery.scss"
+import "./styles/social-header.scss"
 import SettingBar from "./components/SettingBar";
 import Toolbar from "./components/Toolbar";
 import TopMenu from "./components/TopMenu";
 import Canvas from "./components/Canvas";
 import NotFoundPage from "./components/NotFoundPage";
-import ProfilePage from "./components/ProfilePage";
+import ProfilePage, { ProfileRedirect } from "./components/ProfilePage";
+import FriendsPage from "./components/FriendsPage";
 import AuthPage from "./components/AuthPage";
 import AdminPage from "./components/AdminPage";
 import ColoringPage from "./components/ColoringPage";
@@ -25,6 +27,7 @@ import canvasState from "./store/canvasState";
 import capabilitiesState from "./store/capabilitiesState";
 import { isValidRoomId } from "./utils/routerUtils";
 import { usePersonalMessages } from "./hooks/usePersonalMessages";
+import { useNotifications } from "./hooks/useNotifications";
 import { useRoomValidation } from "./hooks/useRoomValidation";
 
 const RoomRoute = () => {
@@ -48,13 +51,15 @@ const App = observer(() => {
         capabilitiesState.fetch();
     }, []);
 
-  const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/help'].includes(location.pathname)
+  const hideGlobalUI = ['/profile', '/login', '/register', '/reset-password', '/admin', '/help', '/friends'].includes(location.pathname)
       || location.pathname === '/gallery'
       || location.pathname.startsWith('/gallery/')
+      || location.pathname.startsWith('/user/')
       || location.pathname === '/coloring'
       || location.pathname.startsWith('/coloring/');
   
   usePersonalMessages();
+  useNotifications();
   useRoomValidation(location.pathname, navigate);
 
     if (location.pathname === '/404') {
@@ -64,6 +69,7 @@ const App = observer(() => {
     const isAdminPage = location.pathname === '/admin';
     const isColoringRoute = location.pathname === '/coloring' || location.pathname.startsWith('/coloring/');
     const isGalleryPage = location.pathname === '/gallery' || location.pathname.startsWith('/gallery/');
+    const isSocialPage = location.pathname.startsWith('/user/') || location.pathname === '/friends';
     const isHelpPage = location.pathname === '/help';
 
 return (
@@ -73,7 +79,7 @@ return (
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}
             {!hideGlobalUI && <SettingBar />}
-            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringRoute ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
+            <div className={`main-content ${isAdminPage ? 'main-content--admin' : ''} ${isColoringRoute ? 'main-content--coloring' : ''} ${isGalleryPage ? 'main-content--gallery' : ''} ${isSocialPage ? 'main-content--gallery' : ''} ${isHelpPage ? 'main-content--help' : ''}`}>
                 {isHelpPageByPath ? (
                     <HelpPage />
                 ) : (
@@ -82,7 +88,9 @@ return (
                         <Route path='/login' element={<AuthPage />} />
                         <Route path='/register' element={<AuthPage />} />
                         <Route path='/reset-password' element={<AuthPage />} />
-                        <Route path='/profile' element={<ProfilePage />} />
+                        <Route path='/profile' element={<ProfileRedirect />} />
+                        <Route path='/user/:userId' element={<ProfilePage />} />
+                        <Route path='/friends' element={<FriendsPage />} />
                         <Route path='/admin' element={<AdminPage />} />
                         <Route path='/help' element={<HelpPage />} />
                         <Route path='/coloring' element={<ColoringPage />} />

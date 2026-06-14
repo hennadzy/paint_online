@@ -18,7 +18,7 @@ function buildStaticUrls(now) {
   return [
     { loc: `${BASE_URL}/`, changefreq: 'weekly', priority: '1.0' },
     { loc: `${BASE_URL}/coloring`, changefreq: 'weekly', priority: '0.8' },
-    { loc: `${BASE_URL}/gallery`, changefreq: 'weekly', priority: '0.9' },
+    { loc: `${BASE_URL}/gallery`, changefreq: 'daily', priority: '0.9' },
     { loc: `${BASE_URL}/help`, changefreq: 'monthly', priority: '0.6' },
   ].map((entry) => ({ ...entry, lastmod: now }));
 }
@@ -52,7 +52,7 @@ async function generateSitemapXml(pgPool) {
   }
 
   try {
-    const [resultDrawings, resultSections] = await Promise.all([
+    const [resultDrawings, resultSections, resultProfiles] = await Promise.all([
       pgPool.query(
         `SELECT id, approved_at, created_at
          FROM gallery_drawings
@@ -64,6 +64,18 @@ async function generateSitemapXml(pgPool) {
         `SELECT id, slug, created_at
          FROM coloring_sections
          ORDER BY created_at DESC
+         LIMIT 5000`
+      ),
+      pgPool.query(
+        `SELECT u.id, u.created_at,
+                MAX(gd.approved_at) AS last_wall_activity,
+                COUNT(gd.id)::int AS drawings_count
+         FROM users u
+         INNER JOIN gallery_drawings gd
+           ON gd.user_id = u.id AND gd.status = 'approved'
+         WHERE (u.is_deleted IS NOT TRUE OR u.is_deleted IS NULL)
+         GROUP BY u.id, u.created_at
+         ORDER BY last_wall_activity DESC NULLS LAST
          LIMIT 5000`
       ),
     ]);
@@ -111,6 +123,17 @@ async function generateSitemapXml(pgPool) {
         lastmod: drawingDate,
         changefreq: 'monthly',
         priority: '0.7',
+      });
+    }
+
+    for (const profile of resultProfiles.rows) {
+      const profileDate = formatDate(profile.last_wall_activity || profile.created_at, now);
+
+      urlEntries.push({
+        loc: `${BASE_URL}/user/${profile.id}`,
+        lastmod: profileDate,
+        changefreq: 'weekly',
+        priority: profile.drawings_count >= 5 ? '0.75' : '0.65',
       });
     }
 

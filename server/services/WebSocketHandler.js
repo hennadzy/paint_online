@@ -393,6 +393,18 @@ const verifiedUsers = await RoomManager.getVerifiedUsers(roomId);
     }
   }
 
+  deliverNotificationToUser(userId, notification) {
+    const ws = this.userSockets.get(userId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        method: 'notification',
+        notification
+      }));
+      return true;
+    }
+    return false;
+  }
+
   async deliverPersonalMessageToUser(toUserId, fromUserId, fromUsername, message, timestamp, msgId) {
     const recipientWs = this.userSockets.get(toUserId);
     if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {

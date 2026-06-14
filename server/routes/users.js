@@ -451,4 +451,116 @@ router.delete('/me/favorites/:roomId', authenticate, asyncHandler(async (req, re
   res.json({ message: 'Удалено из избранного' });
 }));
 
+const FriendService = require('../services/FriendService');
+const NotificationService = require('../services/NotificationService');
+
+router.get('/me/friends', authenticate, asyncHandler(async (req, res) => {
+  const friends = await FriendService.getFriends(req.user.userId, req.query.q);
+  res.json({ friends });
+}));
+
+router.get('/me/friend-requests/incoming', authenticate, asyncHandler(async (req, res) => {
+  const requests = await FriendService.getIncomingRequests(req.user.userId);
+  res.json({ requests });
+}));
+
+router.get('/me/friend-requests/outgoing', authenticate, asyncHandler(async (req, res) => {
+  const requests = await FriendService.getOutgoingRequests(req.user.userId);
+  res.json({ requests });
+}));
+
+router.get('/me/friend-requests/count', authenticate, asyncHandler(async (req, res) => {
+  const count = await FriendService.getIncomingCount(req.user.userId);
+  res.json({ count });
+}));
+
+router.get('/me/notifications', authenticate, asyncHandler(async (req, res) => {
+  const notifications = await NotificationService.getNotifications(req.user.userId, req.query.limit);
+  const unreadCount = await NotificationService.getUnreadCount(req.user.userId);
+  res.json({ notifications, unreadCount });
+}));
+
+router.post('/me/notifications/:notificationId/read', authenticate, asyncHandler(async (req, res) => {
+  const notificationId = parseInt(req.params.notificationId, 10);
+  if (!Number.isFinite(notificationId)) {
+    throw new ValidationError('Некорректный ID уведомления');
+  }
+  await NotificationService.markRead(notificationId, req.user.userId);
+  const unreadCount = await NotificationService.getUnreadCount(req.user.userId);
+  res.json({ unreadCount });
+}));
+
+router.post('/me/notifications/read-all', authenticate, asyncHandler(async (req, res) => {
+  await NotificationService.markAllRead(req.user.userId);
+  res.json({ unreadCount: 0 });
+}));
+
+router.get('/:id/friendship-status', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const status = await FriendService.getFriendshipStatus(req.user.userId, req.params.id);
+  res.json(status);
+}));
+
+router.post('/:id/friend-request', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const result = await FriendService.sendFriendRequest(req.user.userId, req.params.id);
+  res.json(result);
+}));
+
+router.delete('/:id/friend-request', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const result = await FriendService.cancelFriendRequest(req.user.userId, req.params.id);
+  res.json(result);
+}));
+
+router.post('/:id/friend-request/accept', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const result = await FriendService.acceptFriendRequest(req.user.userId, req.params.id);
+  res.json(result);
+}));
+
+router.post('/:id/friend-request/decline', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const result = await FriendService.declineFriendRequest(req.user.userId, req.params.id);
+  res.json(result);
+}));
+
+router.delete('/:id/friends', authenticate, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const result = await FriendService.removeFriend(req.user.userId, req.params.id);
+  res.json(result);
+}));
+
+router.get('/:id', optionalPublicUser, asyncHandler(async (req, res) => {
+  validateUserId(req.params.id);
+  const user = await FriendService.getPublicUser(req.params.id);
+  if (!user) {
+    throw new NotFoundError('Пользователь не найден');
+  }
+
+  let friendshipStatus = { status: 'none' };
+  if (req.user?.userId) {
+    friendshipStatus = await FriendService.getFriendshipStatus(req.user.userId, req.params.id);
+  }
+
+  res.json({
+    user: {
+      id: user.id,
+      username: user.username,
+      avatar_url: user.avatar_url,
+      created_at: user.created_at
+    },
+    friendshipStatus
+  });
+}));
+
+function optionalPublicUser(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+  const { authenticate } = require('../middleware/auth');
+  return authenticate(req, res, next);
+}
+
 module.exports = router;

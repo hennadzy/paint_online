@@ -155,6 +155,9 @@ class PersonalWSService {
           messageIds: message.messageIds
         });
         break;
+      case 'notification':
+        this.emit('notification', message.notification);
+        break;
       default:
         break;
     }

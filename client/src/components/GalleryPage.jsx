@@ -6,6 +6,7 @@ import userState from '../store/userState';
 import { API_URL } from '../store/canvasState';
 import { useSeo } from './SeoMeta';
 import { attachPinchPanGestures } from '../utils/pinchPanGestures';
+import SocialHeader from './SocialHeader';
 import '../styles/gallery.scss';
 
 const HeartIcon = ({ filled }) => (
@@ -43,6 +44,8 @@ const GalleryPage = observer(() => {
   const [editCommentText, setEditCommentText] = useState('');
   const [submittingEdit, setSubmittingEdit] = useState(false);
   const [commentLikeLoading, setCommentLikeLoading] = useState({});
+  const [feedTab, setFeedTab] = useState('all');
+  const [sortMode, setSortMode] = useState('likes');
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const zoomRef = useRef(1);
@@ -56,26 +59,39 @@ const GalleryPage = observer(() => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API_URL}/api/gallery`, { headers });
+      const params = {
+        feed: feedTab,
+        sort: feedTab === 'friends' ? 'date' : sortMode
+      };
+      const response = await axios.get(`${API_URL}/api/gallery`, { headers, params });
       setDrawings(response.data.drawings || []);
     } catch (err) {
-      setError('Ошибка загрузки галереи');
+      if (feedTab === 'friends' && err.response?.status === 401) {
+        setError('Войдите, чтобы видеть ленту друзей');
+      } else {
+        setError('Ошибка загрузки галереи');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [feedTab, sortMode]);
 
   useEffect(() => {
+    if (feedTab === 'friends' && !userState.isAuthenticated) {
+      setDrawings([]);
+      setLoading(false);
+      return;
+    }
     fetchDrawings();
-  }, [fetchDrawings]);
+  }, [fetchDrawings, feedTab, userState.isAuthenticated]);
 
   useEffect(() => {
     if (selectedDrawing) {
       const commentsCount = comments.length;
       setSeoData({
-        title: `${selectedDrawing.title} - рисунок в галерее Рисование.Онлайн`,
-        description: `Рисунок "${selectedDrawing.title}" автора ${selectedDrawing.author_name}. Открывайте изображение и комментарии (${commentsCount}) на отдельной странице работы.`,
-        keywords: `рисунок ${selectedDrawing.title}, комментарии к рисунку, ${selectedDrawing.author_name}, галерея рисунков`,
+        title: `${selectedDrawing.title} - рисунок ${selectedDrawing.author_name} | Рисование.Онлайн`,
+        description: `Рисунок «${selectedDrawing.title}» автора ${selectedDrawing.author_name}. Смотрите работу, комментарии (${commentsCount}) и профиль художника на Рисование.Онлайн.`,
+        keywords: `рисунок ${selectedDrawing.title}, ${selectedDrawing.author_name}, галерея рисунков, стена рисунков, комментарии к рисунку`,
         canonical: `https://risovanie.online/gallery/${selectedDrawing.id}`
       });
       return;
@@ -84,19 +100,21 @@ const GalleryPage = observer(() => {
     if (!loading && !error && drawings.length > 0) {
       setSeoData({
         title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
-        description: `Смотрите галерею рисунков пользователей: ${drawings.length} работ от авторов, отдельные страницы изображений и обсуждения в комментариях.`,
-        keywords: `галерея рисунков пользователей, рисунки онлайн, ${drawings.length} работ, комментарии к рисункам`,
-        canonical: 'https://risovanie.online/gallery'
+        description: `Галерея рисунков: ${drawings.length} работ от авторов сообщества. Открывайте профили художников, стены рисунков, комментарии и лайки.`,
+        keywords: 'галерея рисунков пользователей, стена рисунков, профили художников, лайки рисунков, комментарии к рисункам',
+        canonical: 'https://risovanie.online/gallery',
+        robots: feedTab === 'friends' ? 'noindex, follow' : undefined
       });
     } else if (!loading && !error && drawings.length === 0) {
       setSeoData({
         title: 'Галерея рисунков пользователей - добавить работу',
-        description: 'Галерея рисунков пользователей Рисование.Онлайн. Добавьте первую работу и откройте отдельную страницу рисунка с комментариями.',
-        keywords: 'галерея рисунков, добавить рисунок, комментарии к рисункам',
-        canonical: 'https://risovanie.online/gallery'
+        description: 'Галерея рисунков пользователей Рисование.Онлайн. Добавьте первую работу, собирайте друзей и делитесь рисунками на публичной стене профиля.',
+        keywords: 'галерея рисунков, добавить рисунок, стена рисунков, профиль художника',
+        canonical: 'https://risovanie.online/gallery',
+        robots: feedTab === 'friends' ? 'noindex, follow' : undefined
       });
     }
-  }, [drawings, loading, error, setSeoData, selectedDrawing, comments.length]);
+  }, [drawings, loading, error, setSeoData, selectedDrawing, comments.length, feedTab]);
 
   const fetchDrawingById = useCallback(async (id) => {
     if (!id) return;
@@ -392,7 +410,19 @@ const GalleryPage = observer(() => {
                )}
              </div>
             <div className="gallery-detail__meta">
-              <p>✏️ {selectedDrawing.author_name}</p>
+              <p>✏️{' '}
+                {selectedDrawing.author_id ? (
+                  <button
+                    type="button"
+                    className="gallery-author-link"
+                    onClick={() => navigate(`/user/${selectedDrawing.author_id}`)}
+                  >
+                    {selectedDrawing.author_name}
+                  </button>
+                ) : (
+                  selectedDrawing.author_name
+                )}
+              </p>
               <p>{formatDate(selectedDrawing.approved_at || selectedDrawing.created_at)}</p>
               <button
                 className={`gallery-like-btn ${selectedDrawing.user_liked ? 'liked' : ''} ${!userState.isAuthenticated ? 'disabled' : ''}`}
@@ -524,19 +554,44 @@ const GalleryPage = observer(() => {
 
   return (
     <div className="gallery-page">
-      <header className="gallery-header">
-        <button
-          className="gallery-back-btn"
-          onClick={() => navigate('/')}
-          aria-label="На главную"
-        >
-          ← На главную
-        </button>
-        <h1 className="gallery-title">🎨 Галерея работ</h1>
-        <div className="gallery-header-spacer" />
-      </header>
+      <SocialHeader title="🎨 Галерея работ" backTo="/" />
 
       <main className="gallery-main">
+        {!drawingId && (
+          <div className="gallery-feed-controls">
+            <div className="gallery-feed-tabs">
+              <button
+                type="button"
+                className={`gallery-feed-tab ${feedTab === 'all' ? 'active' : ''}`}
+                onClick={() => setFeedTab('all')}
+              >
+                Всё
+              </button>
+              <button
+                type="button"
+                className={`gallery-feed-tab ${feedTab === 'friends' ? 'active' : ''}`}
+                onClick={() => setFeedTab('friends')}
+              >
+                Друзья
+              </button>
+            </div>
+            {feedTab === 'all' && (
+              <div className="gallery-sort-controls">
+                <label htmlFor="gallery-sort">Сортировка:</label>
+                <select
+                  id="gallery-sort"
+                  className="gallery-sort-select"
+                  value={sortMode}
+                  onChange={(e) => setSortMode(e.target.value)}
+                >
+                  <option value="likes">По лайкам</option>
+                  <option value="date">По дате</option>
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
         {loading && (
           <div className="gallery-loading">
             <div className="gallery-spinner" />
@@ -575,7 +630,25 @@ const GalleryPage = observer(() => {
           </div>
         )}
 
-        {!loading && !error && drawings.length === 0 && (
+        {!loading && !error && feedTab === 'friends' && !userState.isAuthenticated && (
+          <div className="gallery-empty">
+            <div className="gallery-empty-icon">👥</div>
+            <h2>Лента друзей</h2>
+            <p>Войдите, чтобы видеть рисунки ваших друзей</p>
+            <button className="gallery-auth-btn" onClick={() => navigate('/login')}>Войти</button>
+          </div>
+        )}
+
+        {!loading && !error && feedTab === 'friends' && userState.isAuthenticated && drawings.length === 0 && (
+          <div className="gallery-empty">
+            <div className="gallery-empty-icon">👥</div>
+            <h2>Пока пусто</h2>
+            <p>Добавьте друзей, чтобы видеть их рисунки</p>
+            <button className="gallery-auth-btn" onClick={() => navigate('/friends')}>Перейти к друзьям</button>
+          </div>
+        )}
+
+        {!loading && !error && drawings.length === 0 && feedTab === 'all' && (
           <div className="gallery-empty">
             <div className="gallery-empty-icon">🖼️</div>
             <h2>Галерея пуста</h2>
@@ -623,7 +696,23 @@ const GalleryPage = observer(() => {
                 </div>
                 <div className="gallery-card__info">
                   <h3 className="gallery-card__title">{drawing.title}</h3>
-                  <p className="gallery-card__author">✏️ {drawing.author_name}</p>
+                  <p className="gallery-card__author">
+                    ✏️{' '}
+                    {drawing.author_id ? (
+                      <button
+                        type="button"
+                        className="gallery-author-link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/user/${drawing.author_id}`);
+                        }}
+                      >
+                        {drawing.author_name}
+                      </button>
+                    ) : (
+                      drawing.author_name
+                    )}
+                  </p>
                   <p className="gallery-card__date">{formatDate(drawing.approved_at || drawing.created_at)}</p>
                   <div className="gallery-card__footer">
                     <button
@@ -666,9 +755,8 @@ const GalleryPage = observer(() => {
             <div className="gallery-seo-bottom__text">
               <p>
                 На этой странице собрана галерея рисунков пользователей проекта «Рисование.Онлайн».
-                Здесь можно добавлять рисунок, знакомиться с работами других авторов и участвовать в обсуждениях.
-                Галерея объединяет творцов разного уровня: от начинающих до профессиональных художников,
-                создавая пространство для обмена опытом и вдохновения.
+                Здесь можно знакомиться с работами авторов, переходить в их профили и на публичные стены,
+                ставить лайки, оставлять комментарии и добавлять художников в друзья.
               </p>
               <p>
                 Открывайте понравившиеся изображения, оставляйте комментарии к рисункам и ставьте

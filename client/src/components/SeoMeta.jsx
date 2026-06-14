@@ -25,17 +25,27 @@ const SEO_DATA = {
   },
   '/gallery': {
     title: 'Галерея рисунков пользователей - работы сообщества Рисование.Онлайн',
-    description: 'Смотрите галерею рисунков пользователей: цифровые иллюстрации, скетчи и детские рисунки. Открывайте каждую работу, читайте комментарии и делитесь мнением.',
-    keywords: 'галерея рисунков пользователей, рисунки онлайн, работы художников, цифровые рисунки, комментарии к рисункам',
+    description: 'Галерея рисунков пользователей: смотрите работы авторов, открывайте профили и стены художников, ставьте лайки и комментируйте. Добавляйте друзей и следите за их новыми рисунками.',
+    keywords: 'галерея рисунков пользователей, рисунки онлайн, стена рисунков, профили художников, лайки рисунков, комментарии к рисункам, друзья художников',
     canonical: 'https://risovanie.online/gallery'
   },
   '/help': {
     title: 'Справка — Рисование.Онлайн | Ответы на вопросы',
-    description: 'Справка по рисованию онлайн: как начать рисовать, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения. Ответы на частые вопросы.',
-    keywords: 'справка рисование онлайн, как рисовать, инструкции, настройки инструментов, создание комнат, авторизация, галерея, личные сообщения, частые вопросы',
+    description: 'Справка по рисованию онлайн: инструменты, комнаты, галерея, друзья, профили, стена рисунков, личные сообщения и уведомления. Ответы на частые вопросы.',
+    keywords: 'справка рисование онлайн, как рисовать, галерея, друзья, профиль, стена рисунков, личные сообщения, уведомления, частые вопросы',
     canonical: 'https://risovanie.online/help'
   }
 };
+
+const NOINDEX_EXACT_PATHS = new Set([
+  '/login',
+  '/register',
+  '/reset-password',
+  '/profile',
+  '/admin',
+  '/friends',
+  '/404'
+]);
 
 const OG_IMAGES = {
   '/': 'https://risovanie.online/static/og-main.png',
@@ -43,6 +53,26 @@ const OG_IMAGES = {
   '/gallery': 'https://risovanie.online/static/og-gallery.png',
   '/help': 'https://risovanie.online/static/og-help.png'
 };
+
+function isUserProfilePath(path) {
+  return /^\/user\/[0-9a-f-]{36}$/i.test(path);
+}
+
+function shouldIndexPath(path, search, dynamicSeo) {
+  if (NOINDEX_EXACT_PATHS.has(path)) return false;
+  if (new URLSearchParams(search).has('page')) return false;
+  if (new URLSearchParams(search).get('feed') === 'friends') return false;
+  if (dynamicSeo?.robots === 'noindex, follow' || dynamicSeo?.robots === 'noindex, nofollow') return false;
+
+  return path === '/'
+    || path === '/help'
+    || path.startsWith('/help/')
+    || path === '/gallery'
+    || path.startsWith('/gallery/')
+    || path === '/coloring'
+    || path.startsWith('/coloring/')
+    || isUserProfilePath(path);
+}
 
 export function SeoProvider({ children }) {
   const [dynamicSeo, setDynamicSeo] = useState(null);
@@ -58,7 +88,6 @@ export function SeoMeta() {
   const location = useLocation();
   const path = location.pathname;
   const { seoData: dynamicSeo } = useContext(SeoContext);
-  const hasPaginationQuery = new URLSearchParams(location.search).has('page');
 
   const staticSeoData = SEO_DATA[path]
     || (path.startsWith('/gallery/') ? SEO_DATA['/gallery'] : null)
@@ -72,7 +101,7 @@ export function SeoMeta() {
           || (staticSeoData && staticSeoData.canonical)
           || `https://risovanie.online${path}`,
       }
-    : null;
+    : (isUserProfilePath(path) && dynamicSeo ? dynamicSeo : null);
 
   const isRoomPage = (() => {
     if (!path || path === '/') return false;
@@ -103,19 +132,10 @@ export function SeoMeta() {
       return;
     }
 
-    const shouldIndex = !hasPaginationQuery;
-    const isIndexablePath = path === '/'
-      || path === '/help'
-      || path.startsWith('/help/')
-      || path === '/gallery'
-      || path.startsWith('/gallery/')
-      || path === '/coloring'
-      || path.startsWith('/coloring/');
+    const shouldIndex = shouldIndexPath(path, location.search, dynamicSeo);
 
     if (!finalData) {
-      if (isIndexablePath) {
-        updateMeta('robots', shouldIndex ? 'index, follow' : 'noindex, follow');
-      }
+      updateMeta('robots', shouldIndex ? 'index, follow' : 'noindex, follow');
       return;
     }
 
@@ -123,14 +143,19 @@ export function SeoMeta() {
 
     updateMeta('description', finalData.description);
     updateMeta('keywords', finalData.keywords);
-    updateMeta('robots', shouldIndex ? 'index, follow' : 'noindex, follow');
+    updateMeta('robots', dynamicSeo?.robots || (shouldIndex ? 'index, follow' : 'noindex, follow'));
 
     updateMeta('og:title', finalData.title, true);
     updateMeta('og:description', finalData.description, true);
     updateMeta('og:url', finalData.canonical, true);
-    updateMeta('og:type', 'website', true);
+    updateMeta('og:type', finalData.pageType === 'profile' ? 'profile' : 'website', true);
     updateMeta('og:locale', 'ru_RU', true);
     updateMeta('og:site_name', 'Рисование.Онлайн', true);
+
+    const ogImage = OG_IMAGES[path] || OG_IMAGES['/gallery'];
+    if (ogImage) {
+      updateMeta('og:image', ogImage, true);
+    }
 
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
@@ -138,24 +163,21 @@ export function SeoMeta() {
       canonicalLink.rel = 'canonical';
       document.head.appendChild(canonicalLink);
     }
-    canonicalLink.href = hasPaginationQuery ? finalData.canonical : (finalData.canonical || `https://risovanie.online${path}`);
+    canonicalLink.href = finalData.canonical || `https://risovanie.online${path}`;
 
-    const existingLd = document.querySelector('script[type="application/ld+json"][data-page]');
-    if (existingLd) {
-      existingLd.remove();
-    }
+    document.querySelectorAll('script[type="application/ld+json"][data-page]').forEach((node) => node.remove());
 
     if (path === '/coloring') {
       const ld = document.createElement('script');
       ld.type = 'application/ld+json';
       ld.setAttribute('data-page', 'coloring');
       ld.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": finalData.title,
-        "description": finalData.description,
-        "url": finalData.canonical,
-        "inLanguage": "ru"
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: finalData.title,
+        description: finalData.description,
+        url: finalData.canonical,
+        inLanguage: 'ru'
       });
       document.head.appendChild(ld);
     } else if (path === '/gallery') {
@@ -163,12 +185,12 @@ export function SeoMeta() {
       ld.type = 'application/ld+json';
       ld.setAttribute('data-page', 'gallery');
       ld.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "ImageGallery",
-        "name": finalData.title,
-        "description": finalData.description,
-        "url": finalData.canonical,
-        "inLanguage": "ru"
+        '@context': 'https://schema.org',
+        '@type': 'ImageGallery',
+        name: finalData.title,
+        description: finalData.description,
+        url: finalData.canonical,
+        inLanguage: 'ru'
       });
       document.head.appendChild(ld);
     } else if (path === '/help') {
@@ -176,16 +198,34 @@ export function SeoMeta() {
       ld.type = 'application/ld+json';
       ld.setAttribute('data-page', 'help');
       ld.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "name": finalData.title,
-        "description": finalData.description,
-        "url": finalData.canonical,
-        "inLanguage": "ru"
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        name: finalData.title,
+        description: finalData.description,
+        url: finalData.canonical,
+        inLanguage: 'ru'
+      });
+      document.head.appendChild(ld);
+    } else if (isUserProfilePath(path) && finalData.profileName) {
+      const ld = document.createElement('script');
+      ld.type = 'application/ld+json';
+      ld.setAttribute('data-page', 'profile');
+      ld.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        name: finalData.title,
+        description: finalData.description,
+        url: finalData.canonical,
+        inLanguage: 'ru',
+        mainEntity: {
+          '@type': 'Person',
+          name: finalData.profileName,
+          url: finalData.canonical
+        }
       });
       document.head.appendChild(ld);
     }
-  }, [path, finalData, dynamicSeo, hasPaginationQuery, isRoomPage]);
+  }, [path, location.search, finalData, dynamicSeo, isRoomPage]);
 
   return null;
 }

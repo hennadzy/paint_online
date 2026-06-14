@@ -33,10 +33,24 @@ const likeLimiter = rateLimit({
 router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
   try {
     const userId = req.user ? req.user.userId : null;
+    const feed = req.query.feed === 'friends' ? 'friends' : 'all';
+    const sort = req.query.sort === 'date' ? 'date' : 'likes';
 
-    const result = await pgPool.query(
-      userId
-        ? `SELECT
+    if (feed === 'friends') {
+      if (!userId) {
+        return res.status(401).json({ error: 'Требуется авторизация' });
+      }
+    }
+
+    const orderClause = sort === 'date'
+      ? 'gd.approved_at DESC NULLS LAST, gd.created_at DESC'
+      : 'gd.likes_count DESC, gd.approved_at DESC';
+
+    let query;
+    let params;
+
+    if (feed === 'friends') {
+      query = `SELECT
              gd.id,
              gd.title,
              gd.likes_count,
@@ -49,8 +63,27 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
            FROM gallery_drawings gd
            JOIN users u ON u.id = gd.user_id
            WHERE gd.status = 'approved'
-           ORDER BY gd.likes_count DESC, gd.approved_at DESC`
-        : `SELECT
+             AND gd.user_id IN (SELECT friend_id FROM user_friends WHERE user_id = $1)
+           ORDER BY ${orderClause}`;
+      params = [userId];
+    } else if (userId) {
+      query = `SELECT
+             gd.id,
+             gd.title,
+             gd.likes_count,
+             (SELECT COUNT(*) FROM gallery_comments gc WHERE gc.drawing_id = gd.id AND gc.is_deleted = FALSE) AS comments_count,
+             gd.created_at,
+             gd.approved_at,
+             u.username AS author_name,
+             u.id AS author_id,
+             EXISTS(SELECT 1 FROM gallery_likes gl WHERE gl.drawing_id = gd.id AND gl.user_id = $1) AS user_liked
+           FROM gallery_drawings gd
+           JOIN users u ON u.id = gd.user_id
+           WHERE gd.status = 'approved'
+           ORDER BY ${orderClause}`;
+      params = [userId];
+    } else {
+      query = `SELECT
              gd.id,
              gd.title,
              gd.likes_count,
@@ -63,11 +96,13 @@ router.get('/', galleryLimiter, optionalAuthenticate, async (req, res) => {
            FROM gallery_drawings gd
            JOIN users u ON u.id = gd.user_id
            WHERE gd.status = 'approved'
-           ORDER BY gd.likes_count DESC, gd.approved_at DESC`,
-      userId ? [userId] : []
-    );
+           ORDER BY ${orderClause}`;
+      params = [];
+    }
 
-    res.json({ drawings: result.rows });
+    const result = await pgPool.query(query, params);
+
+    res.json({ drawings: result.rows, feed, sort });
   } catch (error) {
     console.error('Get gallery error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -268,7 +303,7 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
     }
 
     const drawing = await pgPool.query(
-      `SELECT id, likes_count FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
+      `SELECT id, user_id, title, likes_count FROM gallery_drawings WHERE id = $1 AND status = 'approved'`,
       [id]
     );
 
@@ -302,6 +337,18 @@ router.post('/:id/like', likeLimiter, authenticate, async (req, res) => {
         [id]
       );
       liked = true;
+
+      const drawingOwnerId = drawing.rows[0].user_id;
+      if (drawingOwnerId !== userId) {
+        const NotificationService = require('../services/NotificationService');
+        await NotificationService.createAndPush({
+          userId: drawingOwnerId,
+          type: 'drawing_liked',
+          actorId: userId,
+          entityId: String(id),
+          entityTitle: drawing.rows[0].title
+        });
+      }
     }
 
     const updated = await pgPool.query(
@@ -330,17 +377,104 @@ router.get('/user/me', authenticate, async (req, res) => {
          gd.likes_count,
          gd.created_at,
          gd.approved_at,
-         u.username AS author_name
+         u.username AS author_name,
+         u.id AS author_id,
+         EXISTS(SELECT 1 FROM gallery_likes gl WHERE gl.drawing_id = gd.id AND gl.user_id = $1) AS user_liked
        FROM gallery_drawings gd
        JOIN users u ON u.id = gd.user_id
        WHERE gd.user_id = $1 AND gd.status = 'approved'
-       ORDER BY gd.likes_count DESC, gd.approved_at DESC`,
+       ORDER BY gd.approved_at DESC NULLS LAST, gd.created_at DESC`,
       [userId]
     );
 
     res.json({ drawings: result.rows });
   } catch (error) {
     console.error('Get user gallery drawings error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/user/:userId', galleryLimiter, optionalAuthenticate, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId;
+    const viewerId = req.user ? req.user.userId : null;
+
+    const userCheck = await pgPool.query(
+      `SELECT id FROM users WHERE id = $1 AND (is_deleted IS NOT TRUE OR is_deleted IS NULL)`,
+      [targetUserId]
+    );
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const result = await pgPool.query(
+      viewerId
+        ? `SELECT
+             gd.id,
+             gd.title,
+             gd.likes_count,
+             gd.created_at,
+             gd.approved_at,
+             u.username AS author_name,
+             u.id AS author_id,
+             EXISTS(SELECT 1 FROM gallery_likes gl WHERE gl.drawing_id = gd.id AND gl.user_id = $2) AS user_liked
+           FROM gallery_drawings gd
+           JOIN users u ON u.id = gd.user_id
+           WHERE gd.user_id = $1 AND gd.status = 'approved'
+           ORDER BY gd.approved_at DESC NULLS LAST, gd.created_at DESC`
+        : `SELECT
+             gd.id,
+             gd.title,
+             gd.likes_count,
+             gd.created_at,
+             gd.approved_at,
+             u.username AS author_name,
+             u.id AS author_id,
+             false AS user_liked
+           FROM gallery_drawings gd
+           JOIN users u ON u.id = gd.user_id
+           WHERE gd.user_id = $1 AND gd.status = 'approved'
+           ORDER BY gd.approved_at DESC NULLS LAST, gd.created_at DESC`,
+      viewerId ? [targetUserId, viewerId] : [targetUserId]
+    );
+
+    res.json({ drawings: result.rows });
+  } catch (error) {
+    console.error('Get user gallery drawings error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const userId = req.user.userId;
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+
+    const result = await pgPool.query(
+      `UPDATE gallery_drawings SET status = 'removed'
+       WHERE id = $1 AND user_id = $2 AND status = 'approved'
+       RETURNING id`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Рисунок не найден или уже удалён' });
+    }
+
+    try {
+      const { regenerateSitemap } = require('../services/sitemapService');
+      regenerateSitemap(pgPool).catch((err) => {
+        console.error('Sitemap regen after gallery remove:', err.message);
+      });
+    } catch (_) { }
+
+    res.json({ message: 'Рисунок удалён со стены' });
+  } catch (error) {
+    console.error('Remove gallery drawing error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
