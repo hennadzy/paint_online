@@ -35,8 +35,8 @@ function drawDefaultCircleCursor(ctx, canvas, x, y, diameter) {
 
 function drawMarkerCursor(ctx, canvas, x, y, size, angleDeg) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const w = size * 1.6;
-  const h = size * 0.45;
+  const w = size * 1.8;
+  const h = size * 0.35;
   const angle = ((angleDeg ?? 0) * Math.PI) / 180;
   ctx.save();
   ctx.translate(x, y);
@@ -156,6 +156,9 @@ function drawCursorOverlay(ctx, canvas, x, y) {
   }
 
   switch (toolName) {
+    case 'marker':
+      drawMarkerCursor(ctx, canvas, x, y, diameter, params.angle ?? 0);
+      break;
     case 'airbrush':
       drawAirbrushCursor(ctx, canvas, x, y, diameter, params.scatter);
       break;

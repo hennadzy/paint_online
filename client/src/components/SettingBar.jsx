@@ -112,8 +112,8 @@ const SettingBar = observer(() => {
               onTouchEnd={handleTouchEnd}
             />
             <span className="line-width-label">
-              <span className="setting-label-text">{widthLabel}:</span>
-              {lineWidth}px
+              <span className="setting-label-text">{widthLabel}: </span>
+              {' '}{lineWidth}px
             </span>
           </div>
 
@@ -133,8 +133,8 @@ const SettingBar = observer(() => {
                 onTouchEnd={handleOpacityTouchEnd}
               />
               <span className="opacity-label">
-                <span className="setting-label-text">Прозрачность:</span>
-                {Math.round(toolState.strokeOpacity * 100)}%
+                <span className="setting-label-text">Прозрачность: </span>
+                {' '}{Math.round(toolState.strokeOpacity * 100)}%
               </span>
             </div>
           )}
@@ -148,9 +148,9 @@ const SettingBar = observer(() => {
                 value={params[extraDef.key] ?? extraDef.default}
                 onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
               />
-              <span className="param-label">{extraDef.label}:</span>
+              <span className="param-label">{extraDef.label}: </span>
               <span className="param-value">
-                {params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
+                {' '}{params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
               </span>
             </div>
           )}

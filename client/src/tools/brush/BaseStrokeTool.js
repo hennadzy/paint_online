@@ -85,6 +85,7 @@ export default class BaseStrokeTool extends Tool {
     this.lastX = x;
     this.lastY = y;
     this.lastTime = Date.now();
+    this._livePreviewPointCount = 0;
     const pt = this.createPoint(x, y, e, 0);
     this.points.push(pt);
     canvasState.redrawCanvas();
@@ -154,6 +155,27 @@ export default class BaseStrokeTool extends Tool {
 
   drawLive() {
     this.drawSegment?.();
+  }
+
+  /** Инкрементальный live-preview: без полного redrawCanvas на каждом move */
+  drawLiveStroke(renderFn) {
+    if (this.points.length === 0) return;
+
+    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+    const prevCount = this._livePreviewPointCount ?? 0;
+
+    if (prevCount === 0) {
+      canvasState.redrawCanvas();
+    }
+
+    if (this.points.length <= prevCount) return;
+
+    const startIdx = prevCount > 0 ? prevCount - 1 : 0;
+    renderFn(ctx, {
+      ...this.buildStrokePayload(),
+      points: this.points.slice(startIdx),
+    });
+    this._livePreviewPointCount = this.points.length;
   }
 
   buildStrokePayload() {

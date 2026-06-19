@@ -476,11 +476,8 @@ body.modal-open {
 
 @media (max-width: 768px) {
   .main-content {
-    padding-top: 150px;
-
-    .canvas-layout:not(.has-chat) {
-      min-height: calc(100vh - 150px - env(safe-area-inset-top, 0px));
-    }
+    padding-top: calc(100px + env(safe-area-inset-top, 0px));
+    padding-bottom: 0;
 
     &--admin {
       padding-top: 0 !important;
@@ -516,14 +513,6 @@ body.modal-open {
       min-height: 100vh !important;
       flex: 1;
       background: #1a1a1a;
-    }
-  }
-
-  .app:has(.setting-bar--multi-row) .main-content {
-    padding-top: 188px;
-
-    .canvas-layout:not(.has-chat) {
-      min-height: calc(100vh - 188px - env(safe-area-inset-top, 0px));
     }
   }
 

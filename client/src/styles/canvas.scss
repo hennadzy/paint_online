@@ -379,10 +379,14 @@ button:active {
     justify-content: flex-start;
     align-items: center;
     padding-top: 0;
-    padding-bottom: calc(2px + env(safe-area-inset-bottom, 6px));
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 6px));
     overflow-y: hidden;
     overflow-x: hidden;
     overscroll-behavior: none;
+  }
+
+  .app:has(.setting-bar--multi-row) .canvas-layout:not(.has-chat) {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 6px));
   }
 
   .canvas-layout.has-chat {

@@ -78,7 +78,7 @@ export default class Brush extends Tool {
     }
     this.points.push(pt);
     canvasState.redrawCanvas();
-    this.drawDot();
+    this.drawLive();
   }
 
   pointerMoveHandler(e) {
@@ -95,28 +95,15 @@ export default class Brush extends Tool {
 
     const { x, y } = this.getCanvasCoordinates(e);
 
-    const dx = x - this.lastX;
-    const dy = y - this.lastY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const spacing = Math.max(1, this.lineWidth * 0.35);
-
-    if (dist < 0.5) return;
-
-    const steps = Math.max(1, Math.ceil(dist / spacing));
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const px = this.lastX + dx * t;
-      const py = this.lastY + dy * t;
-      const pt = { x: px, y: py };
-      if (e.pointerType === 'pen') {
-        pt.w = this.getPressureAdjustedLineWidth(e);
-      }
-      this.points.push(pt);
-      this.drawSegment();
+    const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
+    if (e.pointerType === 'pen') {
+      smoothed.w = this.getPressureAdjustedLineWidth(e);
     }
+    this.points.push(smoothed);
+    this.lastX = smoothed.x;
+    this.lastY = smoothed.y;
 
-    this.lastX = x;
-    this.lastY = y;
+    this.drawLive();
   }
 
   pointerUpHandler(e) {
@@ -150,6 +137,12 @@ export default class Brush extends Tool {
       x: x1 + dx * factor,
       y: y1 + dy * factor
     };
+  }
+
+  drawLive() {
+    canvasState.redrawCanvas();
+    if (this.points.length === 0) return;
+    this.drawStroke();
   }
 
   drawDot() {

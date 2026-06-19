@@ -1,5 +1,4 @@
 import BaseStrokeTool from './BaseStrokeTool';
-import canvasState from '../../store/canvasState';
 import { renderAirbrushStroke } from '../../utils/brushEffects';
 
 export default class Airbrush extends BaseStrokeTool {
@@ -9,10 +8,6 @@ export default class Airbrush extends BaseStrokeTool {
     this.strokeOpacity = 0.35;
     this.scatter = 15;
     this._dwellStart = null;
-  }
-
-  getPointSpacing() {
-    return Math.max(2, this.lineWidth * 0.2);
   }
 
   onStrokeStart() {
@@ -28,16 +23,7 @@ export default class Airbrush extends BaseStrokeTool {
     return pt;
   }
 
-  drawSegment() {
-    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-    canvasState.redrawCanvas();
-    renderAirbrushStroke(ctx, {
-      type: 'airbrush',
-      points: this.points,
-      strokeStyle: this.strokeStyle,
-      strokeOpacity: this.strokeOpacity,
-      lineWidth: this.lineWidth,
-      scatter: this.scatter,
-    });
+  drawLive() {
+    this.drawLiveStroke(renderAirbrushStroke);
   }
 }

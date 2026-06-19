@@ -51,8 +51,8 @@ export function densifyPath(points, spacing) {
 }
 
 export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
-  const w = size * 1.6;
-  const h = size * 0.45;
+  const w = size * 1.8;
+  const h = size * 0.35;
   const angle = (angleDeg * Math.PI) / 180;
 
   ctx.save();
@@ -61,13 +61,7 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.globalAlpha = opacity;
   ctx.fillStyle = color;
   ctx.globalCompositeOperation = 'source-over';
-  ctx.beginPath();
-  ctx.moveTo(-w / 2, -h / 2);
-  ctx.lineTo(w / 2, -h / 2);
-  ctx.lineTo(w / 2 * 0.85, h / 2);
-  ctx.lineTo(-w / 2 * 0.85, h / 2);
-  ctx.closePath();
-  ctx.fill();
+  ctx.fillRect(-w / 2, -h / 2, w, h);
   ctx.restore();
 }
 
@@ -79,8 +73,10 @@ export function renderMarkerStroke(ctx, stroke) {
     lineWidth = 10,
     angle = 0,
   } = stroke;
+  if (!points.length) return;
+
   const color = parseColor(strokeStyle, 1);
-  const dense = densifyPath(points, Math.max(1, lineWidth * 0.12));
+  const dense = densifyPath(points, Math.max(0.35, lineWidth * 0.05));
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
@@ -248,20 +244,12 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   const nx = -dy / len;
   const ny = dx / len;
   const rand = seededRandom(seed);
-  const softEdge = 1 - hardness / 100;
+  const roughness = 1 - hardness / 100;
 
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.globalCompositeOperation = 'source-over';
-
-  ctx.globalAlpha = strokeOpacity * 0.35;
-  ctx.strokeStyle = parseColor(strokeStyle, 0.6);
-  ctx.lineWidth = lw + softEdge * 3;
-  ctx.beginPath();
-  ctx.moveTo(p0.x + nx * 1.2, p0.y + ny * 1.2);
-  ctx.lineTo(p1.x + nx * 1.2, p1.y + ny * 1.2);
-  ctx.stroke();
 
   ctx.globalAlpha = strokeOpacity;
   ctx.strokeStyle = parseColor(strokeStyle, 1);
@@ -271,39 +259,44 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   ctx.lineTo(p1.x, p1.y);
   ctx.stroke();
 
-  const bristles = 10 + Math.floor(softEdge * 14);
+  const bristles = 7;
+  const spread = lw * (0.28 + roughness * 0.55);
   for (let b = 0; b < bristles; b++) {
-    const t = rand();
+    const t = (b + 0.5) / bristles;
     const bx = p0.x + dx * t;
     const by = p0.y + dy * t;
-    const off = (rand() - 0.5) * lw * 0.65;
-    const along = 0.06 + rand() * 0.18;
-    ctx.globalAlpha = strokeOpacity * (0.12 + rand() * 0.28);
-    ctx.lineWidth = 0.6 + rand() * 2.4;
-    ctx.strokeStyle = parseColor(strokeStyle, 0.85 + rand() * 0.15);
+    const off = (b - (bristles - 1) / 2) * (spread / Math.max(1, bristles - 1));
+    ctx.globalAlpha = strokeOpacity * (0.45 + rand() * 0.35);
+    ctx.lineWidth = Math.max(1, lw * (0.16 + rand() * 0.12));
+    ctx.strokeStyle = parseColor(strokeStyle, 0.65);
     ctx.beginPath();
     ctx.moveTo(bx + nx * off, by + ny * off);
-    ctx.lineTo(bx + nx * off + dx * along, by + ny * off + dy * along);
+    ctx.lineTo(bx + nx * off + dx * 0.45, by + ny * off + dy * 0.45);
     ctx.stroke();
   }
 
-  for (let b = 0; b < Math.floor(bristles * 0.4); b++) {
-    const t = rand();
-    const bx = p0.x + dx * t;
-    const by = p0.y + dy * t;
-    ctx.globalAlpha = strokeOpacity * 0.2;
-    ctx.fillStyle = parseColor(strokeStyle, 0.7);
-    ctx.beginPath();
-    ctx.arc(bx + (rand() - 0.5) * lw * 0.3, by + (rand() - 0.5) * lw * 0.3, 0.5 + rand(), 0, Math.PI * 2);
-    ctx.fill();
+  if (roughness > 0.15) {
+    const impastoCount = 2 + Math.floor(roughness * 3);
+    ctx.fillStyle = parseColor(strokeStyle, 1);
+    for (let i = 0; i < impastoCount; i++) {
+      const t = rand();
+      const ix = p0.x + dx * t;
+      const iy = p0.y + dy * t;
+      const jx = (rand() - 0.5) * spread * 0.6;
+      const jy = (rand() - 0.5) * spread * 0.6;
+      ctx.globalAlpha = strokeOpacity * (0.35 + rand() * 0.4);
+      ctx.beginPath();
+      ctx.arc(ix + jx, iy + jy, lw * (0.05 + rand() * 0.07), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  ctx.globalAlpha = strokeOpacity * 0.45;
-  ctx.lineWidth = Math.max(1, lw * 0.25);
-  ctx.strokeStyle = parseColor(strokeStyle, 0.5);
+  ctx.globalAlpha = strokeOpacity * 0.55;
+  ctx.lineWidth = Math.max(1, lw * 0.28);
+  ctx.strokeStyle = parseColor(strokeStyle, 0.45);
   ctx.beginPath();
-  ctx.moveTo(p0.x - nx * 0.6, p0.y - ny * 0.6);
-  ctx.lineTo(p1.x - nx * 0.6, p1.y - ny * 0.6);
+  ctx.moveTo(p0.x - nx * lw * 0.12, p0.y - ny * lw * 0.12);
+  ctx.lineTo(p1.x - nx * lw * 0.12, p1.y - ny * lw * 0.12);
   ctx.stroke();
   ctx.restore();
 }
@@ -316,7 +309,7 @@ export function renderOilStroke(ctx, stroke) {
     lineWidth = 8,
     edgeHardness = 70,
   } = stroke;
-  const dense = densifyPath(points, Math.max(1, lineWidth * 0.12));
+  const dense = densifyPath(points, Math.max(1, lineWidth * 0.18));
 
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
@@ -438,7 +431,7 @@ export function renderCalligraphyStroke(ctx, stroke) {
     speedSensitivity = 50,
   } = stroke;
   const color = parseColor(strokeStyle, strokeOpacity);
-  const dense = densifyPath(points, Math.max(0.8, lineWidth * 0.08));
+  const dense = densifyPath(points, Math.max(0.25, lineWidth * 0.035));
 
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
