@@ -24,7 +24,6 @@ export default class Stamp extends Tool {
 
   applyStampParams() {
     const params = toolState.getToolParams('stamp');
-    this.stampSize = params.stampSize ?? 48;
     this.selectedStamp = params.selectedStamp ?? '😊';
   }
 
@@ -35,6 +34,7 @@ export default class Stamp extends Tool {
     }
 
     this.applyStampParams();
+    this.lineWidth = toolState.lineWidths.stamp ?? 48;
     this.canvas.addEventListener('pointerdown', this.pointerDownHandlerBound);
     this.canvas.addEventListener('wheel', this.wheelHandlerBound, { passive: false });
   }
@@ -46,11 +46,11 @@ export default class Stamp extends Tool {
 
   wheelHandler(e) {
     e.preventDefault();
-    this.applyStampParams();
     const delta = e.deltaY > 0 ? -4 : 4;
-    const newSize = Math.max(16, Math.min(200, this.stampSize + delta));
-    toolState.setToolParam('stamp', 'stampSize', newSize);
-    this.stampSize = newSize;
+    const current = toolState.lineWidths.stamp ?? this.lineWidth ?? 48;
+    const newSize = Math.max(16, Math.min(200, current + delta));
+    toolState.setLineWidth(newSize);
+    this.lineWidth = newSize;
   }
 
   pointerDownHandler(e) {
@@ -58,6 +58,7 @@ export default class Stamp extends Tool {
 
     e.preventDefault();
     this.applyStampParams();
+    this.lineWidth = toolState.lineWidths.stamp ?? this.lineWidth;
     const { x, y } = this.getCanvasCoordinates(e);
     this.placeStamp(x, y);
   }
@@ -66,7 +67,7 @@ export default class Stamp extends Tool {
     const preset = getStampPresets().find((s) => s.id === this.selectedStamp)
       || getStampPresets()[0];
 
-    const size = this.stampSize;
+    const size = toolState.lineWidths.stamp ?? this.lineWidth ?? 48;
     const stroke = {
       type: 'stamp',
       x: x - size / 2,

@@ -5,11 +5,10 @@ import { getStampPresets } from '../utils/stampPresets';
 import '../styles/stamp-palette.scss';
 
 const StampPalette = observer(() => {
-  if (toolState.toolName !== 'stamp') return null;
+  if (toolState.toolName !== 'stamp' || !toolState.stampPaletteOpen) return null;
 
   const presets = getStampPresets();
   const selected = toolState.getToolParams('stamp').selectedStamp ?? '😊';
-  const stampSize = toolState.lineWidths.stamp ?? 48;
 
   return (
     <div className="stamp-palette" data-nosnippet>
@@ -31,7 +30,6 @@ const StampPalette = observer(() => {
           </button>
         ))}
       </div>
-      <span className="stamp-palette__size">{stampSize}px</span>
     </div>
   );
 });

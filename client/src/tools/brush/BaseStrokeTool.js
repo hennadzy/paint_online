@@ -25,6 +25,10 @@ export default class BaseStrokeTool extends Tool {
     this.lineWidth = width;
   }
 
+  getPointSpacing() {
+    return Math.max(1, (this.lineWidth || 5) * 0.15);
+  }
+
   applyToolParams() {
     const params = toolState.getToolParams(this.strokeType);
     Object.assign(this, params);
@@ -102,14 +106,26 @@ export default class BaseStrokeTool extends Tool {
     const dt = Math.max(1, now - (this.lastTime || now));
     const speed = Math.sqrt((x - this.lastX) ** 2 + (y - this.lastY) ** 2) / dt * 16;
 
-    const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
-    const pt = this.createPoint(smoothed.x, smoothed.y, e, speed);
-    this.points.push(pt);
-    this.lastX = smoothed.x;
-    this.lastY = smoothed.y;
+    this.addPointsAlongLine(this.lastX, this.lastY, x, y, e, speed);
+    this.lastX = x;
+    this.lastY = y;
     this.lastTime = now;
 
     this.drawLive();
+  }
+
+  addPointsAlongLine(x1, y1, x2, y2, e, speed) {
+    const spacing = this.getPointSpacing();
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 0.5) return;
+
+    const steps = Math.max(1, Math.ceil(dist / spacing));
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      this.points.push(this.createPoint(x1 + dx * t, y1 + dy * t, e, speed));
+    }
   }
 
   pointerUpHandler(e) {
@@ -134,15 +150,6 @@ export default class BaseStrokeTool extends Tool {
       pt.w = this.getPressureAdjustedLineWidth(e);
     }
     return this.enrichPoint?.(pt, e, speed) ?? pt;
-  }
-
-  interpolate(x1, y1, x2, y2, smoothing = 0.5) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < 2) return { x: x2, y: y2 };
-    const factor = Math.min(smoothing, distance / 2);
-    return { x: x1 + dx * factor, y: y1 + dy * factor };
   }
 
   drawLive() {

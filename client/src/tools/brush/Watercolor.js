@@ -10,6 +10,10 @@ export default class Watercolor extends BaseStrokeTool {
     this.saturation = 50;
   }
 
+  getPointSpacing() {
+    return Math.max(1.5, this.lineWidth * 0.18);
+  }
+
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     canvasState.redrawCanvas();

@@ -21,6 +21,7 @@ class ToolState {
   fillColor = "#000000";
   strokeOpacity = 1;
   textInputActive = false;
+  stampPaletteOpen = false;
 
   lineWidths = {
     brush: 1,
@@ -113,6 +114,9 @@ class ToolState {
       this.toolParams[toolName] = {};
     }
     this.toolParams[toolName][key] = value;
+    if (toolName === 'stamp' && key === 'selectedStamp') {
+      this.stampPaletteOpen = false;
+    }
     if (this.toolName === toolName && this.tool) {
       this.tool[key] = value;
     }
@@ -138,6 +142,10 @@ class ToolState {
 
     if (this.defaultOpacity[this.toolName] !== undefined) {
       this.strokeOpacity = this.defaultOpacity[this.toolName];
+    }
+
+    if (this.toolName === 'stamp') {
+      this.stampPaletteOpen = true;
     }
 
     this.tool.setStrokeColor?.(this.strokeColor);

@@ -1,5 +1,5 @@
 import BaseStrokeTool from './BaseStrokeTool';
-import { drawMarkerStamp, hexToRgba } from '../../utils/brushEffects';
+import { drawMarkerAlongSegment } from '../../utils/brushEffects';
 
 export default class Marker extends BaseStrokeTool {
   constructor(canvas, socket, id, username) {
@@ -7,15 +7,32 @@ export default class Marker extends BaseStrokeTool {
     this.strokeType = 'marker';
     this.strokeOpacity = 0.5;
     this.angle = 0;
+    this._liveFrom = 0;
+  }
+
+  getPointSpacing() {
+    return Math.max(1, this.lineWidth * 0.12);
+  }
+
+  pointerDownHandler(e) {
+    this._liveFrom = 0;
+    super.pointerDownHandler(e);
   }
 
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-    const len = this.points.length;
-    if (len < 1) return;
+    const pts = this.points;
+    if (pts.length < 1) return;
 
-    const p = this.points[len - 1];
-    const color = hexToRgba(this.strokeStyle, 1);
-    drawMarkerStamp(ctx, p.x, p.y, this.lineWidth, this.angle, color, this.strokeOpacity);
+    const start = Math.max(1, this._liveFrom);
+    for (let i = start; i < pts.length; i++) {
+      const p0 = pts[i - 1];
+      const p1 = pts[i];
+      drawMarkerAlongSegment(
+        ctx, p0.x, p0.y, p1.x, p1.y,
+        this.lineWidth, this.angle, this.strokeStyle, this.strokeOpacity
+      );
+    }
+    this._liveFrom = pts.length - 1;
   }
 }

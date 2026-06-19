@@ -10,6 +10,10 @@ export default class Pastel extends BaseStrokeTool {
     this.graininess = 60;
   }
 
+  getPointSpacing() {
+    return Math.max(1, this.lineWidth * 0.14);
+  }
+
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     canvasState.redrawCanvas();

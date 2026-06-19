@@ -1,5 +1,6 @@
 import BaseStrokeTool from './BaseStrokeTool';
-import { sprayAirbrush, hexToRgba } from '../../utils/brushEffects';
+import canvasState from '../../store/canvasState';
+import { renderAirbrushStroke } from '../../utils/brushEffects';
 
 export default class Airbrush extends BaseStrokeTool {
   constructor(canvas, socket, id, username) {
@@ -8,12 +9,14 @@ export default class Airbrush extends BaseStrokeTool {
     this.strokeOpacity = 0.35;
     this.scatter = 15;
     this._dwellStart = null;
-    this._dwellAlpha = 0;
+  }
+
+  getPointSpacing() {
+    return Math.max(2, this.lineWidth * 0.2);
   }
 
   onStrokeStart() {
     this._dwellStart = Date.now();
-    this._dwellAlpha = 0;
   }
 
   enrichPoint(pt) {
@@ -27,12 +30,14 @@ export default class Airbrush extends BaseStrokeTool {
 
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-    const len = this.points.length;
-    if (len < 1) return;
-
-    const p = this.points[len - 1];
-    const alpha = p.a ?? this.strokeOpacity;
-    const radius = p.r ?? (this.lineWidth / 2 + this.scatter);
-    sprayAirbrush(ctx, p.x, p.y, radius, hexToRgba(this.strokeStyle, 1), alpha, len);
+    canvasState.redrawCanvas();
+    renderAirbrushStroke(ctx, {
+      type: 'airbrush',
+      points: this.points,
+      strokeStyle: this.strokeStyle,
+      strokeOpacity: this.strokeOpacity,
+      lineWidth: this.lineWidth,
+      scatter: this.scatter,
+    });
   }
 }

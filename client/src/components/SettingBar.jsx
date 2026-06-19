@@ -77,134 +77,52 @@ const SettingBar = observer(() => {
   const colorValue = isFillTool ? toolState.fillColor : toolState.strokeColor;
   const setColor = isFillTool ? toolState.setFillColor.bind(toolState) : toolState.setStrokeColor.bind(toolState);
 
-  const renderExtraParam = () => {
-    switch (currentToolName) {
-      case 'marker':
-        return (
-          <>
-            <span className="param-label">Угол</span>
-            <input
-              type="range"
-              min={0}
-              max={180}
-              value={params.angle ?? 0}
-              onChange={(e) => handleParamChange('angle', +e.target.value)}
-            />
-            <span className="param-value">{params.angle ?? 0}°</span>
-          </>
-        );
-      case 'airbrush':
-        return (
-          <>
-            <span className="param-label">Разброс</span>
-            <input
-              type="range"
-              min={5}
-              max={40}
-              value={params.scatter ?? 15}
-              onChange={(e) => handleParamChange('scatter', +e.target.value)}
-            />
-            <span className="param-value">{params.scatter ?? 15}px</span>
-          </>
-        );
-      case 'smudge':
-        return (
-          <>
-            <span className="param-label">Сила</span>
-            <input
-              type="range"
-              min={10}
-              max={100}
-              value={params.strength ?? 50}
-              onChange={(e) => handleParamChange('strength', +e.target.value)}
-            />
-            <span className="param-value">{params.strength ?? 50}%</span>
-          </>
-        );
-      case 'watercolor':
-        return (
-          <>
-            <span className="param-label">Насыщ.</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={params.saturation ?? 50}
-              onChange={(e) => handleParamChange('saturation', +e.target.value)}
-            />
-            <span className="param-value">{params.saturation ?? 50}%</span>
-          </>
-        );
-      case 'oil':
-        return (
-          <>
-            <span className="param-label">Край</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={params.edgeHardness ?? 70}
-              onChange={(e) => handleParamChange('edgeHardness', +e.target.value)}
-            />
-            <span className="param-value">{params.edgeHardness ?? 70}%</span>
-          </>
-        );
-      case 'pastel':
-        return (
-          <>
-            <span className="param-label">Зерн.</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={params.graininess ?? 60}
-              onChange={(e) => handleParamChange('graininess', +e.target.value)}
-            />
-            <span className="param-value">{params.graininess ?? 60}%</span>
-          </>
-        );
-      case 'calligraphy':
-        return (
-          <>
-            <span className="param-label">Скорость</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={params.speedSensitivity ?? 50}
-              onChange={(e) => handleParamChange('speedSensitivity', +e.target.value)}
-            />
-            <span className="param-value">{params.speedSensitivity ?? 50}%</span>
-          </>
-        );
-      default:
-        return null;
-    }
+  const extraParamDefs = {
+    marker: { label: 'Угол', key: 'angle', min: 0, max: 180, suffix: '°', default: 0 },
+    airbrush: { label: 'Разброс', key: 'scatter', min: 5, max: 40, suffix: 'px', default: 15 },
+    smudge: { label: 'Сила', key: 'strength', min: 10, max: 100, suffix: '%', default: 50 },
+    watercolor: { label: 'Насыщ.', key: 'saturation', min: 0, max: 100, suffix: '%', default: 50 },
+    oil: { label: 'Край', key: 'edgeHardness', min: 0, max: 100, suffix: '%', default: 70 },
+    pastel: { label: 'Зерн.', key: 'graininess', min: 0, max: 100, suffix: '%', default: 60 },
+    calligraphy: { label: 'Скорость', key: 'speedSensitivity', min: 0, max: 100, suffix: '%', default: 50 },
   };
 
+  const extraDef = extraParamDefs[currentToolName];
   const showOpacity = !isStampTool && !['smudge'].includes(currentToolName);
   const showColor = !isStampTool;
-  const extraParam = renderExtraParam();
-  const widthLabel = isStampTool ? 'Размер' : 'Толщина';
+
+  const sliderCount = 1 + (showOpacity ? 1 : 0) + (extraDef ? 1 : 0);
+  const multiRowClass = sliderCount > 2 ? 'setting-bar--multi-row' : '';
+
+  const renderSliderGroup = (className, children) => (
+    <div className={`setting-slider-group ${className || ''}`}>{children}</div>
+  );
 
   return (
     <>
-      <div className="setting-bar" data-nosnippet>
-        <div className="setting-row">
-          <input
-            ref={inputRef}
-            id="line-width"
-            type="range"
-            min={isStampTool ? 16 : 1}
-            max={isStampTool ? 200 : 50}
-            value={currentWidth}
-            onChange={handleChange}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          />
-          <span className="line-width-label">{widthLabel}: {lineWidth}px</span>
-          {showOpacity && (
+      <div className={`setting-bar ${multiRowClass}`} data-nosnippet>
+        <div className="setting-row setting-row--primary">
+          {renderSliderGroup('setting-slider-group--width', (
+            <>
+              <input
+                ref={inputRef}
+                id="line-width"
+                type="range"
+                min={isStampTool ? 16 : 1}
+                max={isStampTool ? 200 : 50}
+                value={currentWidth}
+                onChange={handleChange}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+              <span className="line-width-label">
+                <span className="setting-label-text">{isStampTool ? 'Размер' : 'Толщина'}</span>
+                {lineWidth}px
+              </span>
+            </>
+          ))}
+          {showOpacity && renderSliderGroup('setting-slider-group--opacity', (
             <>
               <input
                 ref={opacityInputRef}
@@ -221,16 +139,35 @@ const SettingBar = observer(() => {
               />
               <span className="opacity-label">{Math.round(toolState.strokeOpacity * 100)}%</span>
             </>
-          )}
-          {extraParam}
+          ))}
           {showColor && (
             <input
               type="color"
+              className="setting-color-input"
               value={colorValue}
               onChange={(e) => setColor(e.target.value)}
             />
           )}
         </div>
+        {extraDef && (
+          <div className="setting-row setting-row--secondary">
+            {renderSliderGroup('setting-slider-group--param', (
+              <>
+                <input
+                  type="range"
+                  min={extraDef.min}
+                  max={extraDef.max}
+                  value={params[extraDef.key] ?? extraDef.default}
+                  onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
+                />
+                <span className="param-label">{extraDef.label}</span>
+                <span className="param-value">
+                  {params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
+                </span>
+              </>
+            ))}
+          </div>
+        )}
       </div>
       <StampPalette />
     </>

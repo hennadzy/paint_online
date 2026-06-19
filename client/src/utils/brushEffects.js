@@ -19,6 +19,37 @@ function seededRandom(seed) {
   };
 }
 
+/** Разбивает путь на плотные точки для непрерывного рендера */
+export function densifyPath(points, spacing) {
+  if (!points.length) return [];
+  if (points.length === 1) return [points[0]];
+
+  const step = Math.max(0.5, spacing);
+  const result = [{ ...points[0] }];
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1];
+    const p1 = points[i];
+    const dx = p1.x - p0.x;
+    const dy = p1.y - p0.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.max(1, Math.ceil(dist / step));
+
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      result.push({
+        x: p0.x + dx * t,
+        y: p0.y + dy * t,
+        w: p0.w != null && p1.w != null ? p0.w + (p1.w - p0.w) * t : (p1.w ?? p0.w),
+        speed: p0.speed != null && p1.speed != null ? p0.speed + (p1.speed - p0.speed) * t : (p1.speed ?? 0),
+        a: p0.a != null && p1.a != null ? p0.a + (p1.a - p0.a) * t : p1.a,
+        r: p0.r != null && p1.r != null ? p0.r + (p1.r - p0.r) * t : p1.r,
+      });
+    }
+  }
+  return result;
+}
+
 export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   const w = size * 1.6;
   const h = size * 0.45;
@@ -48,36 +79,20 @@ export function renderMarkerStroke(ctx, stroke) {
     lineWidth = 10,
     angle = 0,
   } = stroke;
-  const color = parseColor(strokeStyle, strokeOpacity);
-  const step = Math.max(2, lineWidth * 0.35);
+  const color = parseColor(strokeStyle, 1);
+  const dense = densifyPath(points, Math.max(1, lineWidth * 0.12));
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
-
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    if (i > 0) {
-      const prev = points[i - 1];
-      const dx = p.x - prev.x;
-      const dy = p.y - prev.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const steps = Math.max(1, Math.floor(dist / step));
-      for (let s = 0; s <= steps; s++) {
-        const t = s / steps;
-        const x = prev.x + dx * t;
-        const y = prev.y + dy * t;
-        drawMarkerStamp(ctx, x, y, lineWidth, angle, color, strokeOpacity);
-      }
-    } else {
-      drawMarkerStamp(ctx, p.x, p.y, lineWidth, angle, color, strokeOpacity);
-    }
-  }
+  dense.forEach((p) => {
+    drawMarkerStamp(ctx, p.x, p.y, lineWidth, angle, color, strokeOpacity);
+  });
   ctx.restore();
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0) {
   const rand = seededRandom(Math.floor(x * 1000 + y + seed));
-  const count = Math.max(8, Math.floor(radius * 1.5));
+  const count = Math.max(12, Math.floor(radius * 2));
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = color;
@@ -103,8 +118,9 @@ export function renderAirbrushStroke(ctx, stroke) {
     lineWidth = 15,
     scatter = 15,
   } = stroke;
+  const dense = densifyPath(points, Math.max(2, lineWidth * 0.2));
 
-  points.forEach((p, i) => {
+  dense.forEach((p, i) => {
     const alpha = p.a ?? strokeOpacity;
     const r = p.r ?? (lineWidth / 2 + scatter * 0.5);
     sprayAirbrush(ctx, p.x, p.y, r, parseColor(strokeStyle, 1), alpha, i);
@@ -152,27 +168,46 @@ export function applySmudgeAt(ctx, canvas, x, y, radius, strength, dirX, dirY) {
 
 export function renderSmudgeStroke(ctx, stroke, canvas) {
   const { points = [], lineWidth = 20, strength = 50 } = stroke;
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i - 1];
-    const p1 = points[i];
+  const dense = densifyPath(points, Math.max(2, lineWidth * 0.25));
+  for (let i = 1; i < dense.length; i++) {
+    const p0 = dense[i - 1];
+    const p1 = dense[i];
     const dx = p1.x - p0.x;
     const dy = p1.y - p0.y;
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     applySmudgeAt(ctx, canvas, p1.x, p1.y, lineWidth / 2, strength, dx / len, dy / len);
   }
-  if (points.length === 1) {
-    applySmudgeAt(ctx, canvas, points[0].x, points[0].y, lineWidth / 2, strength, 0, 0);
+  if (dense.length === 1) {
+    applySmudgeAt(ctx, canvas, dense[0].x, dense[0].y, lineWidth / 2, strength, 0, 0);
   }
 }
 
-function drawGrainDot(ctx, x, y, size, color, opacity, rand) {
-  const jitterX = (rand() - 0.5) * size;
-  const jitterY = (rand() - 0.5) * size;
-  ctx.globalAlpha = opacity * (0.4 + rand() * 0.6);
-  ctx.fillStyle = color;
+function drawWatercolorBlob(ctx, x, y, r, strokeStyle, alpha, rand, bleed = 0) {
+  const bx = x + (rand() - 0.5) * r * bleed;
+  const by = y + (rand() - 0.5) * r * bleed;
+  const rr = r * (0.9 + rand() * 0.25);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  const grad = ctx.createRadialGradient(bx, by, 0, bx, by, rr);
+  grad.addColorStop(0, parseColor(strokeStyle, alpha * 0.85));
+  grad.addColorStop(0.35, parseColor(strokeStyle, alpha * 0.45));
+  grad.addColorStop(0.7, parseColor(strokeStyle, alpha * 0.12));
+  grad.addColorStop(1, parseColor(strokeStyle, 0));
+  ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.arc(x + jitterX, y + jitterY, 0.5 + rand() * 1.2, 0, Math.PI * 2);
+  ctx.arc(bx, by, rr, 0, Math.PI * 2);
   ctx.fill();
+
+  const grainCount = Math.floor(rr * 0.6);
+  for (let g = 0; g < grainCount; g++) {
+    const angle = rand() * Math.PI * 2;
+    const dist = rand() * rr * 0.85;
+    ctx.globalAlpha = alpha * 0.15 * rand();
+    ctx.fillStyle = parseColor(strokeStyle, 1);
+    ctx.fillRect(bx + Math.cos(angle) * dist, by + Math.sin(angle) * dist, 1, 1);
+  }
+  ctx.restore();
 }
 
 export function renderWatercolorStroke(ctx, stroke) {
@@ -184,53 +219,80 @@ export function renderWatercolorStroke(ctx, stroke) {
     saturation = 50,
   } = stroke;
   const waterFactor = 1 - saturation / 100;
-  const alpha = strokeOpacity * (0.5 + (1 - waterFactor) * 0.5);
+  const alpha = strokeOpacity * (0.35 + (1 - waterFactor) * 0.55);
+  const dense = densifyPath(points, Math.max(1.5, lineWidth * 0.18));
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-
-  points.forEach((p, i) => {
+  dense.forEach((p, i) => {
     const rand = seededRandom(Math.floor(p.x * 7 + p.y * 13 + i));
     const r = lineWidth / 2;
-    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-    grad.addColorStop(0, parseColor(strokeStyle, alpha));
-    grad.addColorStop(0.6, parseColor(strokeStyle, alpha * 0.5));
-    grad.addColorStop(1, parseColor(strokeStyle, 0));
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r * (0.85 + rand() * 0.3), 0, Math.PI * 2);
-    ctx.fill();
+    drawWatercolorBlob(ctx, p.x, p.y, r, strokeStyle, alpha, rand, 0.35);
 
-    const grainCount = Math.floor(r * 0.8);
-    for (let g = 0; g < grainCount; g++) {
-      const angle = rand() * Math.PI * 2;
-      const dist = rand() * r;
-      drawGrainDot(
-        ctx,
-        p.x + Math.cos(angle) * dist,
-        p.y + Math.sin(angle) * dist,
-        r * 0.3,
-        parseColor(strokeStyle, 1),
-        alpha * 0.4,
-        rand
-      );
+    if (i > 0) {
+      const prev = dense[i - 1];
+      const dx = p.x - prev.x;
+      const dy = p.y - prev.y;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const bleedOff = r * 0.25;
+      drawWatercolorBlob(ctx, p.x + nx * bleedOff, p.y + ny * bleedOff, r * 0.85, strokeStyle, alpha * 0.5, rand, 0.2);
+      drawWatercolorBlob(ctx, p.x - nx * bleedOff, p.y - ny * bleedOff, r * 0.85, strokeStyle, alpha * 0.5, rand, 0.2);
     }
   });
+}
 
-  if (points.length > 1) {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = alpha * 0.6;
-    ctx.strokeStyle = parseColor(strokeStyle, alpha);
-    ctx.lineWidth = lineWidth * 0.3;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hardness, seed) {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const rand = seededRandom(seed);
+  const softEdge = 1 - hardness / 100;
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalCompositeOperation = 'source-over';
+
+  ctx.globalAlpha = strokeOpacity * 0.35;
+  ctx.strokeStyle = parseColor(strokeStyle, 0.6);
+  ctx.lineWidth = lw + softEdge * 3;
+  ctx.beginPath();
+  ctx.moveTo(p0.x + nx * 1.2, p0.y + ny * 1.2);
+  ctx.lineTo(p1.x + nx * 1.2, p1.y + ny * 1.2);
+  ctx.stroke();
+
+  ctx.globalAlpha = strokeOpacity;
+  ctx.strokeStyle = parseColor(strokeStyle, 1);
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.stroke();
+
+  const bristles = 4 + Math.floor(softEdge * 4);
+  for (let b = 0; b < bristles; b++) {
+    const t = rand();
+    const bx = p0.x + dx * t;
+    const by = p0.y + dy * t;
+    const off = (rand() - 0.5) * lw * 0.5;
+    ctx.globalAlpha = strokeOpacity * (0.15 + rand() * 0.25);
+    ctx.lineWidth = 0.8 + rand() * 1.8;
+    ctx.strokeStyle = parseColor(strokeStyle, 0.9);
     ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
+    ctx.moveTo(bx + nx * off, by + ny * off);
+    ctx.lineTo(bx + nx * off + dx * 0.08, by + ny * off + dy * 0.08);
     ctx.stroke();
   }
+
+  ctx.globalAlpha = strokeOpacity * 0.45;
+  ctx.lineWidth = Math.max(1, lw * 0.25);
+  ctx.strokeStyle = parseColor(strokeStyle, 0.5);
+  ctx.beginPath();
+  ctx.moveTo(p0.x - nx * 0.6, p0.y - ny * 0.6);
+  ctx.lineTo(p1.x - nx * 0.6, p1.y - ny * 0.6);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -242,74 +304,57 @@ export function renderOilStroke(ctx, stroke) {
     lineWidth = 8,
     edgeHardness = 70,
   } = stroke;
-  const hardness = edgeHardness / 100;
-  const color = parseColor(strokeStyle, strokeOpacity);
-  const highlight = parseColor(strokeStyle, strokeOpacity * 0.35);
-  const shadow = parseColor(strokeStyle, strokeOpacity * 0.5);
+  const dense = densifyPath(points, Math.max(1, lineWidth * 0.12));
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i - 1];
-    const p1 = points[i];
+  for (let i = 1; i < dense.length; i++) {
+    const p0 = dense[i - 1];
+    const p1 = dense[i];
     const w0 = p0.w ?? lineWidth;
     const w1 = p1.w ?? lineWidth;
-    const lw = (w0 + w1) / 2;
-
-    const dx = p1.x - p0.x;
-    const dy = p1.y - p0.y;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-    const relief = (1 - hardness) * 2 + 1;
-
-    ctx.lineWidth = lw + relief;
-    ctx.strokeStyle = shadow;
-    ctx.globalAlpha = 0.4;
-    ctx.beginPath();
-    ctx.moveTo(p0.x + nx, p0.y + ny);
-    ctx.lineTo(p1.x + nx, p1.y + ny);
-    ctx.stroke();
-
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = strokeOpacity;
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
-
-    ctx.lineWidth = Math.max(1, lw * 0.3);
-    ctx.strokeStyle = highlight;
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(p0.x - nx * 0.5, p0.y - ny * 0.5);
-    ctx.lineTo(p1.x - nx * 0.5, p1.y - ny * 0.5);
-    ctx.stroke();
-
-    const rand = seededRandom(Math.floor(p1.x + p1.y + i));
-    for (let t = 0; t < 3; t++) {
-      const jx = (rand() - 0.5) * lw * 0.4;
-      const jy = (rand() - 0.5) * lw * 0.4;
-      ctx.globalAlpha = strokeOpacity * 0.3;
-      ctx.lineWidth = 1 + rand() * 2;
-      ctx.beginPath();
-      ctx.moveTo(p1.x + jx, p1.y + jy);
-      ctx.lineTo(p1.x + jx + (rand() - 0.5) * 4, p1.y + jy + (rand() - 0.5) * 4);
-      ctx.stroke();
-    }
+    drawOilBristleSegment(
+      ctx, p0, p1, (w0 + w1) / 2,
+      strokeStyle, strokeOpacity, edgeHardness,
+      Math.floor(p1.x * 3 + p1.y * 5 + i)
+    );
   }
 
-  if (points.length === 1) {
-    const p = points[0];
+  if (dense.length === 1) {
+    const p = dense[0];
     const w = p.w ?? lineWidth;
-    ctx.fillStyle = color;
+    ctx.save();
+    ctx.fillStyle = parseColor(strokeStyle, strokeOpacity);
     ctx.beginPath();
     ctx.arc(p.x, p.y, w / 2, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPastelGrainAt(ctx, x, y, r, strokeStyle, strokeOpacity, grain, seed) {
+  const rand = seededRandom(seed);
+  const dots = Math.floor(10 + grain * 24);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+
+  for (let d = 0; d < dots; d++) {
+    const angle = rand() * Math.PI * 2;
+    const dist = rand() * r;
+    const dotR = 0.3 + rand() * 2.2;
+    ctx.globalAlpha = strokeOpacity * (0.25 + rand() * 0.55);
+    ctx.fillStyle = parseColor(strokeStyle, 1);
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, dotR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const dustCount = Math.floor(2 + grain * 6);
+  for (let d = 0; d < dustCount; d++) {
+    ctx.globalAlpha = strokeOpacity * 0.18;
+    ctx.fillStyle = parseColor(strokeStyle, 1);
+    const dx = (rand() - 0.5) * r * 2.8;
+    const dy = (rand() - 0.5) * r * 2.8;
+    ctx.fillRect(x + dx, y + dy, 1 + rand(), 1);
   }
   ctx.restore();
 }
@@ -323,53 +368,15 @@ export function renderPastelStroke(ctx, stroke) {
     graininess = 60,
   } = stroke;
   const grain = graininess / 100;
-  const color = parseColor(strokeStyle, 1);
+  const dense = densifyPath(points, Math.max(1, lineWidth * 0.14));
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-
-  points.forEach((p, i) => {
-    const rand = seededRandom(Math.floor(p.x * 11 + p.y * 17 + i));
-    const r = lineWidth / 2;
-    const dots = Math.floor(8 + grain * 20);
-
-    for (let d = 0; d < dots; d++) {
-      const angle = rand() * Math.PI * 2;
-      const dist = rand() * r;
-      const dotR = 0.4 + rand() * 1.8;
-      ctx.globalAlpha = strokeOpacity * (0.3 + rand() * 0.7);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(p.x + Math.cos(angle) * dist, p.y + Math.sin(angle) * dist, dotR, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (rand() > 0.5) {
-      const dustCount = Math.floor(grain * 5);
-      for (let d = 0; d < dustCount; d++) {
-        ctx.globalAlpha = strokeOpacity * 0.2;
-        ctx.fillStyle = color;
-        const dx = (rand() - 0.5) * r * 2.5;
-        const dy = (rand() - 0.5) * r * 2.5;
-        ctx.fillRect(p.x + dx, p.y + dy, 1, 1);
-      }
-    }
+  dense.forEach((p, i) => {
+    drawPastelGrainAt(
+      ctx, p.x, p.y, lineWidth / 2,
+      strokeStyle, strokeOpacity, grain,
+      Math.floor(p.x * 11 + p.y * 17 + i)
+    );
   });
-
-  if (points.length > 1) {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = strokeOpacity * 0.5;
-    ctx.strokeStyle = parseColor(strokeStyle, strokeOpacity);
-    ctx.lineWidth = lineWidth * 0.25;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
 }
 
 export function calcCalligraphyWidth(baseWidth, dx, dy, speed, sensitivity) {
@@ -382,6 +389,34 @@ export function calcCalligraphyWidth(baseWidth, dx, dy, speed, sensitivity) {
   return Math.max(1, (widthFromSpeed + widthFromAngle) / 2);
 }
 
+function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {
+  const dx = p1.x - p0.x;
+  const dy = p1.y - p0.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 0.01) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p0.x, p0.y, w0 / 2, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  const nx = -dy / len;
+  const ny = dx / len;
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.beginPath();
+  ctx.moveTo(p0.x + nx * w0 / 2, p0.y + ny * w0 / 2);
+  ctx.lineTo(p1.x + nx * w1 / 2, p1.y + ny * w1 / 2);
+  ctx.lineTo(p1.x - nx * w1 / 2, p1.y - ny * w1 / 2);
+  ctx.lineTo(p0.x - nx * w0 / 2, p0.y - ny * w0 / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 export function renderCalligraphyStroke(ctx, stroke) {
   const {
     points = [],
@@ -391,38 +426,20 @@ export function renderCalligraphyStroke(ctx, stroke) {
     speedSensitivity = 50,
   } = stroke;
   const color = parseColor(strokeStyle, strokeOpacity);
+  const dense = densifyPath(points, Math.max(0.8, lineWidth * 0.08));
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = color;
-
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i - 1];
-    const p1 = points[i];
-    const w = p1.w ?? calcCalligraphyWidth(
-      lineWidth,
-      p1.x - p0.x,
-      p1.y - p0.y,
-      p1.speed ?? 0,
-      speedSensitivity
-    );
-    ctx.lineWidth = w;
-    ctx.beginPath();
-    ctx.moveTo(p0.x, p0.y);
-    ctx.lineTo(p1.x, p1.y);
-    ctx.stroke();
+  for (let i = 1; i < dense.length; i++) {
+    const p0 = dense[i - 1];
+    const p1 = dense[i];
+    const w0 = p0.w ?? calcCalligraphyWidth(lineWidth, p1.x - p0.x, p1.y - p0.y, p0.speed ?? 0, speedSensitivity);
+    const w1 = p1.w ?? calcCalligraphyWidth(lineWidth, p1.x - p0.x, p1.y - p0.y, p1.speed ?? 0, speedSensitivity);
+    drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color);
   }
 
-  if (points.length === 1) {
-    const p = points[0];
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, (p.w ?? lineWidth) / 2, 0, Math.PI * 2);
-    ctx.fill();
+  if (dense.length === 1) {
+    const p = dense[0];
+    drawCalligraphyRibbon(ctx, p, p, p.w ?? lineWidth, p.w ?? lineWidth, color);
   }
-  ctx.restore();
 }
 
 export const BRUSH_STROKE_TYPES = [
@@ -460,5 +477,19 @@ export function renderSpecialBrushStroke(ctx, stroke, canvas) {
       break;
     default:
       break;
+  }
+}
+
+/** Рисует маркерные штампы вдоль отрезка (для live-preview) */
+export function drawMarkerAlongSegment(ctx, x0, y0, x1, y1, lineWidth, angle, strokeStyle, strokeOpacity) {
+  const color = parseColor(strokeStyle, 1);
+  const spacing = Math.max(1, lineWidth * 0.12);
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.max(1, Math.ceil(dist / spacing));
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    drawMarkerStamp(ctx, x0 + dx * t, y0 + dy * t, lineWidth, angle, color, strokeOpacity);
   }
 }
