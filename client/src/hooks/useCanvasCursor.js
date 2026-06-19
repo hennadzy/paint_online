@@ -156,9 +156,6 @@ function drawCursorOverlay(ctx, canvas, x, y) {
   }
 
   switch (toolName) {
-    case 'marker':
-      drawMarkerCursor(ctx, canvas, x, y, diameter, params.angle);
-      break;
     case 'airbrush':
       drawAirbrushCursor(ctx, canvas, x, y, diameter, params.scatter);
       break;

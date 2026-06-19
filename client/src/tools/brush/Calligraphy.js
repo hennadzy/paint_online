@@ -1,6 +1,6 @@
 import BaseStrokeTool from './BaseStrokeTool';
 import canvasState from '../../store/canvasState';
-import { calcCalligraphyWidth, renderCalligraphyStroke } from '../../utils/brushEffects';
+import { calcCalligraphyWidth, drawCalligraphyRibbon, parseColor } from '../../utils/brushEffects';
 
 export default class Calligraphy extends BaseStrokeTool {
   constructor(canvas, socket, id, username) {
@@ -12,11 +12,12 @@ export default class Calligraphy extends BaseStrokeTool {
   }
 
   getPointSpacing() {
-    return Math.max(0.8, this.lineWidth * 0.08);
+    return Math.max(0.5, this.lineWidth * 0.06);
   }
 
   pointerDownHandler(e) {
     this._prevX = null;
+    this._prevY = null;
     super.pointerDownHandler(e);
   }
 
@@ -38,14 +39,15 @@ export default class Calligraphy extends BaseStrokeTool {
 
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-    canvasState.redrawCanvas();
-    renderCalligraphyStroke(ctx, {
-      type: 'calligraphy',
-      points: this.points,
-      strokeStyle: this.strokeStyle,
-      strokeOpacity: this.strokeOpacity,
-      lineWidth: this.lineWidth,
-      speedSensitivity: this.speedSensitivity,
-    });
+    const len = this.points.length;
+    if (len < 2) return;
+
+    const p0 = this.points[len - 2];
+    const p1 = this.points[len - 1];
+    const w0 = p0.w ?? this.lineWidth;
+    const w1 = p1.w ?? this.lineWidth;
+    const color = parseColor(this.strokeStyle, this.strokeOpacity);
+
+    drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color);
   }
 }

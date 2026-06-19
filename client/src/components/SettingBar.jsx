@@ -88,42 +88,37 @@ const SettingBar = observer(() => {
   };
 
   const extraDef = extraParamDefs[currentToolName];
-  const showOpacity = !isStampTool && !['smudge'].includes(currentToolName);
+  const showOpacity = !['smudge'].includes(currentToolName);
   const showColor = !isStampTool;
-
   const sliderCount = 1 + (showOpacity ? 1 : 0) + (extraDef ? 1 : 0);
   const multiRowClass = sliderCount > 2 ? 'setting-bar--multi-row' : '';
-
-  const renderSliderGroup = (className, children) => (
-    <div className={`setting-slider-group ${className || ''}`}>{children}</div>
-  );
+  const widthLabel = isStampTool ? 'Размер' : 'Толщина';
 
   return (
     <>
       <div className={`setting-bar ${multiRowClass}`} data-nosnippet>
-        <div className="setting-row setting-row--primary">
-          {renderSliderGroup('setting-slider-group--width', (
-            <>
-              <input
-                ref={inputRef}
-                id="line-width"
-                type="range"
-                min={isStampTool ? 16 : 1}
-                max={isStampTool ? 200 : 50}
-                value={currentWidth}
-                onChange={handleChange}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              />
-              <span className="line-width-label">
-                <span className="setting-label-text">{isStampTool ? 'Размер' : 'Толщина'}</span>
-                {lineWidth}px
-              </span>
-            </>
-          ))}
-          {showOpacity && renderSliderGroup('setting-slider-group--opacity', (
-            <>
+        <div className="setting-row">
+          <div className="setting-slider-group setting-slider-group--width">
+            <input
+              ref={inputRef}
+              id="line-width"
+              type="range"
+              min={isStampTool ? 16 : 1}
+              max={isStampTool ? 200 : 50}
+              value={currentWidth}
+              onChange={handleChange}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            />
+            <span className="line-width-label">
+              <span className="setting-label-text">{widthLabel}:</span>
+              {lineWidth}px
+            </span>
+          </div>
+
+          {showOpacity && (
+            <div className="setting-slider-group setting-slider-group--opacity">
               <input
                 ref={opacityInputRef}
                 id="stroke-opacity"
@@ -137,9 +132,29 @@ const SettingBar = observer(() => {
                 onTouchMove={handleOpacityTouchMove}
                 onTouchEnd={handleOpacityTouchEnd}
               />
-              <span className="opacity-label">{Math.round(toolState.strokeOpacity * 100)}%</span>
-            </>
-          ))}
+              <span className="opacity-label">
+                <span className="setting-label-text">Прозрачность:</span>
+                {Math.round(toolState.strokeOpacity * 100)}%
+              </span>
+            </div>
+          )}
+
+          {extraDef && (
+            <div className="setting-slider-group setting-slider-group--param">
+              <input
+                type="range"
+                min={extraDef.min}
+                max={extraDef.max}
+                value={params[extraDef.key] ?? extraDef.default}
+                onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
+              />
+              <span className="param-label">{extraDef.label}:</span>
+              <span className="param-value">
+                {params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
+              </span>
+            </div>
+          )}
+
           {showColor && (
             <input
               type="color"
@@ -149,25 +164,6 @@ const SettingBar = observer(() => {
             />
           )}
         </div>
-        {extraDef && (
-          <div className="setting-row setting-row--secondary">
-            {renderSliderGroup('setting-slider-group--param', (
-              <>
-                <input
-                  type="range"
-                  min={extraDef.min}
-                  max={extraDef.max}
-                  value={params[extraDef.key] ?? extraDef.default}
-                  onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
-                />
-                <span className="param-label">{extraDef.label}</span>
-                <span className="param-value">
-                  {params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
-                </span>
-              </>
-            ))}
-          </div>
-        )}
       </div>
       <StampPalette />
     </>

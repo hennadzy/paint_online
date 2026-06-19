@@ -9,6 +9,10 @@ export default class Smudge extends BaseStrokeTool {
     this.strength = 50;
   }
 
+  getPointSpacing() {
+    return Math.max(2, this.lineWidth * 0.2);
+  }
+
   drawSegment() {
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     const len = this.points.length;
@@ -19,7 +23,6 @@ export default class Smudge extends BaseStrokeTool {
     const dx = p1.x - p0.x;
     const dy = p1.y - p0.y;
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-    canvasState.redrawCanvas();
     applySmudgeAt(ctx, this.canvas, p1.x, p1.y, this.lineWidth / 2, this.strength, dx / dist, dy / dist);
   }
 }

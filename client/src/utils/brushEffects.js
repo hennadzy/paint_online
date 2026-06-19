@@ -271,19 +271,31 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   ctx.lineTo(p1.x, p1.y);
   ctx.stroke();
 
-  const bristles = 4 + Math.floor(softEdge * 4);
+  const bristles = 10 + Math.floor(softEdge * 14);
   for (let b = 0; b < bristles; b++) {
     const t = rand();
     const bx = p0.x + dx * t;
     const by = p0.y + dy * t;
-    const off = (rand() - 0.5) * lw * 0.5;
-    ctx.globalAlpha = strokeOpacity * (0.15 + rand() * 0.25);
-    ctx.lineWidth = 0.8 + rand() * 1.8;
-    ctx.strokeStyle = parseColor(strokeStyle, 0.9);
+    const off = (rand() - 0.5) * lw * 0.65;
+    const along = 0.06 + rand() * 0.18;
+    ctx.globalAlpha = strokeOpacity * (0.12 + rand() * 0.28);
+    ctx.lineWidth = 0.6 + rand() * 2.4;
+    ctx.strokeStyle = parseColor(strokeStyle, 0.85 + rand() * 0.15);
     ctx.beginPath();
     ctx.moveTo(bx + nx * off, by + ny * off);
-    ctx.lineTo(bx + nx * off + dx * 0.08, by + ny * off + dy * 0.08);
+    ctx.lineTo(bx + nx * off + dx * along, by + ny * off + dy * along);
     ctx.stroke();
+  }
+
+  for (let b = 0; b < Math.floor(bristles * 0.4); b++) {
+    const t = rand();
+    const bx = p0.x + dx * t;
+    const by = p0.y + dy * t;
+    ctx.globalAlpha = strokeOpacity * 0.2;
+    ctx.fillStyle = parseColor(strokeStyle, 0.7);
+    ctx.beginPath();
+    ctx.arc(bx + (rand() - 0.5) * lw * 0.3, by + (rand() - 0.5) * lw * 0.3, 0.5 + rand(), 0, Math.PI * 2);
+    ctx.fill();
   }
 
   ctx.globalAlpha = strokeOpacity * 0.45;
@@ -389,7 +401,7 @@ export function calcCalligraphyWidth(baseWidth, dx, dy, speed, sensitivity) {
   return Math.max(1, (widthFromSpeed + widthFromAngle) / 2);
 }
 
-function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {
+export function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {
   const dx = p1.x - p0.x;
   const dy = p1.y - p0.y;
   const len = Math.sqrt(dx * dx + dy * dy);
@@ -443,7 +455,6 @@ export function renderCalligraphyStroke(ctx, stroke) {
 }
 
 export const BRUSH_STROKE_TYPES = [
-  'marker',
   'airbrush',
   'smudge',
   'watercolor',
@@ -454,9 +465,6 @@ export const BRUSH_STROKE_TYPES = [
 
 export function renderSpecialBrushStroke(ctx, stroke, canvas) {
   switch (stroke.type) {
-    case 'marker':
-      renderMarkerStroke(ctx, stroke);
-      break;
     case 'airbrush':
       renderAirbrushStroke(ctx, stroke);
       break;

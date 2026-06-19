@@ -66,6 +66,7 @@ drawStroke(ctx, stroke) {
     case "selection_transform":
       return this.drawSelectionTransform(ctx, stroke);
     case "brush":
+    case "marker":
     case "eraser":
 
       this.renderBrushStroke(ctx, stroke, stroke.type === "eraser");

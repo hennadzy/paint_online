@@ -331,12 +331,12 @@
     top: 50px;
     left: 0;
     right: 0;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 10px 20px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    height: 50px;
     min-height: 50px;
-    height: auto;
     z-index: 999;
 
     .setting-row {
@@ -355,16 +355,17 @@
       min-width: 0;
 
       input[type="range"] {
-        width: 140px;
-        min-width: 100px;
+        width: 130px;
+        min-width: 90px;
         flex-shrink: 1;
       }
 
       &--width input[type="range"] {
-        width: 160px;
+        width: 150px;
       }
     }
 
+    .setting-label-text,
     .line-width-label,
     .opacity-label,
     .param-label,
@@ -374,17 +375,25 @@
       flex-shrink: 0;
     }
 
-    .line-width-label {
-      min-width: 72px;
+    .setting-label-text {
+      display: inline;
     }
 
-    .opacity-label,
-    .param-value {
-      min-width: 36px;
+    .line-width-label {
+      min-width: 80px;
+    }
+
+    .opacity-label {
+      min-width: 96px;
     }
 
     .param-label {
-      min-width: 44px;
+      min-width: auto;
+    }
+
+    .param-value {
+      min-width: 36px;
+      color: #ccc;
     }
 
     .setting-color-input {
@@ -393,8 +402,8 @@
     }
 
     &--multi-row {
-      min-height: 88px;
-      padding-bottom: 12px;
+      height: 50px;
+      min-height: 50px;
     }
   }
 
@@ -477,6 +486,7 @@
     height: auto;
     padding: 8px 10px;
     gap: 6px;
+    z-index: 1001;
 
     .setting-row {
       display: flex;
@@ -521,10 +531,24 @@
     &--multi-row {
       min-height: 88px;
 
-      .setting-row--secondary {
-        margin-top: 2px;
+      .setting-row {
+        flex-wrap: wrap;
+        row-gap: 6px;
+      }
+
+      .setting-slider-group {
+        flex: 1 1 calc(50% - 8px);
+        min-width: calc(50% - 8px);
+      }
+
+      .setting-color-input {
+        margin-left: auto;
       }
     }
+  }
+
+  .toolbar__submenu {
+    z-index: 1005;
   }
 }
 
