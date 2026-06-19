@@ -196,13 +196,30 @@
 
   .line-width-label,
   .opacity-label,
+  .param-label,
+  .param-value,
   .tolerance-label {
     white-space: nowrap;
     color: #fff;
     font-size: 14px;
     display: inline-block;
-    width: 56px;
+  }
 
+  .line-width-label,
+  .opacity-label {
+    width: 56px;
+  }
+
+  .param-label {
+    font-size: 12px;
+    width: auto;
+    min-width: 40px;
+  }
+
+  .param-value {
+    font-size: 12px;
+    width: 40px;
+    color: #ccc;
   }
 
   .setting-row {
@@ -437,6 +454,42 @@
 
 .icon.arrow {
   background-image: url('../assets/img/arrow.png');
+}
+
+.icon.marker {
+  background-image: url('../assets/img/marker_brush.png');
+}
+
+.icon.airbrush {
+  background-image: url('../assets/img/airbrush.png');
+}
+
+.icon.smudge {
+  background-image: url('../assets/img/smudge_brush.png');
+}
+
+.icon.watercolor {
+  background-image: url('../assets/img/watercolor_icon.png');
+}
+
+.icon.oil {
+  background-image: url('../assets/img/oil_brush_icon.png');
+}
+
+.icon.pastel {
+  background-image: url('../assets/img/pastel_icon.png');
+}
+
+.icon.calligraphy {
+  background-image: url('../assets/img/calligraphy_icon.png');
+}
+
+.icon.ellipse {
+  background-image: url('../assets/img/ellipse.png');
+}
+
+.icon.stamp {
+  background-image: url('../assets/img/stamp.png');
 }
 
 .icon.hand {

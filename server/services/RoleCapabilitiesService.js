@@ -1,12 +1,17 @@
 const { pgPool } = require('../config/db');
 
-const FEATURE_IDS = ['penPressure'];
+const FEATURE_IDS = ['penPressure', 'brushPro'];
 
 const FEATURE_DEFS = {
   penPressure: {
     label: 'Сила нажатия пера',
     description:
       'Переменная толщина линии от нажима стилуса на планшете. Без опции линия фиксированной толщины, как у мыши.',
+  },
+  brushPro: {
+    label: 'Группа кистей Brush Pro',
+    description:
+      'Профессиональные кисти: акварель, масляная, пастель и каллиграфическая. Доступна зарегистрированным пользователям по ролям.',
   },
 };
 
@@ -22,12 +27,13 @@ const ROLE_LABELS = {
 const DEFAULT_CONFIG = {
   features: {
     penPressure: { enabled: true },
+    brushPro: { enabled: true },
   },
   roles: {
-    guest: { penPressure: false },
-    user: { penPressure: true },
-    premium: { penPressure: true },
-    admin: { penPressure: true },
+    guest: { penPressure: false, brushPro: false },
+    user: { penPressure: true, brushPro: true },
+    premium: { penPressure: true, brushPro: true },
+    admin: { penPressure: true, brushPro: true },
   },
 };
 

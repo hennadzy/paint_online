@@ -3,9 +3,19 @@ import { observer } from "mobx-react-lite";
 import "../styles/toolbar.scss";
 import toolState from "../store/toolState";
 import canvasState from "../store/canvasState";
+import capabilitiesState from "../store/capabilitiesState";
 import Brush from "../tools/Brush";
+import Marker from "../tools/brush/Marker";
+import Airbrush from "../tools/brush/Airbrush";
+import Smudge from "../tools/brush/Smudge";
+import Watercolor from "../tools/brush/Watercolor";
+import Oil from "../tools/brush/Oil";
+import Pastel from "../tools/brush/Pastel";
+import Calligraphy from "../tools/brush/Calligraphy";
 import Rect from "../tools/Rect";
 import Circle from "../tools/Circle";
+import Ellipse from "../tools/Ellipse";
+import Stamp from "../tools/Stamp";
 import Line from "../tools/Line";
 import Eraser from "../tools/Eraser";
 import Text from "../tools/Text";
@@ -16,6 +26,68 @@ import Arrow from "../tools/Arrow";
 import Hand from "../tools/Hand";
 import RectSelect from "../tools/RectSelect";
 import Lasso from "../tools/Lasso";
+
+const TOOL_CLASSES = {
+  hand: Hand,
+  select: RectSelect,
+  lasso: Lasso,
+  brush: Brush,
+  marker: Marker,
+  airbrush: Airbrush,
+  smudge: Smudge,
+  watercolor: Watercolor,
+  oil: Oil,
+  pastel: Pastel,
+  calligraphy: Calligraphy,
+  line: Line,
+  arrow: Arrow,
+  circle: Circle,
+  rect: Rect,
+  ellipse: Ellipse,
+  stamp: Stamp,
+  polygon: Polygon,
+  pipette: Pipette,
+  fill: Fill,
+  eraser: Eraser,
+  text: Text,
+};
+
+const GROUP_TOOL_ENTRIES = {
+  brush: [
+    ["brush", Brush, "Кисть"],
+    ["line", Line, "Линия"],
+    ["arrow", Arrow, "Стрелка"],
+  ],
+  brushExtra: [
+    ["marker", Marker, "Маркер (Shift+M)"],
+    ["airbrush", Airbrush, "Аэрограф (Shift+A)"],
+    ["smudge", Smudge, "Размывайка (Shift+S)"],
+  ],
+  brushPro: [
+    ["watercolor", Watercolor, "Акварель (Shift+W)"],
+    ["oil", Oil, "Масляная (Shift+O)"],
+    ["pastel", Pastel, "Пастель (Shift+P)"],
+    ["calligraphy", Calligraphy, "Каллиграфия (Shift+C)"],
+  ],
+  shapes: [
+    ["circle", Circle, "Круг"],
+    ["rect", Rect, "Прямоугольник"],
+    ["polygon", Polygon, "Многоугольник"],
+    ["ellipse", Ellipse, "Эллипс (Shift+E)"],
+    ["stamp", Stamp, "Штампики (Shift+Y)"],
+  ],
+  color: [
+    ["fill", Fill, "Заливка"],
+    ["pipette", Pipette, "Пипетка"],
+  ],
+  eraser: [
+    ["eraser", Eraser, "Ластик"],
+  ],
+  selection: [
+    ["select", RectSelect, "Выделение (M)"],
+    ["lasso", Lasso, "Лассо (Q)"],
+  ],
+};
 
 const Toolbar = observer(() => {
   const [activeGroup, setActiveGroup] = useState(null);
@@ -59,34 +131,14 @@ const Toolbar = observer(() => {
     setActiveGroup(activeGroup === group ? null : group);
   };
 
-  const toolClassMap = {
-    hand: Hand,
-    select: RectSelect,
-    lasso: Lasso,
-    brush: Brush,
-    line: Line,
-    arrow: Arrow,
-    circle: Circle,
-    rect: Rect,
-    polygon: Polygon,
-    pipette: Pipette,
-    fill: Fill,
-    eraser: Eraser,
-    text: Text
-  };
-
-  const selectionLabels = {
-    select: "Выделение",
-    lasso: "Лассо"
-  };
-
   const handleGroupClick = (group) => {
     if (activeGroup === group) {
       toggleGroup(group);
       return;
     }
     const toolName = toolState.getLastInGroup(group);
-    const ToolClass = toolClassMap[toolName];
+    const ToolClass = TOOL_CLASSES[toolName];
+    if (!ToolClass) return;
     changeTool(ToolClass, toolName);
     toggleGroup(group);
   };
@@ -103,6 +155,32 @@ const Toolbar = observer(() => {
     </button>
   );
 
+  const renderGroup = (groupKey) => {
+    const entries = GROUP_TOOL_ENTRIES[groupKey];
+    if (!entries) return null;
+
+    const lastTool = toolState.getLastInGroup(groupKey);
+    const labels = toolState.groupLabels[groupKey] || {};
+    const tooltip = labels[lastTool] || lastTool;
+
+    return (
+      <div className="toolbar__group" key={groupKey}>
+        <button
+          type="button"
+          className={`toolbar__btn ${lastTool} ${toolState.isToolInGroup(toolState.toolName, groupKey) ? "active" : ""}`}
+          onClick={() => handleGroupClick(groupKey)}
+          onMouseDown={(e) => e.target.blur()}
+        >
+          <span className={`icon ${lastTool}`} />
+          <span className="tooltip">{tooltip}</span>
+        </button>
+        <div className={`toolbar__submenu ${activeGroup === groupKey ? "show" : ""}`}>
+          {entries.map(([name, ToolClass, label]) => renderButton(name, ToolClass, label))}
+        </div>
+      </div>
+    );
+  };
+
   const handleActionClick = (action, buttonId) => {
     action();
     setClickAnimation(buttonId);
@@ -110,63 +188,15 @@ const Toolbar = observer(() => {
     setActiveGroup(null);
   };
 
+  const brushProAllowed = capabilitiesState.brushProAllowed;
+
   return (
     <div className="toolbar" data-nosnippet>
-      <div className="toolbar__group">
-        <button
-          type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("brush")} ${toolState.isToolInGroup(toolState.toolName, "brush") ? "active" : ""}`}
-          onClick={() => handleGroupClick("brush")}
-          onMouseDown={(e) => e.target.blur()}
-        >
-          <span className={`icon ${toolState.getLastInGroup("brush")}`} />
-          <span className="tooltip">
-            {{"brush": "Кисть", "line": "Линия", "arrow": "Стрелка"}[toolState.getLastInGroup("brush")]}
-          </span>
-        </button>
-        <div className={`toolbar__submenu ${activeGroup === "brush" ? "show" : ""}`}>
-          {renderButton("brush", Brush, "Кисть")}
-          {renderButton("line", Line, "Линия")}
-          {renderButton("arrow", Arrow, "Стрелка")}
-        </div>
-      </div>
-
-      <div className="toolbar__group">
-        <button
-          type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("shapes")} ${toolState.isToolInGroup(toolState.toolName, "shapes") ? "active" : ""}`}
-          onClick={() => handleGroupClick("shapes")}
-          onMouseDown={(e) => e.target.blur()}
-        >
-          <span className={`icon ${toolState.getLastInGroup("shapes")}`} />
-          <span className="tooltip">
-            {{"circle": "Круг", "rect": "Прямоугольник", "polygon": "Многоугольник"}[toolState.getLastInGroup("shapes")]}
-          </span>
-        </button>
-        <div className={`toolbar__submenu ${activeGroup === "shapes" ? "show" : ""}`}>
-          {renderButton("circle", Circle, "Круг")}
-          {renderButton("rect", Rect, "Прямоугольник")}
-          {renderButton("polygon", Polygon, "Многоугольник")}
-        </div>
-      </div>
-
-      <div className="toolbar__group">
-        <button
-          type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("color")} ${toolState.isToolInGroup(toolState.toolName, "color") ? "active" : ""}`}
-          onClick={() => handleGroupClick("color")}
-          onMouseDown={(e) => e.target.blur()}
-        >
-          <span className={`icon ${toolState.getLastInGroup("color")}`} />
-          <span className="tooltip">
-            {{"pipette": "Пипетка", "fill": "Заливка"}[toolState.getLastInGroup("color")]}
-          </span>
-        </button>
-        <div className={`toolbar__submenu ${activeGroup === "color" ? "show" : ""}`}>
-          {renderButton("fill", Fill, "Заливка")}
-          {renderButton("pipette", Pipette, "Пипетка")}
-        </div>
-      </div>
+      {renderGroup("brush")}
+      {renderGroup("brushExtra")}
+      {brushProAllowed && renderGroup("brushPro")}
+      {renderGroup("shapes")}
+      {renderGroup("color")}
 
       <div className="toolbar__group">
         <button
@@ -206,24 +236,7 @@ const Toolbar = observer(() => {
         <span className="tooltip">Сетка</span>
       </button>
 
-      <div className="toolbar__group">
-        <button
-          type="button"
-          className={`toolbar__btn ${toolState.getLastInGroup("selection")} ${toolState.isToolInGroup(toolState.toolName, "selection") ? "active" : ""}`}
-          onClick={() => handleGroupClick("selection")}
-          onMouseDown={(e) => e.target.blur()}
-        >
-          <span className={`icon ${toolState.getLastInGroup("selection")}`} />
-          <span className="tooltip">
-            {selectionLabels[toolState.getLastInGroup("selection")]}
-          </span>
-        </button>
-        <div className={`toolbar__submenu ${activeGroup === "selection" ? "show" : ""}`}>
-          {renderButton("select", RectSelect, "Выделение (M)")}
-          {renderButton("lasso", Lasso, "Лассо (Q)")}
-        </div>
-      </div>
-
+      {renderGroup("selection")}
       {renderButton("hand", Hand, "Рука (H)")}
 
       <button

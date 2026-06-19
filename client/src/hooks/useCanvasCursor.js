@@ -10,45 +10,175 @@ import {
   SELECT_CURSOR_STYLE,
 } from '../utils/toolCursors';
 
-const CURSOR_NONE_TOOLS = ['brush', 'eraser', 'rect', 'circle', 'line', 'arrow', 'polygon'];
+const CURSOR_NONE_TOOLS = [
+  'brush', 'eraser', 'rect', 'circle', 'ellipse', 'line', 'arrow', 'polygon',
+  'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy',
+];
 const SELECTION_TOOLS = ['select', 'lasso'];
+const STAMP_TOOLS = ['stamp'];
 
 const TOOL_CURSOR_CLASSES = [
-  'brush-cursor',
-  'eraser-cursor',
-  'rect-cursor',
-  'circle-cursor',
-  'line-cursor',
-  'text-cursor',
-  'hand-cursor',
-  'select-cursor',
-  'lasso-cursor',
+  'brush-cursor', 'eraser-cursor', 'rect-cursor', 'circle-cursor', 'ellipse-cursor',
+  'line-cursor', 'text-cursor', 'hand-cursor', 'select-cursor', 'lasso-cursor',
+  'marker-cursor', 'airbrush-cursor', 'smudge-cursor', 'watercolor-cursor',
+  'oil-cursor', 'pastel-cursor', 'calligraphy-cursor', 'stamp-cursor',
 ];
 
-function drawCursorOverlay(ctx, canvas, x, y) {
-  const diameter = toolState.tool?.lineWidth ?? 1;
+function drawDefaultCircleCursor(ctx, canvas, x, y, diameter) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.arc(x, y, diameter / 2, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
 
-  if (toolState.toolName === 'text') {
+function drawMarkerCursor(ctx, canvas, x, y, size, angleDeg) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const w = size * 1.6;
+  const h = size * 0.45;
+  const angle = ((angleDeg ?? 0) * Math.PI) / 180;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
+function drawAirbrushCursor(ctx, canvas, x, y, size, scatter) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const r = size / 2 + (scatter ?? 15) * 0.5;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(80,80,80,0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const d = r * 0.6;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, 1.5, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(100,100,100,0.4)';
+    ctx.fill();
+  }
+}
+
+function drawSmudgeCursor(ctx, canvas, x, y, size) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const r = size / 2;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.5, y);
+  ctx.quadraticCurveTo(x, y - r * 0.3, x + r * 0.5, y);
+  ctx.strokeStyle = '#999';
+  ctx.stroke();
+}
+
+function drawWatercolorCursor(ctx, canvas, x, y, size) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const r = size / 2;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0, 'rgba(100,150,255,0.3)');
+  grad.addColorStop(1, 'rgba(100,150,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(80,120,200,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawOilCursor(ctx, canvas, x, y, size) {
+  drawDefaultCircleCursor(ctx, canvas, x, y, size);
+  ctx.beginPath();
+  ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.15, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fill();
+}
+
+function drawPastelCursor(ctx, canvas, x, y, size) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const r = size / 2;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#888';
+  ctx.setLineDash([2, 2]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  for (let i = 0; i < 5; i++) {
+    const a = Math.random() * Math.PI * 2;
+    ctx.fillRect(x + Math.cos(a) * r * 0.7, y + Math.sin(a) * r * 0.7, 1, 1);
+  }
+}
+
+function drawCalligraphyCursor(ctx, canvas, x, y, size) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 4);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.6, size * 0.2, 0, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCursorOverlay(ctx, canvas, x, y) {
+  const toolName = toolState.toolName;
+  const diameter = toolState.tool?.lineWidth ?? 1;
+  const params = toolState.getToolParams(toolName);
+
+  if (toolName === 'text') {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'white';
     ctx.beginPath();
     ctx.moveTo(x, y - 10);
     ctx.lineTo(x, y + 10);
     ctx.stroke();
-
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'black';
     ctx.beginPath();
     ctx.moveTo(x, y - 10);
     ctx.lineTo(x, y + 10);
     ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.arc(x, y, diameter / 2, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    return;
+  }
+
+  switch (toolName) {
+    case 'marker':
+      drawMarkerCursor(ctx, canvas, x, y, diameter, params.angle);
+      break;
+    case 'airbrush':
+      drawAirbrushCursor(ctx, canvas, x, y, diameter, params.scatter);
+      break;
+    case 'smudge':
+      drawSmudgeCursor(ctx, canvas, x, y, diameter);
+      break;
+    case 'watercolor':
+      drawWatercolorCursor(ctx, canvas, x, y, diameter);
+      break;
+    case 'oil':
+      drawOilCursor(ctx, canvas, x, y, diameter);
+      break;
+    case 'pastel':
+      drawPastelCursor(ctx, canvas, x, y, diameter);
+      break;
+    case 'calligraphy':
+      drawCalligraphyCursor(ctx, canvas, x, y, diameter);
+      break;
+    default:
+      drawDefaultCircleCursor(ctx, canvas, x, y, diameter);
   }
 }
 
@@ -66,6 +196,8 @@ function applyCanvasCursorClass(canvas, toolName) {
 
   if (CURSOR_NONE_TOOLS.includes(toolName)) {
     canvas.style.cursor = 'none';
+  } else if (STAMP_TOOLS.includes(toolName)) {
+    canvas.style.cursor = 'crosshair';
   } else if (toolName === 'hand') {
     canvas.style.cursor = HAND_GRAB_STYLE;
   } else if (toolName === 'text') {

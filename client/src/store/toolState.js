@@ -3,6 +3,17 @@ import canvasState from "./canvasState";
 import selectionState from "./selectionState";
 import { commitSelectionSession } from "../utils/selectionSession";
 
+const DEFAULT_TOOL_PARAMS = {
+  marker: { angle: 0 },
+  airbrush: { scatter: 15 },
+  smudge: { strength: 50 },
+  watercolor: { saturation: 50 },
+  oil: { edgeHardness: 70 },
+  pastel: { graininess: 60 },
+  calligraphy: { speedSensitivity: 50 },
+  stamp: { stampSize: 48, selectedStamp: '😊' },
+};
+
 class ToolState {
   tool = null;
   toolName = null;
@@ -13,21 +24,41 @@ class ToolState {
 
   lineWidths = {
     brush: 1,
+    marker: 12,
+    airbrush: 20,
+    smudge: 24,
+    watercolor: 14,
+    oil: 10,
+    pastel: 12,
+    calligraphy: 8,
     rect: 1,
     circle: 1,
+    ellipse: 1,
     polygon: 1,
     eraser: 10,
     line: 1,
     arrow: 2,
     text: 16,
     fill: 1,
-    pipette: 1
+    pipette: 1,
+    stamp: 48,
   };
+
+  defaultOpacity = {
+    marker: 0.5,
+    airbrush: 0.35,
+    watercolor: 0.45,
+    pastel: 0.35,
+  };
+
+  toolParams = JSON.parse(JSON.stringify(DEFAULT_TOOL_PARAMS));
 
   groups = {
     selection: ["select", "lasso"],
     brush: ["brush", "line", "arrow"],
-    shapes: ["circle", "rect", "polygon"],
+    brushExtra: ["marker", "airbrush", "smudge"],
+    brushPro: ["watercolor", "oil", "pastel", "calligraphy"],
+    shapes: ["circle", "rect", "polygon", "ellipse", "stamp"],
     color: ["fill", "pipette"],
     eraser: ["eraser"],
   };
@@ -35,9 +66,23 @@ class ToolState {
   lastSelected = {
     selection: "select",
     brush: "brush",
+    brushExtra: "marker",
+    brushPro: "watercolor",
     shapes: "circle",
     color: "fill",
     eraser: "eraser",
+  };
+
+  groupLabels = {
+    brush: { brush: "Кисть", line: "Линия", arrow: "Стрелка" },
+    brushExtra: { marker: "Маркер", airbrush: "Аэрограф", smudge: "Размывайка" },
+    brushPro: { watercolor: "Акварель", oil: "Масляная", pastel: "Пастель", calligraphy: "Каллиграфия" },
+    shapes: {
+      circle: "Круг", rect: "Прямоугольник", polygon: "Многоугольник",
+      ellipse: "Эллипс", stamp: "Штампики",
+    },
+    color: { pipette: "Пипетка", fill: "Заливка" },
+    selection: { select: "Выделение", lasso: "Лассо" },
   };
 
   constructor() {
@@ -45,7 +90,7 @@ class ToolState {
   }
 
   getGroupForTool(toolName) {
-    for (let group in this.groups) {
+    for (const group in this.groups) {
       if (this.groups[group].includes(toolName)) return group;
     }
     return null;
@@ -57,6 +102,20 @@ class ToolState {
 
   isToolInGroup(toolName, group) {
     return this.groups[group].includes(toolName);
+  }
+
+  getToolParams(toolName) {
+    return { ...(this.toolParams[toolName] || {}) };
+  }
+
+  setToolParam(toolName, key, value) {
+    if (!this.toolParams[toolName]) {
+      this.toolParams[toolName] = {};
+    }
+    this.toolParams[toolName][key] = value;
+    if (this.toolName === toolName && this.tool) {
+      this.tool[key] = value;
+    }
   }
 
   setTool(tool, toolNameOverride) {
@@ -77,10 +136,19 @@ class ToolState {
     const group = this.getGroupForTool(this.toolName);
     if (group) this.lastSelected[group] = this.toolName;
 
+    if (this.defaultOpacity[this.toolName] !== undefined) {
+      this.strokeOpacity = this.defaultOpacity[this.toolName];
+    }
+
     this.tool.setStrokeColor?.(this.strokeColor);
     this.tool.setFillColor?.(this.fillColor);
     this.tool.setStrokeOpacity?.(this.strokeOpacity);
     this.tool.setLineWidth?.(this.lineWidths[this.toolName] ?? 1);
+
+    const params = this.getToolParams(this.toolName);
+    Object.entries(params).forEach(([key, value]) => {
+      if (this.tool) this.tool[key] = value;
+    });
 
     if (this.tool.canvas) {
       const ctx = this.tool.canvas.getContext("2d", { willReadFrequently: true });
@@ -95,7 +163,6 @@ class ToolState {
     this.tool.listen?.();
     canvasState.redrawCanvas();
   }
-
 
   setLineWidth(lineWidth) {
     if (this.tool && this.toolName) {

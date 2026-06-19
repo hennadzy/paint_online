@@ -1,10 +1,13 @@
 import Rect from "../tools/Rect";
 import Circle from "../tools/Circle";
+import Ellipse from "../tools/Ellipse";
 import Line from "../tools/Line";
 import Text from "../tools/Text";
 import Polygon from "../tools/Polygon";
 import Arrow from "../tools/Arrow";
 import { floodFillImageData } from "../utils/floodFill";
+import { renderSpecialBrushStroke, BRUSH_STROKE_TYPES } from "../utils/brushEffects";
+import { getStampById } from "../utils/stampPresets";
 import { eraseMaskFromBuffer, eraseMaskRegionFromBuffer } from "../utils/selectionUtils";
 
 class CanvasService {
@@ -82,11 +85,21 @@ drawStroke(ctx, stroke) {
     case "polygon":
       this.drawPolygonStroke(ctx, stroke);
       break;
+    case "ellipse":
+      this.drawEllipseStroke(ctx, stroke);
+      break;
+    case "stamp":
+      return this.drawStampStroke(ctx, stroke);
     case "text":
       this.drawTextStroke(ctx, stroke);
       break;
     case "fill":
       this.drawFillStroke(ctx, stroke);
+      break;
+    default:
+      if (BRUSH_STROKE_TYPES.includes(stroke.type)) {
+        renderSpecialBrushStroke(ctx, stroke, ctx.canvas);
+      }
       break;
   }
 
@@ -272,6 +285,42 @@ drawRectStroke(ctx, stroke) {
     ctx.arc(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(radius), 0, 2 * Math.PI);
     ctx.stroke();
     ctx.restore();
+  }
+
+  drawEllipseStroke(ctx, stroke) {
+    const { x, y, width, height, strokeStyle = '#000000', strokeOpacity = 1, lineWidth = 5 } = stroke;
+    const color = this.hexToRgba(strokeStyle, strokeOpacity);
+    Ellipse.staticDraw(ctx, x, y, width, height, color, lineWidth);
+  }
+
+  drawStampStroke(ctx, stroke) {
+    const { x, y, width, height, stampId, stampKind, stampContent } = stroke;
+    const preset = getStampById(stampId);
+    const kind = stampKind || preset.kind;
+
+    ctx.save();
+    ctx.globalAlpha = stroke.strokeOpacity ?? 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    if (kind === 'emoji') {
+      const emoji = stampContent || preset.content;
+      const size = height || width || 48;
+      ctx.font = `${size}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, x + size / 2, y + size / 2);
+      ctx.restore();
+      return Promise.resolve();
+    }
+
+    const raw = stampContent || preset.content;
+    const src = raw?.default || raw;
+    if (typeof src === 'string') {
+      return this.loadImageForStroke({ x, y, width, height, imageData: src }, ctx);
+    }
+
+    ctx.restore();
+    return Promise.resolve();
   }
 
   drawLineStroke(ctx, stroke) {

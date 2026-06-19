@@ -110,7 +110,15 @@ html, body {
 .main-canvas.eraser-cursor,
 .main-canvas.rect-cursor,
 .main-canvas.circle-cursor,
-.main-canvas.line-cursor {
+.main-canvas.ellipse-cursor,
+.main-canvas.line-cursor,
+.main-canvas.marker-cursor,
+.main-canvas.airbrush-cursor,
+.main-canvas.smudge-cursor,
+.main-canvas.watercolor-cursor,
+.main-canvas.oil-cursor,
+.main-canvas.pastel-cursor,
+.main-canvas.calligraphy-cursor {
   cursor: none;
 }
 

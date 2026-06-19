@@ -1,0 +1,86 @@
+.stamp-palette {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid #444;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+
+  &__label {
+    color: #bbb;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  &__size {
+    color: #888;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 420px;
+  }
+
+  &__item {
+    width: 36px;
+    height: 36px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: #2a2a2a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    transition: border-color 0.15s, background 0.15s;
+
+    &:hover {
+      background: #3a3a3a;
+    }
+
+    &.active {
+      border-color: #6ea8fe;
+      background: #333;
+    }
+  }
+
+  &__emoji {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  &__img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 768px) {
+  .stamp-palette {
+    bottom: 110px;
+    padding: 6px 10px;
+
+    &__item {
+      width: 32px;
+      height: 32px;
+    }
+
+    &__emoji {
+      font-size: 18px;
+    }
+  }
+}
