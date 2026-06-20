@@ -29,10 +29,6 @@ export default class Watercolor extends BaseStrokeTool {
     return pt;
   }
 
-  getPointSpacing() {
-    return Math.max(1, (this.lineWidth || 5) * 0.16);
-  }
-
   drawLive() {
     this.drawLiveFull(renderWatercolorStroke);
   }

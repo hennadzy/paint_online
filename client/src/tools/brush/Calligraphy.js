@@ -9,10 +9,6 @@ export default class Calligraphy extends BaseStrokeTool {
     this.angleSensitivity = 50;
   }
 
-  getPointSpacing() {
-    return Math.max(1, (this.lineWidth || 5) * 0.12);
-  }
-
   enrichPoint(pt, e) {
     if (e?.pointerType === 'pen') {
       pt.pr = this.getPressureAdjustedLineWidth(e) / Math.max(1, this.lineWidth);

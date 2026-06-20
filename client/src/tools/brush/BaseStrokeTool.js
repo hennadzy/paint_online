@@ -3,6 +3,10 @@ import canvasState from '../../store/canvasState';
 import toolState from '../../store/toolState';
 import CanvasService from '../../services/CanvasService';
 
+const HEAVY_STROKE_TYPES = new Set([
+  'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy',
+]);
+
 export default class BaseStrokeTool extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
@@ -14,6 +18,9 @@ export default class BaseStrokeTool extends Tool {
     this.strokeType = 'brush';
     this._liveRafId = null;
     this._pendingLiveRender = null;
+    this._liveLayer = null;
+    this._liveLayerCtx = null;
+    this._liveDrawnCount = 0;
   }
 
   setStrokeColor(color) {
@@ -29,7 +36,40 @@ export default class BaseStrokeTool extends Tool {
   }
 
   getPointSpacing() {
-    return Math.max(1, (this.lineWidth || 5) * 0.15);
+    const base = Math.max(1, (this.lineWidth || 5) * 0.15);
+    const heavyMul = HEAVY_STROKE_TYPES.has(this.strokeType) ? 2 : 1;
+    const mobileMul = window.innerWidth <= 768 ? 1.4 : 1;
+    return base * heavyMul * mobileMul;
+  }
+
+  ensureLiveLayer() {
+    if (!this._liveLayer) {
+      this._liveLayer = document.createElement('canvas');
+      this._liveLayerCtx = this._liveLayer.getContext('2d', { willReadFrequently: true });
+    }
+    if (
+      this._liveLayer.width !== this.canvas.width ||
+      this._liveLayer.height !== this.canvas.height
+    ) {
+      this._liveLayer.width = this.canvas.width;
+      this._liveLayer.height = this.canvas.height;
+      this._liveDrawnCount = 0;
+    }
+    return this._liveLayerCtx;
+  }
+
+  clearLiveLayer() {
+    if (this._liveLayerCtx) {
+      this._liveLayerCtx.clearRect(0, 0, this._liveLayer.width, this._liveLayer.height);
+    }
+    this._liveDrawnCount = 0;
+  }
+
+  presentLiveStroke() {
+    CanvasService.blitBufferToDisplay();
+    if (!this._liveLayer) return;
+    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(this._liveLayer, 0, 0);
   }
 
   applyToolParams() {
@@ -63,6 +103,7 @@ export default class BaseStrokeTool extends Tool {
     this.canvas.removeEventListener('pointercancel', this.pointerUpHandlerBound);
     this.canvas.removeEventListener('lostpointercapture', this.lostPointerCaptureHandlerBound);
     this.cancelLivePreview();
+    this.clearLiveLayer();
   }
 
   cancelLivePreview() {
@@ -89,6 +130,7 @@ export default class BaseStrokeTool extends Tool {
     this._hasCommitted = false;
     canvasState.isDrawing = true;
     this.cancelLivePreview();
+    this.clearLiveLayer();
     this.points = [];
     this.resetPenPressureState();
     this.applyToolParams();
@@ -100,8 +142,8 @@ export default class BaseStrokeTool extends Tool {
     this.lastTime = Date.now();
     const pt = this.createPoint(x, y, e, 0);
     this.points.push(pt);
-    CanvasService.blitBufferToDisplay();
     this.drawLive();
+    this.presentLiveStroke();
   }
 
   pointerMoveHandler(e) {
@@ -156,6 +198,7 @@ export default class BaseStrokeTool extends Tool {
     this._hasCommitted = true;
     this.mouseDown = false;
     this.cancelLivePreview();
+    this.clearLiveLayer();
     this.commitStroke();
   }
 
@@ -192,22 +235,31 @@ export default class BaseStrokeTool extends Tool {
     const paintFn = this._pendingLiveRender;
     this._pendingLiveRender = null;
     if (!paintFn || !this.mouseDown || this.points.length === 0) return;
-    CanvasService.blitBufferToDisplay();
     paintFn();
+    this.presentLiveStroke();
   }
 
   drawLiveFull(renderFn, needsCanvas = false) {
     if (this.points.length === 0) return;
-    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+
+    const liveCtx = this.ensureLiveLayer();
+    const from = Math.max(0, this._liveDrawnCount - 1);
+    const segmentPoints = this.points.slice(from);
+    if (segmentPoints.length === 0) return;
+
     const payload = {
       ...this.buildStrokePayload(),
-      livePreview: window.innerWidth <= 768,
+      points: segmentPoints,
+      livePreview: true,
     };
+
     if (needsCanvas) {
-      renderFn(ctx, payload, this.canvas);
+      renderFn(liveCtx, payload, this.canvas);
     } else {
-      renderFn(ctx, payload);
+      renderFn(liveCtx, payload);
     }
+
+    this._liveDrawnCount = this.points.length;
   }
 
   buildStrokePayload() {

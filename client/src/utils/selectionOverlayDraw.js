@@ -1,6 +1,6 @@
 import selectionState from "../store/selectionState";
 import { drawMarchingAnts, imageDataToCanvas } from "./selectionUtils";
-import { drawTransformHandles, getTransformedBounds } from "./selectionSession";
+import { drawTransformHandles, getTransformedBounds } from "../utils/selectionSession";
 
 export function selectionNeedsVisual() {
   return (
@@ -9,6 +9,21 @@ export function selectionNeedsVisual() {
     selectionState.hasSelection ||
     selectionState.transformSessionActive
   );
+}
+
+export function syncSelectionOverlay(mainCanvas, overlayCanvas) {
+  if (!mainCanvas || !overlayCanvas) return;
+
+  if (overlayCanvas.width !== mainCanvas.width) {
+    overlayCanvas.width = mainCanvas.width;
+  }
+  if (overlayCanvas.height !== mainCanvas.height) {
+    overlayCanvas.height = mainCanvas.height;
+  }
+  if (mainCanvas.style.width) {
+    overlayCanvas.style.width = mainCanvas.style.width;
+    overlayCanvas.style.height = mainCanvas.style.height;
+  }
 }
 
 export function drawSelectionPreview(ctx, canvas, { clear = true } = {}) {
@@ -73,8 +88,4 @@ export function drawSelectionPreview(ctx, canvas, { clear = true } = {}) {
     const rect = { x: previewX, y: previewY, width, height };
     drawMarchingAnts(ctx, rect, selectionState.marchingAntsOffset);
   }
-}
-
-export function isMobileSelectionComposite() {
-  return window.innerWidth <= 768;
 }

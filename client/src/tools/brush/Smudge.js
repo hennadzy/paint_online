@@ -8,10 +8,6 @@ export default class Smudge extends BaseStrokeTool {
     this.strength = 50;
   }
 
-  getPointSpacing() {
-    return Math.max(2, this.lineWidth * 0.2);
-  }
-
   drawLive() {
     this.drawLiveFull(renderSmudgeStroke, true);
   }

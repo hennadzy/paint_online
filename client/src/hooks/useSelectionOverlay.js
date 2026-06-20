@@ -4,8 +4,8 @@ import canvasState from "../store/canvasState";
 import selectionState from "../store/selectionState";
 import {
   drawSelectionPreview,
-  isMobileSelectionComposite,
   selectionNeedsVisual,
+  syncSelectionOverlay,
 } from "../utils/selectionOverlayDraw";
 
 export function useSelectionOverlay(overlayRef, canvasRef) {
@@ -13,23 +13,25 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
     let animationId = null;
     let wasAnimating = false;
 
-    const redrawSelection = () => {
-      if (isMobileSelectionComposite()) {
-        canvasState.redrawCanvas();
-        return;
-      }
-
+    const redrawOverlay = () => {
       const overlay = overlayRef.current;
       const canvas = canvasRef.current;
       if (!overlay || !canvas) return;
+
+      syncSelectionOverlay(canvas, overlay);
       const ctx = overlay.getContext("2d");
       drawSelectionPreview(ctx, overlay);
+    };
+
+    const redrawAll = () => {
+      canvasState.redrawCanvas();
+      redrawOverlay();
     };
 
     const tick = () => {
       const overlay = overlayRef.current;
       const canvas = canvasRef.current;
-      if (!canvas || (!isMobileSelectionComposite() && !overlay)) {
+      if (!overlay || !canvas) {
         animationId = requestAnimationFrame(tick);
         return;
       }
@@ -38,15 +40,12 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
 
       if (needsAnimation) {
         selectionState.advanceMarchingAnts();
-        redrawSelection();
+        redrawOverlay();
         wasAnimating = true;
       } else if (wasAnimating) {
-        if (isMobileSelectionComposite()) {
-          canvasState.redrawCanvas();
-        } else if (overlay) {
-          const ctx = overlay.getContext("2d");
-          ctx.clearRect(0, 0, overlay.width, overlay.height);
-        }
+        canvasState.redrawCanvas();
+        const ctx = overlay.getContext("2d");
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
         wasAnimating = false;
       }
 
@@ -70,9 +69,7 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
       ],
       () => {
         if (!selectionNeedsVisual()) return;
-        if (isMobileSelectionComposite()) {
-          canvasState.redrawCanvas();
-        }
+        redrawAll();
       }
     );
 
