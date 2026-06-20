@@ -93,9 +93,6 @@ class SelectionState {
 
   enterTransformSession() {
     this.transformSessionActive = true;
-    if (!this.floatingOnly) {
-      this.hasCut = false;
-    }
   }
 
   exitTransformSession() {

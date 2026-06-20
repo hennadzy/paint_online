@@ -109,7 +109,7 @@ export default class Lasso extends Tool {
     if (path.length < 3) return;
 
     this.finalizeSelection(path, getSelectionMode(e));
-    enterTransformSession();
+    enterTransformSession(this.canvas);
   }
 
   releaseCapture(e) {

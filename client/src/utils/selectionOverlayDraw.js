@@ -11,8 +11,12 @@ export function selectionNeedsVisual() {
   );
 }
 
-export function drawSelectionPreview(ctx, canvas) {
+export function drawSelectionPreview(ctx, canvas, { clear = true } = {}) {
   if (!ctx || !canvas) return;
+
+  if (clear) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
   if (selectionState.draftRect) {
     drawMarchingAnts(ctx, selectionState.draftRect, selectionState.marchingAntsOffset);

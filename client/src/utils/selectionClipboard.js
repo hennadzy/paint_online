@@ -134,6 +134,6 @@ export function pasteSelection(canvas) {
     imageData,
     floatingOnly: true,
   });
-  enterTransformSession();
+  enterTransformSession(canvas);
   return true;
 }

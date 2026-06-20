@@ -337,11 +337,11 @@
     z-index: 999;
 
     .setting-row {
-      display: flex;
-      gap: 0;
-      align-items: flex-end;
-      flex-wrap: nowrap;
-      width: 100%;
+      display: contents;
+    }
+
+    .setting-row--follow {
+      margin-top: 0;
     }
 
     .setting-slider-group {
@@ -529,11 +529,27 @@
     z-index: 997;
 
     .setting-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
       width: 100%;
-      flex-wrap: nowrap;
+      align-items: center;
+
+      &--follow {
+        margin-top: 14px;
+      }
+
+      > * {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      > .setting-color-input {
+        width: 40px;
+        max-width: 40px;
+        justify-self: start;
+      }
     }
 
     .setting-slider-group {
@@ -541,12 +557,14 @@
       flex-direction: row;
       align-items: center;
       gap: 6px;
-      flex: 1 1 0;
-      min-width: 90px;
+      flex: none;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
 
       input[type="range"] {
         flex: 1 1 auto;
-        min-width: 90px;
+        min-width: 0;
         width: 100%;
       }
     }
@@ -554,17 +572,18 @@
     .setting-slider-group--width,
     .setting-slider-group--opacity,
     .setting-slider-group--param {
-      flex: 1 1 0;
-      min-width: 90px;
-      max-width: none;
+      flex: none;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .setting-toggle {
       display: flex;
       align-items: center;
       gap: 4px;
-      flex: 0 0 auto;
-      flex-shrink: 0;
+      flex: none;
+      width: 100%;
+      max-width: 100%;
       font-size: 11px;
       color: #ddd;
       white-space: nowrap;
@@ -611,107 +630,9 @@
     }
 
     &--multi-row {
-      min-height: 88px;
+      min-height: auto;
       gap: 4px;
       padding-bottom: 4px;
-
-      .setting-row--mobile-params,
-      .setting-row--mobile-extra {
-        margin-top: 14px;
-        margin-bottom: 0;
-        padding-top: 0;
-      }
-
-      .setting-row--mobile-params + .setting-row--mobile-extra {
-        margin-top: 8px;
-      }
-
-      .setting-row:first-child {
-        .setting-slider-group--width,
-        .setting-slider-group--opacity,
-        .setting-slider-group--param {
-          flex: 0 0 calc(50% - 4px);
-          max-width: calc(50% - 4px);
-
-          .setting-slider-row {
-            width: 100%;
-          }
-
-          .setting-slider-col {
-            flex: 1 1 auto;
-            min-width: 0;
-          }
-
-          input[type="range"] {
-            width: 100%;
-            flex: 1 1 auto;
-          }
-        }
-      }
-
-      &.setting-bar--mobile-two-row {
-        padding-top: 8px;
-        padding-bottom: 2px;
-
-        .setting-row--mobile-extra {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          align-items: center;
-          gap: 8px 12px;
-          flex-wrap: nowrap;
-
-          .setting-toggle {
-            grid-column: 1;
-            flex: none;
-            max-width: none;
-          }
-
-          .setting-color-input {
-            grid-column: 2;
-            justify-self: start;
-            flex: none;
-            margin-left: 0;
-          }
-        }
-      }
-
-      &.setting-bar--mobile-three-row {
-        .setting-row--mobile-params {
-          .setting-slider-group--param {
-            flex: 0 0 calc(50% - 4px);
-            max-width: calc(50% - 4px);
-          }
-        }
-      }
-
-      .setting-row--mobile-extra {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .setting-row--mobile-extra .setting-slider-group {
-        flex: 0 0 calc(50% - 4px);
-        max-width: calc(50% - 4px);
-
-        .setting-slider-row {
-          width: 100%;
-        }
-
-        .setting-slider-col {
-          flex: 1 1 auto;
-          min-width: 0;
-        }
-
-        input[type="range"] {
-          width: 100%;
-          flex: 1 1 auto;
-        }
-      }
-
-      .setting-row--mobile-extra .setting-toggle {
-        flex: 0 0 calc(50% - 4px);
-      }
     }
   }
 

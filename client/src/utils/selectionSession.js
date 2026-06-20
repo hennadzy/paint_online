@@ -150,8 +150,11 @@ export function hitTestTransformTarget(px, py, canvasWidth = 0) {
   return null;
 }
 
-export function enterTransformSession() {
+export function enterTransformSession(canvas) {
   selectionState.enterTransformSession();
+  if (canvas && !selectionState.floatingOnly && !selectionState.hasCut) {
+    cutSelectionFromBuffer(canvas);
+  }
 }
 
 export function cutSelectionFromBuffer(canvas) {
@@ -253,7 +256,6 @@ export function createTransformSessionHandlers(tool) {
       initialTransform = { ...selectionState.transform };
       initialBounds = getLocalBounds();
       selectionState.setDragging(handle.id === "move");
-      cutSelectionFromBuffer(tool.canvas);
       tool.canvas.setPointerCapture?.(e.pointerId);
       return true;
     },

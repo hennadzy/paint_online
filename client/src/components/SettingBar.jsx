@@ -35,6 +35,14 @@ const PRESSURE_TOOLS = new Set([
   'brush', 'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy', 'eraser',
 ]);
 
+function chunkItems(items, size) {
+  const rows = [];
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size));
+  }
+  return rows;
+}
+
 const SettingBar = observer(() => {
   const barRef = useRef(null);
   const inputRef = useRef(null);
@@ -116,13 +124,6 @@ const SettingBar = observer(() => {
   const showPressure = PRESSURE_TOOLS.has(currentToolName);
   const showOpacity = !['smudge'].includes(currentToolName);
   const showColor = !isStampTool;
-  const rangeExtras = extraParams.filter((p) => p.type === 'range');
-  const toggleExtras = extraParams.filter((p) => p.type === 'toggle');
-  const mainRangeCount = 1 + (showOpacity ? 1 : 0) + rangeExtras.length;
-  const mobileTwoRow = mainRangeCount === 2 && (showPressure || showColor || toggleExtras.length > 0);
-  const multiRow = mainRangeCount > 2;
-  const useThirdRow = multiRow;
-  const useSecondRow = mobileTwoRow || multiRow;
   const widthLabel = isStampTool ? 'Размер' : 'Толщина';
 
   const renderRangeGroup = (def, className = 'setting-slider-group--param') => (
@@ -156,123 +157,97 @@ const SettingBar = observer(() => {
     </label>
   );
 
-  const renderExtras = () => extraParams.map((def) => (
-    def.type === 'toggle' ? renderToggle(def) : renderRangeGroup(def)
-  ));
+  const widthControl = (
+    <div key="width" className="setting-slider-group setting-slider-group--width">
+      <div className="setting-slider-row">
+        <div className="setting-slider-col">
+          <input
+            ref={inputRef}
+            id="line-width"
+            type="range"
+            min={isStampTool ? 16 : 1}
+            max={isStampTool ? 200 : 50}
+            value={currentWidth}
+            onChange={handleChange}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          />
+          <span className="setting-caption">{widthLabel}</span>
+        </div>
+        <span className="setting-value">{lineWidth}px</span>
+      </div>
+    </div>
+  );
 
-  const renderToggleExtras = () => toggleExtras.map(renderToggle);
+  const opacityControl = showOpacity && (
+    <div key="opacity" className="setting-slider-group setting-slider-group--opacity">
+      <div className="setting-slider-row">
+        <div className="setting-slider-col">
+          <input
+            ref={opacityInputRef}
+            id="stroke-opacity"
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={toolState.strokeOpacity}
+            onChange={handleOpacityChange}
+            onTouchStart={handleOpacityTouchStart}
+            onTouchMove={handleOpacityTouchMove}
+            onTouchEnd={handleOpacityTouchEnd}
+          />
+          <span className="setting-caption">Прозрачность</span>
+        </div>
+        <span className="setting-value">{Math.round(toolState.strokeOpacity * 100)}%</span>
+      </div>
+    </div>
+  );
 
-  const renderRangeExtras = () => rangeExtras.map((def) => renderRangeGroup(def));
-
-  const renderPressureToggle = () => showPressure && (
-    <label className="setting-toggle">
+  const orderedControls = [
+    widthControl,
+    opacityControl,
+    ...extraParams.map((def) => (
+      def.type === 'toggle' ? renderToggle(def) : renderRangeGroup(def)
+    )),
+    showPressure && (
+      <label key="pressure" className="setting-toggle">
+        <input
+          type="checkbox"
+          checked={toolState.pressureSensitivity}
+          onChange={(e) => toolState.setPressureSensitivity(e.target.checked)}
+        />
+        <span className="setting-toggle__label">Сила нажатия</span>
+      </label>
+    ),
+    showColor && (
       <input
-        type="checkbox"
-        checked={toolState.pressureSensitivity}
-        onChange={(e) => toolState.setPressureSensitivity(e.target.checked)}
+        key="color"
+        type="color"
+        className="setting-color-input"
+        value={colorValue}
+        onChange={(e) => setColor(e.target.value)}
       />
-      <span className="setting-toggle__label">Сила нажатия</span>
-    </label>
-  );
+    ),
+  ].filter(Boolean);
 
-  const colorInput = showColor && (
-    <input
-      type="color"
-      className="setting-color-input"
-      value={colorValue}
-      onChange={(e) => setColor(e.target.value)}
-    />
-  );
+  const mobileRows = chunkItems(orderedControls, 2);
 
   return (
     <>
       <div
         ref={barRef}
-        className={`setting-bar${useSecondRow || useThirdRow ? ' setting-bar--multi-row' : ''}${mobileTwoRow ? ' setting-bar--mobile-two-row' : ''}${useThirdRow ? ' setting-bar--mobile-three-row' : ''}`}
+        className={`setting-bar${mobileRows.length > 1 ? ' setting-bar--multi-row' : ''}`}
         data-nosnippet
       >
-        <div className="setting-row">
-          <div className="setting-slider-group setting-slider-group--width">
-            <div className="setting-slider-row">
-              <div className="setting-slider-col">
-                <input
-                  ref={inputRef}
-                  id="line-width"
-                  type="range"
-                  min={isStampTool ? 16 : 1}
-                  max={isStampTool ? 200 : 50}
-                  value={currentWidth}
-                  onChange={handleChange}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                />
-                <span className="setting-caption">{widthLabel}</span>
-              </div>
-              <span className="setting-value">{lineWidth}px</span>
-            </div>
+        {mobileRows.map((rowItems, rowIndex) => (
+          <div
+            key={rowIndex}
+            className={`setting-row${rowIndex > 0 ? ' setting-row--follow' : ''}`}
+          >
+            {rowItems}
           </div>
-
-          {showOpacity && (
-            <div className="setting-slider-group setting-slider-group--opacity">
-              <div className="setting-slider-row">
-                <div className="setting-slider-col">
-                  <input
-                    ref={opacityInputRef}
-                    id="stroke-opacity"
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={toolState.strokeOpacity}
-                    onChange={handleOpacityChange}
-                    onTouchStart={handleOpacityTouchStart}
-                    onTouchMove={handleOpacityTouchMove}
-                    onTouchEnd={handleOpacityTouchEnd}
-                  />
-                  <span className="setting-caption">Прозрачность</span>
-                </div>
-                <span className="setting-value">{Math.round(toolState.strokeOpacity * 100)}%</span>
-              </div>
-            </div>
-          )}
-
-          {mobileTwoRow && !showOpacity && renderRangeExtras()}
-
-          {!useSecondRow && renderExtras()}
-          {!useSecondRow && renderPressureToggle()}
-          {!useSecondRow && colorInput}
-
-          {multiRow && (
-            <div className="setting-desktop-cluster">
-              {renderExtras()}
-              {renderPressureToggle()}
-              {colorInput}
-            </div>
-          )}
-        </div>
-
-        {useThirdRow && (
-          <div className="setting-row setting-row--mobile-params">
-            {renderRangeExtras()}
-          </div>
-        )}
-
-        {mobileTwoRow && (
-          <div className="setting-row setting-row--mobile-extra">
-            {renderToggleExtras()}
-            {renderPressureToggle()}
-            {colorInput}
-          </div>
-        )}
-
-        {useThirdRow && (
-          <div className="setting-row setting-row--mobile-extra">
-            {renderToggleExtras()}
-            {renderPressureToggle()}
-            {colorInput}
-          </div>
-        )}
+        ))}
       </div>
       <StampPalette />
     </>

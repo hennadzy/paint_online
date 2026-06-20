@@ -70,7 +70,9 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
       ],
       () => {
         if (!selectionNeedsVisual()) return;
-        redrawSelection();
+        if (isMobileSelectionComposite()) {
+          canvasState.redrawCanvas();
+        }
       }
     );
 

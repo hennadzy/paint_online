@@ -108,7 +108,7 @@ export default class RectSelect extends Tool {
     if (rect.width < minSize || rect.height < minSize) return;
 
     this.finalizeSelection(rect, getSelectionMode(e));
-    enterTransformSession();
+    enterTransformSession(this.canvas);
   }
 
   releaseCapture(e) {

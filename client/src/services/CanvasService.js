@@ -600,7 +600,7 @@ drawPolygonStroke(ctx, stroke) {
     }
 
     if (isMobileSelectionComposite() && selectionNeedsVisual()) {
-      drawSelectionPreview(this.ctx, this.canvas);
+      drawSelectionPreview(this.ctx, this.canvas, { clear: false });
     }
   }
 
