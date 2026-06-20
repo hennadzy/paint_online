@@ -276,6 +276,9 @@ export function createTransformSessionHandlers(tool) {
       const transform = { ...initialTransform };
 
       if (activeHandle.id === "move") {
+        if (!selectionState.hasCut && !selectionState.floatingOnly) {
+          cutSelectionFromBuffer(tool.canvas);
+        }
         selectionState.setPreviewPosition(bounds.x + dx, bounds.y + dy);
         return;
       }

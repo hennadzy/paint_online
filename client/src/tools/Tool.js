@@ -2,6 +2,9 @@ import toolState from "../store/toolState";
 import { API_URL } from "../store/canvasState";
 import axios from "axios";
 
+const SAVE_DEBOUNCE_MS = 1200;
+const pendingSaves = new Map();
+
 export default class Tool {
   constructor(canvas, socket, id, username) {
     this.canvas = canvas;
@@ -148,7 +151,15 @@ export default class Tool {
   }
 
   saveImage() {
-    if (this.id) {
+    if (!this.id) return;
+
+    const pending = pendingSaves.get(this.id);
+    if (pending) {
+      clearTimeout(pending);
+    }
+
+    const timeoutId = setTimeout(() => {
+      pendingSaves.delete(this.id);
       const roomToken = localStorage.getItem(`room_token_${this.id}`);
       if (!roomToken) return;
       axios.post(
@@ -156,6 +167,8 @@ export default class Tool {
         { img: this.canvas.toDataURL() },
         { headers: { Authorization: `Bearer ${roomToken}` } }
       );
-    }
+    }, SAVE_DEBOUNCE_MS);
+
+    pendingSaves.set(this.id, timeoutId);
   }
 }

@@ -190,26 +190,6 @@ export function renderSmudgeStroke(ctx, stroke, canvas) {
   }
 }
 
-function mixStrokeWithCanvas(ctx, x, y, strokeStyle, amount) {
-  try {
-    const sx = Math.max(0, Math.min(ctx.canvas.width - 1, Math.floor(x)));
-    const sy = Math.max(0, Math.min(ctx.canvas.height - 1, Math.floor(y)));
-    const d = ctx.getImageData(sx, sy, 1, 1).data;
-    if (d[3] < 4) return strokeStyle;
-
-    const sr = parseInt(strokeStyle.slice(1, 3), 16);
-    const sg = parseInt(strokeStyle.slice(3, 5), 16);
-    const sb = parseInt(strokeStyle.slice(5, 7), 16);
-    const t = amount * (d[3] / 255);
-    const r = Math.round(sr * (1 - t) + d[0] * t);
-    const g = Math.round(sg * (1 - t) + d[1] * t);
-    const b = Math.round(sb * (1 - t) + d[2] * t);
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-  } catch {
-    return strokeStyle;
-  }
-}
-
 function drawWatercolorWash(ctx, x, y, r, colorOrHex, alpha, rand, options = {}) {
   const { texture = true, bleed = 0.5, livePreview = false } = options;
   const strokeStyle = typeof colorOrHex === 'string' && colorOrHex.startsWith('#')
@@ -284,8 +264,7 @@ export function renderWatercolorStroke(ctx, stroke) {
     const r = p.r ?? baseW / 2;
     const alpha = p.a ?? defaultAlpha;
     const dwell = p.dwell ?? 0;
-    const mix = livePreview ? 0 : (0.12 + (1 - waterFactor) * 0.22 + dwell * 0.08);
-    const mixedColor = mix > 0 ? mixStrokeWithCanvas(ctx, p.x, p.y, strokeStyle, mix) : strokeStyle;
+    const mixedColor = strokeStyle;
 
     drawWatercolorWash(ctx, p.x, p.y, r, mixedColor, alpha, rand, {
       texture: useTexture,
@@ -311,25 +290,6 @@ export function renderWatercolorStroke(ctx, stroke) {
   });
 }
 
-function mixOilWithCanvas(ctx, x, y, strokeStyle, amount) {
-  try {
-    const sx = Math.max(0, Math.min(ctx.canvas.width - 1, Math.floor(x)));
-    const sy = Math.max(0, Math.min(ctx.canvas.height - 1, Math.floor(y)));
-    const d = ctx.getImageData(sx, sy, 1, 1).data;
-    if (d[3] < 4) return strokeStyle;
-    const sr = parseInt(strokeStyle.slice(1, 3), 16);
-    const sg = parseInt(strokeStyle.slice(3, 5), 16);
-    const sb = parseInt(strokeStyle.slice(5, 7), 16);
-    const t = amount * 0.45;
-    const r = Math.round(sr * (1 - t) + d[0] * t);
-    const g = Math.round(sg * (1 - t) + d[1] * t);
-    const b = Math.round(sb * (1 - t) + d[2] * t);
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-  } catch {
-    return strokeStyle;
-  }
-}
-
 function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hardness, seed, livePreview = false) {
   const dx = p1.x - p0.x;
   const dy = p1.y - p0.y;
@@ -339,10 +299,8 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   const rand = seededRandom(seed);
   const roughness = 1 - hardness / 100;
   const edgeJitter = lw * roughness * 0.22;
-  const midX = (p0.x + p1.x) / 2;
-  const midY = (p0.y + p1.y) / 2;
-  const wetColor = livePreview ? strokeStyle : mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.55);
-  const bristleColor = livePreview ? strokeStyle : mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.35);
+  const wetColor = strokeStyle;
+  const bristleColor = strokeStyle;
 
   ctx.save();
   ctx.lineCap = 'round';
