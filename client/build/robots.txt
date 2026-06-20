@@ -1,12 +1,14 @@
 User-agent: *
-Allow: /
-Allow: /coloring
-Allow: /coloring/*
-Allow: /gallery
-Allow: /gallery/*
+Disallow: /
+
+Allow: /$
+Allow: /coloring$
+Allow: /coloring/
+Allow: /gallery$
+Allow: /gallery/
 Allow: /user/
-Allow: /user/*
 Allow: /help
+Allow: /help/
 
 Disallow: /static/
 Disallow: /*.json$

@@ -128,7 +128,7 @@ export function SeoMeta() {
     };
 
     if (isRoomPage) {
-      updateMeta('robots', 'noindex, follow');
+      updateMeta('robots', 'noindex, nofollow');
       return;
     }
 

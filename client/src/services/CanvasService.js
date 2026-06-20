@@ -9,6 +9,11 @@ import { floodFillImageData } from "../utils/floodFill";
 import { renderSpecialBrushStroke, renderMarkerStroke, BRUSH_STROKE_TYPES } from "../utils/brushEffects";
 import { getStampById } from "../utils/stampPresets";
 import { eraseMaskFromBuffer, eraseMaskRegionFromBuffer } from "../utils/selectionUtils";
+import {
+  drawSelectionPreview,
+  isMobileSelectionComposite,
+  selectionNeedsVisual,
+} from "../utils/selectionOverlayDraw";
 
 class CanvasService {
   constructor() {
@@ -592,6 +597,10 @@ drawPolygonStroke(ctx, stroke) {
 
     if (this.showGrid) {
       this.drawGrid();
+    }
+
+    if (isMobileSelectionComposite() && selectionNeedsVisual()) {
+      drawSelectionPreview(this.ctx, this.canvas);
     }
   }
 

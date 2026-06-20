@@ -20,6 +20,7 @@ const {
   buildProfileIndexableHtml,
   injectSeoIntoHtml
 } = require('./utils/profileSeo');
+const { injectNoindexIntoHtml } = require('./utils/noindexSeo');
 const {
   MAIN_COLORING_SEO_TEXT,
   MAIN_COLORING_SEO_PARAGRAPHS,
@@ -137,11 +138,12 @@ function send404Page(res) {
   let html;
   try {
     html = fs.readFileSync(indexPath, 'utf8');
+    html = injectNoindexIntoHtml(html, { title: '404 — Страница не найдена | Рисование.Онлайн' });
     html = html.replace(/<body>\s*/i, '<body>\n    ' + fallback + '\n    ');
   } catch (_) {
-    html = '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>404 — Страница не найдена</title></head><body>' + fallback + '</body></html>';
+    html = '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>404 — Страница не найдена</title></head><body>' + fallback + '</body></html>';
   }
-  res.status(404).setHeader('Content-Type', 'text/html').send(html);
+  res.status(404).setHeader('X-Robots-Tag', 'noindex, nofollow').setHeader('Content-Type', 'text/html').send(html);
 }
 
 app.get('/404', (req, res) => {
@@ -733,9 +735,11 @@ app.get('*', (req, res) => {
       if (!room) {
         send404Page(res);
       } else {
-        res.setHeader('X-Robots-Tag', 'noindex');
-
-        res.sendFile(indexPath);
+        res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+        let html = fs.readFileSync(indexPath, 'utf8');
+        html = injectNoindexIntoHtml(html);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
       }
     })
     .catch(() => {

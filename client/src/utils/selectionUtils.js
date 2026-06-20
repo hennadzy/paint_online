@@ -296,9 +296,10 @@ export function pointInMask(px, py, mask, canvasWidth) {
 }
 
 export function drawMarchingAnts(ctx, rect, offset = 0, path = null) {
+  const lineWidth = window.innerWidth <= 768 ? 2 : 1;
   ctx.save();
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = 1;
+  ctx.lineWidth = lineWidth;
   ctx.setLineDash([4, 4]);
   ctx.lineDashOffset = -offset;
 
