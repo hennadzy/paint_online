@@ -74,11 +74,13 @@ export function renderMarkerStroke(ctx, stroke) {
     strokeOpacity = 0.5,
     lineWidth = 10,
     angle = 0,
+    livePreview = false,
   } = stroke;
   if (!points.length) return;
 
   const color = parseColor(strokeStyle, 1);
-  const dense = densifyPath(points, Math.max(0.35, lineWidth * 0.05));
+  const spacing = livePreview ? Math.max(0.6, lineWidth * 0.08) : Math.max(0.35, lineWidth * 0.05);
+  const dense = densifyPath(points, spacing);
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
@@ -89,9 +91,11 @@ export function renderMarkerStroke(ctx, stroke) {
   ctx.restore();
 }
 
-export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0) {
+export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false) {
   const rand = seededRandom(Math.floor(x * 1000 + y + seed));
-  const count = Math.max(12, Math.floor(radius * 2));
+  const count = livePreview
+    ? Math.max(5, Math.floor(radius * 0.65))
+    : Math.max(12, Math.floor(radius * 2));
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = color;
@@ -116,13 +120,15 @@ export function renderAirbrushStroke(ctx, stroke) {
     strokeOpacity = 0.4,
     lineWidth = 15,
     scatter = 15,
+    livePreview = false,
   } = stroke;
-  const dense = densifyPath(points, Math.max(2, lineWidth * 0.2));
+  const spacing = livePreview ? Math.max(3, lineWidth * 0.28) : Math.max(2, lineWidth * 0.2);
+  const dense = densifyPath(points, spacing);
 
   dense.forEach((p, i) => {
     const alpha = p.a ?? strokeOpacity;
     const r = p.r ?? (lineWidth / 2 + scatter * 0.5);
-    sprayAirbrush(ctx, p.x, p.y, r, parseColor(strokeStyle, 1), alpha, i);
+    sprayAirbrush(ctx, p.x, p.y, r, parseColor(strokeStyle, 1), alpha, i, livePreview);
   });
 }
 
@@ -166,8 +172,9 @@ export function applySmudgeAt(ctx, canvas, x, y, radius, strength, dirX, dirY) {
 }
 
 export function renderSmudgeStroke(ctx, stroke, canvas) {
-  const { points = [], lineWidth = 20, strength = 50 } = stroke;
-  const dense = densifyPath(points, Math.max(2, lineWidth * 0.25));
+  const { points = [], lineWidth = 20, strength = 50, livePreview = false } = stroke;
+  const spacing = livePreview ? Math.max(4, lineWidth * 0.35) : Math.max(2, lineWidth * 0.25);
+  const dense = densifyPath(points, spacing);
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
     const p1 = dense[i];
@@ -204,7 +211,7 @@ function mixStrokeWithCanvas(ctx, x, y, strokeStyle, amount) {
 }
 
 function drawWatercolorWash(ctx, x, y, r, colorOrHex, alpha, rand, options = {}) {
-  const { texture = true, bleed = 0.5 } = options;
+  const { texture = true, bleed = 0.5, livePreview = false } = options;
   const strokeStyle = typeof colorOrHex === 'string' && colorOrHex.startsWith('#')
     ? colorOrHex
     : '#000000';
@@ -224,7 +231,7 @@ function drawWatercolorWash(ctx, x, y, r, colorOrHex, alpha, rand, options = {})
   ctx.arc(bx, by, rr, 0, Math.PI * 2);
   ctx.fill();
 
-  if (texture) {
+  if (texture && !livePreview) {
     const grainCount = Math.floor(rr * 1.4);
     for (let g = 0; g < grainCount; g++) {
       const angle = rand() * Math.PI * 2;
@@ -263,10 +270,13 @@ export function renderWatercolorStroke(ctx, stroke) {
     lineWidth = 12,
     saturation = 50,
     texture = true,
+    livePreview = false,
   } = stroke;
   const waterFactor = 1 - saturation / 100;
   const defaultAlpha = strokeOpacity * (0.18 + (1 - waterFactor) * 0.35);
-  const dense = densifyPath(points, Math.max(1.5, lineWidth * 0.18));
+  const spacing = livePreview ? Math.max(2.5, lineWidth * 0.24) : Math.max(1.5, lineWidth * 0.18);
+  const dense = densifyPath(points, spacing);
+  const useTexture = livePreview ? false : texture;
 
   dense.forEach((p, i) => {
     const rand = seededRandom(Math.floor(p.x * 7 + p.y * 13 + i));
@@ -274,27 +284,29 @@ export function renderWatercolorStroke(ctx, stroke) {
     const r = p.r ?? baseW / 2;
     const alpha = p.a ?? defaultAlpha;
     const dwell = p.dwell ?? 0;
-    const mix = 0.12 + (1 - waterFactor) * 0.22 + dwell * 0.08;
-    const mixedColor = mixStrokeWithCanvas(ctx, p.x, p.y, strokeStyle, mix);
+    const mix = livePreview ? 0 : (0.12 + (1 - waterFactor) * 0.22 + dwell * 0.08);
+    const mixedColor = mix > 0 ? mixStrokeWithCanvas(ctx, p.x, p.y, strokeStyle, mix) : strokeStyle;
 
     drawWatercolorWash(ctx, p.x, p.y, r, mixedColor, alpha, rand, {
-      texture,
+      texture: useTexture,
       bleed: 0.45 + dwell * 0.25,
+      livePreview,
     });
 
-    if (dwell > 0.2) {
+    if (!livePreview && dwell > 0.2) {
       drawWatercolorWash(ctx, p.x, p.y, r * (1.15 + dwell * 0.5), mixedColor, alpha * 0.28, rand, {
         texture: false,
         bleed: 0.65,
+        livePreview,
       });
     }
 
-    if (i > 0 && !texture) {
+    if (!livePreview && i > 0 && !texture) {
       const prev = dense[i - 1];
       const mx = (p.x + prev.x) / 2;
       const my = (p.y + prev.y) / 2;
       const mr = ((p.r ?? r) + (prev.r ?? r)) / 2 * 0.9;
-      drawWatercolorWash(ctx, mx, my, mr, mixedColor, alpha * 0.22, rand, { texture: false, bleed: 0.2 });
+      drawWatercolorWash(ctx, mx, my, mr, mixedColor, alpha * 0.22, rand, { texture: false, bleed: 0.2, livePreview });
     }
   });
 }
@@ -318,7 +330,7 @@ function mixOilWithCanvas(ctx, x, y, strokeStyle, amount) {
   }
 }
 
-function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hardness, seed) {
+function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hardness, seed, livePreview = false) {
   const dx = p1.x - p0.x;
   const dy = p1.y - p0.y;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -329,8 +341,8 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   const edgeJitter = lw * roughness * 0.22;
   const midX = (p0.x + p1.x) / 2;
   const midY = (p0.y + p1.y) / 2;
-  const wetColor = mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.55);
-  const bristleColor = mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.35);
+  const wetColor = livePreview ? strokeStyle : mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.55);
+  const bristleColor = livePreview ? strokeStyle : mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.35);
 
   ctx.save();
   ctx.lineCap = 'round';
@@ -353,7 +365,9 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   ctx.lineTo(p1.x, p1.y);
   ctx.stroke();
 
-  const bristles = 8 + Math.floor(roughness * 5);
+  const bristles = livePreview
+    ? 3 + Math.floor(roughness * 2)
+    : 8 + Math.floor(roughness * 5);
   const spread = lw * (0.35 + roughness * 0.65);
   for (let b = 0; b < bristles; b++) {
     const t = (b + 0.5) / bristles;
@@ -370,7 +384,7 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
     ctx.stroke();
   }
 
-  if (roughness > 0.08) {
+  if (!livePreview && roughness > 0.08) {
     const impastoCount = 3 + Math.floor(roughness * 4);
     ctx.fillStyle = parseColor(strokeStyle, 1);
     for (let i = 0; i < impastoCount; i++) {
@@ -394,8 +408,10 @@ export function renderOilStroke(ctx, stroke) {
     strokeOpacity = 1,
     lineWidth = 8,
     edgeHardness = 70,
+    livePreview = false,
   } = stroke;
-  const dense = densifyPath(points, Math.max(1, lineWidth * 0.18));
+  const spacing = livePreview ? Math.max(2, lineWidth * 0.24) : Math.max(1, lineWidth * 0.18);
+  const dense = densifyPath(points, spacing);
 
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
@@ -405,7 +421,8 @@ export function renderOilStroke(ctx, stroke) {
     drawOilBristleSegment(
       ctx, p0, p1, (w0 + w1) / 2,
       strokeStyle, strokeOpacity, edgeHardness,
-      Math.floor(p1.x * 3 + p1.y * 5 + i)
+      Math.floor(p1.x * 3 + p1.y * 5 + i),
+      livePreview
     );
   }
 
@@ -421,9 +438,11 @@ export function renderOilStroke(ctx, stroke) {
   }
 }
 
-function drawPastelGrainAt(ctx, x, y, r, strokeStyle, strokeOpacity, grain, seed, angleDeg = 0) {
+function drawPastelGrainAt(ctx, x, y, r, strokeStyle, strokeOpacity, grain, seed, angleDeg = 0, livePreview = false) {
   const rand = seededRandom(seed);
-  const dots = Math.floor(10 + grain * 24);
+  const dots = livePreview
+    ? Math.floor(4 + grain * 8)
+    : Math.floor(10 + grain * 24);
   const angleRad = (angleDeg * Math.PI) / 180;
   const cosA = Math.cos(angleRad);
   const sinA = Math.sin(angleRad);
@@ -446,7 +465,7 @@ function drawPastelGrainAt(ctx, x, y, r, strokeStyle, strokeOpacity, grain, seed
     ctx.fill();
   }
 
-  const dustCount = Math.floor(2 + grain * 6);
+  const dustCount = livePreview ? Math.floor(1 + grain * 2) : Math.floor(2 + grain * 6);
   for (let d = 0; d < dustCount; d++) {
     ctx.globalAlpha = strokeOpacity * 0.18;
     ctx.fillStyle = parseColor(strokeStyle, 1);
@@ -467,9 +486,11 @@ export function renderPastelStroke(ctx, stroke) {
     lineWidth = 10,
     graininess = 60,
     angle = 0,
+    livePreview = false,
   } = stroke;
   const grain = graininess / 100;
-  const dense = densifyPath(points, Math.max(1, lineWidth * 0.14));
+  const spacing = livePreview ? Math.max(2, lineWidth * 0.2) : Math.max(1, lineWidth * 0.14);
+  const dense = densifyPath(points, spacing);
 
   dense.forEach((p, i) => {
     const baseW = p.w ?? lineWidth;
@@ -477,7 +498,8 @@ export function renderPastelStroke(ctx, stroke) {
       ctx, p.x, p.y, baseW / 2,
       strokeStyle, strokeOpacity, grain,
       Math.floor(p.x * 11 + p.y * 17 + i),
-      angle
+      angle,
+      livePreview
     );
   });
 }
@@ -546,12 +568,14 @@ export function renderCalligraphyStroke(ctx, stroke) {
     lineWidth = 8,
     speedSensitivity = 50,
     angleSensitivity = 50,
+    livePreview = false,
   } = stroke;
   const color = parseColor(strokeStyle, strokeOpacity);
 
   if (points.length < 2) return;
 
-  const dense = densifyPath(points, Math.max(0.8, lineWidth * 0.07));
+  const spacing = livePreview ? Math.max(1.2, lineWidth * 0.1) : Math.max(0.8, lineWidth * 0.07);
+  const dense = densifyPath(points, spacing);
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';

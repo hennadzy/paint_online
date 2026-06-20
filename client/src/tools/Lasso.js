@@ -125,7 +125,7 @@ export default class Lasso extends Tool {
     const canvasWidth = this.canvas.width;
     const canvasHeight = this.canvas.height;
     const newMask = createMask(canvasWidth, canvasHeight);
-    fillPathMask(newMask, canvasWidth, path);
+    fillPathMask(newMask, canvasWidth, canvasHeight, path);
 
     const mask = combineMasks(
       mode === "new" ? null : selectionState.mask,

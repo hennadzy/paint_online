@@ -121,6 +121,7 @@ const SettingBar = observer(() => {
   const mainRangeCount = 1 + (showOpacity ? 1 : 0) + rangeExtras.length;
   const mobileTwoRow = mainRangeCount === 2 && (showPressure || showColor || toggleExtras.length > 0);
   const multiRow = mainRangeCount > 2;
+  const useThirdRow = multiRow;
   const useSecondRow = mobileTwoRow || multiRow;
   const widthLabel = isStampTool ? 'Размер' : 'Толщина';
 
@@ -187,7 +188,7 @@ const SettingBar = observer(() => {
     <>
       <div
         ref={barRef}
-        className={`setting-bar${useSecondRow ? ' setting-bar--multi-row' : ''}${mobileTwoRow ? ' setting-bar--mobile-two-row' : ''}`}
+        className={`setting-bar${useSecondRow || useThirdRow ? ' setting-bar--multi-row' : ''}${mobileTwoRow ? ' setting-bar--mobile-two-row' : ''}${useThirdRow ? ' setting-bar--mobile-three-row' : ''}`}
         data-nosnippet
       >
         <div className="setting-row">
@@ -251,10 +252,23 @@ const SettingBar = observer(() => {
           )}
         </div>
 
-        {useSecondRow && (
+        {useThirdRow && (
+          <div className="setting-row setting-row--mobile-params">
+            {renderRangeExtras()}
+          </div>
+        )}
+
+        {mobileTwoRow && (
           <div className="setting-row setting-row--mobile-extra">
-            {multiRow && renderExtras()}
-            {mobileTwoRow && renderToggleExtras()}
+            {renderToggleExtras()}
+            {renderPressureToggle()}
+            {colorInput}
+          </div>
+        )}
+
+        {useThirdRow && (
+          <div className="setting-row setting-row--mobile-extra">
+            {renderToggleExtras()}
             {renderPressureToggle()}
             {colorInput}
           </div>
