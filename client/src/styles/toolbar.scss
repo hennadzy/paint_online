@@ -616,7 +616,8 @@
 
       .setting-row:first-child {
         .setting-slider-group--width,
-        .setting-slider-group--opacity {
+        .setting-slider-group--opacity,
+        .setting-slider-group--param {
           flex: 0 0 calc(50% - 4px);
           max-width: calc(50% - 4px);
 
@@ -632,6 +633,27 @@
           input[type="range"] {
             width: 100%;
             flex: 1 1 auto;
+          }
+        }
+      }
+
+      &.setting-bar--mobile-two-row {
+        min-height: 72px;
+
+        .setting-row--mobile-extra {
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: nowrap;
+          gap: 10px;
+
+          .setting-toggle {
+            flex: 1 1 auto;
+            max-width: none;
+          }
+
+          .setting-color-input {
+            flex: 0 0 auto;
+            margin-left: auto;
           }
         }
       }

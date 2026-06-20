@@ -116,9 +116,12 @@ const SettingBar = observer(() => {
   const showPressure = PRESSURE_TOOLS.has(currentToolName);
   const showOpacity = !['smudge'].includes(currentToolName);
   const showColor = !isStampTool;
-  const rangeSliderCount = extraParams.filter((p) => p.type === 'range').length;
-  const sliderCount = 1 + (showOpacity ? 1 : 0) + rangeSliderCount;
-  const multiRow = sliderCount > 2;
+  const rangeExtras = extraParams.filter((p) => p.type === 'range');
+  const toggleExtras = extraParams.filter((p) => p.type === 'toggle');
+  const mainRangeCount = 1 + (showOpacity ? 1 : 0) + rangeExtras.length;
+  const mobileTwoRow = mainRangeCount === 2 && (showPressure || showColor || toggleExtras.length > 0);
+  const multiRow = mainRangeCount > 2;
+  const useSecondRow = mobileTwoRow || multiRow;
   const widthLabel = isStampTool ? 'Размер' : 'Толщина';
 
   const renderRangeGroup = (def, className = 'setting-slider-group--param') => (
@@ -156,6 +159,10 @@ const SettingBar = observer(() => {
     def.type === 'toggle' ? renderToggle(def) : renderRangeGroup(def)
   ));
 
+  const renderToggleExtras = () => toggleExtras.map(renderToggle);
+
+  const renderRangeExtras = () => rangeExtras.map((def) => renderRangeGroup(def));
+
   const renderPressureToggle = () => showPressure && (
     <label className="setting-toggle">
       <input
@@ -178,7 +185,11 @@ const SettingBar = observer(() => {
 
   return (
     <>
-      <div ref={barRef} className={`setting-bar ${multiRow ? 'setting-bar--multi-row' : ''}`} data-nosnippet>
+      <div
+        ref={barRef}
+        className={`setting-bar${useSecondRow ? ' setting-bar--multi-row' : ''}${mobileTwoRow ? ' setting-bar--mobile-two-row' : ''}`}
+        data-nosnippet
+      >
         <div className="setting-row">
           <div className="setting-slider-group setting-slider-group--width">
             <div className="setting-slider-row">
@@ -225,9 +236,11 @@ const SettingBar = observer(() => {
             </div>
           )}
 
-          {!multiRow && renderExtras()}
-          {!multiRow && renderPressureToggle()}
-          {!multiRow && colorInput}
+          {mobileTwoRow && !showOpacity && renderRangeExtras()}
+
+          {!useSecondRow && renderExtras()}
+          {!useSecondRow && renderPressureToggle()}
+          {!useSecondRow && colorInput}
 
           {multiRow && (
             <div className="setting-desktop-cluster">
@@ -238,9 +251,10 @@ const SettingBar = observer(() => {
           )}
         </div>
 
-        {multiRow && (
+        {useSecondRow && (
           <div className="setting-row setting-row--mobile-extra">
-            {renderExtras()}
+            {multiRow && renderExtras()}
+            {mobileTwoRow && renderToggleExtras()}
             {renderPressureToggle()}
             {colorInput}
           </div>
