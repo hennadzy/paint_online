@@ -670,12 +670,13 @@
   .toolbar__submenu {
     z-index: 1025;
     flex-direction: column;
-    background-color: transparent;
-    backdrop-filter: none;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
+    background-color: rgba(48, 48, 48, 0.72);
+    border: 1px solid rgba(0, 0, 0, 0.45);
+    border-radius: 6px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
     gap: 0;
+    backdrop-filter: blur(4px);
   }
 
   .toolbar__group {

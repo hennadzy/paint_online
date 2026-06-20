@@ -478,16 +478,13 @@ body.modal-open {
   :root {
     --mobile-topmenu-h: 50px;
     --mobile-toolbar-h: 50px;
-    --mobile-setting-h: 66px;
+    --mobile-setting-bar-h: 66px;
+    --mobile-setting-bar-extra: max(0px, calc(var(--mobile-setting-bar-h) - 66px));
     --mobile-chrome-h: calc(
       var(--mobile-topmenu-h) +
       var(--mobile-toolbar-h) +
-      var(--mobile-setting-h)
+      var(--mobile-setting-bar-h)
     );
-  }
-
-  .app:has(.setting-bar--multi-row) {
-    --mobile-setting-h: 104px;
   }
 
   .main-content {

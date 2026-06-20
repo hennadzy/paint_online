@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { observer } from "mobx-react-lite";
 import toolState from "../store/toolState";
 import StampPalette from "./StampPalette";
+import { useMobileSettingBarHeight } from "../hooks/useMobileSettingBarHeight";
 
 const TOOL_EXTRA_PARAMS = {
   marker: [
@@ -35,10 +36,13 @@ const PRESSURE_TOOLS = new Set([
 ]);
 
 const SettingBar = observer(() => {
+  const barRef = useRef(null);
   const inputRef = useRef(null);
   const opacityInputRef = useRef(null);
   const isDraggingRef = useRef(false);
   const isOpacityDraggingRef = useRef(false);
+
+  useMobileSettingBarHeight(barRef);
 
   const handleChange = (e) => {
     toolState.setLineWidth(+e.target.value);
@@ -174,7 +178,7 @@ const SettingBar = observer(() => {
 
   return (
     <>
-      <div className={`setting-bar ${multiRow ? 'setting-bar--multi-row' : ''}`} data-nosnippet>
+      <div ref={barRef} className={`setting-bar ${multiRow ? 'setting-bar--multi-row' : ''}`} data-nosnippet>
         <div className="setting-row">
           <div className="setting-slider-group setting-slider-group--width">
             <div className="setting-slider-row">
