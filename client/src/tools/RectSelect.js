@@ -28,22 +28,20 @@ export default class RectSelect extends Tool {
       this.pointerDownHandlerBound = this.pointerDownHandler.bind(this);
       this.pointerMoveHandlerBound = this.pointerMoveHandler.bind(this);
       this.pointerUpHandlerBound = this.pointerUpHandler.bind(this);
-      this.pointerCancelHandlerBound = this.pointerUpHandlerBound;
       this.lostPointerCaptureHandlerBound = this.lostPointerCaptureHandler.bind(this);
     }
 
-    this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
-    this.canvas.addEventListener("pointermove", this.pointerMoveHandlerBound);
-    this.canvas.addEventListener("pointerup", this.pointerUpHandlerBound);
-    this.canvas.addEventListener("pointercancel", this.pointerCancelHandlerBound);
+    this.bindCanvasDragPointerEvents({
+      onDown: this.pointerDownHandlerBound,
+      onMove: this.pointerMoveHandlerBound,
+      onUp: this.pointerUpHandlerBound,
+    });
+
     this.canvas.addEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
   }
 
   destroyEvents() {
-    this.canvas.removeEventListener("pointerdown", this.pointerDownHandlerBound);
-    this.canvas.removeEventListener("pointermove", this.pointerMoveHandlerBound);
-    this.canvas.removeEventListener("pointerup", this.pointerUpHandlerBound);
-    this.canvas.removeEventListener("pointercancel", this.pointerCancelHandlerBound);
+    this.unbindCanvasDragPointerEvents();
     this.canvas.removeEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
     this.transformSession.destroy();
     selectionState.clearDraft();
@@ -69,8 +67,8 @@ export default class RectSelect extends Tool {
       if (this.transformSession.pointerDown(e)) return;
     }
 
-    e.preventDefault();
-    this.canvas.setPointerCapture(e.pointerId);
+    e.preventDefault?.();
+    this.canvas.setPointerCapture?.(e.pointerId);
     this.mouseDown = true;
     const { x, y } = this.getCanvasCoordinates(e);
     this.startX = x;
@@ -86,6 +84,7 @@ export default class RectSelect extends Tool {
 
     if (!this.mouseDown) return;
 
+    e.preventDefault?.();
     const { x, y } = this.getCanvasCoordinates(e);
     selectionState.setDraftRect(normalizeRect(this.startX, this.startY, x, y));
   }

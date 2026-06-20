@@ -384,48 +384,46 @@ button:active {
   }
 
   .canvas-layout.has-chat {
-    justify-content: flex-start;
+    justify-content: stretch;
     align-items: stretch;
     padding-top: 0;
-    gap: 0px;
-    overflow-y: hidden;
-    overflow-x: hidden;
+    gap: 4px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
   }
 
   .canvas-layout.has-chat .canvas-container {
-    flex: 1 1 auto;
-    min-height: 80px;
+    flex: 1 1 52%;
+    min-height: 120px;
     height: auto;
-    max-height: calc(
-      100dvh -
-      var(--mobile-chrome-h, 166px) -
-      env(safe-area-inset-top, 0px) -
-      env(safe-area-inset-bottom, 28px) -
-      88px +
-      min(var(--mobile-setting-bar-extra, 0px), 60px) * 0.1
-    );
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    max-height: none;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .canvas-layout.has-chat .canvas-side-panel {
-    flex: 0 1 auto;
-    max-height: calc(230px - var(--mobile-setting-bar-extra, 0px) * 0.2);
-    min-height: 150px;
+    flex: 1 1 48%;
+    min-height: 180px;
+    max-height: none;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
   }
 
   .canvas-layout.has-chat .chat-users {
-    padding-top: max(0px, calc(4px - var(--mobile-setting-bar-extra, 0px) * 0.02));
+    padding-top: 4px;
 
     h4 {
-      font-size: max(11px, calc(12px - var(--mobile-setting-bar-extra, 0px) * 0.003));
-      margin-bottom: max(1px, calc(3px - var(--mobile-setting-bar-extra, 0px) * 0.005));
+      font-size: 12px;
+      margin-bottom: 3px;
     }
   }
 
   .canvas-layout.has-chat .chat-users-list {
-    max-height: calc(80px - var(--mobile-setting-bar-extra, 0px) * 0.06);
+    max-height: none;
+    flex: 1;
+    min-height: 0;
   }
 
   .canvas-layout .toolbar {
@@ -551,9 +549,8 @@ button:active {
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   .canvas-layout:not(.has-chat) .about-btns-mobile {
@@ -578,7 +575,6 @@ button:active {
     flex-direction: column;
     overflow: hidden;
     min-height: 0;
-    max-height: 230px;
     padding-bottom: env(safe-area-inset-bottom, 16px);
     touch-action: none;
     user-select: none;

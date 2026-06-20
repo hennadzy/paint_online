@@ -77,6 +77,28 @@ export default class Tool {
     return { x, y };
   }
 
+  bindCanvasDragPointerEvents(handlers) {
+    const passiveFalse = { passive: false };
+
+    this._canvasDragDown = (e) => handlers.onDown?.(e);
+    this._canvasDragMove = (e) => handlers.onMove?.(e);
+    this._canvasDragUp = (e) => handlers.onUp?.(e);
+
+    this.canvas.addEventListener("pointerdown", this._canvasDragDown, passiveFalse);
+    document.addEventListener("pointermove", this._canvasDragMove, passiveFalse);
+    document.addEventListener("pointerup", this._canvasDragUp);
+    document.addEventListener("pointercancel", this._canvasDragUp);
+  }
+
+  unbindCanvasDragPointerEvents() {
+    if (!this._canvasDragDown) return;
+
+    this.canvas.removeEventListener("pointerdown", this._canvasDragDown);
+    document.removeEventListener("pointermove", this._canvasDragMove);
+    document.removeEventListener("pointerup", this._canvasDragUp);
+    document.removeEventListener("pointercancel", this._canvasDragUp);
+  }
+
   /** Сброс сглаживания давления в начале штриха (перо). */
   resetPenPressureState() {
     this._penPressureSmoothed = null;

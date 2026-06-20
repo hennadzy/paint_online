@@ -612,7 +612,8 @@
 
     &--multi-row {
       min-height: 88px;
-      gap: 8px;
+      gap: 4px;
+      padding-bottom: 4px;
 
       .setting-row:first-child {
         .setting-slider-group--width,
@@ -638,11 +639,17 @@
       }
 
       &.setting-bar--mobile-two-row {
+        padding-top: 8px;
+        padding-bottom: 2px;
+
         .setting-row--mobile-extra {
+          margin-top: 14px;
+          margin-bottom: 0;
+          padding-top: 0;
           justify-content: flex-start;
           align-items: center;
           flex-wrap: nowrap;
-          gap: 10px;
+          gap: 12px;
 
           .setting-toggle {
             flex: 0 0 auto;
