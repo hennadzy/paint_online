@@ -1,6 +1,5 @@
 import toolState from "../store/toolState";
 import { API_URL } from "../store/canvasState";
-import capabilitiesState from "../store/capabilitiesState";
 import axios from "axios";
 
 export default class Tool {
@@ -89,10 +88,12 @@ export default class Tool {
    * Только pointerType "pen"; мышь / touch / тачпад — без изменений.
    */
   getPressureAdjustedLineWidth(e) {
-    if (e.pointerType !== "pen") {
+    const isPenLike = e.pointerType === 'pen'
+      || (typeof e.pressure === 'number' && e.pressure > 0 && e.pointerType !== 'touch');
+    if (!isPenLike) {
       return this.lineWidth;
     }
-    if (!capabilitiesState.penPressureAllowed) {
+    if (!toolState.pressureSensitivity) {
       return this.lineWidth;
     }
     const p = e.pressure;

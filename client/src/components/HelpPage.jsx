@@ -218,9 +218,9 @@ const HelpPage = () => {
                 <span className="help-hotkey-desc">— Пастель</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
-                <meta itemProp="name" content="Какая клавиша для каллиграфической кисти?" />
+                <meta itemProp="name" content="Какая клавиша для пера?" />
                 <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="I" />I</span>
-                <span className="help-hotkey-desc">— Каллиграфия</span>
+                <span className="help-hotkey-desc">— Перо</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для эллипса?" />

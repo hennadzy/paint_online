@@ -162,7 +162,12 @@
   min-height: 50px;
 
   @media (max-width: 768px) {
-    top: calc(100px + env(safe-area-inset-top, 0px));
+    top: calc(
+      var(--mobile-topmenu-h, 50px) +
+      var(--mobile-toolbar-h, 50px) +
+      var(--mobile-submenu-slot-h, 44px) +
+      env(safe-area-inset-top, 0px)
+    );
     z-index: 998;
   }
 
@@ -443,6 +448,11 @@
     overflow-x: auto;
     overflow-y: hidden;
     flex-wrap: nowrap;
+
+    &:has(.toolbar__submenu.show) {
+      overflow: visible;
+      z-index: 1020;
+    }
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -507,12 +517,18 @@
 
   .setting-bar {
     position: fixed;
+    top: calc(
+      var(--mobile-topmenu-h, 50px) +
+      var(--mobile-toolbar-h, 50px) +
+      var(--mobile-submenu-slot-h, 44px) +
+      env(safe-area-inset-top, 0px)
+    );
     overflow: hidden;
     min-height: 50px;
     height: auto;
     padding: 8px 10px;
     gap: 6px;
-    z-index: 998;
+    z-index: 997;
 
     .setting-row {
       display: flex;
@@ -645,11 +661,22 @@
   }
 
   .toolbar__submenu {
-    z-index: 1015;
+    z-index: 1025;
+    flex-direction: row;
+    background-color: rgba(70, 70, 70, 0.96);
+    backdrop-filter: blur(8px);
+    padding: 4px 6px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    gap: 2px;
   }
 
   .toolbar__group {
-    z-index: 1010;
+    z-index: 1020;
+
+    &:has(.toolbar__submenu.show) {
+      z-index: 1030;
+    }
   }
 }
 

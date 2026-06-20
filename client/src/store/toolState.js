@@ -8,7 +8,7 @@ const DEFAULT_TOOL_PARAMS = {
   airbrush: { scatter: 15 },
   smudge: { strength: 50 },
   watercolor: { saturation: 50, texture: true },
-  oil: { edgeHardness: 70, pressureSensitivity: true },
+  oil: { edgeHardness: 70 },
   pastel: { graininess: 60, angle: 0 },
   calligraphy: { speedSensitivity: 50, angleSensitivity: 50 },
   stamp: { stampSize: 48, selectedStamp: '😊' },
@@ -20,6 +20,7 @@ class ToolState {
   strokeColor = "#000000";
   fillColor = "#000000";
   strokeOpacity = 1;
+  pressureSensitivity = true;
   textInputActive = false;
   stampPaletteOpen = false;
 
@@ -77,7 +78,7 @@ class ToolState {
   groupLabels = {
     brush: { brush: "Кисть", line: "Линия", arrow: "Стрелка" },
     brushExtra: { marker: "Маркер", airbrush: "Аэрограф", smudge: "Размытие" },
-    brushPro: { watercolor: "Акварель", oil: "Масляная", pastel: "Пастель", calligraphy: "Каллиграфия" },
+    brushPro: { watercolor: "Акварель", oil: "Масляная", pastel: "Пастель", calligraphy: "Перо" },
     shapes: {
       circle: "Круг", rect: "Прямоугольник", polygon: "Многоугольник",
       ellipse: "Эллипс", stamp: "Штампы",
@@ -187,6 +188,10 @@ class ToolState {
   setStrokeOpacity(opacity) {
     this.strokeOpacity = opacity;
     this.tool?.setStrokeOpacity?.(opacity);
+  }
+
+  setPressureSensitivity(enabled) {
+    this.pressureSensitivity = enabled;
   }
 
   setFillColor(color) {

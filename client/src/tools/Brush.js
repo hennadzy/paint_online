@@ -76,7 +76,7 @@ export default class Brush extends Tool {
     this.lastX = x;
     this.lastY = y;
     const pt = { x, y };
-    if (e.pointerType === "pen") {
+    if (e.pointerType === "pen" || (typeof e.pressure === "number" && e.pressure > 0 && e.pointerType !== "touch")) {
       pt.w = this.getPressureAdjustedLineWidth(e);
     }
     this.points.push(pt);
@@ -120,7 +120,7 @@ export default class Brush extends Tool {
     const { x, y } = this.getCanvasCoordinates(e);
 
     const smoothed = this.interpolate(this.lastX, this.lastY, x, y);
-    if (e.pointerType === 'pen') {
+    if (e.pointerType === 'pen' || (typeof e.pressure === 'number' && e.pressure > 0 && e.pointerType !== 'touch')) {
       smoothed.w = this.getPressureAdjustedLineWidth(e);
     }
     this.points.push(smoothed);

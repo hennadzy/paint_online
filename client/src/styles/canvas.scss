@@ -277,12 +277,9 @@ button:active {
 }
 
 @media screen and (max-width: 768px) and (orientation: portrait) {
-  $mobile-menu-height-local: 158px;
-  $mobile-menu-height-chat: 158px;
-
   :root {
-    --mobile-menu-height-local: #{$mobile-menu-height-local};
-    --mobile-menu-height-chat: #{$mobile-menu-height-chat};
+    --mobile-menu-height-local: var(--mobile-chrome-h, 194px);
+    --mobile-menu-height-chat: var(--mobile-chrome-h, 194px);
     --keyboard-height: 0px;
   }
 

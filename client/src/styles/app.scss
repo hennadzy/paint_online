@@ -475,8 +475,25 @@ body.modal-open {
 }
 
 @media (max-width: 768px) {
+  :root {
+    --mobile-topmenu-h: 50px;
+    --mobile-toolbar-h: 50px;
+    --mobile-submenu-slot-h: 44px;
+    --mobile-setting-h: 50px;
+    --mobile-chrome-h: calc(
+      var(--mobile-topmenu-h) +
+      var(--mobile-toolbar-h) +
+      var(--mobile-submenu-slot-h) +
+      var(--mobile-setting-h)
+    );
+  }
+
+  .app:has(.setting-bar--multi-row) {
+    --mobile-setting-h: 88px;
+  }
+
   .main-content {
-    padding-top: calc(150px + env(safe-area-inset-top, 0px));
+    padding-top: calc(var(--mobile-chrome-h) + env(safe-area-inset-top, 0px));
     padding-bottom: 0;
 
     &--admin {
@@ -514,10 +531,6 @@ body.modal-open {
       flex: 1;
       background: #1a1a1a;
     }
-  }
-
-  .app:has(.setting-bar--multi-row) .main-content {
-    padding-top: calc(188px + env(safe-area-inset-top, 0px));
   }
 
   .top-menu__actions .toolbar__btn {

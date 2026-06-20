@@ -68,7 +68,7 @@ const GROUP_TOOL_ENTRIES = {
     ["watercolor", Watercolor, "Акварель"],
     ["oil", Oil, "Масляная"],
     ["pastel", Pastel, "Пастель"],
-    ["calligraphy", Calligraphy, "Каллиграфия"],
+    ["calligraphy", Calligraphy, "Перо"],
   ],
   shapes: [
     ["circle", Circle, "Круг"],

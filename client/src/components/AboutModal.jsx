@@ -127,7 +127,7 @@ const AboutModal = observer(() => {
               <li><strong>W</strong> — Акварель</li>
               <li><strong>O</strong> — Масляная</li>
               <li><strong>P</strong> — Пастель</li>
-              <li><strong>I</strong> — Каллиграфия</li>
+              <li><strong>I</strong> — Перо</li>
               <li><strong>U</strong> — Эллипс</li>
               <li><strong>Y</strong> — Штампы</li>
               <li><strong>F</strong> — Заливка</li>

@@ -20,7 +20,7 @@ export default class Calligraphy extends BaseStrokeTool {
   }
 
   getPointSpacing() {
-    return Math.max(0.4, (this.lineWidth || 5) * 0.08);
+    return Math.max(0.15, (this.lineWidth || 5) * 0.022);
   }
 
   enrichPoint(pt, e, speed) {
@@ -34,16 +34,16 @@ export default class Calligraphy extends BaseStrokeTool {
     );
 
     if (this._prevW != null) {
-      const maxStep = this.lineWidth * 0.28;
+      const maxStep = Math.max(0.4, this.lineWidth * 0.06);
       w = Math.max(this._prevW - maxStep, Math.min(this._prevW + maxStep, w));
     }
 
-    if (e?.pointerType === 'pen') {
+    if (e?.pointerType === 'pen' || (typeof e?.pressure === 'number' && e.pressure > 0 && e.pointerType !== 'touch')) {
       const pw = this.getPressureAdjustedLineWidth(e);
-      w = w * 0.55 + pw * 0.45;
+      w = w * 0.4 + pw * 0.6;
     }
 
-    pt.w = Math.max(1, w);
+    pt.w = Math.max(0.8, w);
     this._prevX = pt.x;
     this._prevY = pt.y;
     this._prevW = pt.w;

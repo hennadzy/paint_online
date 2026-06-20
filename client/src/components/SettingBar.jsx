@@ -19,7 +19,6 @@ const TOOL_EXTRA_PARAMS = {
   ],
   oil: [
     { type: 'range', label: 'Край', key: 'edgeHardness', min: 0, max: 100, suffix: '%', default: 70 },
-    { type: 'toggle', label: 'Давление', key: 'pressureSensitivity', default: true },
   ],
   pastel: [
     { type: 'range', label: 'Зерн.', key: 'graininess', min: 0, max: 100, suffix: '%', default: 60 },
@@ -30,6 +29,10 @@ const TOOL_EXTRA_PARAMS = {
     { type: 'range', label: 'Угол', key: 'angleSensitivity', min: 0, max: 100, suffix: '%', default: 50 },
   ],
 };
+
+const PRESSURE_TOOLS = new Set([
+  'brush', 'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy', 'eraser',
+]);
 
 const SettingBar = observer(() => {
   const inputRef = useRef(null);
@@ -106,6 +109,7 @@ const SettingBar = observer(() => {
   const setColor = isFillTool ? toolState.setFillColor.bind(toolState) : toolState.setStrokeColor.bind(toolState);
 
   const extraParams = TOOL_EXTRA_PARAMS[currentToolName] || [];
+  const showPressure = PRESSURE_TOOLS.has(currentToolName);
   const showOpacity = !['smudge'].includes(currentToolName);
   const showColor = !isStampTool;
   const rangeSliderCount = extraParams.filter((p) => p.type === 'range').length;
@@ -147,6 +151,17 @@ const SettingBar = observer(() => {
   const renderExtras = () => extraParams.map((def) => (
     def.type === 'toggle' ? renderToggle(def) : renderRangeGroup(def)
   ));
+
+  const renderPressureToggle = () => showPressure && (
+    <label className="setting-toggle">
+      <input
+        type="checkbox"
+        checked={toolState.pressureSensitivity}
+        onChange={(e) => toolState.setPressureSensitivity(e.target.checked)}
+      />
+      <span className="setting-toggle__label">Сила нажатия</span>
+    </label>
+  );
 
   const colorInput = showColor && (
     <input
@@ -207,11 +222,13 @@ const SettingBar = observer(() => {
           )}
 
           {!multiRow && renderExtras()}
+          {!multiRow && renderPressureToggle()}
           {!multiRow && colorInput}
 
           {multiRow && (
             <div className="setting-desktop-cluster">
               {renderExtras()}
+              {renderPressureToggle()}
               {colorInput}
             </div>
           )}
@@ -220,6 +237,7 @@ const SettingBar = observer(() => {
         {multiRow && (
           <div className="setting-row setting-row--mobile-extra">
             {renderExtras()}
+            {renderPressureToggle()}
             {colorInput}
           </div>
         )}

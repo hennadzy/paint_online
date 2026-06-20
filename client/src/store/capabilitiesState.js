@@ -14,14 +14,13 @@ function resolveCapabilityTier(user, isAuthenticated) {
 
 const SAFE_FALLBACK = {
   features: {
-    penPressure: { enabled: false },
     brushPro: { enabled: false },
   },
   roles: {
-    guest: { penPressure: false, brushPro: false },
-    user: { penPressure: false, brushPro: false },
-    premium: { penPressure: false, brushPro: false },
-    admin: { penPressure: false, brushPro: false },
+    guest: { brushPro: false },
+    user: { brushPro: false },
+    premium: { brushPro: false },
+    admin: { brushPro: false },
   },
 };
 
@@ -61,10 +60,6 @@ class CapabilitiesState {
     if (!masterOn) return false;
     const t = this.tier;
     return Boolean(this.data.roles?.[t]?.[featureId]);
-  }
-
-  get penPressureAllowed() {
-    return this.isFeatureAllowed('penPressure');
   }
 
   get brushProAllowed() {
