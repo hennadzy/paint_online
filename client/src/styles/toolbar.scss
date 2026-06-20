@@ -165,7 +165,6 @@
     top: calc(
       var(--mobile-topmenu-h, 50px) +
       var(--mobile-toolbar-h, 50px) +
-      var(--mobile-submenu-slot-h, 44px) +
       env(safe-area-inset-top, 0px)
     );
     z-index: 998;
@@ -520,7 +519,6 @@
     top: calc(
       var(--mobile-topmenu-h, 50px) +
       var(--mobile-toolbar-h, 50px) +
-      var(--mobile-submenu-slot-h, 44px) +
       env(safe-area-inset-top, 0px)
     );
     overflow: hidden;
@@ -543,13 +541,37 @@
       flex-direction: row;
       align-items: center;
       gap: 6px;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex: 1 1 0;
+      min-width: 90px;
 
       input[type="range"] {
         flex: 1 1 auto;
-        min-width: 60px;
-        width: auto;
+        min-width: 90px;
+        width: 100%;
+      }
+    }
+
+    .setting-slider-group--width,
+    .setting-slider-group--opacity,
+    .setting-slider-group--param {
+      flex: 1 1 0;
+      min-width: 90px;
+      max-width: none;
+    }
+
+    .setting-toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: #ddd;
+      white-space: nowrap;
+
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
       }
     }
 
@@ -578,21 +600,6 @@
       min-width: 32px;
       flex-shrink: 0;
       color: #fff;
-    }
-
-    .setting-toggle {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
-      font-size: 11px;
-      color: #ddd;
-      white-space: nowrap;
-
-      input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-      }
     }
 
     .setting-desktop-cluster {
@@ -662,13 +669,13 @@
 
   .toolbar__submenu {
     z-index: 1025;
-    flex-direction: row;
-    background-color: rgba(70, 70, 70, 0.96);
-    backdrop-filter: blur(8px);
-    padding: 4px 6px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    gap: 2px;
+    flex-direction: column;
+    background-color: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    gap: 0;
   }
 
   .toolbar__group {

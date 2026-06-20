@@ -88,9 +88,7 @@ export default class Tool {
    * Только pointerType "pen"; мышь / touch / тачпад — без изменений.
    */
   getPressureAdjustedLineWidth(e) {
-    const isPenLike = e.pointerType === 'pen'
-      || (typeof e.pressure === 'number' && e.pressure > 0 && e.pointerType !== 'touch');
-    if (!isPenLike) {
+    if (e.pointerType !== "pen") {
       return this.lineWidth;
     }
     if (!toolState.pressureSensitivity) {

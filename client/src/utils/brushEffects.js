@@ -45,6 +45,7 @@ export function densifyPath(points, spacing) {
         a: p0.a != null && p1.a != null ? p0.a + (p1.a - p0.a) * t : p1.a,
         r: p0.r != null && p1.r != null ? p0.r + (p1.r - p0.r) * t : p1.r,
         dwell: p0.dwell != null && p1.dwell != null ? p0.dwell + (p1.dwell - p0.dwell) * t : p1.dwell,
+        pr: p0.pr != null && p1.pr != null ? p0.pr + (p1.pr - p0.pr) * t : (p1.pr ?? p0.pr),
       });
     }
   }
@@ -516,7 +517,7 @@ function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {
 
   const nx = -dy / len;
   const ny = dx / len;
-  const ext = Math.min(1.5, len * 0.12);
+  const ext = Math.min(2, len * 0.2);
   const ux = dx / len;
   const uy = dy / len;
   const ax = p0.x - ux * ext;
@@ -550,18 +551,32 @@ export function renderCalligraphyStroke(ctx, stroke) {
 
   if (points.length < 2) return;
 
-  const dense = densifyPath(points, Math.max(0.25, lineWidth * 0.022));
+  const dense = densifyPath(points, Math.max(0.8, lineWidth * 0.07));
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
+
+  let prevW = null;
 
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
     const p1 = dense[i];
     const dx = p1.x - p0.x;
     const dy = p1.y - p0.y;
-    const w0 = p0.w ?? calcCalligraphyWidth(lineWidth, dx, dy, p0.speed ?? 0, speedSensitivity, angleSensitivity);
-    const w1 = p1.w ?? calcCalligraphyWidth(lineWidth, dx, dy, p1.speed ?? 0, speedSensitivity, angleSensitivity);
+    let w0 = calcCalligraphyWidth(lineWidth, dx, dy, p0.speed ?? 0, speedSensitivity, angleSensitivity);
+    let w1 = calcCalligraphyWidth(lineWidth, dx, dy, p1.speed ?? 0, speedSensitivity, angleSensitivity);
+
+    if (p0.pr != null) w0 *= p0.pr;
+    if (p1.pr != null) w1 *= p1.pr;
+
+    if (prevW != null) {
+      w0 = prevW * 0.45 + w0 * 0.55;
+    }
+
+    w0 = Math.max(0.8, w0);
+    w1 = Math.max(0.8, w1);
+    prevW = w1;
+
     drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color);
   }
 

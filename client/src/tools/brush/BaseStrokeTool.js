@@ -161,7 +161,7 @@ export default class BaseStrokeTool extends Tool {
 
   createPoint(x, y, e, speed) {
     const pt = { x, y, speed };
-    if (e?.pointerType === 'pen' || (typeof e?.pressure === 'number' && e.pressure > 0 && e.pointerType !== 'touch')) {
+    if (e?.pointerType === 'pen') {
       pt.w = this.getPressureAdjustedLineWidth(e);
     }
     return this.enrichPoint?.(pt, e, speed) ?? pt;
