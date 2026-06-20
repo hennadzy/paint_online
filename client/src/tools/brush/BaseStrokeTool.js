@@ -13,6 +13,10 @@ function isMobileBrushDevice() {
   return window.innerWidth <= 768;
 }
 
+function isMobileDirectStroke(strokeType) {
+  return isMobileBrushDevice() && HEAVY_STROKE_TYPES.has(strokeType) && strokeType !== 'smudge';
+}
+
 export default class BaseStrokeTool extends Tool {
   constructor(canvas, socket, id, username) {
     super(canvas, socket, id, username);
@@ -85,7 +89,7 @@ export default class BaseStrokeTool extends Tool {
   }
 
   presentLiveStroke() {
-    if (isMobileBrushDevice() && HEAVY_STROKE_TYPES.has(this.strokeType) && this.strokeType !== 'smudge') {
+    if (isMobileDirectStroke(this.strokeType)) {
       return;
     }
     CanvasService.blitBufferToDisplay();
@@ -274,7 +278,6 @@ export default class BaseStrokeTool extends Tool {
   drawLiveFull(renderFn, needsCanvas = false) {
     if (this.points.length === 0) return;
 
-    const liveCtx = this.ensureLiveLayer();
     const from = Math.max(0, this._liveDrawnCount - 1);
     const segmentPoints = this.points.slice(from);
     if (segmentPoints.length === 0) return;
@@ -286,19 +289,22 @@ export default class BaseStrokeTool extends Tool {
       mobilePreview: HEAVY_STROKE_TYPES.has(this.strokeType) && isMobileBrushDevice(),
     };
 
-    if (needsCanvas) {
-      renderFn(liveCtx, payload, this.canvas);
-    } else {
-      renderFn(liveCtx, payload);
-    }
-
-    if (isMobileBrushDevice() && HEAVY_STROKE_TYPES.has(this.strokeType) && this.strokeType !== 'smudge') {
+    if (isMobileDirectStroke(this.strokeType)) {
       const displayCtx = this.canvas.getContext('2d', { willReadFrequently: true });
       if (needsCanvas) {
         renderFn(displayCtx, payload, this.canvas);
       } else {
         renderFn(displayCtx, payload);
       }
+      this._liveDrawnCount = this.points.length;
+      return;
+    }
+
+    const liveCtx = this.ensureLiveLayer();
+    if (needsCanvas) {
+      renderFn(liveCtx, payload, this.canvas);
+    } else {
+      renderFn(liveCtx, payload);
     }
 
     this._liveDrawnCount = this.points.length;
@@ -333,8 +339,15 @@ export default class BaseStrokeTool extends Tool {
       this._liveLayer &&
       this._liveDrawnCount > 0 &&
       CanvasService.bufferCtx;
+    const commitFromDisplayCanvas =
+      isMobileDirectStroke(this.strokeType) &&
+      this._liveDrawnCount > 0 &&
+      CanvasService.bufferCtx;
 
-    if (commitFromLiveLayer) {
+    if (commitFromDisplayCanvas) {
+      CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
+      CanvasService.bufferCtx.drawImage(this.canvas, 0, 0);
+    } else if (commitFromLiveLayer) {
       if (this.strokeType === 'smudge') {
         CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
       }
@@ -342,7 +355,7 @@ export default class BaseStrokeTool extends Tool {
     }
 
     this.points = [];
-    canvasState.pushStroke(stroke, { skipBufferDraw: commitFromLiveLayer });
+    canvasState.pushStroke(stroke, { skipBufferDraw: commitFromLiveLayer || commitFromDisplayCanvas });
     this.saveImage();
 
     this.send(JSON.stringify({

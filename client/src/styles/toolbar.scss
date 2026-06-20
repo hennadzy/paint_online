@@ -580,10 +580,12 @@
     .setting-toggle {
       display: flex;
       align-items: center;
+      align-self: center;
       gap: 4px;
       flex: none;
       width: 100%;
       max-width: 100%;
+      min-height: 24px;
       font-size: 11px;
       color: #ddd;
       white-space: nowrap;
@@ -627,6 +629,9 @@
 
     .setting-color-input {
       flex-shrink: 0;
+      align-self: center;
+      height: 24px;
+      margin: 0;
     }
 
     &--multi-row {
