@@ -6,6 +6,8 @@ import CanvasService from '../../services/CanvasService';
 const HEAVY_STROKE_TYPES = new Set([
   'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy',
 ]);
+const MAX_STROKE_POINTS_DESKTOP = 4000;
+const MAX_STROKE_POINTS_MOBILE = 2500;
 
 export default class BaseStrokeTool extends Tool {
   constructor(canvas, socket, id, username) {
@@ -35,11 +37,12 @@ export default class BaseStrokeTool extends Tool {
     this.lineWidth = width;
   }
 
-  getPointSpacing() {
+  getPointSpacing(speed = 0) {
     const base = Math.max(1, (this.lineWidth || 5) * 0.15);
     const heavyMul = HEAVY_STROKE_TYPES.has(this.strokeType) ? 2 : 1;
     const mobileMul = window.innerWidth <= 768 ? 1.4 : 1;
-    return base * heavyMul * mobileMul;
+    const speedMul = 1 + Math.min(2, Math.max(0, speed) / 12);
+    return base * heavyMul * mobileMul * speedMul;
   }
 
   ensureLiveLayer() {
@@ -171,7 +174,7 @@ export default class BaseStrokeTool extends Tool {
   }
 
   addPointsAlongLine(x1, y1, x2, y2, e, speed) {
-    const spacing = this.getPointSpacing();
+    const spacing = this.getPointSpacing(speed);
     const dx = x2 - x1;
     const dy = y2 - y1;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -182,6 +185,16 @@ export default class BaseStrokeTool extends Tool {
       const t = i / steps;
       this.points.push(this.createPoint(x1 + dx * t, y1 + dy * t, e, speed));
     }
+    this.trimStrokePoints();
+  }
+
+  trimStrokePoints() {
+    const maxPoints = window.innerWidth <= 768 ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP;
+    if (this.points.length <= maxPoints) return;
+    const excess = this.points.length - maxPoints;
+    // Keep stroke tail responsive while dropping oldest dense points.
+    this.points.splice(1, excess);
+    this._liveDrawnCount = Math.max(0, this._liveDrawnCount - excess);
   }
 
   pointerUpHandler(e) {

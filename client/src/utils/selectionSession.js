@@ -258,7 +258,7 @@ export function createTransformSessionHandlers(tool) {
       startY = y;
       initialTransform = { ...selectionState.transform };
       initialBounds = getLocalBounds();
-      if (handle.id === "move" && !selectionState.hasCut && !selectionState.floatingOnly) {
+      if (!selectionState.hasCut && !selectionState.floatingOnly) {
         cutSelectionFromBuffer(tool.canvas);
       }
       selectionState.setDragging(handle.id === "move");
@@ -275,10 +275,11 @@ export function createTransformSessionHandlers(tool) {
       const bounds = initialBounds;
       const transform = { ...initialTransform };
 
+      if (!selectionState.hasCut && !selectionState.floatingOnly) {
+        cutSelectionFromBuffer(tool.canvas);
+      }
+
       if (activeHandle.id === "move") {
-        if (!selectionState.hasCut && !selectionState.floatingOnly) {
-          cutSelectionFromBuffer(tool.canvas);
-        }
         selectionState.setPreviewPosition(bounds.x + dx, bounds.y + dy);
         return;
       }
