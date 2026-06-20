@@ -385,41 +385,19 @@ export function renderPastelStroke(ctx, stroke) {
 }
 
 export function calcCalligraphyWidth(baseWidth, dx, dy, speed, sensitivity) {
-  const angle = Math.abs(Math.atan2(dy, dx));
-  const angleFactor = Math.abs(Math.sin(angle * 2));
-  const speedFactor = Math.min(1, speed / 15);
-  const sens = sensitivity / 100;
-  const widthFromSpeed = baseWidth * (1 - speedFactor * sens * 0.7);
-  const widthFromAngle = baseWidth * (0.3 + angleFactor * 0.7);
-  return Math.max(1, (widthFromSpeed + widthFromAngle) / 2);
-}
-
-export function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {
-  const dx = p1.x - p0.x;
-  const dy = p1.y - p0.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.01) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(p0.x, p0.y, w0 / 2, 0, Math.PI * 2);
-    ctx.fill();
-    return;
+  if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+    return baseWidth;
   }
 
-  const nx = -dy / len;
-  const ny = dx / len;
+  const moveAngle = Math.atan2(dy, dx);
+  const horizontalFactor = Math.abs(Math.cos(moveAngle));
+  const widthFromAngle = baseWidth * (0.12 + horizontalFactor * 0.88);
 
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.beginPath();
-  ctx.moveTo(p0.x + nx * w0 / 2, p0.y + ny * w0 / 2);
-  ctx.lineTo(p1.x + nx * w1 / 2, p1.y + ny * w1 / 2);
-  ctx.lineTo(p1.x - nx * w1 / 2, p1.y - ny * w1 / 2);
-  ctx.lineTo(p0.x - nx * w0 / 2, p0.y - ny * w0 / 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  const speedFactor = Math.min(1, Math.max(0, speed / 18));
+  const sens = sensitivity / 100;
+  const speedMul = 1 - speedFactor * sens * 0.85;
+
+  return Math.max(1, widthFromAngle * speedMul);
 }
 
 export function renderCalligraphyStroke(ctx, stroke) {
@@ -431,20 +409,36 @@ export function renderCalligraphyStroke(ctx, stroke) {
     speedSensitivity = 50,
   } = stroke;
   const color = parseColor(strokeStyle, strokeOpacity);
-  const dense = densifyPath(points, Math.max(0.25, lineWidth * 0.035));
 
-  for (let i = 1; i < dense.length; i++) {
-    const p0 = dense[i - 1];
-    const p1 = dense[i];
-    const w0 = p0.w ?? calcCalligraphyWidth(lineWidth, p1.x - p0.x, p1.y - p0.y, p0.speed ?? 0, speedSensitivity);
-    const w1 = p1.w ?? calcCalligraphyWidth(lineWidth, p1.x - p0.x, p1.y - p0.y, p1.speed ?? 0, speedSensitivity);
-    drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color);
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color;
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1];
+    const p1 = points[i];
+    const dx = p1.x - p0.x;
+    const dy = p1.y - p0.y;
+    const w0 = p0.w ?? calcCalligraphyWidth(lineWidth, dx, dy, p0.speed ?? 0, speedSensitivity);
+    const w1 = p1.w ?? calcCalligraphyWidth(lineWidth, dx, dy, p1.speed ?? 0, speedSensitivity);
+    ctx.lineWidth = (w0 + w1) / 2;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
   }
 
-  if (dense.length === 1) {
-    const p = dense[0];
-    drawCalligraphyRibbon(ctx, p, p, p.w ?? lineWidth, p.w ?? lineWidth, color);
+  if (points.length === 1) {
+    const p = points[0];
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, (p.w ?? lineWidth) / 2, 0, Math.PI * 2);
+    ctx.fill();
   }
+
+  ctx.restore();
 }
 
 export const BRUSH_STROKE_TYPES = [

@@ -69,22 +69,18 @@
   }
 }
 
-@media (max-width: 768px) and (orientation: portrait) {
+@media (max-width: 768px) {
   .stamp-palette {
-    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    bottom: 110px;
     padding: 6px 10px;
-  }
 
-  .app:has(.setting-bar--multi-row) .stamp-palette {
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  }
+    &__item {
+      width: 32px;
+      height: 32px;
+    }
 
-  .stamp-palette__item {
-    width: 32px;
-    height: 32px;
-  }
-
-  .stamp-palette__emoji {
-    font-size: 18px;
+    &__emoji {
+      font-size: 18px;
+    }
   }
 }

@@ -99,59 +99,61 @@ const SettingBar = observer(() => {
       <div className={`setting-bar ${multiRowClass}`} data-nosnippet>
         <div className="setting-row">
           <div className="setting-slider-group setting-slider-group--width">
-            <input
-              ref={inputRef}
-              id="line-width"
-              type="range"
-              min={isStampTool ? 16 : 1}
-              max={isStampTool ? 200 : 50}
-              value={currentWidth}
-              onChange={handleChange}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            />
-            <span className="line-width-label">
-              <span className="setting-label-text">{widthLabel}: </span>
-              {' '}{lineWidth}px
-            </span>
+            <div className="setting-slider-top">
+              <input
+                ref={inputRef}
+                id="line-width"
+                type="range"
+                min={isStampTool ? 16 : 1}
+                max={isStampTool ? 200 : 50}
+                value={currentWidth}
+                onChange={handleChange}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+              <span className="setting-value">{lineWidth}px</span>
+            </div>
+            <span className="setting-caption">{widthLabel}</span>
           </div>
 
           {showOpacity && (
             <div className="setting-slider-group setting-slider-group--opacity">
-              <input
-                ref={opacityInputRef}
-                id="stroke-opacity"
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={toolState.strokeOpacity}
-                onChange={handleOpacityChange}
-                onTouchStart={handleOpacityTouchStart}
-                onTouchMove={handleOpacityTouchMove}
-                onTouchEnd={handleOpacityTouchEnd}
-              />
-              <span className="opacity-label">
-                <span className="setting-label-text">Прозрачность: </span>
-                {' '}{Math.round(toolState.strokeOpacity * 100)}%
-              </span>
+              <div className="setting-slider-top">
+                <input
+                  ref={opacityInputRef}
+                  id="stroke-opacity"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={toolState.strokeOpacity}
+                  onChange={handleOpacityChange}
+                  onTouchStart={handleOpacityTouchStart}
+                  onTouchMove={handleOpacityTouchMove}
+                  onTouchEnd={handleOpacityTouchEnd}
+                />
+                <span className="setting-value">{Math.round(toolState.strokeOpacity * 100)}%</span>
+              </div>
+              <span className="setting-caption">Прозрачность</span>
             </div>
           )}
 
           {extraDef && (
             <div className="setting-slider-group setting-slider-group--param">
-              <input
-                type="range"
-                min={extraDef.min}
-                max={extraDef.max}
-                value={params[extraDef.key] ?? extraDef.default}
-                onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
-              />
-              <span className="param-label">{extraDef.label}: </span>
-              <span className="param-value">
-                {' '}{params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
-              </span>
+              <div className="setting-slider-top">
+                <input
+                  type="range"
+                  min={extraDef.min}
+                  max={extraDef.max}
+                  value={params[extraDef.key] ?? extraDef.default}
+                  onChange={(e) => handleParamChange(extraDef.key, +e.target.value)}
+                />
+                <span className="setting-value">
+                  {params[extraDef.key] ?? extraDef.default}{extraDef.suffix}
+                </span>
+              </div>
+              <span className="setting-caption">{extraDef.label}</span>
             </div>
           )}
 

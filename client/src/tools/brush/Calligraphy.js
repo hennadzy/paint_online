@@ -1,4 +1,5 @@
 import BaseStrokeTool from './BaseStrokeTool';
+import canvasState from '../../store/canvasState';
 import { calcCalligraphyWidth, renderCalligraphyStroke } from '../../utils/brushEffects';
 
 export default class Calligraphy extends BaseStrokeTool {
@@ -17,7 +18,7 @@ export default class Calligraphy extends BaseStrokeTool {
   }
 
   getPointSpacing() {
-    return Math.max(0.5, (this.lineWidth || 5) * 0.06);
+    return Math.max(0.5, (this.lineWidth || 5) * 0.12);
   }
 
   enrichPoint(pt, e, speed) {
@@ -37,6 +38,9 @@ export default class Calligraphy extends BaseStrokeTool {
   }
 
   drawLive() {
-    this.drawLiveStroke(renderCalligraphyStroke);
+    canvasState.redrawCanvas();
+    if (this.points.length === 0) return;
+    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+    renderCalligraphyStroke(ctx, this.buildStrokePayload());
   }
 }

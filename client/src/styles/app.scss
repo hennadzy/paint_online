@@ -476,7 +476,7 @@ body.modal-open {
 
 @media (max-width: 768px) {
   .main-content {
-    padding-top: calc(100px + env(safe-area-inset-top, 0px));
+    padding-top: calc(150px + env(safe-area-inset-top, 0px));
     padding-bottom: 0;
 
     &--admin {
@@ -514,6 +514,10 @@ body.modal-open {
       flex: 1;
       background: #1a1a1a;
     }
+  }
+
+  .app:has(.setting-bar--multi-row) .main-content {
+    padding-top: calc(188px + env(safe-area-inset-top, 0px));
   }
 
   .top-menu__actions .toolbar__btn {
