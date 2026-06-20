@@ -28,36 +28,54 @@ export default class RectSelect extends Tool {
       this.pointerDownHandlerBound = this.pointerDownHandler.bind(this);
       this.pointerMoveHandlerBound = this.pointerMoveHandler.bind(this);
       this.pointerUpHandlerBound = this.pointerUpHandler.bind(this);
+      this.pointerCancelHandlerBound = this.pointerUpHandlerBound;
+      this.lostPointerCaptureHandlerBound = this.lostPointerCaptureHandler.bind(this);
     }
 
     this.canvas.addEventListener("pointerdown", this.pointerDownHandlerBound);
-    document.addEventListener("pointermove", this.pointerMoveHandlerBound);
-    document.addEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.addEventListener("pointermove", this.pointerMoveHandlerBound);
+    this.canvas.addEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.addEventListener("pointercancel", this.pointerCancelHandlerBound);
+    this.canvas.addEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
   }
 
   destroyEvents() {
     this.canvas.removeEventListener("pointerdown", this.pointerDownHandlerBound);
-    document.removeEventListener("pointermove", this.pointerMoveHandlerBound);
-    document.removeEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.removeEventListener("pointermove", this.pointerMoveHandlerBound);
+    this.canvas.removeEventListener("pointerup", this.pointerUpHandlerBound);
+    this.canvas.removeEventListener("pointercancel", this.pointerCancelHandlerBound);
+    this.canvas.removeEventListener("lostpointercapture", this.lostPointerCaptureHandlerBound);
     this.transformSession.destroy();
     selectionState.clearDraft();
   }
 
+  lostPointerCaptureHandler(e) {
+    if (!this.mouseDown) return;
+    try {
+      this.canvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  }
+
+  isPrimaryPointer(e) {
+    return e.isPrimary !== false;
+  }
+
   pointerDownHandler(e) {
+    if (!this.isPrimaryPointer(e)) return;
     if (this.isPinchingActive()) return;
-    if (e.button !== 0) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
 
     if (selectionState.transformSessionActive) {
       if (this.transformSession.pointerDown(e)) return;
     }
 
     e.preventDefault();
+    this.canvas.setPointerCapture(e.pointerId);
     this.mouseDown = true;
     const { x, y } = this.getCanvasCoordinates(e);
     this.startX = x;
     this.startY = y;
     selectionState.setDraftRect({ x, y, width: 0, height: 0 });
-    e.target.setPointerCapture?.(e.pointerId);
   }
 
   pointerMoveHandler(e) {
@@ -75,20 +93,29 @@ export default class RectSelect extends Tool {
   pointerUpHandler(e) {
     if (selectionState.transformSessionActive && this.mouseDown) {
       this.transformSession.pointerUp();
+      this.releaseCapture(e);
       return;
     }
 
     if (!this.mouseDown) return;
     this.mouseDown = false;
+    this.releaseCapture(e);
 
     const { x, y } = this.getCanvasCoordinates(e);
     const rect = normalizeRect(this.startX, this.startY, x, y);
     selectionState.clearDraft();
 
-    if (rect.width < 2 || rect.height < 2) return;
+    const minSize = e.pointerType === "touch" ? 4 : 2;
+    if (rect.width < minSize || rect.height < minSize) return;
 
     this.finalizeSelection(rect, getSelectionMode(e));
     enterTransformSession();
+  }
+
+  releaseCapture(e) {
+    if (this.canvas.hasPointerCapture?.(e.pointerId)) {
+      this.canvas.releasePointerCapture(e.pointerId);
+    }
   }
 
   finalizeSelection(rect, mode) {

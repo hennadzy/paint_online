@@ -394,15 +394,15 @@ button:active {
 
   .canvas-layout.has-chat .canvas-container {
     flex: 1 1 auto;
-    min-height: 100px;
+    min-height: 80px;
     height: auto;
     max-height: calc(
       100dvh -
       var(--mobile-chrome-h, 166px) -
       env(safe-area-inset-top, 0px) -
       env(safe-area-inset-bottom, 28px) -
-      110px +
-      min(var(--mobile-setting-bar-extra, 0px), 60px) * 0.15
+      88px +
+      min(var(--mobile-setting-bar-extra, 0px), 60px) * 0.1
     );
     overflow-y: auto;
     overflow-x: hidden;
@@ -411,21 +411,21 @@ button:active {
 
   .canvas-layout.has-chat .canvas-side-panel {
     flex: 0 1 auto;
-    max-height: calc(190px - var(--mobile-setting-bar-extra, 0px) * 0.35);
-    min-height: 120px;
+    max-height: calc(230px - var(--mobile-setting-bar-extra, 0px) * 0.2);
+    min-height: 150px;
   }
 
   .canvas-layout.has-chat .chat-users {
-    padding-top: max(0px, calc(4px - var(--mobile-setting-bar-extra, 0px) * 0.04));
+    padding-top: max(0px, calc(4px - var(--mobile-setting-bar-extra, 0px) * 0.02));
 
     h4 {
-      font-size: max(11px, calc(12px - var(--mobile-setting-bar-extra, 0px) * 0.005));
-      margin-bottom: max(1px, calc(3px - var(--mobile-setting-bar-extra, 0px) * 0.01));
+      font-size: max(11px, calc(12px - var(--mobile-setting-bar-extra, 0px) * 0.003));
+      margin-bottom: max(1px, calc(3px - var(--mobile-setting-bar-extra, 0px) * 0.005));
     }
   }
 
   .canvas-layout.has-chat .chat-users-list {
-    max-height: calc(72px - var(--mobile-setting-bar-extra, 0px) * 0.12);
+    max-height: calc(80px - var(--mobile-setting-bar-extra, 0px) * 0.06);
   }
 
   .canvas-layout .toolbar {
@@ -578,7 +578,7 @@ button:active {
     flex-direction: column;
     overflow: hidden;
     min-height: 0;
-    max-height: 190px;
+    max-height: 230px;
     padding-bottom: env(safe-area-inset-bottom, 16px);
     touch-action: none;
     user-select: none;

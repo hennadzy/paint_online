@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
+import selectionState from '../store/selectionState';
 import {
   attachPinchPanGestures,
   getTouchCenter,
@@ -35,6 +36,7 @@ export function usePinchZoom(containerRef, wrapperRef) {
         if (tool.points) tool.points.length = 0;
         if (tool.startX !== undefined) tool.startX = undefined;
         if (tool.startY !== undefined) tool.startY = undefined;
+        selectionState.clearDraft();
         canvasState.redrawCanvas();
       }
     };

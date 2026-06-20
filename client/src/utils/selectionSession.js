@@ -235,7 +235,7 @@ export function createTransformSessionHandlers(tool) {
     pointerDown(e) {
       if (tool.isPinchingActive()) return;
       if (!selectionState.transformSessionActive) return false;
-      if (e.button !== 0) return false;
+      if (e.pointerType === "mouse" && e.button !== 0) return false;
 
       const { x, y } = tool.getCanvasCoordinates(e);
       const handle = hitTestTransformTarget(x, y, tool.canvas.width);

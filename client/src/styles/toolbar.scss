@@ -638,22 +638,20 @@
       }
 
       &.setting-bar--mobile-two-row {
-        min-height: 72px;
-
         .setting-row--mobile-extra {
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: center;
           flex-wrap: nowrap;
           gap: 10px;
 
           .setting-toggle {
-            flex: 1 1 auto;
+            flex: 0 0 auto;
             max-width: none;
           }
 
           .setting-color-input {
             flex: 0 0 auto;
-            margin-left: auto;
+            margin-left: 0;
           }
         }
       }
