@@ -121,15 +121,19 @@ const AboutModal = observer(() => {
               <li><strong>Ctrl+Y</strong> или <strong>Ctrl+Shift+Z</strong> — Повторить действие</li>
               <li><strong>+</strong> — Увеличить масштаб</li>
               <li><strong>-</strong> — Уменьшить масштаб</li>
-              <li><strong>Shift+M</strong> — Маркер (Brush Extra)</li>
-              <li><strong>Shift+A</strong> — Аэрограф (Brush Extra)</li>
-              <li><strong>Shift+S</strong> — Размывайка (Brush Extra)</li>
-              <li><strong>Shift+W</strong> — Акварель (Brush Pro)</li>
-              <li><strong>Shift+O</strong> — Масляная кисть (Brush Pro)</li>
-              <li><strong>Shift+P</strong> — Пастель (Brush Pro)</li>
-              <li><strong>Shift+C</strong> — Каллиграфия (Brush Pro)</li>
-              <li><strong>Shift+E</strong> — Эллипс</li>
-              <li><strong>Shift+Y</strong> — Штампики-смайлики</li>
+              <li><strong>K</strong> — Маркер</li>
+              <li><strong>A</strong> — Аэрограф</li>
+              <li><strong>S</strong> — Размытие</li>
+              <li><strong>W</strong> — Акварель</li>
+              <li><strong>O</strong> — Масляная</li>
+              <li><strong>P</strong> — Пастель</li>
+              <li><strong>I</strong> — Каллиграфия</li>
+              <li><strong>U</strong> — Эллипс</li>
+              <li><strong>Y</strong> — Штампы</li>
+              <li><strong>F</strong> — Заливка</li>
+              <li><strong>D</strong> — Пипетка</li>
+              <li><strong>N</strong> — Многоугольник</li>
+              <li><strong>J</strong> — Стрелка</li>
             </ul>
           </div>
 

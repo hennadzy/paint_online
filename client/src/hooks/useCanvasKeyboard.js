@@ -3,6 +3,7 @@ import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
 import selectionState from '../store/selectionState';
 import capabilitiesState from '../store/capabilitiesState';
+import { findToolByHotkey, resolveHotkeyKey } from '../config/toolHotkeys';
 import {
   copySelection,
   cutSelection,
@@ -27,54 +28,43 @@ import Text from '../tools/Text';
 import Hand from '../tools/Hand';
 import RectSelect from '../tools/RectSelect';
 import Lasso from '../tools/Lasso';
+import Fill from '../tools/Fill';
+import Pipette from '../tools/Pipette';
+import Polygon from '../tools/Polygon';
+import Arrow from '../tools/Arrow';
 
-const TOOL_MAP = {
-  b: [Brush, 'brush'],
-  e: [Eraser, 'eraser'],
-  l: [Line, 'line'],
-  r: [Rect, 'rect'],
-  c: [Circle, 'circle'],
-  t: [Text, 'text'],
-  h: [Hand, 'hand'],
-  m: [RectSelect, 'select'],
-  q: [Lasso, 'lasso'],
-  и: [Brush, 'brush'],
-  у: [Eraser, 'eraser'],
-  д: [Line, 'line'],
-  к: [Rect, 'rect'],
-  с: [Circle, 'circle'],
-  е: [Text, 'text'],
-  р: [Hand, 'hand'],
-  ь: [RectSelect, 'select'],
-  й: [Lasso, 'lasso'],
-};
-
-const SHIFT_TOOL_MAP = {
-  m: [Marker, 'marker'],
-  a: [Airbrush, 'airbrush'],
-  s: [Smudge, 'smudge'],
-  w: [Watercolor, 'watercolor'],
-  o: [Oil, 'oil'],
-  p: [Pastel, 'pastel'],
-  c: [Calligraphy, 'calligraphy'],
-  e: [Ellipse, 'ellipse'],
-  y: [Stamp, 'stamp'],
-  ь: [Marker, 'marker'],
-  ф: [Airbrush, 'airbrush'],
-  ы: [Smudge, 'smudge'],
-  ц: [Watercolor, 'watercolor'],
-  щ: [Oil, 'oil'],
-  з: [Pastel, 'pastel'],
-  с: [Calligraphy, 'calligraphy'],
-  у: [Ellipse, 'ellipse'],
-  н: [Stamp, 'stamp'],
+const TOOL_CLASSES = {
+  hand: Hand,
+  select: RectSelect,
+  lasso: Lasso,
+  brush: Brush,
+  eraser: Eraser,
+  line: Line,
+  rect: Rect,
+  circle: Circle,
+  text: Text,
+  marker: Marker,
+  airbrush: Airbrush,
+  smudge: Smudge,
+  watercolor: Watercolor,
+  oil: Oil,
+  pastel: Pastel,
+  calligraphy: Calligraphy,
+  ellipse: Ellipse,
+  stamp: Stamp,
+  fill: Fill,
+  pipette: Pipette,
+  polygon: Polygon,
+  arrow: Arrow,
 };
 
 const BRUSH_PRO_TOOLS = new Set(['watercolor', 'oil', 'pastel', 'calligraphy']);
 
 export function useCanvasKeyboard() {
   useEffect(() => {
-    const activateTool = (ToolClass, toolName) => {
+    const activateTool = (toolName) => {
+      const ToolClass = TOOL_CLASSES[toolName];
+      if (!ToolClass) return;
       const { canvas, socket, sessionId, username } = canvasState;
       if (!canvas) return;
       if (BRUSH_PRO_TOOLS.has(toolName) && !capabilitiesState.brushProAllowed) return;
@@ -139,22 +129,18 @@ export function useCanvasKeyboard() {
         return;
       }
 
-      const key = e.key.toLowerCase();
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const shiftTool = SHIFT_TOOL_MAP[key];
-        if (shiftTool) {
-          e.preventDefault();
-          activateTool(shiftTool[0], shiftTool[1]);
-          return;
-        }
+      const key = resolveHotkeyKey(e.key);
+      if (key === 'G') {
+        canvasState.toggleGrid();
+        return;
       }
 
-      const tool = TOOL_MAP[key];
-      if (tool) {
-        activateTool(tool[0], tool[1]);
-      } else if (key === 'g' || key === 'п') {
-        canvasState.toggleGrid();
+      const toolName = findToolByHotkey(e.key);
+      if (toolName) {
+        e.preventDefault();
+        activateTool(toolName);
       }
     };
 

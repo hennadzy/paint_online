@@ -189,48 +189,68 @@ const HelpPage = () => {
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для маркера?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+M" />Shift+M</span>
-                <span className="help-hotkey-desc">— Маркер (Brush Extra)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="K" />K</span>
+                <span className="help-hotkey-desc">— Маркер</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для аэрографа?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+A" />Shift+A</span>
-                <span className="help-hotkey-desc">— Аэрограф (Brush Extra)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="A" />A</span>
+                <span className="help-hotkey-desc">— Аэрограф</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
-                <meta itemProp="name" content="Какая клавиша для размывайки?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+S" />Shift+S</span>
-                <span className="help-hotkey-desc">— Размывайка (Brush Extra)</span>
+                <meta itemProp="name" content="Какая клавиша для размытия?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="S" />S</span>
+                <span className="help-hotkey-desc">— Размытие</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для акварели?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+W" />Shift+W</span>
-                <span className="help-hotkey-desc">— Акварель (Brush Pro)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="W" />W</span>
+                <span className="help-hotkey-desc">— Акварель</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для масляной кисти?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+O" />Shift+O</span>
-                <span className="help-hotkey-desc">— Масляная кисть (Brush Pro)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="O" />O</span>
+                <span className="help-hotkey-desc">— Масляная</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для пастели?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+P" />Shift+P</span>
-                <span className="help-hotkey-desc">— Пастель (Brush Pro)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="P" />P</span>
+                <span className="help-hotkey-desc">— Пастель</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для каллиграфической кисти?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+C" />Shift+C</span>
-                <span className="help-hotkey-desc">— Каллиграфия (Brush Pro)</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="I" />I</span>
+                <span className="help-hotkey-desc">— Каллиграфия</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
                 <meta itemProp="name" content="Какая клавиша для эллипса?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+E" />Shift+E</span>
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="U" />U</span>
                 <span className="help-hotkey-desc">— Эллипс</span>
               </div>
               <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
-                <meta itemProp="name" content="Какая клавиша для штампиков?" />
-                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Shift+Y" />Shift+Y</span>
-                <span className="help-hotkey-desc">— Штампики-смайлики</span>
+                <meta itemProp="name" content="Какая клавиша для штампов?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="Y" />Y</span>
+                <span className="help-hotkey-desc">— Штампы</span>
+              </div>
+              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
+                <meta itemProp="name" content="Какая клавиша для заливки?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="F" />F</span>
+                <span className="help-hotkey-desc">— Заливка</span>
+              </div>
+              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
+                <meta itemProp="name" content="Какая клавиша для пипетки?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="D" />D</span>
+                <span className="help-hotkey-desc">— Пипетка</span>
+              </div>
+              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
+                <meta itemProp="name" content="Какая клавиша для многоугольника?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="N" />N</span>
+                <span className="help-hotkey-desc">— Многоугольник</span>
+              </div>
+              <div className="help-hotkey-item" itemProp="mainEntity" itemScope itemType="https://schema.org/Question">
+                <meta itemProp="name" content="Какая клавиша для стрелки?" />
+                <span className="help-hotkey-key" itemProp="acceptedAnswer" itemScope itemType="https://schema.org/Answer"><meta itemProp="text" content="J" />J</span>
+                <span className="help-hotkey-desc">— Стрелка</span>
               </div>
             </div>
           </div>

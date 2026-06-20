@@ -44,6 +44,7 @@ export function densifyPath(points, spacing) {
         speed: p0.speed != null && p1.speed != null ? p0.speed + (p1.speed - p0.speed) * t : (p1.speed ?? 0),
         a: p0.a != null && p1.a != null ? p0.a + (p1.a - p0.a) * t : p1.a,
         r: p0.r != null && p1.r != null ? p0.r + (p1.r - p0.r) * t : p1.r,
+        dwell: p0.dwell != null && p1.dwell != null ? p0.dwell + (p1.dwell - p0.dwell) * t : p1.dwell,
       });
     }
   }
@@ -198,20 +199,23 @@ function mixStrokeWithCanvas(ctx, x, y, strokeStyle, amount) {
   }
 }
 
-function drawWatercolorBlob(ctx, x, y, r, strokeStyle, alpha, rand, options = {}) {
-  const { bleed = 0.35, mix = 0.45, texture = true } = options;
-  const bx = x + (rand() - 0.5) * r * bleed;
-  const by = y + (rand() - 0.5) * r * bleed;
-  const rr = r * (0.85 + rand() * 0.35);
-  const mixedColor = mixStrokeWithCanvas(ctx, bx, by, strokeStyle, mix);
+function drawWatercolorWash(ctx, x, y, r, colorOrHex, alpha, rand, options = {}) {
+  const { texture = true, bleed = 0.5 } = options;
+  const strokeStyle = typeof colorOrHex === 'string' && colorOrHex.startsWith('#')
+    ? colorOrHex
+    : '#000000';
+  const bx = x + (rand() - 0.5) * r * bleed * 0.4;
+  const by = y + (rand() - 0.5) * r * bleed * 0.4;
+  const rr = r * (1.05 + rand() * 0.35);
+  const mixedColor = strokeStyle;
 
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
   const grad = ctx.createRadialGradient(bx, by, 0, bx, by, rr);
-  grad.addColorStop(0, parseColor(mixedColor, alpha * 0.75));
-  grad.addColorStop(0.25, parseColor(mixedColor, alpha * 0.5));
-  grad.addColorStop(0.55, parseColor(mixedColor, alpha * 0.22));
-  grad.addColorStop(0.82, parseColor(mixedColor, alpha * 0.06));
+  grad.addColorStop(0, parseColor(mixedColor, alpha * 0.55));
+  grad.addColorStop(0.2, parseColor(mixedColor, alpha * 0.35));
+  grad.addColorStop(0.55, parseColor(mixedColor, alpha * 0.12));
+  grad.addColorStop(0.85, parseColor(mixedColor, alpha * 0.03));
   grad.addColorStop(1, parseColor(mixedColor, 0));
   ctx.fillStyle = grad;
   ctx.beginPath();
@@ -219,20 +223,20 @@ function drawWatercolorBlob(ctx, x, y, r, strokeStyle, alpha, rand, options = {}
   ctx.fill();
 
   ctx.globalCompositeOperation = 'source-over';
-  const softGrad = ctx.createRadialGradient(bx, by, rr * 0.15, bx, by, rr * 1.15);
-  softGrad.addColorStop(0, parseColor(mixedColor, alpha * 0.08));
-  softGrad.addColorStop(1, parseColor(mixedColor, 0));
-  ctx.fillStyle = softGrad;
+  const halo = ctx.createRadialGradient(bx, by, rr * 0.2, bx, by, rr * 1.35);
+  halo.addColorStop(0, parseColor(mixedColor, alpha * 0.06));
+  halo.addColorStop(1, parseColor(mixedColor, 0));
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(bx, by, rr * 1.15, 0, Math.PI * 2);
+  ctx.arc(bx, by, rr * 1.35, 0, Math.PI * 2);
   ctx.fill();
 
   if (texture) {
-    const grainCount = Math.floor(rr * 1.2);
+    const grainCount = Math.floor(rr * 0.45);
     for (let g = 0; g < grainCount; g++) {
       const angle = rand() * Math.PI * 2;
-      const dist = rand() * rr * 0.9;
-      ctx.globalAlpha = alpha * 0.12 * rand();
+      const dist = rand() * rr * 0.95;
+      ctx.globalAlpha = alpha * 0.08 * rand();
       ctx.fillStyle = parseColor(mixedColor, 1);
       ctx.fillRect(bx + Math.cos(angle) * dist, by + Math.sin(angle) * dist, 1, 1);
     }
@@ -250,30 +254,54 @@ export function renderWatercolorStroke(ctx, stroke) {
     texture = true,
   } = stroke;
   const waterFactor = 1 - saturation / 100;
-  const alpha = strokeOpacity * (0.25 + (1 - waterFactor) * 0.5);
-  const dense = densifyPath(points, Math.max(1.2, lineWidth * 0.14));
+  const defaultAlpha = strokeOpacity * (0.15 + (1 - waterFactor) * 0.4);
+  const dense = densifyPath(points, Math.max(2.5, lineWidth * 0.24));
 
   dense.forEach((p, i) => {
     const rand = seededRandom(Math.floor(p.x * 7 + p.y * 13 + i));
-    const r = lineWidth / 2;
-    drawWatercolorBlob(ctx, p.x, p.y, r, strokeStyle, alpha, rand, { texture, mix: 0.4 + (1 - waterFactor) * 0.35 });
+    const r = p.r ?? lineWidth / 2;
+    const alpha = p.a ?? defaultAlpha;
+    const dwell = p.dwell ?? 0;
+    const mix = 0.25 + (1 - waterFactor) * 0.35 + dwell * 0.15;
+    const mixedColor = mixStrokeWithCanvas(ctx, p.x, p.y, strokeStyle, mix);
+
+    drawWatercolorWash(ctx, p.x, p.y, r, mixedColor, alpha, rand, { texture, mix: 0, bleed: 0.55 + dwell * 0.35 });
+
+    if (dwell > 0.12 || i === 0) {
+      drawWatercolorWash(ctx, p.x, p.y, r * (1.1 + dwell * 0.8), mixedColor, alpha * 0.45, rand, {
+        texture: false,
+        mix: 0,
+        bleed: 0.75,
+      });
+    }
 
     if (i > 0) {
       const prev = dense[i - 1];
-      const dx = p.x - prev.x;
-      const dy = p.y - prev.y;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      const nx = -dy / len;
-      const ny = dx / len;
-      const bleedOff = r * 0.35;
-      const sideAlpha = alpha * 0.55;
-      drawWatercolorBlob(ctx, p.x + nx * bleedOff, p.y + ny * bleedOff, r * 0.9, strokeStyle, sideAlpha, rand, { texture, mix: 0.35 });
-      drawWatercolorBlob(ctx, p.x - nx * bleedOff, p.y - ny * bleedOff, r * 0.9, strokeStyle, sideAlpha, rand, { texture, mix: 0.35 });
       const mx = (p.x + prev.x) / 2;
       const my = (p.y + prev.y) / 2;
-      drawWatercolorBlob(ctx, mx, my, r * 0.75, strokeStyle, alpha * 0.4, rand, { texture: false, mix: 0.5, bleed: 0.2 });
+      const mr = ((p.r ?? r) + (prev.r ?? r)) / 2 * 0.85;
+      drawWatercolorWash(ctx, mx, my, mr, mixedColor, alpha * 0.35, rand, { texture: false, mix: 0, bleed: 0.25 });
     }
   });
+}
+
+function mixOilWithCanvas(ctx, x, y, strokeStyle, amount) {
+  try {
+    const sx = Math.max(0, Math.min(ctx.canvas.width - 1, Math.floor(x)));
+    const sy = Math.max(0, Math.min(ctx.canvas.height - 1, Math.floor(y)));
+    const d = ctx.getImageData(sx, sy, 1, 1).data;
+    if (d[3] < 4) return strokeStyle;
+    const sr = parseInt(strokeStyle.slice(1, 3), 16);
+    const sg = parseInt(strokeStyle.slice(3, 5), 16);
+    const sb = parseInt(strokeStyle.slice(5, 7), 16);
+    const t = amount * 0.45;
+    const r = Math.round(sr * (1 - t) + d[0] * t);
+    const g = Math.round(sg * (1 - t) + d[1] * t);
+    const b = Math.round(sb * (1 - t) + d[2] * t);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  } catch {
+    return strokeStyle;
+  }
 }
 
 function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hardness, seed) {
@@ -284,67 +312,62 @@ function drawOilBristleSegment(ctx, p0, p1, lw, strokeStyle, strokeOpacity, hard
   const ny = dx / len;
   const rand = seededRandom(seed);
   const roughness = 1 - hardness / 100;
-  const edgeJitter = lw * roughness * 0.18;
+  const edgeJitter = lw * roughness * 0.22;
+  const midX = (p0.x + p1.x) / 2;
+  const midY = (p0.y + p1.y) / 2;
+  const wetColor = mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.55);
+  const bristleColor = mixOilWithCanvas(ctx, midX, midY, strokeStyle, 0.35);
 
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.globalCompositeOperation = 'source-over';
 
-  ctx.globalAlpha = strokeOpacity;
-  ctx.strokeStyle = parseColor(strokeStyle, 1);
-  ctx.lineWidth = lw;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = strokeOpacity * 0.35;
+  ctx.strokeStyle = parseColor(wetColor, 1);
+  ctx.lineWidth = lw * 1.15;
   ctx.beginPath();
   ctx.moveTo(p0.x, p0.y);
   ctx.lineTo(p1.x, p1.y);
   ctx.stroke();
 
-  const bristles = 6 + Math.floor(roughness * 4);
-  const spread = lw * (0.3 + roughness * 0.6);
+  ctx.globalAlpha = strokeOpacity * 0.75;
+  ctx.strokeStyle = parseColor(strokeStyle, 1);
+  ctx.lineWidth = lw * 0.85;
+  ctx.beginPath();
+  ctx.moveTo(p0.x, p0.y);
+  ctx.lineTo(p1.x, p1.y);
+  ctx.stroke();
+
+  const bristles = 8 + Math.floor(roughness * 5);
+  const spread = lw * (0.35 + roughness * 0.65);
   for (let b = 0; b < bristles; b++) {
     const t = (b + 0.5) / bristles;
     const bx = p0.x + dx * t;
     const by = p0.y + dy * t;
     const off = (b - (bristles - 1) / 2) * (spread / Math.max(1, bristles - 1));
     const jitter = (rand() - 0.5) * edgeJitter;
-    ctx.globalAlpha = strokeOpacity * (0.4 + rand() * 0.35);
-    ctx.lineWidth = Math.max(0.8, lw * (0.14 + rand() * 0.14));
-    ctx.strokeStyle = parseColor(strokeStyle, 0.6 + rand() * 0.25);
+    ctx.globalAlpha = strokeOpacity * (0.35 + rand() * 0.4);
+    ctx.lineWidth = Math.max(0.7, lw * (0.1 + rand() * 0.12));
+    ctx.strokeStyle = parseColor(bristleColor, 0.85);
     ctx.beginPath();
     ctx.moveTo(bx + nx * (off + jitter), by + ny * (off + jitter));
-    ctx.lineTo(bx + nx * (off + jitter) + dx * 0.5, by + ny * (off + jitter) + dy * 0.5);
+    ctx.lineTo(bx + nx * (off + jitter) + dx * 0.55, by + ny * (off + jitter) + dy * 0.55);
     ctx.stroke();
   }
 
-  if (roughness > 0.1) {
-    const impastoCount = 2 + Math.floor(roughness * 4);
+  if (roughness > 0.08) {
+    const impastoCount = 3 + Math.floor(roughness * 4);
     ctx.fillStyle = parseColor(strokeStyle, 1);
     for (let i = 0; i < impastoCount; i++) {
       const t = rand();
       const ix = p0.x + dx * t;
       const iy = p0.y + dy * t;
-      const jx = (rand() - 0.5) * spread * 0.75;
-      const jy = (rand() - 0.5) * spread * 0.75;
-      ctx.globalAlpha = strokeOpacity * (0.3 + rand() * 0.45);
+      ctx.globalAlpha = strokeOpacity * (0.35 + rand() * 0.5);
       ctx.beginPath();
-      ctx.arc(ix + jx, iy + jy, lw * (0.04 + rand() * 0.08), 0, Math.PI * 2);
+      ctx.arc(ix + (rand() - 0.5) * spread * 0.5, iy + (rand() - 0.5) * spread * 0.5, lw * (0.05 + rand() * 0.09), 0, Math.PI * 2);
       ctx.fill();
     }
-  }
-
-  const edgeSteps = 3 + Math.floor(roughness * 4);
-  for (let e = 0; e < edgeSteps; e++) {
-    const t = rand();
-    const ex = p0.x + dx * t;
-    const ey = p0.y + dy * t;
-    const side = (rand() > 0.5 ? 1 : -1) * (lw * 0.5 + rand() * edgeJitter);
-    ctx.globalAlpha = strokeOpacity * 0.35;
-    ctx.lineWidth = 1 + rand() * 2;
-    ctx.strokeStyle = parseColor(strokeStyle, 0.4);
-    ctx.beginPath();
-    ctx.moveTo(ex + nx * side, ey + ny * side);
-    ctx.lineTo(ex + nx * side * 0.7 + dx * 0.08, ey + ny * side * 0.7 + dy * 0.08);
-    ctx.stroke();
   }
 
   ctx.restore();
@@ -446,21 +469,21 @@ export function renderPastelStroke(ctx, stroke) {
 
 export function calcCalligraphyWidth(baseWidth, dx, dy, speed, speedSensitivity, angleSensitivity, nibAngleDeg = 45) {
   if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
-    return Math.max(1, baseWidth * 0.1);
+    return Math.max(1, baseWidth * 0.08);
   }
 
-  const moveAngle = Math.atan2(dy, dx);
-  const nibRad = (nibAngleDeg * Math.PI) / 180;
-  const sinNib = Math.abs(Math.sin(moveAngle - nibRad));
+  const beta = Math.atan2(dy, dx);
+  const alpha = (nibAngleDeg * Math.PI) / 180;
+  const minW = baseWidth * 0.08;
+  const sinVal = Math.abs(Math.sin(beta - alpha));
   const aSens = angleSensitivity / 100;
-  const angleFactor = (1 - aSens) * 0.35 + aSens * sinNib;
-  const widthFromAngle = baseWidth * (0.08 + angleFactor * 0.92);
+  const angleW = minW + (baseWidth - minW) * ((1 - aSens) * 0.35 + aSens * sinVal);
 
   const speedFactor = Math.min(1, Math.max(0, speed / 14));
   const sSens = speedSensitivity / 100;
-  const speedMul = 1 - speedFactor * sSens * 0.88;
+  const speedMul = 1 - speedFactor * sSens * 0.78;
 
-  return Math.max(1, widthFromAngle * Math.max(0.12, speedMul));
+  return Math.max(1, angleW * Math.max(0.15, speedMul));
 }
 
 function drawCalligraphyRibbon(ctx, p0, p1, w0, w1, color) {

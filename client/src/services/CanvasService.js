@@ -580,6 +580,10 @@ drawPolygonStroke(ctx, stroke) {
   }
 
   redraw() {
+    this.blitBufferToDisplay();
+  }
+
+  blitBufferToDisplay() {
     if (!this.ctx || !this.bufferCanvas) return;
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

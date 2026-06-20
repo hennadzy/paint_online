@@ -4,6 +4,7 @@ import "../styles/toolbar.scss";
 import toolState from "../store/toolState";
 import canvasState from "../store/canvasState";
 import capabilitiesState from "../store/capabilitiesState";
+import { formatToolTooltip } from "../config/toolHotkeys";
 import Brush from "../tools/Brush";
 import Marker from "../tools/brush/Marker";
 import Airbrush from "../tools/brush/Airbrush";
@@ -59,22 +60,22 @@ const GROUP_TOOL_ENTRIES = {
     ["arrow", Arrow, "Стрелка"],
   ],
   brushExtra: [
-    ["marker", Marker, "Маркер (Shift+M)"],
-    ["airbrush", Airbrush, "Аэрограф (Shift+A)"],
-    ["smudge", Smudge, "Размывайка (Shift+S)"],
+    ["marker", Marker, "Маркер"],
+    ["airbrush", Airbrush, "Аэрограф"],
+    ["smudge", Smudge, "Размытие"],
   ],
   brushPro: [
-    ["watercolor", Watercolor, "Акварель (Shift+W)"],
-    ["oil", Oil, "Масляная (Shift+O)"],
-    ["pastel", Pastel, "Пастель (Shift+P)"],
-    ["calligraphy", Calligraphy, "Каллиграфия (Shift+C)"],
+    ["watercolor", Watercolor, "Акварель"],
+    ["oil", Oil, "Масляная"],
+    ["pastel", Pastel, "Пастель"],
+    ["calligraphy", Calligraphy, "Каллиграфия"],
   ],
   shapes: [
     ["circle", Circle, "Круг"],
     ["rect", Rect, "Прямоугольник"],
     ["polygon", Polygon, "Многоугольник"],
-    ["ellipse", Ellipse, "Эллипс (Shift+E)"],
-    ["stamp", Stamp, "Штампики (Shift+Y)"],
+    ["ellipse", Ellipse, "Эллипс"],
+    ["stamp", Stamp, "Штампы"],
   ],
   color: [
     ["fill", Fill, "Заливка"],
@@ -84,8 +85,8 @@ const GROUP_TOOL_ENTRIES = {
     ["eraser", Eraser, "Ластик"],
   ],
   selection: [
-    ["select", RectSelect, "Выделение (M)"],
-    ["lasso", Lasso, "Лассо (Q)"],
+    ["select", RectSelect, "Выделение"],
+    ["lasso", Lasso, "Лассо"],
   ],
 };
 
@@ -143,6 +144,8 @@ const Toolbar = observer(() => {
     toggleGroup(group);
   };
 
+  const toolLabel = (name, label) => formatToolTooltip(label, name);
+
   const renderButton = (toolName, ToolClass, label) => (
     <button
       type="button"
@@ -151,7 +154,7 @@ const Toolbar = observer(() => {
       onMouseDown={(e) => e.target.blur()}
     >
       <span className={`icon ${toolName}`} />
-      <span className="tooltip">{label}</span>
+      <span className="tooltip">{toolLabel(toolName, label)}</span>
     </button>
   );
 
@@ -161,7 +164,7 @@ const Toolbar = observer(() => {
 
     const lastTool = toolState.getLastInGroup(groupKey);
     const labels = toolState.groupLabels[groupKey] || {};
-    const tooltip = labels[lastTool] || lastTool;
+    const tooltip = toolLabel(lastTool, labels[lastTool] || lastTool);
 
     return (
       <div className="toolbar__group" key={groupKey}>
@@ -206,7 +209,7 @@ const Toolbar = observer(() => {
           onMouseDown={(e) => e.target.blur()}
         >
           <span className="icon eraser" />
-          <span className="tooltip">Ластик</span>
+          <span className="tooltip">{toolLabel("eraser", "Ластик")}</span>
         </button>
         <div className={`toolbar__submenu ${activeGroup === "eraser" ? "show" : ""}`}>
           {renderButton("eraser", Eraser, "Ластик")}
@@ -233,21 +236,21 @@ const Toolbar = observer(() => {
         title="Сетка"
       >
         <span className="icon grid" />
-        <span className="tooltip">Сетка</span>
+        <span className="tooltip">{toolLabel("grid", "Сетка")}</span>
       </button>
 
       {renderGroup("selection")}
-      {renderButton("hand", Hand, "Рука (H)")}
+      {renderButton("hand", Hand, "Рука")}
 
       <button
         type="button"
         className={`toolbar__btn zoom-btn ${clickAnimation === "zoomOut" ? "click-animation" : ""}`}
         onClick={() => handleActionClick(() => canvasState.zoomOut(), "zoomOut")}
         onMouseDown={(e) => e.target.blur()}
-        title="Уменьшить (Ctrl+-)"
+        title="Уменьшить"
       >
         <span className="icon minus" />
-        <span className="tooltip">Уменьшить</span>
+        <span className="tooltip">Уменьшить (-)</span>
       </button>
 
       <button
@@ -255,10 +258,10 @@ const Toolbar = observer(() => {
         className={`toolbar__btn zoom-btn ${clickAnimation === "zoomIn" ? "click-animation" : ""}`}
         onClick={() => handleActionClick(() => canvasState.zoomIn(), "zoomIn")}
         onMouseDown={(e) => e.target.blur()}
-        title="Увеличить (Ctrl++)"
+        title="Увеличить"
       >
         <span className="icon plus" />
-        <span className="tooltip">Увеличить</span>
+        <span className="tooltip">Увеличить (+)</span>
       </button>
     </div>
   );

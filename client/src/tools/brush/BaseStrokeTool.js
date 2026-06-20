@@ -1,6 +1,7 @@
 import Tool from '../Tool';
 import canvasState from '../../store/canvasState';
 import toolState from '../../store/toolState';
+import CanvasService from '../../services/CanvasService';
 
 export default class BaseStrokeTool extends Tool {
   constructor(canvas, socket, id, username) {
@@ -11,6 +12,8 @@ export default class BaseStrokeTool extends Tool {
     this.lastX = null;
     this.lastY = null;
     this.strokeType = 'brush';
+    this._liveRafId = null;
+    this._pendingLiveRender = null;
   }
 
   setStrokeColor(color) {
@@ -59,6 +62,15 @@ export default class BaseStrokeTool extends Tool {
     this.canvas.removeEventListener('pointerup', this.pointerUpHandlerBound);
     this.canvas.removeEventListener('pointercancel', this.pointerUpHandlerBound);
     this.canvas.removeEventListener('lostpointercapture', this.lostPointerCaptureHandlerBound);
+    this.cancelLivePreview();
+  }
+
+  cancelLivePreview() {
+    if (this._liveRafId != null) {
+      cancelAnimationFrame(this._liveRafId);
+      this._liveRafId = null;
+    }
+    this._pendingLiveRender = null;
   }
 
   lostPointerCaptureHandler(e) {
@@ -76,6 +88,7 @@ export default class BaseStrokeTool extends Tool {
     this.mouseDown = true;
     this._hasCommitted = false;
     canvasState.isDrawing = true;
+    this.cancelLivePreview();
     this.points = [];
     this.resetPenPressureState();
     this.applyToolParams();
@@ -87,7 +100,7 @@ export default class BaseStrokeTool extends Tool {
     this.lastTime = Date.now();
     const pt = this.createPoint(x, y, e, 0);
     this.points.push(pt);
-    canvasState.redrawCanvas();
+    CanvasService.blitBufferToDisplay();
     this.drawLive();
   }
 
@@ -97,6 +110,7 @@ export default class BaseStrokeTool extends Tool {
     if (this.isPinchingActive()) {
       this.mouseDown = false;
       canvasState.isDrawing = false;
+      this.cancelLivePreview();
       if (this.points.length > 0) this.commitStroke();
       return;
     }
@@ -111,7 +125,7 @@ export default class BaseStrokeTool extends Tool {
     this.lastY = y;
     this.lastTime = now;
 
-    this.drawLive();
+    this.scheduleLivePreview(() => this.drawLive());
   }
 
   addPointsAlongLine(x1, y1, x2, y2, e, speed) {
@@ -141,6 +155,7 @@ export default class BaseStrokeTool extends Tool {
 
     this._hasCommitted = true;
     this.mouseDown = false;
+    this.cancelLivePreview();
     this.commitStroke();
   }
 
@@ -156,9 +171,32 @@ export default class BaseStrokeTool extends Tool {
     this.drawSegment?.();
   }
 
-  /** Live-preview = commit: полный redraw + тот же рендер, что после отпускания */
+  scheduleLivePreview(paintFn, immediate = false) {
+    this._pendingLiveRender = paintFn;
+    if (immediate) {
+      if (this._liveRafId != null) {
+        cancelAnimationFrame(this._liveRafId);
+        this._liveRafId = null;
+      }
+      this.flushLivePreview();
+      return;
+    }
+    if (this._liveRafId != null) return;
+    this._liveRafId = requestAnimationFrame(() => {
+      this._liveRafId = null;
+      this.flushLivePreview();
+    });
+  }
+
+  flushLivePreview() {
+    const paintFn = this._pendingLiveRender;
+    this._pendingLiveRender = null;
+    if (!paintFn || !this.mouseDown || this.points.length === 0) return;
+    CanvasService.blitBufferToDisplay();
+    paintFn();
+  }
+
   drawLiveFull(renderFn, needsCanvas = false) {
-    canvasState.redrawCanvas();
     if (this.points.length === 0) return;
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     const payload = this.buildStrokePayload();

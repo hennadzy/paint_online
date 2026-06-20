@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import canvasState from "../store/canvasState";
+import CanvasService from "../services/CanvasService";
 
 export default class Brush extends Tool {
   constructor(canvas, socket, id, username) {
@@ -10,6 +11,8 @@ export default class Brush extends Tool {
     this.lineWidth = 1;
     this.lastX = null;
     this.lastY = null;
+    this._liveRafId = null;
+    this._pendingLivePaint = null;
   }
 
   setStrokeColor(color) {
@@ -77,8 +80,29 @@ export default class Brush extends Tool {
       pt.w = this.getPressureAdjustedLineWidth(e);
     }
     this.points.push(pt);
-    canvasState.redrawCanvas();
-    this.drawLive();
+    this.scheduleLivePaint(true);
+  }
+
+  scheduleLivePaint(immediate = false) {
+    this._pendingLivePaint = true;
+    if (immediate) {
+      if (this._liveRafId != null) cancelAnimationFrame(this._liveRafId);
+      this._liveRafId = null;
+      this.flushLivePaint();
+      return;
+    }
+    if (this._liveRafId != null) return;
+    this._liveRafId = requestAnimationFrame(() => {
+      this._liveRafId = null;
+      this.flushLivePaint();
+    });
+  }
+
+  flushLivePaint() {
+    if (!this._pendingLivePaint || !this.mouseDown || this.points.length === 0) return;
+    this._pendingLivePaint = false;
+    CanvasService.blitBufferToDisplay();
+    this.drawStroke();
   }
 
   pointerMoveHandler(e) {
@@ -103,7 +127,7 @@ export default class Brush extends Tool {
     this.lastX = smoothed.x;
     this.lastY = smoothed.y;
 
-    this.drawLive();
+    this.scheduleLivePaint();
   }
 
   pointerUpHandler(e) {
@@ -122,6 +146,9 @@ export default class Brush extends Tool {
 
     this._hasCommitted = true;
     this.mouseDown = false;
+    if (this._liveRafId != null) cancelAnimationFrame(this._liveRafId);
+    this._liveRafId = null;
+    this._pendingLivePaint = false;
     this.commitStroke();
   }
 
@@ -140,9 +167,7 @@ export default class Brush extends Tool {
   }
 
   drawLive() {
-    canvasState.redrawCanvas();
-    if (this.points.length === 0) return;
-    this.drawStroke();
+    this.scheduleLivePaint();
   }
 
   drawDot() {

@@ -76,11 +76,11 @@ class ToolState {
 
   groupLabels = {
     brush: { brush: "Кисть", line: "Линия", arrow: "Стрелка" },
-    brushExtra: { marker: "Маркер", airbrush: "Аэрограф", smudge: "Размывайка" },
+    brushExtra: { marker: "Маркер", airbrush: "Аэрограф", smudge: "Размытие" },
     brushPro: { watercolor: "Акварель", oil: "Масляная", pastel: "Пастель", calligraphy: "Каллиграфия" },
     shapes: {
       circle: "Круг", rect: "Прямоугольник", polygon: "Многоугольник",
-      ellipse: "Эллипс", stamp: "Штампики",
+      ellipse: "Эллипс", stamp: "Штампы",
     },
     color: { pipette: "Пипетка", fill: "Заливка" },
     selection: { select: "Выделение", lasso: "Лассо" },
