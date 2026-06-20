@@ -27,6 +27,7 @@ export default class BaseStrokeTool extends Tool {
     this._liveLayer = null;
     this._liveLayerCtx = null;
     this._liveDrawnCount = 0;
+    this._liveLayerContainsBuffer = false;
   }
 
   setStrokeColor(color) {
@@ -63,6 +64,14 @@ export default class BaseStrokeTool extends Tool {
       this._liveLayer.width = this.canvas.width;
       this._liveLayer.height = this.canvas.height;
       this._liveDrawnCount = 0;
+      this._liveLayerContainsBuffer = false;
+    }
+    if (this.strokeType === 'smudge' && !this._liveLayerContainsBuffer) {
+      this._liveLayerCtx.clearRect(0, 0, this._liveLayer.width, this._liveLayer.height);
+      if (CanvasService.bufferCanvas) {
+        this._liveLayerCtx.drawImage(CanvasService.bufferCanvas, 0, 0);
+      }
+      this._liveLayerContainsBuffer = true;
     }
     return this._liveLayerCtx;
   }
@@ -72,9 +81,13 @@ export default class BaseStrokeTool extends Tool {
       this._liveLayerCtx.clearRect(0, 0, this._liveLayer.width, this._liveLayer.height);
     }
     this._liveDrawnCount = 0;
+    this._liveLayerContainsBuffer = false;
   }
 
   presentLiveStroke() {
+    if (isMobileBrushDevice() && HEAVY_STROKE_TYPES.has(this.strokeType) && this.strokeType !== 'smudge') {
+      return;
+    }
     CanvasService.blitBufferToDisplay();
     if (!this._liveLayer) return;
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
@@ -279,6 +292,15 @@ export default class BaseStrokeTool extends Tool {
       renderFn(liveCtx, payload);
     }
 
+    if (isMobileBrushDevice() && HEAVY_STROKE_TYPES.has(this.strokeType) && this.strokeType !== 'smudge') {
+      const displayCtx = this.canvas.getContext('2d', { willReadFrequently: true });
+      if (needsCanvas) {
+        renderFn(displayCtx, payload, this.canvas);
+      } else {
+        renderFn(displayCtx, payload);
+      }
+    }
+
     this._liveDrawnCount = this.points.length;
   }
 
@@ -313,6 +335,9 @@ export default class BaseStrokeTool extends Tool {
       CanvasService.bufferCtx;
 
     if (commitFromLiveLayer) {
+      if (this.strokeType === 'smudge') {
+        CanvasService.bufferCtx.clearRect(0, 0, CanvasService.bufferCanvas.width, CanvasService.bufferCanvas.height);
+      }
       CanvasService.bufferCtx.drawImage(this._liveLayer, 0, 0);
     }
 
