@@ -214,12 +214,11 @@ export function commitSelectionSession(canvas) {
     mask: floatingOnly ? null : mask,
   };
 
-  selectionState.clear();
-
   void (async () => {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
     const stroke = buildSelectionTransformStroke(payload);
     await canvasState.pushStroke(stroke);
+    selectionState.clear();
+    canvasState.redrawCanvas();
   })();
 }
 

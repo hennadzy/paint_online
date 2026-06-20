@@ -7,7 +7,11 @@ const HEAVY_STROKE_TYPES = new Set([
   'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy',
 ]);
 const MAX_STROKE_POINTS_DESKTOP = 4000;
-const MAX_STROKE_POINTS_MOBILE = 2500;
+const MAX_STROKE_POINTS_MOBILE = 1200;
+
+function isMobileBrushDevice() {
+  return window.innerWidth <= 768;
+}
 
 export default class BaseStrokeTool extends Tool {
   constructor(canvas, socket, id, username) {
@@ -40,7 +44,9 @@ export default class BaseStrokeTool extends Tool {
   getPointSpacing(speed = 0) {
     const base = Math.max(1, (this.lineWidth || 5) * 0.15);
     const heavyMul = HEAVY_STROKE_TYPES.has(this.strokeType) ? 2 : 1;
-    const mobileMul = window.innerWidth <= 768 ? 1.4 : 1;
+    const mobileMul = isMobileBrushDevice()
+      ? (HEAVY_STROKE_TYPES.has(this.strokeType) ? 2.8 : 1.4)
+      : 1;
     const speedMul = 1 + Math.min(2, Math.max(0, speed) / 12);
     return base * heavyMul * mobileMul * speedMul;
   }
@@ -189,7 +195,7 @@ export default class BaseStrokeTool extends Tool {
   }
 
   trimStrokePoints() {
-    const maxPoints = window.innerWidth <= 768 ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP;
+    const maxPoints = isMobileBrushDevice() ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP;
     if (this.points.length <= maxPoints) return;
     const excess = this.points.length - maxPoints;
     // Keep stroke tail responsive while dropping oldest dense points.
@@ -264,6 +270,7 @@ export default class BaseStrokeTool extends Tool {
       ...this.buildStrokePayload(),
       points: segmentPoints,
       livePreview: HEAVY_STROKE_TYPES.has(this.strokeType),
+      mobilePreview: HEAVY_STROKE_TYPES.has(this.strokeType) && isMobileBrushDevice(),
     };
 
     if (needsCanvas) {
@@ -297,6 +304,7 @@ export default class BaseStrokeTool extends Tool {
     const stroke = this.buildStrokePayload();
     if (HEAVY_STROKE_TYPES.has(this.strokeType)) {
       stroke.livePreview = true;
+      stroke.mobilePreview = isMobileBrushDevice();
     }
     const commitFromLiveLayer =
       HEAVY_STROKE_TYPES.has(this.strokeType) &&
