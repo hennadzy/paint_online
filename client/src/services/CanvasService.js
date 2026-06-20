@@ -9,6 +9,7 @@ import { floodFillImageData } from "../utils/floodFill";
 import { renderSpecialBrushStroke, renderMarkerStroke, BRUSH_STROKE_TYPES } from "../utils/brushEffects";
 import { getStampById } from "../utils/stampPresets";
 import { eraseMaskFromBuffer, eraseMaskRegionFromBuffer } from "../utils/selectionUtils";
+import selectionState from "../store/selectionState";
 import {
   drawSelectionPreview,
   isMobileSelectionComposite,
@@ -600,6 +601,14 @@ drawPolygonStroke(ctx, stroke) {
     }
 
     if (isMobileSelectionComposite() && selectionNeedsVisual()) {
+      if (
+        selectionState.hasSelection &&
+        selectionState.transformSessionActive &&
+        !selectionState.floatingOnly &&
+        selectionState.mask
+      ) {
+        eraseMaskFromBuffer(this.ctx, selectionState.mask, this.canvas.width, this.canvas.height);
+      }
       drawSelectionPreview(this.ctx, this.canvas, { clear: false });
     }
   }

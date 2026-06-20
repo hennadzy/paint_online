@@ -211,8 +211,8 @@ export default class BaseStrokeTool extends Tool {
     this._hasCommitted = true;
     this.mouseDown = false;
     this.cancelLivePreview();
-    this.clearLiveLayer();
     this.commitStroke();
+    this.clearLiveLayer();
   }
 
   createPoint(x, y, e, speed) {
@@ -263,6 +263,7 @@ export default class BaseStrokeTool extends Tool {
     const payload = {
       ...this.buildStrokePayload(),
       points: segmentPoints,
+      livePreview: HEAVY_STROKE_TYPES.has(this.strokeType),
     };
 
     if (needsCanvas) {
@@ -294,8 +295,21 @@ export default class BaseStrokeTool extends Tool {
     }
 
     const stroke = this.buildStrokePayload();
+    if (HEAVY_STROKE_TYPES.has(this.strokeType)) {
+      stroke.livePreview = true;
+    }
+    const commitFromLiveLayer =
+      HEAVY_STROKE_TYPES.has(this.strokeType) &&
+      this._liveLayer &&
+      this._liveDrawnCount > 0 &&
+      CanvasService.bufferCtx;
+
+    if (commitFromLiveLayer) {
+      CanvasService.bufferCtx.drawImage(this._liveLayer, 0, 0);
+    }
+
     this.points = [];
-    canvasState.pushStroke(stroke);
+    canvasState.pushStroke(stroke, { skipBufferDraw: commitFromLiveLayer });
     this.saveImage();
 
     this.send(JSON.stringify({

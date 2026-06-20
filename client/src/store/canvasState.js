@@ -311,21 +311,23 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
     return HistoryService.redoStacks;
   }
 
-  async pushStroke(stroke) {
+  async pushStroke(stroke, options = {}) {
     const added = HistoryService.addStroke(stroke, this.username);
     if (added) {
       if (!WebSocketService.isConnected) {
         this.saveLocalCanvasSnapshot();
       }
 
-      await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+      if (!options.skipBufferDraw) {
+        await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
+      }
       CanvasService.redraw();
       AutoSaveService.markChanged();
       this.scheduleThumbnailSave();
       this.scheduleLocalAutoSave();
 
       if (WebSocketService.isConnected) {
-        WebSocketService.sendDraw(stroke);
+        WebSocketService.sendDraw(options.broadcastStroke || stroke);
       }
     }
   }
