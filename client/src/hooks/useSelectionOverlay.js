@@ -4,6 +4,7 @@ import canvasState from "../store/canvasState";
 import selectionState from "../store/selectionState";
 import {
   drawSelectionPreview,
+  isMobileSelectionComposite,
   selectionNeedsVisual,
   syncSelectionOverlay,
 } from "../utils/selectionOverlayDraw";
@@ -23,15 +24,24 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
       drawSelectionPreview(ctx, overlay);
     };
 
-    const redrawAll = () => {
-      canvasState.redrawCanvas();
+    const redrawSelectionVisual = () => {
+      if (isMobileSelectionComposite()) {
+        canvasState.redrawCanvas();
+        return;
+      }
       redrawOverlay();
     };
 
+    const redrawAll = () => {
+      canvasState.redrawCanvas();
+      if (!isMobileSelectionComposite()) {
+        redrawOverlay();
+      }
+    };
+
     const tick = () => {
-      const overlay = overlayRef.current;
       const canvas = canvasRef.current;
-      if (!overlay || !canvas) {
+      if (!canvas) {
         animationId = requestAnimationFrame(tick);
         return;
       }
@@ -40,12 +50,17 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
 
       if (needsAnimation) {
         selectionState.advanceMarchingAnts();
-        redrawOverlay();
+        redrawSelectionVisual();
         wasAnimating = true;
       } else if (wasAnimating) {
         canvasState.redrawCanvas();
-        const ctx = overlay.getContext("2d");
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        if (!isMobileSelectionComposite()) {
+          const overlay = overlayRef.current;
+          if (overlay) {
+            const ctx = overlay.getContext("2d");
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+          }
+        }
         wasAnimating = false;
       }
 

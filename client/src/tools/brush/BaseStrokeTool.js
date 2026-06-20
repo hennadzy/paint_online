@@ -250,7 +250,6 @@ export default class BaseStrokeTool extends Tool {
     const payload = {
       ...this.buildStrokePayload(),
       points: segmentPoints,
-      livePreview: true,
     };
 
     if (needsCanvas) {

@@ -161,8 +161,11 @@ export function cutSelectionFromBuffer(canvas) {
   if (selectionState.hasCut || selectionState.floatingOnly) return;
   const { mask } = selectionState;
   const bufferCtx = canvasState.bufferCtx;
-  if (!mask || !bufferCtx) return;
-  eraseMaskFromBuffer(bufferCtx, mask, canvas.width, canvas.height);
+  const bufferCanvas = canvasState.bufferCanvas;
+  const width = bufferCanvas?.width || canvas?.width;
+  const height = bufferCanvas?.height || canvas?.height;
+  if (!mask || !bufferCtx || !width || !height) return;
+  eraseMaskFromBuffer(bufferCtx, mask, width, height);
   selectionState.setHasCut(true);
   canvasState.redrawCanvas();
 }
@@ -255,6 +258,9 @@ export function createTransformSessionHandlers(tool) {
       startY = y;
       initialTransform = { ...selectionState.transform };
       initialBounds = getLocalBounds();
+      if (handle.id === "move" && !selectionState.hasCut && !selectionState.floatingOnly) {
+        cutSelectionFromBuffer(tool.canvas);
+      }
       selectionState.setDragging(handle.id === "move");
       tool.canvas.setPointerCapture?.(e.pointerId);
       return true;
