@@ -7,9 +7,10 @@ export default class Pastel extends BaseStrokeTool {
     this.strokeType = 'pastel';
     this.strokeOpacity = 0.35;
     this.graininess = 60;
+    this.angle = 0;
   }
 
   drawLive() {
-    this.drawLiveStroke(renderPastelStroke);
+    this.drawLiveFull(renderPastelStroke);
   }
 }

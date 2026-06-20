@@ -7,9 +7,10 @@ export default class Watercolor extends BaseStrokeTool {
     this.strokeType = 'watercolor';
     this.strokeOpacity = 0.45;
     this.saturation = 50;
+    this.texture = true;
   }
 
   drawLive() {
-    this.drawLiveStroke(renderWatercolorStroke);
+    this.drawLiveFull(renderWatercolorStroke);
   }
 }

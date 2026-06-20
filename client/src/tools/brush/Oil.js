@@ -6,16 +6,25 @@ export default class Oil extends BaseStrokeTool {
     super(canvas, socket, id, username);
     this.strokeType = 'oil';
     this.edgeHardness = 70;
+    this.pressureSensitivity = true;
   }
 
-  enrichPoint(pt, e, speed) {
-    if (e?.pointerType === 'pen' && pt.w) return pt;
-    const speedBoost = Math.min(1, (speed || 0) / 20);
-    pt.w = this.lineWidth * (1 + speedBoost * 0.5);
+  enrichPoint(pt, e) {
+    if (!this.pressureSensitivity) {
+      pt.w = this.lineWidth;
+      return pt;
+    }
+    if (e?.pointerType === 'pen') {
+      pt.w = this.getPressureAdjustedLineWidth(e);
+    } else if (typeof e?.pressure === 'number') {
+      pt.w = this.lineWidth * (0.25 + e.pressure * 0.75);
+    } else {
+      pt.w = this.lineWidth;
+    }
     return pt;
   }
 
   drawLive() {
-    this.drawLiveStroke(renderOilStroke);
+    this.drawLiveFull(renderOilStroke);
   }
 }

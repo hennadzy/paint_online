@@ -1,5 +1,4 @@
 import BaseStrokeTool from './BaseStrokeTool';
-import canvasState from '../../store/canvasState';
 import { calcCalligraphyWidth, renderCalligraphyStroke } from '../../utils/brushEffects';
 
 export default class Calligraphy extends BaseStrokeTool {
@@ -7,18 +6,21 @@ export default class Calligraphy extends BaseStrokeTool {
     super(canvas, socket, id, username);
     this.strokeType = 'calligraphy';
     this.speedSensitivity = 50;
+    this.angleSensitivity = 50;
     this._prevX = null;
     this._prevY = null;
+    this._prevW = null;
   }
 
   pointerDownHandler(e) {
     this._prevX = null;
     this._prevY = null;
+    this._prevW = null;
     super.pointerDownHandler(e);
   }
 
   getPointSpacing() {
-    return Math.max(0.5, (this.lineWidth || 5) * 0.12);
+    return Math.max(0.4, (this.lineWidth || 5) * 0.08);
   }
 
   enrichPoint(pt, e, speed) {
@@ -26,21 +28,29 @@ export default class Calligraphy extends BaseStrokeTool {
     const refY = this._prevY ?? this.lastY ?? pt.y;
     const dx = pt.x - refX;
     const dy = pt.y - refY;
-    let w = calcCalligraphyWidth(this.lineWidth, dx, dy, speed, this.speedSensitivity);
+    let w = calcCalligraphyWidth(
+      this.lineWidth, dx, dy, speed,
+      this.speedSensitivity, this.angleSensitivity
+    );
+
+    if (this._prevW != null) {
+      const maxStep = this.lineWidth * 0.28;
+      w = Math.max(this._prevW - maxStep, Math.min(this._prevW + maxStep, w));
+    }
+
     if (e?.pointerType === 'pen') {
       const pw = this.getPressureAdjustedLineWidth(e);
-      w = (w + pw) / 2;
+      w = w * 0.55 + pw * 0.45;
     }
-    pt.w = w;
+
+    pt.w = Math.max(1, w);
     this._prevX = pt.x;
     this._prevY = pt.y;
+    this._prevW = pt.w;
     return pt;
   }
 
   drawLive() {
-    canvasState.redrawCanvas();
-    if (this.points.length === 0) return;
-    const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-    renderCalligraphyStroke(ctx, this.buildStrokePayload());
+    this.drawLiveFull(renderCalligraphyStroke);
   }
 }

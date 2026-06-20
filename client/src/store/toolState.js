@@ -7,10 +7,10 @@ const DEFAULT_TOOL_PARAMS = {
   marker: { angle: 0 },
   airbrush: { scatter: 15 },
   smudge: { strength: 50 },
-  watercolor: { saturation: 50 },
-  oil: { edgeHardness: 70 },
-  pastel: { graininess: 60 },
-  calligraphy: { speedSensitivity: 50 },
+  watercolor: { saturation: 50, texture: true },
+  oil: { edgeHardness: 70, pressureSensitivity: true },
+  pastel: { graininess: 60, angle: 0 },
+  calligraphy: { speedSensitivity: 50, angleSensitivity: 50 },
   stamp: { stampSize: 48, selectedStamp: '😊' },
 };
 
@@ -106,7 +106,7 @@ class ToolState {
   }
 
   getToolParams(toolName) {
-    return { ...(this.toolParams[toolName] || {}) };
+    return { ...(DEFAULT_TOOL_PARAMS[toolName] || {}), ...(this.toolParams[toolName] || {}) };
   }
 
   setToolParam(toolName, key, value) {

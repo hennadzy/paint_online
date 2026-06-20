@@ -24,6 +24,6 @@ export default class Airbrush extends BaseStrokeTool {
   }
 
   drawLive() {
-    this.drawLiveStroke(renderAirbrushStroke);
+    this.drawLiveFull(renderAirbrushStroke);
   }
 }
