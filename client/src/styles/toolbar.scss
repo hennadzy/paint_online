@@ -524,19 +524,20 @@
     overflow: hidden;
     min-height: 50px;
     height: auto;
-    padding: 8px 10px;
-    gap: 6px;
+    padding: 5px 10px;
+    gap: 2px;
     z-index: 997;
 
     .setting-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px 10px;
+      gap: 0 10px;
       width: 100%;
       align-items: center;
+      min-height: 24px;
 
       &--follow {
-        margin-top: 6px;
+        margin-top: 0;
       }
 
       > * {
@@ -561,6 +562,7 @@
       width: 100%;
       max-width: 100%;
       min-width: 0;
+      min-height: 24px;
 
       input[type="range"] {
         flex: 1 1 auto;
@@ -586,6 +588,7 @@
       width: 100%;
       max-width: 100%;
       min-height: 24px;
+      height: 24px;
       font-size: 11px;
       color: #ddd;
       white-space: nowrap;
@@ -613,6 +616,7 @@
       align-items: center;
       gap: 6px;
       width: 100%;
+      min-height: 24px;
     }
 
     .setting-value {
@@ -636,8 +640,8 @@
 
     &--multi-row {
       min-height: auto;
-      gap: 4px;
-      padding-bottom: 4px;
+      gap: 2px;
+      padding-bottom: 5px;
     }
   }
 
