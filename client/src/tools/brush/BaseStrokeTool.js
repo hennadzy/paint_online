@@ -402,7 +402,9 @@ export default class BaseStrokeTool extends Tool {
     }
 
     this.points = [];
-    canvasState.pushStroke(stroke, { skipBufferDraw: commitFromLiveLayer });
+    void canvasState
+      .pushStroke(stroke, { skipBufferDraw: commitFromLiveLayer })
+      .then(() => canvasState.redrawCanvas());
     this.saveImage();
 
     this.send(JSON.stringify({

@@ -548,8 +548,6 @@ drawPolygonStroke(ctx, stroke) {
         index += 1;
       }
 
-      this.redraw();
-
       if (index < strokes.length) {
         requestAnimationFrame(drawBatch);
         return;

@@ -14,21 +14,27 @@ export function useCanvasResize(canvasRef, cursorRef, containerRef, selectionOve
       const selectionOverlay = selectionOverlayRef?.current;
       if (!canvas || !cursor) return;
 
-      canvas.width = LOGICAL_WIDTH;
-      canvas.height = LOGICAL_HEIGHT;
-      cursor.width = LOGICAL_WIDTH;
-      cursor.height = LOGICAL_HEIGHT;
-      if (selectionOverlay) {
-        selectionOverlay.width = LOGICAL_WIDTH;
-        selectionOverlay.height = LOGICAL_HEIGHT;
-      }
+      const needsBackingStoreReset =
+        canvasState.canvas !== canvas ||
+        canvas.width !== LOGICAL_WIDTH ||
+        canvas.height !== LOGICAL_HEIGHT;
 
-      canvasState.setCanvas(canvas);
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-      canvasState.rebuildBuffer();
-      canvasState.redrawCanvas();
+      if (needsBackingStoreReset) {
+        canvas.width = LOGICAL_WIDTH;
+        canvas.height = LOGICAL_HEIGHT;
+        cursor.width = LOGICAL_WIDTH;
+        cursor.height = LOGICAL_HEIGHT;
+        if (selectionOverlay) {
+          selectionOverlay.width = LOGICAL_WIDTH;
+          selectionOverlay.height = LOGICAL_HEIGHT;
+        }
+
+        canvasState.setCanvas(canvas);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+        canvasState.rebuildBuffer();
+      }
       canvasState.setZoom(canvasState.zoom);
     };
 
