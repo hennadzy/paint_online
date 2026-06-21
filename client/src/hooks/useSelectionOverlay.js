@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { reaction } from "mobx";
 import canvasState from "../store/canvasState";
 import selectionState from "../store/selectionState";
+import toolState from "../store/toolState";
 import {
   drawSelectionPreview,
   isMobileSelectionComposite,
@@ -13,6 +14,7 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
   useEffect(() => {
     let animationId = null;
     let wasAnimating = false;
+    const isSelectionToolActive = () => toolState.toolName === "select" || toolState.toolName === "lasso";
 
     const redrawOverlay = () => {
       const overlay = overlayRef.current;
@@ -25,6 +27,9 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
     };
 
     const redrawSelectionVisual = () => {
+      if (canvasState.isDrawing && !isSelectionToolActive()) {
+        return;
+      }
       if (isMobileSelectionComposite()) {
         canvasState.redrawCanvas();
         return;
@@ -33,6 +38,9 @@ export function useSelectionOverlay(overlayRef, canvasRef) {
     };
 
     const redrawAll = () => {
+      if (canvasState.isDrawing && !isSelectionToolActive()) {
+        return;
+      }
       canvasState.redrawCanvas();
       if (!isMobileSelectionComposite()) {
         redrawOverlay();
