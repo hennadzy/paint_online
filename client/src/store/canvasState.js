@@ -314,10 +314,6 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
   async pushStroke(stroke, options = {}) {
     const added = HistoryService.addStroke(stroke, this.username);
     if (added) {
-      if (!WebSocketService.isConnected) {
-        this.saveLocalCanvasSnapshot();
-      }
-
       if (!options.skipBufferDraw) {
         await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       }
@@ -784,13 +780,13 @@ setupThumbnailInterval() {
     this._localSaveTimer = setTimeout(() => {
       this._localSaveTimer = null;
       this.saveLocalCanvasSnapshot();
-    }, 200);
+    }, 1500);
   }
 
   setupAutoSave() {
     AutoSaveService.setSaveCallback(() => {
       if (!this.isConnected) {
-        this.saveLocalCanvasSnapshot();
+        this.scheduleLocalAutoSave();
       }
     });
 

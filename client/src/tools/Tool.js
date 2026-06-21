@@ -5,6 +5,26 @@ import axios from "axios";
 const SAVE_DEBOUNCE_MS = 1200;
 const pendingSaves = new Map();
 
+function canvasToDataUrl(canvas, type = 'image/jpeg', quality = 0.85) {
+  if (!canvas?.toBlob) {
+    return Promise.resolve(canvas.toDataURL(type, quality));
+  }
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        resolve(canvas.toDataURL(type, quality));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(canvas.toDataURL(type, quality));
+      reader.readAsDataURL(blob);
+    }, type, quality);
+  });
+}
+
 export default class Tool {
   constructor(canvas, socket, id, username) {
     this.canvas = canvas;
@@ -162,11 +182,13 @@ export default class Tool {
       pendingSaves.delete(this.id);
       const roomToken = localStorage.getItem(`room_token_${this.id}`);
       if (!roomToken) return;
-      axios.post(
-        `${API_URL}/api/image?id=${this.id}`,
-        { img: this.canvas.toDataURL() },
-        { headers: { Authorization: `Bearer ${roomToken}` } }
-      );
+      canvasToDataUrl(this.canvas).then((img) => {
+        axios.post(
+          `${API_URL}/api/image?id=${this.id}`,
+          { img },
+          { headers: { Authorization: `Bearer ${roomToken}` } }
+        );
+      });
     }, SAVE_DEBOUNCE_MS);
 
     pendingSaves.set(this.id, timeoutId);

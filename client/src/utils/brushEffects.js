@@ -27,6 +27,51 @@ function isMobileRenderTarget(stroke) {
   return Boolean(stroke?.mobilePreview) || isMobileViewport();
 }
 
+function renderSimpleMobileStroke(ctx, stroke) {
+  const {
+    points = [],
+    strokeStyle = '#000000',
+    strokeOpacity = 1,
+    lineWidth = 5,
+    type,
+  } = stroke;
+  if (!points.length) return;
+
+  const color = type === 'smudge'
+    ? 'rgba(180, 180, 180, 0.35)'
+    : parseColor(strokeStyle, strokeOpacity);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (points.length === 1) {
+    const w = points[0].w ?? lineWidth;
+    ctx.beginPath();
+    ctx.arc(points[0].x, points[0].y, w / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1];
+    const p1 = points[i];
+    const w0 = p0.w ?? lineWidth;
+    const w1 = p1.w ?? lineWidth;
+    ctx.lineWidth = Math.max(1, (w0 + w1) / 2);
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function downsamplePoints(points, maxPoints) {
   if (!Array.isArray(points) || points.length <= maxPoints || maxPoints < 2) {
     return points;
@@ -649,6 +694,11 @@ export const BRUSH_STROKE_TYPES = [
 ];
 
 export function renderSpecialBrushStroke(ctx, stroke, canvas) {
+  if (stroke?.mobileFastPath && isMobileRenderTarget(stroke)) {
+    renderSimpleMobileStroke(ctx, stroke);
+    return;
+  }
+
   switch (stroke.type) {
     case 'airbrush':
       renderAirbrushStroke(ctx, stroke);
