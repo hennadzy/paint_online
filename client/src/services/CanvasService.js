@@ -508,8 +508,50 @@ drawPolygonStroke(ctx, stroke) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  isMobileRenderDevice() {
+    return typeof window !== 'undefined' && window.innerWidth <= 768;
+  }
+
+  drawStrokesIncrementally(strokes, done, token) {
+    if (!this.isMobileRenderDevice()) {
+      for (const stroke of strokes) {
+        this.drawStroke(this.bufferCtx, stroke);
+      }
+      done();
+      return;
+    }
+
+    let index = 0;
+    const drawBatch = () => {
+      if (token && this._rebuildToken !== token) return;
+
+      const frameBudgetMs = 8;
+      const startedAt = performance.now();
+      while (
+        index < strokes.length &&
+        performance.now() - startedAt < frameBudgetMs
+      ) {
+        this.drawStroke(this.bufferCtx, strokes[index]);
+        index += 1;
+      }
+
+      this.redraw();
+
+      if (index < strokes.length) {
+        requestAnimationFrame(drawBatch);
+        return;
+      }
+
+      done();
+    };
+
+    requestAnimationFrame(drawBatch);
+  }
+
   rebuildBuffer(strokes, callback) {
     if (!this.bufferCtx) return;
+    const rebuildToken = Symbol('rebuildBuffer');
+    this._rebuildToken = rebuildToken;
 
     const imageStrokes = [];
     const otherStrokes = [];
@@ -549,6 +591,7 @@ drawPolygonStroke(ctx, stroke) {
     const preloadPromises = imageStrokes.map(stroke => preloadImage(stroke.imageData));
 
     Promise.all(preloadPromises).then(() => {
+      if (this._rebuildToken !== rebuildToken) return;
       this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
       this.bufferCtx.fillStyle = "white";
       this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
@@ -567,21 +610,21 @@ drawPolygonStroke(ctx, stroke) {
         }
       }
 
-      for (const stroke of otherStrokes) {
-        this.drawStroke(this.bufferCtx, stroke);
-      }
-
-      this.redraw();
-      if (callback) callback();
+      this.drawStrokesIncrementally(otherStrokes, () => {
+        if (this._rebuildToken !== rebuildToken) return;
+        this.redraw();
+        if (callback) callback();
+      }, rebuildToken);
     }).catch(() => {
+      if (this._rebuildToken !== rebuildToken) return;
       this.bufferCtx.clearRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
       this.bufferCtx.fillStyle = "white";
       this.bufferCtx.fillRect(0, 0, this.bufferCanvas.width, this.bufferCanvas.height);
-      for (const stroke of otherStrokes) {
-        this.drawStroke(this.bufferCtx, stroke);
-      }
-      this.redraw();
-      if (callback) callback();
+      this.drawStrokesIncrementally(otherStrokes, () => {
+        if (this._rebuildToken !== rebuildToken) return;
+        this.redraw();
+        if (callback) callback();
+      }, rebuildToken);
     });
   }
 

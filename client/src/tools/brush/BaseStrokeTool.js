@@ -10,9 +10,6 @@ const MAX_STROKE_POINTS_DESKTOP = 4000;
 const MAX_STROKE_POINTS_MOBILE = 700;
 const MOBILE_HEAVY_FRAME_DELAY = 48;
 const MOBILE_SMUDGE_FRAME_DELAY = 80;
-const MOBILE_SIMPLE_PREVIEW_TYPES = new Set([
-  'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel',
-]);
 
 function isMobileBrushDevice() {
   return window.innerWidth <= 768;
@@ -355,12 +352,6 @@ export default class BaseStrokeTool extends Tool {
     const segmentPoints = this.points.slice(from);
     if (segmentPoints.length === 0) return;
 
-    if (this.shouldUseSimpleMobilePreview()) {
-      this.drawSimpleMobileSegment(segmentPoints);
-      this._liveDrawnCount = this.points.length;
-      return;
-    }
-
     const payload = {
       ...this.buildStrokePayload(),
       points: segmentPoints,
@@ -376,46 +367,6 @@ export default class BaseStrokeTool extends Tool {
     }
 
     this._liveDrawnCount = this.points.length;
-  }
-
-  shouldUseSimpleMobilePreview() {
-    return isMobileBrushDevice() && MOBILE_SIMPLE_PREVIEW_TYPES.has(this.strokeType);
-  }
-
-  drawSimpleMobileSegment(points) {
-    const liveCtx = this.ensureLiveLayer();
-    const color = this.strokeType === 'smudge'
-      ? 'rgba(180, 180, 180, 0.35)'
-      : this.hexToRgba(this.strokeStyle || '#000000', this.strokeOpacity ?? 1);
-
-    liveCtx.save();
-    liveCtx.globalCompositeOperation = 'source-over';
-    liveCtx.strokeStyle = color;
-    liveCtx.fillStyle = color;
-    liveCtx.lineCap = 'round';
-    liveCtx.lineJoin = 'round';
-
-    if (points.length === 1) {
-      const w = points[0].w ?? this.lineWidth ?? 1;
-      liveCtx.beginPath();
-      liveCtx.arc(points[0].x, points[0].y, w / 2, 0, Math.PI * 2);
-      liveCtx.fill();
-      liveCtx.restore();
-      return;
-    }
-
-    for (let i = 1; i < points.length; i++) {
-      const p0 = points[i - 1];
-      const p1 = points[i];
-      const w0 = p0.w ?? this.lineWidth ?? 1;
-      const w1 = p1.w ?? this.lineWidth ?? 1;
-      liveCtx.lineWidth = Math.max(1, (w0 + w1) / 2);
-      liveCtx.beginPath();
-      liveCtx.moveTo(p0.x, p0.y);
-      liveCtx.lineTo(p1.x, p1.y);
-      liveCtx.stroke();
-    }
-    liveCtx.restore();
   }
 
   buildStrokePayload() {
@@ -441,9 +392,6 @@ export default class BaseStrokeTool extends Tool {
     if (HEAVY_STROKE_TYPES.has(this.strokeType)) {
       stroke.livePreview = true;
       stroke.mobilePreview = isMobileBrushDevice();
-      if (this.shouldUseSimpleMobilePreview()) {
-        stroke.mobileFastPath = true;
-      }
     }
     const commitFromLiveLayer =
       HEAVY_STROKE_TYPES.has(this.strokeType) &&
