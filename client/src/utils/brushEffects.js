@@ -19,6 +19,28 @@ function seededRandom(seed) {
   };
 }
 
+function isMobileViewport() {
+  return typeof window !== 'undefined' && window.innerWidth <= 768;
+}
+
+function isMobileRenderTarget(stroke) {
+  return Boolean(stroke?.mobilePreview) || isMobileViewport();
+}
+
+function downsamplePoints(points, maxPoints) {
+  if (!Array.isArray(points) || points.length <= maxPoints || maxPoints < 2) {
+    return points;
+  }
+  const result = [points[0]];
+  const span = points.length - 1;
+  const step = span / (maxPoints - 1);
+  for (let i = 1; i < maxPoints - 1; i++) {
+    result.push(points[Math.round(i * step)]);
+  }
+  result.push(points[points.length - 1]);
+  return result;
+}
+
 /** Разбивает путь на плотные точки для непрерывного рендера */
 export function densifyPath(points, spacing) {
   if (!points.length) return [];
@@ -80,12 +102,13 @@ export function renderMarkerStroke(ctx, stroke) {
   if (!points.length) return;
 
   const color = parseColor(strokeStyle, 1);
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(1.6, lineWidth * 0.18)
     : livePreview
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 1600 : 5000);
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
@@ -130,17 +153,18 @@ export function renderAirbrushStroke(ctx, stroke) {
     livePreview = false,
     mobilePreview = false,
   } = stroke;
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(7, lineWidth * 0.6)
     : livePreview
       ? Math.max(3, lineWidth * 0.28)
       : Math.max(2, lineWidth * 0.2);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 900 : 2600);
 
   dense.forEach((p, i) => {
     const alpha = p.a ?? strokeOpacity;
     const r = p.r ?? (lineWidth / 2 + scatter * 0.5);
-    sprayAirbrush(ctx, p.x, p.y, r, parseColor(strokeStyle, 1), alpha, i, livePreview, mobilePreview);
+    sprayAirbrush(ctx, p.x, p.y, r, parseColor(strokeStyle, 1), alpha, i, livePreview, mobileMode);
   });
 }
 
@@ -185,12 +209,13 @@ export function applySmudgeAt(ctx, canvas, x, y, radius, strength, dirX, dirY) {
 
 export function renderSmudgeStroke(ctx, stroke, canvas) {
   const { points = [], lineWidth = 20, strength = 50, livePreview = false, mobilePreview = false } = stroke;
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(10, lineWidth * 0.75)
     : livePreview
       ? Math.max(4, lineWidth * 0.35)
       : Math.max(2, lineWidth * 0.25);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 520 : 1400);
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
     const p1 = dense[i];
@@ -271,12 +296,13 @@ export function renderWatercolorStroke(ctx, stroke) {
   } = stroke;
   const waterFactor = 1 - saturation / 100;
   const defaultAlpha = strokeOpacity * (0.18 + (1 - waterFactor) * 0.35);
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(6, lineWidth * 0.55)
     : livePreview
       ? Math.max(2.5, lineWidth * 0.24)
       : Math.max(1.5, lineWidth * 0.18);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 760 : 2200);
   const useTexture = livePreview ? false : texture;
 
   dense.forEach((p, i) => {
@@ -291,7 +317,7 @@ export function renderWatercolorStroke(ctx, stroke) {
       texture: useTexture,
       bleed: 0.45 + dwell * 0.25,
       livePreview,
-      mobilePreview,
+      mobilePreview: mobileMode,
     });
 
     if (!livePreview && dwell > 0.2) {
@@ -393,12 +419,13 @@ export function renderOilStroke(ctx, stroke) {
     livePreview = false,
     mobilePreview = false,
   } = stroke;
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(5, lineWidth * 0.55)
     : livePreview
       ? Math.max(2, lineWidth * 0.24)
       : Math.max(1, lineWidth * 0.18);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 1000 : 2800);
 
   for (let i = 1; i < dense.length; i++) {
     const p0 = dense[i - 1];
@@ -410,7 +437,7 @@ export function renderOilStroke(ctx, stroke) {
       strokeStyle, strokeOpacity, edgeHardness,
       Math.floor(p1.x * 3 + p1.y * 5 + i),
       livePreview,
-      mobilePreview
+      mobileMode
     );
   }
 
@@ -482,12 +509,13 @@ export function renderPastelStroke(ctx, stroke) {
     mobilePreview = false,
   } = stroke;
   const grain = graininess / 100;
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(5, lineWidth * 0.5)
     : livePreview
       ? Math.max(2, lineWidth * 0.2)
       : Math.max(1, lineWidth * 0.14);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 850 : 2400);
 
   dense.forEach((p, i) => {
     const baseW = p.w ?? lineWidth;
@@ -497,7 +525,7 @@ export function renderPastelStroke(ctx, stroke) {
       Math.floor(p.x * 11 + p.y * 17 + i),
       angle,
       livePreview,
-      mobilePreview
+      mobileMode
     );
   });
 }
@@ -573,12 +601,13 @@ export function renderCalligraphyStroke(ctx, stroke) {
 
   if (points.length < 2) return;
 
-  const spacing = mobilePreview
+  const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const spacing = mobileMode
     ? Math.max(2, lineWidth * 0.2)
     : livePreview
       ? Math.max(1.2, lineWidth * 0.1)
       : Math.max(0.8, lineWidth * 0.07);
-  const dense = densifyPath(points, spacing);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 1500 : 4200);
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
