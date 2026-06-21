@@ -389,10 +389,6 @@ export default class BaseStrokeTool extends Tool {
     }
 
     const stroke = this.buildStrokePayload();
-    if (HEAVY_STROKE_TYPES.has(this.strokeType)) {
-      stroke.livePreview = true;
-      stroke.mobilePreview = isMobileBrushDevice();
-    }
     const commitFromLiveLayer =
       HEAVY_STROKE_TYPES.has(this.strokeType) &&
       this._liveLayer &&

@@ -19,12 +19,8 @@ function seededRandom(seed) {
   };
 }
 
-function isMobileViewport() {
-  return typeof window !== 'undefined' && window.innerWidth <= 768;
-}
-
 function isMobileRenderTarget(stroke) {
-  return Boolean(stroke?.mobilePreview) || isMobileViewport();
+  return Boolean(stroke?.mobilePreview);
 }
 
 function downsamplePoints(points, maxPoints) {

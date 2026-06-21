@@ -27,6 +27,19 @@ class CanvasService {
     this.listeners = new Set();
   }
 
+  getFinalBrushStroke(stroke) {
+    if (!stroke || (!BRUSH_STROKE_TYPES.includes(stroke.type) && stroke.type !== 'marker')) {
+      return stroke;
+    }
+
+    return {
+      ...stroke,
+      livePreview: false,
+      mobilePreview: false,
+      mobileFastPath: false,
+    };
+  }
+
   initialize(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -77,7 +90,7 @@ drawStroke(ctx, stroke) {
       this.renderBrushStroke(ctx, stroke, stroke.type === "eraser");
       break;
     case "marker":
-      renderMarkerStroke(ctx, stroke);
+      renderMarkerStroke(ctx, this.getFinalBrushStroke(stroke));
       break;
     case "rect":
       this.drawRectStroke(ctx, stroke);
@@ -107,7 +120,7 @@ drawStroke(ctx, stroke) {
       break;
     default:
       if (BRUSH_STROKE_TYPES.includes(stroke.type)) {
-        renderSpecialBrushStroke(ctx, stroke, ctx.canvas);
+        renderSpecialBrushStroke(ctx, this.getFinalBrushStroke(stroke), ctx.canvas);
       }
       break;
   }
