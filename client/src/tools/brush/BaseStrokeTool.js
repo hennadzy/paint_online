@@ -13,6 +13,10 @@ function isMobileBrushDevice() {
   return window.innerWidth <= 768;
 }
 
+function supportsDelegatedInk() {
+  return typeof navigator !== 'undefined' && typeof navigator.ink?.requestPresenter === 'function';
+}
+
 function isMobileDirectStroke(strokeType) {
   return false;
 }
@@ -32,6 +36,7 @@ export default class BaseStrokeTool extends Tool {
     this._liveLayerCtx = null;
     this._liveDrawnCount = 0;
     this._liveLayerContainsBuffer = false;
+    this._inkPresenterPromise = null;
   }
 
   setStrokeColor(color) {
@@ -130,6 +135,35 @@ export default class BaseStrokeTool extends Tool {
     this.canvas.removeEventListener('lostpointercapture', this.lostPointerCaptureHandlerBound);
     this.cancelLivePreview();
     this.clearLiveLayer();
+    this._inkPresenterPromise = null;
+  }
+
+  ensureInkPresenter() {
+    if (!supportsDelegatedInk()) return;
+    if (this._inkPresenterPromise) return;
+    this._inkPresenterPromise = navigator.ink
+      .requestPresenter({ presentationArea: this.canvas })
+      .catch(() => null);
+  }
+
+  updateInkTrail(e) {
+    if (!this.mouseDown) return;
+    if (!this._inkPresenterPromise) return;
+    if (!e?.isTrusted) return;
+    if (e.pointerType === 'mouse') return;
+
+    const diameter = Math.max(
+      1,
+      e.pointerType === 'pen'
+        ? this.getPressureAdjustedLineWidth(e)
+        : (this.lineWidth || 1)
+    );
+    const color = this.strokeStyle || '#000000';
+
+    this._inkPresenterPromise.then((presenter) => {
+      if (!presenter) return;
+      presenter.updateInkTrailStartPoint(e, { color, diameter });
+    });
   }
 
   cancelLivePreview() {
@@ -161,6 +195,8 @@ export default class BaseStrokeTool extends Tool {
     this.resetPenPressureState();
     this.applyToolParams();
     this.onStrokeStart?.(e);
+    this.ensureInkPresenter();
+    this.updateInkTrail(e);
 
     const { x, y } = this.getCanvasCoordinates(e);
     this.lastX = x;
@@ -174,6 +210,7 @@ export default class BaseStrokeTool extends Tool {
 
   pointerMoveHandler(e) {
     if (!this.mouseDown) return;
+    this.updateInkTrail(e);
 
     if (this.isPinchingActive()) {
       this.mouseDown = false;
