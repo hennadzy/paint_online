@@ -7,7 +7,9 @@ const HEAVY_STROKE_TYPES = new Set([
   'marker', 'airbrush', 'smudge', 'watercolor', 'oil', 'pastel', 'calligraphy',
 ]);
 const MAX_STROKE_POINTS_DESKTOP = 4000;
-const MAX_STROKE_POINTS_MOBILE = 1200;
+const MAX_STROKE_POINTS_MOBILE = 700;
+const MOBILE_HEAVY_FRAME_DELAY = 48;
+const MOBILE_SMUDGE_FRAME_DELAY = 80;
 
 function isMobileBrushDevice() {
   return window.innerWidth <= 768;
@@ -37,6 +39,8 @@ export default class BaseStrokeTool extends Tool {
     this._liveDrawnCount = 0;
     this._liveLayerContainsBuffer = false;
     this._inkPresenterPromise = null;
+    this._liveTimeoutId = null;
+    this._lastLiveRenderAt = 0;
   }
 
   setStrokeColor(color) {
@@ -55,7 +59,7 @@ export default class BaseStrokeTool extends Tool {
     const base = Math.max(1, (this.lineWidth || 5) * 0.15);
     const heavyMul = HEAVY_STROKE_TYPES.has(this.strokeType) ? 2 : 1;
     const mobileMul = isMobileBrushDevice()
-      ? (HEAVY_STROKE_TYPES.has(this.strokeType) ? 2.8 : 1.4)
+      ? (HEAVY_STROKE_TYPES.has(this.strokeType) ? 4.2 : 1.4)
       : 1;
     const speedMul = 1 + Math.min(2, Math.max(0, speed) / 12);
     return base * heavyMul * mobileMul * speedMul;
@@ -170,6 +174,10 @@ export default class BaseStrokeTool extends Tool {
     if (this._liveRafId != null) {
       cancelAnimationFrame(this._liveRafId);
       this._liveRafId = null;
+    }
+    if (this._liveTimeoutId != null) {
+      clearTimeout(this._liveTimeoutId);
+      this._liveTimeoutId = null;
     }
     this._pendingLiveRender = null;
   }
@@ -294,22 +302,47 @@ export default class BaseStrokeTool extends Tool {
         cancelAnimationFrame(this._liveRafId);
         this._liveRafId = null;
       }
+      if (this._liveTimeoutId != null) {
+        clearTimeout(this._liveTimeoutId);
+        this._liveTimeoutId = null;
+      }
       this.flushLivePreview();
       return;
     }
-    if (this._liveRafId != null) return;
-    this._liveRafId = requestAnimationFrame(() => {
-      this._liveRafId = null;
-      this.flushLivePreview();
-    });
+    if (this._liveRafId != null || this._liveTimeoutId != null) return;
+
+    const delay = this.getLivePreviewDelay();
+    const now = performance.now();
+    const wait = Math.max(0, delay - (now - this._lastLiveRenderAt));
+    const requestFlush = () => {
+      this._liveTimeoutId = null;
+      this._liveRafId = requestAnimationFrame(() => {
+        this._liveRafId = null;
+        this.flushLivePreview();
+      });
+    };
+
+    if (wait > 0) {
+      this._liveTimeoutId = setTimeout(requestFlush, wait);
+    } else {
+      requestFlush();
+    }
   }
 
   flushLivePreview() {
     const paintFn = this._pendingLiveRender;
     this._pendingLiveRender = null;
     if (!paintFn || !this.mouseDown || this.points.length === 0) return;
+    this._lastLiveRenderAt = performance.now();
     paintFn();
     this.presentLiveStroke();
+  }
+
+  getLivePreviewDelay() {
+    if (!isMobileBrushDevice() || !HEAVY_STROKE_TYPES.has(this.strokeType)) {
+      return 0;
+    }
+    return this.strokeType === 'smudge' ? MOBILE_SMUDGE_FRAME_DELAY : MOBILE_HEAVY_FRAME_DELAY;
   }
 
   drawLiveFull(renderFn, needsCanvas = false) {
