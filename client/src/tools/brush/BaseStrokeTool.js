@@ -8,6 +8,8 @@ const HEAVY_STROKE_TYPES = new Set([
 ]);
 const MAX_STROKE_POINTS_DESKTOP = 4000;
 const MAX_STROKE_POINTS_MOBILE = 700;
+const MAX_MARKER_POINTS_DESKTOP = 16000;
+const MAX_MARKER_POINTS_MOBILE = 6000;
 const MOBILE_HEAVY_FRAME_DELAY = 48;
 const MOBILE_SMUDGE_FRAME_DELAY = 80;
 
@@ -257,7 +259,9 @@ export default class BaseStrokeTool extends Tool {
   }
 
   trimStrokePoints() {
-    const maxPoints = isMobileBrushDevice() ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP;
+    const maxPoints = this.strokeType === 'marker'
+      ? (isMobileBrushDevice() ? MAX_MARKER_POINTS_MOBILE : MAX_MARKER_POINTS_DESKTOP)
+      : (isMobileBrushDevice() ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP);
     if (this.points.length <= maxPoints) return;
     const excess = this.points.length - maxPoints;
     // Keep stroke tail responsive while dropping oldest dense points.

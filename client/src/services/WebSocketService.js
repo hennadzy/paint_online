@@ -13,11 +13,18 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
     this.shouldReconnect = true;
+    this.connectionId = 0;
+    this.reconnectTimer = null;
   }
 
 connect(wsUrl, roomId, username, token) {
     return new Promise((resolve, reject) => {
       try {
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        const connectionId = ++this.connectionId;
         const isReconnecting = this.reconnectAttempts > 0;
 
         if (this.socket) {
@@ -34,15 +41,18 @@ connect(wsUrl, roomId, username, token) {
         this.username = username;
         this.token = token;
         this.socket = new WebSocket(wsUrl);
+        const socket = this.socket;
         
         const connectionTimeout = setTimeout(() => {
-          if (this.socket && this.socket.readyState !== WebSocket.OPEN) {
-            this.socket.close();
+          if (connectionId !== this.connectionId) return;
+          if (socket && socket.readyState !== WebSocket.OPEN) {
+            socket.close();
             reject(new Error('Connection timeout'));
           }
         }, 10000);
 
-        this.socket.onopen = () => {
+        socket.onopen = () => {
+          if (connectionId !== this.connectionId) return;
           clearTimeout(connectionTimeout);
           this.isConnected = true;
           
@@ -66,7 +76,8 @@ connect(wsUrl, roomId, username, token) {
           resolve();
         };
 
-        this.socket.onmessage = (event) => {
+        socket.onmessage = (event) => {
+          if (connectionId !== this.connectionId) return;
           try {
             const message = JSON.parse(event.data);
             this.handleMessage(message);
@@ -75,22 +86,27 @@ connect(wsUrl, roomId, username, token) {
           }
         };
 
-        this.socket.onerror = (error) => {
+        socket.onerror = (error) => {
+          if (connectionId !== this.connectionId) return;
           clearTimeout(connectionTimeout);
           this.emit('error', { error });
           reject(error);
         };
 
-        this.socket.onclose = () => {
+        socket.onclose = (event) => {
+          if (connectionId !== this.connectionId) return;
           clearTimeout(connectionTimeout);
           this.isConnected = false;
           this.emit('disconnected', {});
 
-          if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+          const shouldRetry = event.code !== 1008 && event.code !== 4000;
+          if (shouldRetry && this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1);
             
-            setTimeout(() => {
+            this.reconnectTimer = setTimeout(() => {
+              this.reconnectTimer = null;
+              if (connectionId !== this.connectionId) return;
               this.emit('reconnecting', { attempt: this.reconnectAttempts });
               this.connect(wsUrl, roomId, username, token).catch(() => {});
             }, delay);
@@ -104,6 +120,11 @@ connect(wsUrl, roomId, username, token) {
 
   disconnect() {
     this.shouldReconnect = false;
+    this.connectionId++;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.socket) {
       this.socket.close();
       this.socket = null;

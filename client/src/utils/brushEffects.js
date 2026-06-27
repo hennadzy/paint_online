@@ -108,6 +108,87 @@ function drawMarkerMaskStamp(ctx, x, y, size, angleDeg) {
   ctx.restore();
 }
 
+function splitMarkerPasses(points, lineWidth) {
+  if (points.length < 4) return [points];
+
+  const cellSize = Math.max(4, lineWidth * 0.9);
+  const overlapDistanceSq = Math.max(4, lineWidth * 0.75) ** 2;
+  const minIndexGap = Math.max(8, Math.ceil(lineWidth * 0.8));
+  const cells = new Map();
+  const passes = [];
+  let currentPass = [points[0]];
+  let insideOlderOverlap = false;
+
+  const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+  const addPoint = (point, index) => {
+    const key = cellKey(point.x, point.y);
+    const bucket = cells.get(key) || [];
+    bucket.push({ point, index });
+    cells.set(key, bucket);
+  };
+  const hasOlderOverlap = (point, index) => {
+    const cx = Math.floor(point.x / cellSize);
+    const cy = Math.floor(point.y / cellSize);
+    for (let yy = cy - 1; yy <= cy + 1; yy++) {
+      for (let xx = cx - 1; xx <= cx + 1; xx++) {
+        const bucket = cells.get(`${xx}:${yy}`);
+        if (!bucket) continue;
+        for (const entry of bucket) {
+          if (index - entry.index < minIndexGap) continue;
+          const dx = point.x - entry.point.x;
+          const dy = point.y - entry.point.y;
+          if (dx * dx + dy * dy <= overlapDistanceSq) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
+  addPoint(points[0], 0);
+  for (let i = 1; i < points.length; i++) {
+    const point = points[i];
+    const overlapsOlderPath = hasOlderOverlap(point, i);
+    if (currentPass.length > 1 && overlapsOlderPath && !insideOlderOverlap) {
+      passes.push(currentPass);
+      currentPass = [points[i - 1], point];
+    } else {
+      currentPass.push(point);
+    }
+    insideOlderOverlap = overlapsOlderPath;
+    addPoint(point, i);
+  }
+  if (currentPass.length) passes.push(currentPass);
+
+  return passes;
+}
+
+function drawMarkerPass(ctx, points, lineWidth, angle, color, strokeOpacity) {
+  const maskCanvas = createCanvasLike(ctx.canvas);
+  const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+  const colorCanvas = createCanvasLike(ctx.canvas);
+  const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+
+  maskCtx.fillStyle = '#000000';
+  maskCtx.globalCompositeOperation = 'source-over';
+  points.forEach((p) => {
+    const size = p.w ?? lineWidth;
+    drawMarkerMaskStamp(maskCtx, p.x, p.y, size, angle);
+  });
+
+  colorCtx.fillStyle = color;
+  colorCtx.fillRect(0, 0, colorCanvas.width, colorCanvas.height);
+  colorCtx.globalCompositeOperation = 'destination-in';
+  colorCtx.drawImage(maskCanvas, 0, 0);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = strokeOpacity;
+  ctx.drawImage(colorCanvas, 0, 0);
+  ctx.restore();
+}
+
 export function renderMarkerStroke(ctx, stroke) {
   const {
     points = [],
@@ -127,29 +208,10 @@ export function renderMarkerStroke(ctx, stroke) {
     : livePreview
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
-  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 2200 : 5000);
-  const maskCanvas = createCanvasLike(ctx.canvas);
-  const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-  const colorCanvas = createCanvasLike(ctx.canvas);
-  const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
-
-  maskCtx.fillStyle = '#000000';
-  maskCtx.globalCompositeOperation = 'source-over';
-  dense.forEach((p) => {
-    const size = p.w ?? lineWidth;
-    drawMarkerMaskStamp(maskCtx, p.x, p.y, size, angle);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 6000 : 16000);
+  splitMarkerPasses(dense, lineWidth).forEach((pass) => {
+    drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
   });
-
-  colorCtx.fillStyle = color;
-  colorCtx.fillRect(0, 0, colorCanvas.width, colorCanvas.height);
-  colorCtx.globalCompositeOperation = 'destination-in';
-  colorCtx.drawImage(maskCanvas, 0, 0);
-
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = strokeOpacity;
-  ctx.drawImage(colorCanvas, 0, 0);
-  ctx.restore();
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {

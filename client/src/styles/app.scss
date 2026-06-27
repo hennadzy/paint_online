@@ -474,6 +474,33 @@ body.modal-open {
   }
 }
 
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    min-height: 200vh;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+  }
+
+  body {
+    position: static !important;
+  }
+
+  .app {
+    width: 200vw;
+    min-height: 200vh;
+    transform: scale(0.5);
+    transform-origin: top left;
+  }
+
+  .main-content {
+    min-height: calc(200vh - 50px);
+    overflow: visible;
+  }
+}
+
 @media (max-width: 768px) and (orientation: portrait) {
   :root {
     --mobile-topmenu-h: 50px;
