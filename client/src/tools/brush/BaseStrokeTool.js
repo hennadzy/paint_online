@@ -263,6 +263,21 @@ export default class BaseStrokeTool extends Tool {
       ? (isMobileBrushDevice() ? MAX_MARKER_POINTS_MOBILE : MAX_MARKER_POINTS_DESKTOP)
       : (isMobileBrushDevice() ? MAX_STROKE_POINTS_MOBILE : MAX_STROKE_POINTS_DESKTOP);
     if (this.points.length <= maxPoints) return;
+
+    if (this.strokeType === 'marker') {
+      const decimated = [this.points[0]];
+      const span = this.points.length - 1;
+      const step = span / (maxPoints - 1);
+      for (let i = 1; i < maxPoints - 1; i++) {
+        decimated.push(this.points[Math.round(i * step)]);
+      }
+      decimated.push(this.points[this.points.length - 1]);
+      const removed = this.points.length - decimated.length;
+      this.points.splice(0, this.points.length, ...decimated);
+      this._liveDrawnCount = Math.max(0, this._liveDrawnCount - removed);
+      return;
+    }
+
     const excess = this.points.length - maxPoints;
     // Keep stroke tail responsive while dropping oldest dense points.
     this.points.splice(1, excess);

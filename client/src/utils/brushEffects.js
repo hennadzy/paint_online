@@ -95,19 +95,15 @@ function getPointDirection(points, index) {
   return { dx: dx / len, dy: dy / len };
 }
 
-function splitMarkerPasses(points, lineWidth) {
-  if (points.length < 4) return [points];
+function collectSelfOverlapPoints(points, lineWidth) {
+  if (points.length < 4) return [];
 
   const cellSize = Math.max(6, lineWidth * 1.2);
   const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
   const minIndexGap = Math.max(18, Math.ceil(lineWidth * 1.8));
   const cells = new Map();
-  const passes = [];
-  let currentPass = [points[0]];
-  let insideOlderOverlap = false;
-  let pointsSinceSplit = Infinity;
   const directions = points.map((_, index) => getPointDirection(points, index));
-  const minPointsBetweenSplits = Math.max(18, Math.ceil(lineWidth * 2.2));
+  const overlap = [];
 
   const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
   const addPoint = (point, index) => {
@@ -131,7 +127,7 @@ function splitMarkerPasses(points, lineWidth) {
           const dx = point.x - entry.point.x;
           const dy = point.y - entry.point.y;
           const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
-          if (dot < 0.5 && dx * dx + dy * dy <= overlapDistanceSq) {
+          if (dot < 0.55 && dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
           }
         }
@@ -140,44 +136,15 @@ function splitMarkerPasses(points, lineWidth) {
     return false;
   };
 
-  addPoint(points[0], 0);
-  for (let i = 1; i < points.length; i++) {
+  for (let i = 0; i < points.length; i++) {
     const point = points[i];
-    const overlapsOlderPath = hasOlderOverlap(point, i);
-
-    if (
-      overlapsOlderPath
-      && !insideOlderOverlap
-      && currentPass.length > 1
-      && pointsSinceSplit >= minPointsBetweenSplits
-    ) {
-      passes.push(currentPass);
-      currentPass = [];
-      insideOlderOverlap = true;
-      pointsSinceSplit = 0;
-      addPoint(point, i);
-      continue;
+    if (i > 0 && hasOlderOverlap(point, i)) {
+      overlap.push(point);
     }
-
-    if (overlapsOlderPath) {
-      if (passes.length > 0) {
-        currentPass.push(point);
-      } else {
-        currentPass.push(point);
-      }
-    } else {
-      currentPass.push(point);
-      insideOlderOverlap = false;
-    }
-
-    pointsSinceSplit += 1;
-
-    insideOlderOverlap = overlapsOlderPath;
     addPoint(point, i);
   }
 
-  if (currentPass.length) passes.push(currentPass);
-  return passes.length ? passes : [points];
+  return overlap;
 }
 
 function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
@@ -239,14 +206,17 @@ export function renderMarkerStroke(ctx, stroke) {
     : livePreview
       ? Math.max(0.75, lineWidth * 0.09)
       : Math.max(0.4, lineWidth * 0.06);
-  const maxPoints = incremental ? 1400 : mobileMode ? 5000 : livePreview ? 2400 : 9000;
+  const maxPoints = incremental || livePreview
+    ? 2200
+    : mobileMode ? 7000 : 12000;
   const dense = downsamplePoints(densifyPath(points, spacing), maxPoints);
-  const passes = incremental ? [dense] : splitMarkerPasses(dense, lineWidth);
 
-  passes.forEach((pass) => {
-    if (!incremental && passes.length > 1 && pass.length < 4) return;
-    drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
-  });
+  drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
+
+  const overlapPoints = collectSelfOverlapPoints(dense, lineWidth);
+  if (overlapPoints.length) {
+    drawMarkerPass(ctx, overlapPoints, lineWidth, angle, color, strokeOpacity);
+  }
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
