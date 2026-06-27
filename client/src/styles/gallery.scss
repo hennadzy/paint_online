@@ -1154,10 +1154,15 @@
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
+  .main-content--gallery {
+    background: #1a1a1a !important;
+  }
+
   .gallery-page {
     width: 200vw;
     max-width: none;
-    min-height: 200vh;
+    min-height: 100%;
+    flex: 1;
   }
 
   .gallery-header,

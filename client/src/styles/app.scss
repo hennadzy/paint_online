@@ -501,12 +501,18 @@ body.modal-open {
   }
 
   .main-content--coloring,
-  .main-content--gallery,
   .main-content--help,
   .main-content--admin {
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
+  }
+
+  .main-content--gallery {
+    width: 200vw !important;
+    min-height: 200vh !important;
+    height: auto !important;
+    background: #1a1a1a !important;
   }
 
   .export-modal-overlay,

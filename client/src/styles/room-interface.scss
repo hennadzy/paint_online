@@ -1579,9 +1579,15 @@
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
+    max-height: none !important;
     padding: 20px !important;
-    align-items: center !important;
-    justify-content: center !important;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .room-interface {
@@ -1590,13 +1596,34 @@
 
   .app .room-interface {
     max-height: none !important;
+    overflow: visible !important;
   }
 
   .app .room-interface.fullscreen {
     width: 100% !important;
     max-width: none !important;
-    height: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
     max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .app .room-interface.fullscreen .room-card,
+  .app .room-interface.fullscreen .room-card.created-room {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .app .room-interface.fullscreen .rooms-list,
+  .app .rooms-list.fullscreen {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .app .room-interface.fullscreen .about-content {
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .room-interface.fullscreen {
@@ -1610,18 +1637,34 @@
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
-    max-height: 200vh !important;
+    max-height: none !important;
     transform: scale(0.5);
     transform-origin: top left;
     padding: 20px !important;
-    align-items: center !important;
-    justify-content: center !important;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   body > .room-interface-overlay .room-interface.fullscreen {
     width: min(180vw, 1200px) !important;
     max-width: min(180vw, 1200px) !important;
-    height: 100% !important;
+    height: auto !important;
     max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body > .room-interface-overlay .room-card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body > .room-interface-overlay .rooms-list {
+    max-height: none !important;
+    overflow: visible !important;
   }
 }
