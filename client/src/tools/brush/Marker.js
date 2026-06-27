@@ -93,26 +93,74 @@ export default class Marker extends BaseStrokeTool {
     ctx.restore();
   }
 
-  renderMarkerMasksToLive(liveCtx, color) {
+  getMaskRegionFromBounds(bounds) {
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    const x = Math.max(0, Math.floor(bounds.minX - 2));
+    const y = Math.max(0, Math.floor(bounds.minY - 2));
+    const maxX = Math.min(width, Math.ceil(bounds.maxX + 2));
+    const maxY = Math.min(height, Math.ceil(bounds.maxY + 2));
+    return {
+      x,
+      y,
+      width: Math.max(0, maxX - x),
+      height: Math.max(0, maxY - y),
+    };
+  }
+
+  mergeRegions(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    const x = Math.min(a.x, b.x);
+    const y = Math.min(a.y, b.y);
+    const maxX = Math.max(a.x + a.width, b.x + b.width);
+    const maxY = Math.max(a.y + a.height, b.y + b.height);
+    return { x, y, width: maxX - x, height: maxY - y };
+  }
+
+  renderMarkerMasksToLive(liveCtx, color, dirtyRegion = null) {
     const colorCtx = this._markerColorLayerCtx;
     const width = this.canvas.width;
     const height = this.canvas.height;
     if (!colorCtx) return;
 
-    liveCtx.clearRect(0, 0, width, height);
+    const region = dirtyRegion || { x: 0, y: 0, width, height };
+    if (region.width <= 0 || region.height <= 0) return;
+
+    liveCtx.clearRect(region.x, region.y, region.width, region.height);
 
     const drawColoredMask = (mask) => {
-      colorCtx.clearRect(0, 0, width, height);
+      colorCtx.clearRect(region.x, region.y, region.width, region.height);
       colorCtx.save();
       colorCtx.globalCompositeOperation = 'source-over';
       colorCtx.globalAlpha = this.strokeOpacity;
       colorCtx.fillStyle = color;
-      colorCtx.fillRect(0, 0, width, height);
+      colorCtx.fillRect(region.x, region.y, region.width, region.height);
       colorCtx.globalCompositeOperation = 'destination-in';
       colorCtx.globalAlpha = 1;
-      colorCtx.drawImage(mask, 0, 0);
+      colorCtx.drawImage(
+        mask,
+        region.x,
+        region.y,
+        region.width,
+        region.height,
+        region.x,
+        region.y,
+        region.width,
+        region.height
+      );
       colorCtx.restore();
-      liveCtx.drawImage(this._markerColorLayer, 0, 0);
+      liveCtx.drawImage(
+        this._markerColorLayer,
+        region.x,
+        region.y,
+        region.width,
+        region.height,
+        region.x,
+        region.y,
+        region.width,
+        region.height
+      );
     };
 
     drawColoredMask(this._markerBaseMask);
@@ -204,6 +252,7 @@ export default class Marker extends BaseStrokeTool {
 
     this.fillMaskPolygon(this._markerBaseMaskCtx, polygon);
     state.pendingBase.items.push({ polygon, bounds, distance: state.distance });
+    return this.getMaskRegionFromBounds(bounds);
   }
 
   drawLive() {
@@ -237,24 +286,31 @@ export default class Marker extends BaseStrokeTool {
 
     if (this._liveDrawnCount === 0 && this.points.length === 1) {
       drawMarkerPass(this._markerBaseMaskCtx, [this.points[0]], this.lineWidth, this.angle, '#000', 1);
-      this.renderMarkerMasksToLive(liveCtx, color);
+      this.renderMarkerMasksToLive(
+        liveCtx,
+        color,
+        this.getMaskRegionFromBounds(getPolygonBounds(
+          getMarkerSegmentPolygon(this.points[0], this.points[0], this.lineWidth, this.angle)
+        ))
+      );
       this._liveDrawnCount = 1;
       return;
     }
 
     const startIndex = Math.max(1, this._liveDrawnCount);
+    let dirtyRegion = null;
     for (let i = startIndex; i < this.points.length; i++) {
       const p0 = this.points[i - 1];
       const p1 = this.points[i];
       state.distance += Math.hypot(p1.x - p0.x, p1.y - p0.y);
 
-      this.processLiveCoverageSegment(
+      dirtyRegion = this.mergeRegions(dirtyRegion, this.processLiveCoverageSegment(
         state,
         getMarkerSegmentPolygon(p0, p1, this.lineWidth, this.angle)
-      );
+      ));
     }
 
-    this.renderMarkerMasksToLive(liveCtx, color);
+    this.renderMarkerMasksToLive(liveCtx, color, dirtyRegion);
     this._liveDrawnCount = this.points.length;
   }
 
