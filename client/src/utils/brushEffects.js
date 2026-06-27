@@ -366,18 +366,25 @@ export function renderMarkerStroke(ctx, stroke) {
 
   const color = parseColor(strokeStyle, 1);
   const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
+  const previewMode = incremental || livePreview;
   const spacing = mobileMode
     ? Math.max(1.8, lineWidth * 0.18)
     : livePreview
       ? Math.max(1.4, lineWidth * 0.16)
       : Math.max(0.4, lineWidth * 0.06);
-  const maxPoints = incremental || livePreview
+  const maxPoints = previewMode
     ? mobileMode ? 700 : 1200
     : mobileMode ? 7000 : 12000;
   const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
+  const overlapDense = previewMode
+    ? downsamplePointsStable(
+      densifyPath(points, mobileMode ? Math.max(1.4, lineWidth * 0.14) : Math.max(0.9, lineWidth * 0.1)),
+      mobileMode ? 1400 : 2600
+    )
+    : dense;
 
   drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
-  drawMarkerSelfOverlapPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
+  drawMarkerSelfOverlapPass(ctx, overlapDense, lineWidth, angle, color, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
