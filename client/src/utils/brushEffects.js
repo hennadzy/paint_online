@@ -85,11 +85,42 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.restore();
 }
 
-function drawMarkerStamps(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
+  const angle = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const hw = width / 2;
+  const hh = height / 2;
+  const corners = [
+    { x: -hw, y: -hh },
+    { x: hw, y: -hh },
+    { x: hw, y: hh },
+    { x: -hw, y: hh },
+  ].map((p) => ({
+    x: x + p.x * cos - p.y * sin,
+    y: y + p.x * sin + p.y * cos,
+  }));
+
+  ctx.moveTo(corners[0].x, corners[0].y);
+  ctx.lineTo(corners[1].x, corners[1].y);
+  ctx.lineTo(corners[2].x, corners[2].y);
+  ctx.lineTo(corners[3].x, corners[3].y);
+  ctx.closePath();
+}
+
+function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = strokeOpacity;
+  ctx.fillStyle = color;
+  ctx.beginPath();
   points.forEach((p) => {
+    if (p.skipStamp) return;
     const size = p.w ?? lineWidth;
-    drawMarkerStamp(ctx, p.x, p.y, size, angleDeg, color, strokeOpacity);
+    addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angleDeg);
   });
+  ctx.fill();
+  ctx.restore();
 }
 
 export function renderMarkerStroke(ctx, stroke) {
@@ -112,7 +143,7 @@ export function renderMarkerStroke(ctx, stroke) {
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
   const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 6000 : 16000);
-  drawMarkerStamps(ctx, dense, lineWidth, angle, color, strokeOpacity);
+  drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
