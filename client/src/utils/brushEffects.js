@@ -181,74 +181,6 @@ export function getPolygonBounds(polygon) {
   });
 }
 
-function polygonArea(polygon) {
-  let area = 0;
-  for (let i = 0; i < polygon.length; i++) {
-    const p0 = polygon[i];
-    const p1 = polygon[(i + 1) % polygon.length];
-    area += p0.x * p1.y - p1.x * p0.y;
-  }
-  return area / 2;
-}
-
-function crossEdge(a, b, point) {
-  return (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
-}
-
-function lineIntersection(a, b, c, d) {
-  const a1 = b.y - a.y;
-  const b1 = a.x - b.x;
-  const c1 = a1 * a.x + b1 * a.y;
-  const a2 = d.y - c.y;
-  const b2 = c.x - d.x;
-  const c2 = a2 * c.x + b2 * c.y;
-  const det = a1 * b2 - a2 * b1;
-
-  if (Math.abs(det) < 0.0001) return b;
-
-  return {
-    x: (b2 * c1 - b1 * c2) / det,
-    y: (a1 * c2 - a2 * c1) / det,
-  };
-}
-
-export function clipConvexPolygons(subjectPolygon, clipPolygon) {
-  if (subjectPolygon.length < 3 || clipPolygon.length < 3) return [];
-
-  let output = subjectPolygon;
-  const orientation = polygonArea(clipPolygon) >= 0 ? 1 : -1;
-
-  for (let i = 0; i < clipPolygon.length; i++) {
-    const clipStart = clipPolygon[i];
-    const clipEnd = clipPolygon[(i + 1) % clipPolygon.length];
-    const input = output;
-    output = [];
-
-    if (!input.length) break;
-
-    let previous = input[input.length - 1];
-    let previousInside = orientation * crossEdge(clipStart, clipEnd, previous) >= -0.01;
-
-    for (let j = 0; j < input.length; j++) {
-      const current = input[j];
-      const currentInside = orientation * crossEdge(clipStart, clipEnd, current) >= -0.01;
-      if (currentInside) {
-        if (!previousInside) {
-          output.push(lineIntersection(previous, current, clipStart, clipEnd));
-        }
-        output.push(current);
-      } else if (previousInside) {
-        output.push(lineIntersection(previous, current, clipStart, clipEnd));
-      }
-
-      previous = current;
-      previousInside = currentInside;
-    }
-  }
-
-  return output.length >= 3 ? output : [];
-}
-
 export function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
   if (!points.length) return;
 
@@ -302,86 +234,62 @@ function drawColoredMask(ctx, colorLayer, mask, color, opacity) {
 }
 
 function processMarkerCoverageSegment(state, polygon, distance) {
-  const { coverageCtxs, lineWidth } = state;
+  const { scratch, scratchCtx, coverageCtxs, lineWidth } = state;
+  const width = scratch.width;
+  const height = scratch.height;
   const minPathGap = Math.max(lineWidth * 3.2, 24);
   const bounds = getPolygonBounds(polygon);
-  const cellSize = Math.max(8, lineWidth * 1.4);
-  const cellRange = (itemBounds) => ({
-    minX: Math.floor(itemBounds.minX / cellSize),
-    minY: Math.floor(itemBounds.minY / cellSize),
-    maxX: Math.floor(itemBounds.maxX / cellSize),
-    maxY: Math.floor(itemBounds.maxY / cellSize),
-  });
-  const addToGrid = (grid, item) => {
-    const range = cellRange(item.bounds);
-    for (let y = range.minY; y <= range.maxY; y++) {
-      for (let x = range.minX; x <= range.maxX; x++) {
-        const key = `${x}:${y}`;
-        const bucket = grid.get(key) || [];
-        bucket.push(item);
-        grid.set(key, bucket);
-      }
-    }
+  const region = {
+    x: Math.max(0, Math.floor(bounds.minX - 2)),
+    y: Math.max(0, Math.floor(bounds.minY - 2)),
+    maxX: Math.min(width, Math.ceil(bounds.maxX + 2)),
+    maxY: Math.min(height, Math.ceil(bounds.maxY + 2)),
   };
-  const getCandidates = (grid, itemBounds) => {
-    const range = cellRange(itemBounds);
-    const candidates = new Set();
-    for (let y = range.minY; y <= range.maxY; y++) {
-      for (let x = range.minX; x <= range.maxX; x++) {
-        const bucket = grid.get(`${x}:${y}`);
-        if (!bucket) continue;
-        bucket.forEach((item) => candidates.add(item));
-      }
-    }
-    return candidates;
-  };
-  const maturePending = (pending, grid) => {
-    while (
-      pending.index < pending.items.length &&
-      distance - pending.items[pending.index].distance >= minPathGap
-    ) {
-      addToGrid(grid, pending.items[pending.index]);
-      pending.index += 1;
-    }
-  };
+  region.width = Math.max(0, region.maxX - region.x);
+  region.height = Math.max(0, region.maxY - region.y);
 
-  maturePending(state.pendingBase, state.baseGrid);
-  for (let level = 1; level < state.pendingCoverage.length; level++) {
-    maturePending(state.pendingCoverage[level], state.coverageGrids[level]);
+  while (
+    state.pendingBase.index < state.pendingBase.items.length &&
+    distance - state.pendingBase.items[state.pendingBase.index].distance >= minPathGap
+  ) {
+    fillMarkerMaskPolygon(coverageCtxs[0], state.pendingBase.items[state.pendingBase.index].polygon);
+    state.pendingBase.index += 1;
   }
 
-  const fillIntersections = (sourceGrid, targetLevel) => {
-    const candidates = getCandidates(sourceGrid, bounds);
-    candidates.forEach((older) => {
-      const olderBounds = older.bounds;
-      if (
-        bounds.minX > olderBounds.maxX ||
-        bounds.maxX < olderBounds.minX ||
-        bounds.minY > olderBounds.maxY ||
-        bounds.maxY < olderBounds.minY
-      ) {
-        return;
-      }
-
-      const intersection = clipConvexPolygons(polygon, older.polygon);
-      if (!intersection.length) return;
-
-      fillMarkerMaskPolygon(coverageCtxs[targetLevel], intersection);
-      state.pendingCoverage[targetLevel].items.push({
-        polygon: intersection,
-        bounds: getPolygonBounds(intersection),
-        distance,
-      });
-    });
-  };
-
-  fillIntersections(state.baseGrid, 1);
-  for (let level = 2; level < coverageCtxs.length; level++) {
-    fillIntersections(state.coverageGrids[level - 1], level);
+  if (region.width > 0 && region.height > 0) {
+    for (let level = coverageCtxs.length - 2; level >= 0; level--) {
+      scratchCtx.clearRect(region.x, region.y, region.width, region.height);
+      fillMarkerMaskPolygon(scratchCtx, polygon);
+      scratchCtx.globalCompositeOperation = 'destination-in';
+      scratchCtx.drawImage(
+        coverageCtxs[level].canvas,
+        region.x,
+        region.y,
+        region.width,
+        region.height,
+        region.x,
+        region.y,
+        region.width,
+        region.height
+      );
+      scratchCtx.globalCompositeOperation = 'source-over';
+      coverageCtxs[level + 1].drawImage(
+        scratch,
+        region.x,
+        region.y,
+        region.width,
+        region.height,
+        region.x,
+        region.y,
+        region.width,
+        region.height
+      );
+    }
+    scratchCtx.clearRect(region.x, region.y, region.width, region.height);
   }
 
   fillMarkerMaskPolygon(state.baseCtx, polygon);
-  state.pendingBase.items.push({ polygon, bounds, distance });
+  state.pendingBase.items.push({ polygon, distance });
 }
 
 function drawMarkerLayeredStroke(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
@@ -400,26 +308,24 @@ function drawMarkerLayeredStroke(ctx, points, lineWidth, angleDeg, color, stroke
   };
 
   const base = createLayer();
+  const scratch = createLayer();
   const colorLayer = createLayer();
   const coverage = Array.from({ length: MARKER_MAX_COVERAGE_LEVELS }, createLayer);
   const baseCtx = base.getContext('2d');
+  const scratchCtx = scratch.getContext('2d');
   const coverageCtxs = coverage.map((layer) => layer.getContext('2d'));
-  if (!baseCtx || coverageCtxs.some((layerCtx) => !layerCtx)) {
+  if (!baseCtx || !scratchCtx || coverageCtxs.some((layerCtx) => !layerCtx)) {
     drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity);
     return;
   }
 
   const state = {
     baseCtx,
+    scratch,
+    scratchCtx,
     coverageCtxs,
     lineWidth,
-    baseGrid: new Map(),
-    coverageGrids: Array.from({ length: MARKER_MAX_COVERAGE_LEVELS }, () => new Map()),
     pendingBase: { items: [], index: 0 },
-    pendingCoverage: Array.from(
-      { length: MARKER_MAX_COVERAGE_LEVELS },
-      () => ({ items: [], index: 0 })
-    ),
   };
 
   if (points.length === 1) {
