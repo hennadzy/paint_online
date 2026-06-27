@@ -230,6 +230,8 @@ export function useCanvasCursor(canvasRef, cursorRef) {
     const handleMove = (e) => {
       if (toolState.toolName === 'hand') return;
 
+      canvas._lastPointerEvent = e;
+
       if (
         SELECTION_TOOLS.includes(toolState.toolName) &&
         selectionState.transformSessionActive
@@ -302,9 +304,35 @@ export function useCanvasCursor(canvasRef, cursorRef) {
       }
     );
 
+    const disposeParams = reaction(
+      () => {
+        const toolName = toolState.toolName;
+        if (toolName !== 'marker' && toolName !== 'pastel') return null;
+        return toolState.getToolParams(toolName)?.angle;
+      },
+      () => {
+        const canvas = canvasRef.current;
+        const cursor = cursorRef.current;
+        if (!canvas || !cursor) return;
+        if (!CURSOR_NONE_TOOLS.includes(toolState.toolName)) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const lastEvent = canvas._lastPointerEvent;
+        if (!lastEvent) return;
+
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (lastEvent.clientX - rect.left) * scaleX;
+        const y = (lastEvent.clientY - rect.top) * scaleY;
+        const ctx = cursor.getContext('2d');
+        drawCursorOverlay(ctx, cursor, x, y);
+      }
+    );
+
     return () => {
       disposeTool();
       disposeSelection();
+      disposeParams();
     };
   }, [canvasRef, cursorRef]);
 }

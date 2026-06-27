@@ -85,115 +85,11 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.restore();
 }
 
-function getPointDirection(points, index) {
-  const prev = points[Math.max(0, index - 1)];
-  const next = points[Math.min(points.length - 1, index + 1)];
-  const dx = next.x - prev.x;
-  const dy = next.y - prev.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.001) return { dx: 0, dy: 0 };
-  return { dx: dx / len, dy: dy / len };
-}
-
-function splitMarkerPasses(points, lineWidth) {
-  if (points.length < 4) return [points];
-
-  const cellSize = Math.max(6, lineWidth * 1.2);
-  const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
-  const minIndexGap = Math.max(14, Math.ceil(lineWidth * 1.4));
-  const cells = new Map();
-  const passes = [];
-  let currentPass = [points[0]];
-  let insideOlderOverlap = false;
-  const directions = points.map((_, index) => getPointDirection(points, index));
-
-  const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-  const addPoint = (point, index) => {
-    const key = cellKey(point.x, point.y);
-    const bucket = cells.get(key) || [];
-    bucket.push({ point, index, direction: directions[index] });
-    cells.set(key, bucket);
-  };
-  const hasOlderOverlap = (point, index) => {
-    const direction = directions[index];
-    if (direction.dx === 0 && direction.dy === 0) return false;
-
-    const cx = Math.floor(point.x / cellSize);
-    const cy = Math.floor(point.y / cellSize);
-    for (let yy = cy - 1; yy <= cy + 1; yy++) {
-      for (let xx = cx - 1; xx <= cx + 1; xx++) {
-        const bucket = cells.get(`${xx}:${yy}`);
-        if (!bucket) continue;
-        for (const entry of bucket) {
-          if (index - entry.index < minIndexGap) continue;
-          const dx = point.x - entry.point.x;
-          const dy = point.y - entry.point.y;
-          const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
-          if (dot < 0.65 && dx * dx + dy * dy <= overlapDistanceSq) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
-
-  addPoint(points[0], 0);
-  for (let i = 1; i < points.length; i++) {
-    const point = points[i];
-    const overlapsOlderPath = hasOlderOverlap(point, i);
-
-    if (currentPass.length > 1 && overlapsOlderPath && !insideOlderOverlap) {
-      currentPass.push({ ...point, skipStamp: true });
-      passes.push(currentPass);
-      currentPass = [];
-    } else {
-      currentPass.push(point);
-    }
-
-    insideOlderOverlap = overlapsOlderPath;
-    addPoint(point, i);
-  }
-  if (currentPass.length) passes.push(currentPass);
-
-  return passes;
-}
-
-function addRotatedRectToPath(ctx, x, y, width, height, angle) {
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  const hw = width / 2;
-  const hh = height / 2;
-  const corners = [
-    { x: -hw, y: -hh },
-    { x: hw, y: -hh },
-    { x: hw, y: hh },
-    { x: -hw, y: hh },
-  ].map((p) => ({
-    x: x + p.x * cos - p.y * sin,
-    y: y + p.x * sin + p.y * cos,
-  }));
-
-  ctx.moveTo(corners[0].x, corners[0].y);
-  ctx.lineTo(corners[1].x, corners[1].y);
-  ctx.lineTo(corners[2].x, corners[2].y);
-  ctx.lineTo(corners[3].x, corners[3].y);
-  ctx.closePath();
-}
-
-function drawMarkerPass(ctx, points, lineWidth, angle, color, strokeOpacity) {
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = strokeOpacity;
-  ctx.fillStyle = color;
-  ctx.beginPath();
+function drawMarkerStamps(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
   points.forEach((p) => {
-    if (p.skipStamp) return;
     const size = p.w ?? lineWidth;
-    addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angle);
+    drawMarkerStamp(ctx, p.x, p.y, size, angleDeg, color, strokeOpacity);
   });
-  ctx.fill();
-  ctx.restore();
 }
 
 export function renderMarkerStroke(ctx, stroke) {
@@ -216,11 +112,7 @@ export function renderMarkerStroke(ctx, stroke) {
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
   const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 6000 : 16000);
-  const passes = splitMarkerPasses(dense, lineWidth);
-  passes.forEach((pass) => {
-    if (passes.length > 1 && pass.length < 2) return;
-    drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
-  });
+  drawMarkerStamps(ctx, dense, lineWidth, angle, color, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
