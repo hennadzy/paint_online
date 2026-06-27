@@ -115,6 +115,9 @@ function splitMarkerPasses(points, lineWidth) {
     cells.set(key, bucket);
   };
   const hasOlderOverlap = (point, index) => {
+    const direction = directions[index];
+    if (direction.dx === 0 && direction.dy === 0) return false;
+
     const cx = Math.floor(point.x / cellSize);
     const cy = Math.floor(point.y / cellSize);
     for (let yy = cy - 1; yy <= cy + 1; yy++) {
@@ -125,7 +128,6 @@ function splitMarkerPasses(points, lineWidth) {
           if (index - entry.index < minIndexGap) continue;
           const dx = point.x - entry.point.x;
           const dy = point.y - entry.point.y;
-          const direction = directions[index];
           const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
           if (dot < 0.65 && dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
@@ -140,13 +142,20 @@ function splitMarkerPasses(points, lineWidth) {
   for (let i = 1; i < points.length; i++) {
     const point = points[i];
     const overlapsOlderPath = hasOlderOverlap(point, i);
-    if (currentPass.length > 1 && overlapsOlderPath && !insideOlderOverlap) {
-      passes.push(currentPass);
+
+    if (overlapsOlderPath) {
+      if (!insideOlderOverlap && currentPass.length > 1) {
+        passes.push(currentPass);
+        currentPass = [];
+      }
+      insideOlderOverlap = true;
+    } else if (insideOlderOverlap) {
       currentPass = [point];
+      insideOlderOverlap = false;
     } else {
       currentPass.push(point);
     }
-    insideOlderOverlap = overlapsOlderPath;
+
     addPoint(point, i);
   }
   if (currentPass.length) passes.push(currentPass);

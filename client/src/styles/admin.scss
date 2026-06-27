@@ -935,3 +935,21 @@ html, body {
   }
 }
 
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .admin-page {
+    min-height: 200vh;
+    width: 200vw;
+    max-width: none;
+  }
+
+  .admin-modal-overlay {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    max-height: 200vh !important;
+  }
+
+  .admin-modal {
+    max-height: 180vh;
+  }
+}

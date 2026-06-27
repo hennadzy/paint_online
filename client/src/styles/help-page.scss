@@ -186,3 +186,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .help-page-overlay {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    max-height: 200vh !important;
+  }
+
+  .help-page,
+  .help-page.fullscreen,
+  .help-page.full-screen {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+  }
+}

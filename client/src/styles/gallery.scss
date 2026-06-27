@@ -1160,8 +1160,10 @@
     min-height: 200vh;
   }
 
-  .gallery-header {
+  .gallery-header,
+  .social-header {
     width: 100%;
+    max-width: none;
     box-sizing: border-box;
   }
 

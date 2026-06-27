@@ -1588,6 +1588,17 @@
     margin: 0 auto;
   }
 
+  .app .room-interface {
+    max-height: none !important;
+  }
+
+  .app .room-interface.fullscreen {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    max-height: none !important;
+  }
+
   .room-interface.fullscreen {
     width: 90% !important;
     max-width: 1200px !important;
@@ -1596,18 +1607,21 @@
   body > .room-interface-overlay,
   body > .room-interface-overlay.fullscreen,
   body > .room-interface-overlay.input-dialog-overlay {
-    width: 100vw !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    max-height: 200vh !important;
+    transform: scale(0.5);
+    transform-origin: top left;
     padding: 20px !important;
     align-items: center !important;
     justify-content: center !important;
   }
 
   body > .room-interface-overlay .room-interface.fullscreen {
-    width: min(90vw, 600px) !important;
-    max-width: min(90vw, 600px) !important;
-    height: auto !important;
-    max-height: 100vh !important;
+    width: min(180vw, 1200px) !important;
+    max-width: min(180vw, 1200px) !important;
+    height: 100% !important;
+    max-height: none !important;
   }
 }

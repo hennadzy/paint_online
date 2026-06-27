@@ -510,14 +510,18 @@ body.modal-open {
   }
 
   .export-modal-overlay,
-  .modal-overlay {
+  .modal-overlay,
+  .admin-modal-overlay,
+  .room-interface-overlay,
+  .help-page-overlay {
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
+    max-height: 200vh !important;
   }
 
   .export-modal {
-    width: min(90vw, 420px);
+    width: min(180vw, 840px);
   }
 }
 
