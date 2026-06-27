@@ -210,7 +210,9 @@ export function renderMarkerStroke(ctx, stroke) {
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
   const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 6000 : 16000);
-  splitMarkerPasses(dense, lineWidth).forEach((pass) => {
+  const passes = splitMarkerPasses(dense, lineWidth);
+  passes.forEach((pass) => {
+    if (passes.length > 1 && pass.length < 2) return;
     drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
   });
 }

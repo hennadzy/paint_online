@@ -965,7 +965,7 @@
   }
 
   .coloring-workspace {
-    flex: 1;
+    flex: 1 1 0 !important;
     min-height: 0;
     order: initial !important;
     padding: 12px !important;
@@ -989,6 +989,8 @@
     display: flex !important;
     order: initial !important;
     flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 5 !important;
   }
 
   .coloring-palette {

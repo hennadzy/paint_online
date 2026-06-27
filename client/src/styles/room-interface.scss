@@ -1573,9 +1573,9 @@
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
-  .room-interface-overlay,
-  .room-interface-overlay.fullscreen,
-  .room-interface-overlay.input-dialog-overlay {
+  .app .room-interface-overlay,
+  .app .room-interface-overlay.fullscreen,
+  .app .room-interface-overlay.input-dialog-overlay {
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
@@ -1591,5 +1591,23 @@
   .room-interface.fullscreen {
     width: 90% !important;
     max-width: 1200px !important;
+  }
+
+  body > .room-interface-overlay,
+  body > .room-interface-overlay.fullscreen,
+  body > .room-interface-overlay.input-dialog-overlay {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    padding: 20px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body > .room-interface-overlay .room-interface.fullscreen {
+    width: min(90vw, 600px) !important;
+    max-width: min(90vw, 600px) !important;
+    height: auto !important;
+    max-height: 100vh !important;
   }
 }
