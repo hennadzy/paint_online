@@ -48,9 +48,6 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
   validateUserId(userId);
   
-  console.log('[users PUT /me] User ID:', userId);
-  console.log('[users PUT /me] Request body:', { username, email });
-  
   const updates = {};
 
   if (username !== undefined && username !== null) {
@@ -93,11 +90,7 @@ router.put('/me', authenticate, asyncHandler(async (req, res) => {
     throw new ValidationError('Нет полей для обновления');
   }
 
-  console.log('[users PUT /me] Updates to apply:', updates);
-
   const updatedUser = await User.update(userId, updates);
-  
-  console.log('[users PUT /me] Updated user:', updatedUser);
   
   const { password_hash, ...userWithoutPassword } = updatedUser;
   res.json({ user: userWithoutPassword });
