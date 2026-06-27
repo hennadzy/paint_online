@@ -279,7 +279,12 @@ function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, stro
   if (points.length < 4) return;
 
   const cellSize = Math.max(8, lineWidth * 1.4);
-  const minSegmentGap = Math.max(6, Math.ceil(lineWidth * 0.8));
+  const minPathGap = Math.max(lineWidth * 3.2, 24);
+  const distances = [0];
+  for (let i = 1; i < points.length; i++) {
+    distances[i] = distances[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+
   const cells = new Map();
   const cellKey = (x, y) => `${x}:${y}`;
   const segmentCellRange = (bounds) => ({
@@ -327,7 +332,7 @@ function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, stro
     ctx.beginPath();
     let hasIntersection = false;
     candidates.forEach((older) => {
-      if (i - older.index <= minSegmentGap || !boundsOverlap(bounds, older.bounds)) return;
+      if (distances[i] - older.distance < minPathGap || !boundsOverlap(bounds, older.bounds)) return;
 
       const intersection = clipPolygon(polygon, older.polygon);
       if (!intersection.length) return;
@@ -340,7 +345,7 @@ function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, stro
       ctx.fill();
     }
 
-    addSegment({ index: i, polygon, bounds });
+    addSegment({ index: i, distance: distances[i], polygon, bounds });
   }
 
   ctx.restore();
@@ -362,12 +367,12 @@ export function renderMarkerStroke(ctx, stroke) {
   const color = parseColor(strokeStyle, 1);
   const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
   const spacing = mobileMode
-    ? Math.max(1.2, lineWidth * 0.12)
+    ? Math.max(1.8, lineWidth * 0.18)
     : livePreview
-      ? Math.max(0.75, lineWidth * 0.09)
+      ? Math.max(1.4, lineWidth * 0.16)
       : Math.max(0.4, lineWidth * 0.06);
   const maxPoints = incremental || livePreview
-    ? mobileMode ? 3500 : 6000
+    ? mobileMode ? 700 : 1200
     : mobileMode ? 7000 : 12000;
   const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
 

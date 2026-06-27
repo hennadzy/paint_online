@@ -46,11 +46,26 @@ class ToolState {
     stamp: 48,
   };
 
-  defaultOpacity = {
+  strokeOpacities = {
+    brush: 1,
     marker: 0.5,
     airbrush: 0.35,
+    smudge: 1,
     watercolor: 0.45,
+    oil: 1,
     pastel: 0.35,
+    calligraphy: 1,
+    rect: 1,
+    circle: 1,
+    ellipse: 1,
+    polygon: 1,
+    eraser: 1,
+    line: 1,
+    arrow: 1,
+    text: 1,
+    fill: 1,
+    pipette: 1,
+    stamp: 1,
   };
 
   toolParams = JSON.parse(JSON.stringify(DEFAULT_TOOL_PARAMS));
@@ -110,6 +125,10 @@ class ToolState {
     return { ...(DEFAULT_TOOL_PARAMS[toolName] || {}), ...(this.toolParams[toolName] || {}) };
   }
 
+  getToolOpacity(toolName) {
+    return this.strokeOpacities[toolName] ?? 1;
+  }
+
   setToolParam(toolName, key, value) {
     if (!this.toolParams[toolName]) {
       this.toolParams[toolName] = {};
@@ -141,9 +160,7 @@ class ToolState {
     const group = this.getGroupForTool(this.toolName);
     if (group) this.lastSelected[group] = this.toolName;
 
-    if (this.defaultOpacity[this.toolName] !== undefined) {
-      this.strokeOpacity = this.defaultOpacity[this.toolName];
-    }
+    this.strokeOpacity = this.getToolOpacity(this.toolName);
 
     if (this.toolName === 'stamp') {
       this.stampPaletteOpen = true;
@@ -187,6 +204,9 @@ class ToolState {
 
   setStrokeOpacity(opacity) {
     this.strokeOpacity = opacity;
+    if (this.toolName) {
+      this.strokeOpacities[this.toolName] = opacity;
+    }
     this.tool?.setStrokeOpacity?.(opacity);
   }
 
