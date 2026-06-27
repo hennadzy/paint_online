@@ -85,45 +85,33 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.restore();
 }
 
-function createCanvasLike(sourceCanvas) {
-  if (typeof OffscreenCanvas !== 'undefined') {
-    return new OffscreenCanvas(sourceCanvas.width, sourceCanvas.height);
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = sourceCanvas.width;
-  canvas.height = sourceCanvas.height;
-  return canvas;
-}
-
-function drawMarkerMaskStamp(ctx, x, y, size, angleDeg) {
-  const w = size * 1.8;
-  const h = size * 0.35;
-  const angle = (angleDeg * Math.PI) / 180;
-
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  ctx.fillRect(-w / 2, -h / 2, w, h);
-  ctx.restore();
+function getPointDirection(points, index) {
+  const prev = points[Math.max(0, index - 1)];
+  const next = points[Math.min(points.length - 1, index + 1)];
+  const dx = next.x - prev.x;
+  const dy = next.y - prev.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 0.001) return { dx: 0, dy: 0 };
+  return { dx: dx / len, dy: dy / len };
 }
 
 function splitMarkerPasses(points, lineWidth) {
   if (points.length < 4) return [points];
 
-  const cellSize = Math.max(4, lineWidth * 0.9);
-  const overlapDistanceSq = Math.max(4, lineWidth * 0.75) ** 2;
-  const minIndexGap = Math.max(8, Math.ceil(lineWidth * 0.8));
+  const cellSize = Math.max(6, lineWidth * 1.2);
+  const overlapDistanceSq = Math.max(6, lineWidth * 0.55) ** 2;
+  const minIndexGap = Math.max(14, Math.ceil(lineWidth * 1.4));
   const cells = new Map();
   const passes = [];
   let currentPass = [points[0]];
   let insideOlderOverlap = false;
+  const directions = points.map((_, index) => getPointDirection(points, index));
 
   const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
   const addPoint = (point, index) => {
     const key = cellKey(point.x, point.y);
     const bucket = cells.get(key) || [];
-    bucket.push({ point, index });
+    bucket.push({ point, index, direction: directions[index] });
     cells.set(key, bucket);
   };
   const hasOlderOverlap = (point, index) => {
@@ -137,7 +125,9 @@ function splitMarkerPasses(points, lineWidth) {
           if (index - entry.index < minIndexGap) continue;
           const dx = point.x - entry.point.x;
           const dy = point.y - entry.point.y;
-          if (dx * dx + dy * dy <= overlapDistanceSq) {
+          const direction = directions[index];
+          const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
+          if (dot < 0.35 && dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
           }
         }
@@ -164,28 +154,39 @@ function splitMarkerPasses(points, lineWidth) {
   return passes;
 }
 
+function addRotatedRectToPath(ctx, x, y, width, height, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const hw = width / 2;
+  const hh = height / 2;
+  const corners = [
+    { x: -hw, y: -hh },
+    { x: hw, y: -hh },
+    { x: hw, y: hh },
+    { x: -hw, y: hh },
+  ].map((p) => ({
+    x: x + p.x * cos - p.y * sin,
+    y: y + p.x * sin + p.y * cos,
+  }));
+
+  ctx.moveTo(corners[0].x, corners[0].y);
+  ctx.lineTo(corners[1].x, corners[1].y);
+  ctx.lineTo(corners[2].x, corners[2].y);
+  ctx.lineTo(corners[3].x, corners[3].y);
+  ctx.closePath();
+}
+
 function drawMarkerPass(ctx, points, lineWidth, angle, color, strokeOpacity) {
-  const maskCanvas = createCanvasLike(ctx.canvas);
-  const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-  const colorCanvas = createCanvasLike(ctx.canvas);
-  const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
-
-  maskCtx.fillStyle = '#000000';
-  maskCtx.globalCompositeOperation = 'source-over';
-  points.forEach((p) => {
-    const size = p.w ?? lineWidth;
-    drawMarkerMaskStamp(maskCtx, p.x, p.y, size, angle);
-  });
-
-  colorCtx.fillStyle = color;
-  colorCtx.fillRect(0, 0, colorCanvas.width, colorCanvas.height);
-  colorCtx.globalCompositeOperation = 'destination-in';
-  colorCtx.drawImage(maskCanvas, 0, 0);
-
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = strokeOpacity;
-  ctx.drawImage(colorCanvas, 0, 0);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  points.forEach((p) => {
+    const size = p.w ?? lineWidth;
+    addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angle);
+  });
+  ctx.fill();
   ctx.restore();
 }
 

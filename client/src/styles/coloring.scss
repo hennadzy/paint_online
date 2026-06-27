@@ -925,3 +925,42 @@
  }
  }
 }
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .main-content--coloring {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    overflow: visible !important;
+  }
+
+  .coloring-page {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 200vh !important;
+  }
+
+  .coloring-selector {
+    padding: 24px 20px;
+  }
+
+  .coloring-pages-list {
+    max-width: 640px;
+  }
+
+  .coloring-page-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 18px;
+  }
+
+  .coloring-page-item__preview {
+    width: 140px;
+    height: 100px;
+  }
+
+  .coloring-workspace {
+    flex: 1;
+    min-height: 0;
+  }
+}

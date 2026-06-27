@@ -1571,3 +1571,11 @@
     }
   }
 }
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .room-interface-overlay {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+  }
+}

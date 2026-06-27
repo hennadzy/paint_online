@@ -499,6 +499,15 @@ body.modal-open {
     min-height: calc(200vh - 50px);
     overflow: visible;
   }
+
+  .main-content--coloring,
+  .main-content--gallery,
+  .main-content--help,
+  .main-content--admin {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+  }
 }
 
 @media (max-width: 768px) and (orientation: portrait) {

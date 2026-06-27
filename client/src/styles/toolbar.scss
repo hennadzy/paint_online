@@ -1008,6 +1008,13 @@ canvas.eraser-cursor {
   }
 }
 
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .toolbar {
+    height: calc(200vh - 108px);
+    max-height: none;
+  }
+}
+
 .notification {
   animation: notificationBlink 1s infinite;
 }
