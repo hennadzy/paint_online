@@ -37,6 +37,20 @@ function downsamplePoints(points, maxPoints) {
   return result;
 }
 
+function downsamplePointsStable(points, maxPoints) {
+  if (!Array.isArray(points) || points.length <= maxPoints || maxPoints < 2) {
+    return points;
+  }
+
+  const result = [points[0]];
+  const step = Math.ceil((points.length - 1) / (maxPoints - 1));
+  for (let i = step; i < points.length - 1; i += step) {
+    result.push(points[i]);
+  }
+  result.push(points[points.length - 1]);
+  return result;
+}
+
 /** Разбивает путь на плотные точки для непрерывного рендера */
 export function densifyPath(points, spacing) {
   if (!points.length) return [];
@@ -139,72 +153,104 @@ function addPolygonToPath(ctx, polygon) {
   ctx.closePath();
 }
 
-function collectSelfOverlapRuns(points, lineWidth) {
-  if (points.length < 4) return [];
-
-  const cellSize = Math.max(6, lineWidth * 1.2);
-  const overlapDistanceSq = Math.max(6, lineWidth * 0.7) ** 2;
-  const minIndexGap = Math.max(18, Math.ceil(lineWidth * 1.8));
-  const cells = new Map();
-  const overlapFlags = new Array(points.length).fill(false);
-
-  const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-  const addPoint = (point, index) => {
-    const key = cellKey(point.x, point.y);
-    const bucket = cells.get(key) || [];
-    bucket.push({ point, index });
-    cells.set(key, bucket);
-  };
-  const hasOlderOverlap = (point, index) => {
-    const cx = Math.floor(point.x / cellSize);
-    const cy = Math.floor(point.y / cellSize);
-    for (let yy = cy - 1; yy <= cy + 1; yy++) {
-      for (let xx = cx - 1; xx <= cx + 1; xx++) {
-        const bucket = cells.get(`${xx}:${yy}`);
-        if (!bucket) continue;
-        for (const entry of bucket) {
-          if (index - entry.index < minIndexGap) continue;
-          const dx = point.x - entry.point.x;
-          const dy = point.y - entry.point.y;
-          if (dx * dx + dy * dy <= overlapDistanceSq) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  };
-
-  for (let i = 0; i < points.length; i++) {
-    const point = points[i];
-    if (i > 0 && hasOlderOverlap(point, i)) {
-      overlapFlags[i] = true;
-      overlapFlags[i - 1] = true;
-    }
-    addPoint(point, i);
-  }
-
-  const runs = [];
-  let current = null;
-  for (let i = 0; i < points.length; i++) {
-    if (!overlapFlags[i]) {
-      if (current?.length > 1) runs.push(current);
-      current = null;
-      continue;
-    }
-    if (!current) {
-      current = [];
-      if (i > 0) current.push(points[i - 1]);
-    }
-    current.push(points[i]);
-  }
-  if (current?.length > 1) runs.push(current);
-
-  return runs;
-}
-
 function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
   addPolygonToPath(ctx, getRotatedRectCorners(x, y, width, height, angleDeg));
+}
+
+function getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg) {
+  const s0 = p0.w ?? lineWidth;
+  const s1 = p1.w ?? lineWidth;
+  const c0 = getRotatedRectCorners(p0.x, p0.y, s0 * 1.8, s0 * 0.35, angleDeg);
+  const c1 = getRotatedRectCorners(p1.x, p1.y, s1 * 1.8, s1 * 0.35, angleDeg);
+  return getConvexHull([...c0, ...c1]);
+}
+
+function getPolygonBounds(polygon) {
+  return polygon.reduce((bounds, point) => ({
+    minX: Math.min(bounds.minX, point.x),
+    minY: Math.min(bounds.minY, point.y),
+    maxX: Math.max(bounds.maxX, point.x),
+    maxY: Math.max(bounds.maxY, point.y),
+  }), {
+    minX: Infinity,
+    minY: Infinity,
+    maxX: -Infinity,
+    maxY: -Infinity,
+  });
+}
+
+function boundsOverlap(a, b) {
+  return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+}
+
+function polygonArea(polygon) {
+  let area = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const p0 = polygon[i];
+    const p1 = polygon[(i + 1) % polygon.length];
+    area += p0.x * p1.y - p1.x * p0.y;
+  }
+  return area / 2;
+}
+
+function crossEdge(a, b, point) {
+  return (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
+}
+
+function lineIntersection(a, b, c, d) {
+  const a1 = b.y - a.y;
+  const b1 = a.x - b.x;
+  const c1 = a1 * a.x + b1 * a.y;
+  const a2 = d.y - c.y;
+  const b2 = c.x - d.x;
+  const c2 = a2 * c.x + b2 * c.y;
+  const det = a1 * b2 - a2 * b1;
+
+  if (Math.abs(det) < 0.0001) {
+    return b;
+  }
+
+  return {
+    x: (b2 * c1 - b1 * c2) / det,
+    y: (a1 * c2 - a2 * c1) / det,
+  };
+}
+
+function clipPolygon(subjectPolygon, clipPolygon) {
+  if (subjectPolygon.length < 3 || clipPolygon.length < 3) return [];
+
+  let output = subjectPolygon;
+  const orientation = polygonArea(clipPolygon) >= 0 ? 1 : -1;
+
+  for (let i = 0; i < clipPolygon.length; i++) {
+    const clipStart = clipPolygon[i];
+    const clipEnd = clipPolygon[(i + 1) % clipPolygon.length];
+    const input = output;
+    output = [];
+
+    if (!input.length) break;
+
+    let previous = input[input.length - 1];
+    let previousInside = orientation * crossEdge(clipStart, clipEnd, previous) >= -0.01;
+
+    for (let j = 0; j < input.length; j++) {
+      const current = input[j];
+      const currentInside = orientation * crossEdge(clipStart, clipEnd, current) >= -0.01;
+      if (currentInside) {
+        if (!previousInside) {
+          output.push(lineIntersection(previous, current, clipStart, clipEnd));
+        }
+        output.push(current);
+      } else if (previousInside) {
+        output.push(lineIntersection(previous, current, clipStart, clipEnd));
+      }
+
+      previous = current;
+      previousInside = currentInside;
+    }
+  }
+
+  return output.length >= 3 ? output : [];
 }
 
 function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
@@ -221,17 +267,82 @@ function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) 
     addRotatedRectToPath(ctx, points[0].x, points[0].y, size * 1.8, size * 0.35, angleDeg);
   } else {
     for (let i = 1; i < points.length; i++) {
-      const p0 = points[i - 1];
-      const p1 = points[i];
-      const s0 = p0.w ?? lineWidth;
-      const s1 = p1.w ?? lineWidth;
-      const c0 = getRotatedRectCorners(p0.x, p0.y, s0 * 1.8, s0 * 0.35, angleDeg);
-      const c1 = getRotatedRectCorners(p1.x, p1.y, s1 * 1.8, s1 * 0.35, angleDeg);
-      addPolygonToPath(ctx, getConvexHull([...c0, ...c1]));
+      addPolygonToPath(ctx, getMarkerSegmentPolygon(points[i - 1], points[i], lineWidth, angleDeg));
     }
   }
 
   ctx.fill();
+  ctx.restore();
+}
+
+function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+  if (points.length < 4) return;
+
+  const cellSize = Math.max(8, lineWidth * 1.4);
+  const minSegmentGap = Math.max(6, Math.ceil(lineWidth * 0.8));
+  const cells = new Map();
+  const cellKey = (x, y) => `${x}:${y}`;
+  const segmentCellRange = (bounds) => ({
+    minX: Math.floor(bounds.minX / cellSize),
+    minY: Math.floor(bounds.minY / cellSize),
+    maxX: Math.floor(bounds.maxX / cellSize),
+    maxY: Math.floor(bounds.maxY / cellSize),
+  });
+
+  const addSegment = (segment) => {
+    const range = segmentCellRange(segment.bounds);
+    for (let y = range.minY; y <= range.maxY; y++) {
+      for (let x = range.minX; x <= range.maxX; x++) {
+        const key = cellKey(x, y);
+        const bucket = cells.get(key) || [];
+        bucket.push(segment);
+        cells.set(key, bucket);
+      }
+    }
+  };
+
+  const getCandidates = (bounds) => {
+    const range = segmentCellRange(bounds);
+    const candidates = new Set();
+    for (let y = range.minY; y <= range.maxY; y++) {
+      for (let x = range.minX; x <= range.maxX; x++) {
+        const bucket = cells.get(cellKey(x, y));
+        if (!bucket) continue;
+        bucket.forEach((segment) => candidates.add(segment));
+      }
+    }
+    return candidates;
+  };
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = strokeOpacity;
+  ctx.fillStyle = color;
+
+  for (let i = 1; i < points.length; i++) {
+    const polygon = getMarkerSegmentPolygon(points[i - 1], points[i], lineWidth, angleDeg);
+    const bounds = getPolygonBounds(polygon);
+    const candidates = getCandidates(bounds);
+
+    ctx.beginPath();
+    let hasIntersection = false;
+    candidates.forEach((older) => {
+      if (i - older.index <= minSegmentGap || !boundsOverlap(bounds, older.bounds)) return;
+
+      const intersection = clipPolygon(polygon, older.polygon);
+      if (!intersection.length) return;
+
+      addPolygonToPath(ctx, intersection);
+      hasIntersection = true;
+    });
+
+    if (hasIntersection) {
+      ctx.fill();
+    }
+
+    addSegment({ index: i, polygon, bounds });
+  }
+
   ctx.restore();
 }
 
@@ -256,18 +367,12 @@ export function renderMarkerStroke(ctx, stroke) {
       ? Math.max(0.75, lineWidth * 0.09)
       : Math.max(0.4, lineWidth * 0.06);
   const maxPoints = incremental || livePreview
-    ? 2200
+    ? mobileMode ? 3500 : 6000
     : mobileMode ? 7000 : 12000;
-  const dense = downsamplePoints(densifyPath(points, spacing), maxPoints);
+  const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
 
   drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
-
-  const overlapRuns = collectSelfOverlapRuns(dense, lineWidth);
-  if (overlapRuns.length) {
-    overlapRuns.forEach((run) => {
-      drawMarkerPass(ctx, run, lineWidth, angle, color, strokeOpacity);
-    });
-  }
+  drawMarkerSelfOverlapPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
