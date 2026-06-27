@@ -10,8 +10,21 @@ export default class Marker extends BaseStrokeTool {
   }
 
   drawLive() {
-    this.clearLiveLayer();
-    this._liveDrawnCount = 0;
-    this.drawLiveFull(renderMarkerStroke);
+    if (this.points.length === 0) return;
+
+    const from = Math.max(0, this._liveDrawnCount - 1);
+    if (from >= this.points.length) return;
+
+    const segmentPoints = this.points.slice(from);
+    const payload = {
+      ...this.buildStrokePayload(),
+      points: segmentPoints,
+      livePreview: true,
+      mobilePreview: window.innerWidth <= 768,
+    };
+
+    const liveCtx = this.ensureLiveLayer();
+    renderMarkerStroke(liveCtx, payload);
+    this._liveDrawnCount = this.points.length;
   }
 }
