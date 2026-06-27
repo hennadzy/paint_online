@@ -144,9 +144,9 @@ function splitMarkerPasses(points, lineWidth) {
     const overlapsOlderPath = hasOlderOverlap(point, i);
 
     if (currentPass.length > 1 && overlapsOlderPath && !insideOlderOverlap) {
-      currentPass.push(point);
+      currentPass.push({ ...point, skipStamp: true });
       passes.push(currentPass);
-      currentPass = [point];
+      currentPass = [];
     } else {
       currentPass.push(point);
     }
@@ -188,6 +188,7 @@ function drawMarkerPass(ctx, points, lineWidth, angle, color, strokeOpacity) {
   ctx.fillStyle = color;
   ctx.beginPath();
   points.forEach((p) => {
+    if (p.skipStamp) return;
     const size = p.w ?? lineWidth;
     addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angle);
   });
@@ -216,11 +217,9 @@ export function renderMarkerStroke(ctx, stroke) {
       : Math.max(0.35, lineWidth * 0.05);
   const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 6000 : 16000);
   const passes = splitMarkerPasses(dense, lineWidth);
-  passes.forEach((pass, passIndex) => {
+  passes.forEach((pass) => {
     if (passes.length > 1 && pass.length < 2) return;
-    const drawPoints = passIndex > 0 ? pass.slice(1) : pass;
-    if (!drawPoints.length) return;
-    drawMarkerPass(ctx, drawPoints, lineWidth, angle, color, strokeOpacity);
+    drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
   });
 }
 

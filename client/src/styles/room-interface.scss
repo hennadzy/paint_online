@@ -1667,4 +1667,32 @@
     max-height: none !important;
     overflow: visible !important;
   }
+
+  .app .room-interface-overlay.input-dialog-overlay,
+  body > .room-interface-overlay.input-dialog-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 40px !important;
+    padding-top: calc(40px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-y: auto !important;
+    max-height: none !important;
+  }
+
+  .app .room-interface.input-dialog,
+  body > .room-interface-overlay .room-interface.input-dialog {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    width: min(160vw, 700px) !important;
+    margin: 0 auto !important;
+  }
+
+  .app .room-interface-overlay.input-dialog-overlay .room-card.username-form,
+  .app .room-interface-overlay.input-dialog-overlay .room-card.password-form,
+  body > .room-interface-overlay.input-dialog-overlay .room-card.username-form,
+  body > .room-interface-overlay.input-dialog-overlay .room-card.password-form {
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }

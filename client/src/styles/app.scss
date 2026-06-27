@@ -518,12 +518,46 @@ body.modal-open {
   .export-modal-overlay,
   .modal-overlay,
   .admin-modal-overlay,
-  .room-interface-overlay,
   .help-page-overlay {
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
     max-height: 200vh !important;
+  }
+
+  .room-interface-overlay:not(.input-dialog-overlay) {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    max-height: 200vh !important;
+  }
+
+  .room-interface-overlay.input-dialog-overlay {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+    max-height: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    padding: 40px !important;
+    padding-top: calc(40px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+  }
+
+  .room-interface.input-dialog {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    width: min(160vw, 700px) !important;
+    margin: 0 auto !important;
+  }
+
+  .room-interface-overlay.input-dialog-overlay .room-card.username-form,
+  .room-interface-overlay.input-dialog-overlay .room-card.password-form {
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .export-modal {
