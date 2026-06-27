@@ -53,6 +53,7 @@ function downsamplePointsStable(points, maxPoints) {
   return result;
 }
 
+/** Разбивает путь на плотные точки для непрерывного рендера */
 export function densifyPath(points, spacing) {
   if (!points.length) return [];
   if (points.length === 1) return [points[0]];
@@ -944,5 +945,19 @@ export function renderSpecialBrushStroke(ctx, stroke, canvas) {
       break;
     default:
       break;
+  }
+}
+
+/** Рисует маркерные штампы вдоль отрезка (для live-preview) */
+export function drawMarkerAlongSegment(ctx, x0, y0, x1, y1, lineWidth, angle, strokeStyle, strokeOpacity) {
+  const color = parseColor(strokeStyle, 1);
+  const spacing = Math.max(1, lineWidth * 0.12);
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.max(1, Math.ceil(dist / spacing));
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    drawMarkerStamp(ctx, x0 + dx * t, y0 + dy * t, lineWidth, angle, color, strokeOpacity);
   }
 }

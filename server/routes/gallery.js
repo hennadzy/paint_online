@@ -162,8 +162,10 @@ router.get('/drawing/:id', galleryLimiter, optionalAuthenticate, async (req, res
 
 router.get('/image/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
+  console.log(`[GALLERY-IMAGE] Request ID=${id}, IP=${req.ip}, User-Agent=${req.get('User-Agent')}`);
   try {
     if (!Number.isFinite(id) || id <= 0) {
+      console.log('Invalid id:', id);
       return res.status(400).json({ error: 'Invalid id' });
     }
 
@@ -174,16 +176,20 @@ router.get('/image/:id', async (req, res) => {
 
     const row = result.rows[0];
     if (result.rows.length === 0) {
+      console.log(`[GALLERY-IMAGE-404] No row for ID=${id}`);
       return res.status(404).json({ error: 'Image not found' });
     }
     if (!row.image_data || typeof row.image_data !== 'string' || row.image_data.trim().length === 0) {
+      console.log(`[GALLERY-IMAGE-404] Empty image_data for ID=${id}`);
       return res.status(404).json({ error: 'Image not found' });
     }
     if (String(row.status || '').trim().toLowerCase() !== 'approved') {
+      console.log(`[GALLERY-IMAGE-404] Not approved for ID=${id}, status='${row.status}'`);
       return res.status(404).json({ error: 'Image not found' });
     }
 
     const imageData = String(row.image_data).trim();
+    console.log(`[GALLERY-IMAGE-OK] Serving ID=${id}, status='${row.status}', data_len=${imageData.length}`);
 
     let mimeType = 'image/png';
     let base64Payload = '';
@@ -198,12 +204,14 @@ router.get('/image/:id', async (req, res) => {
     } else if (/^[a-z0-9+/=\r\n]+$/i.test(imageData)) {
       base64Payload = imageData;
     } else {
+      console.log(`[GALLERY-IMAGE-INVALID] Unsupported format for ID=${id}`);
       return res.status(500).json({ error: 'Invalid image data' });
     }
 
     const sanitizedBase64 = base64Payload.replace(/\s+/g, '');
     const buffer = Buffer.from(sanitizedBase64, 'base64');
     if (!buffer || buffer.length === 0) {
+      console.log(`[GALLERY-IMAGE-INVALID] Empty decoded buffer for ID=${id}`);
       return res.status(500).json({ error: 'Invalid image data' });
     }
 

@@ -762,6 +762,16 @@ setupThumbnailInterval() {
       document.head.appendChild(link);
     };
   }
+  handleMessage(msg) {
+    WebSocketService.handleMessage(msg);
+  }
+  drawSingleStroke(ctx, stroke) {
+    CanvasService.drawStroke(ctx, stroke);
+  }
+  renderBrushStroke(ctx, stroke, isEraser) {
+    CanvasService.renderBrushStroke(ctx, stroke, isEraser);
+  }
+
   scheduleLocalAutoSave() {
     if (this.isConnected) return;
     if (this._localSaveTimer) {

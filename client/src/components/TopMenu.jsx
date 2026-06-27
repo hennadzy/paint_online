@@ -169,7 +169,10 @@ useEffect(() => {
         URL.revokeObjectURL(url);
         alert('Скачайте рисунок, чтобы поделиться');
       }
-    } catch {
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.log('Share failed', error);
+      }
     }
   }, []);
 

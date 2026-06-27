@@ -1,6 +1,7 @@
 class AutoSaveService {
   constructor() {
     this.version = "1.0";
+    this.autosaveInterval = null;
     this.hasChanges = false;
     this.lastSaveTime = 0;
     this.saveDelay = 500;
@@ -102,6 +103,40 @@ class AutoSaveService {
     } catch (error) {}
   }
 
+  rotateBackups(roomId = null) {
+    try {
+      for (let i = this.maxBackups - 1; i > 0; i--) {
+        const currentKey = this.getBackupKey(roomId, i - 1);
+        const nextKey = this.getBackupKey(roomId, i);
+        const data = localStorage.getItem(currentKey);
+
+        if (data) {
+          localStorage.setItem(nextKey, data);
+        }
+      }
+
+      const mainKey = this.getStorageKey(roomId);
+      const mainData = localStorage.getItem(mainKey);
+
+      if (mainData) {
+        localStorage.setItem(this.getBackupKey(roomId, 0), mainData);
+      }
+    } catch (error) {}
+  }
+
+  restoreFromBackup(roomId = null, backupIndex = 0) {
+    try {
+      const backupKey = this.getBackupKey(roomId, backupIndex);
+      const data = localStorage.getItem(backupKey);
+
+      if (!data) return null;
+
+      return JSON.parse(data);
+    } catch (error) {
+      return null;
+    }
+  }
+
   cleanupOldBackups(roomId = null) {
     try {
       for (let i = 0; i < this.maxBackups; i++) {
@@ -169,6 +204,36 @@ class AutoSaveService {
 
   generateSessionId() {
     return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  }
+
+  formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+
+    const timeStr = date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    if (isToday) {
+      return `сегодня в ${timeStr}`;
+    }
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    if (isYesterday) {
+      return `вчера в ${timeStr}`;
+    }
+
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   getStorageSize() {

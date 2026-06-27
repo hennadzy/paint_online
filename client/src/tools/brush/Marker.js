@@ -89,6 +89,8 @@ export default class Marker extends BaseStrokeTool {
   }
 
   commitStroke() {
+    // The marker preview is intentionally simplified for responsiveness.
+    // Commit the full vector stroke so long lines do not keep preview artifacts.
     this._liveDrawnCount = 0;
     super.commitStroke();
   }
