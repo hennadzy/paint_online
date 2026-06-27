@@ -12,20 +12,15 @@ export default class Marker extends BaseStrokeTool {
   drawLive() {
     if (this.points.length === 0) return;
 
-    const from = Math.max(0, this._liveDrawnCount - 1);
-    if (from >= this.points.length) return;
-
-    const segmentPoints = this.points.slice(from);
-    const payload = {
+    const liveCtx = this.ensureLiveLayer();
+    this.clearLiveLayer();
+    renderMarkerStroke(liveCtx, {
       ...this.buildStrokePayload(),
-      points: segmentPoints,
+      points: this.points,
       livePreview: true,
       incremental: true,
       mobilePreview: window.innerWidth <= 768,
-    };
-
-    const liveCtx = this.ensureLiveLayer();
-    renderMarkerStroke(liveCtx, payload);
+    });
     this._liveDrawnCount = this.points.length;
   }
 }

@@ -286,16 +286,29 @@ const ColoringPage = () => {
       const isLandscape = window.matchMedia('(max-width: 768px) and (orientation: landscape)').matches;
       document.body.classList.toggle('coloring-active-page', isActivePage);
       document.body.classList.toggle('coloring-active-landscape', isActivePage && isLandscape);
+
+      const vv = window.visualViewport;
+      if (vv) {
+        const bottomInset = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+        document.documentElement.style.setProperty('--coloring-vv-bottom', `${bottomInset}px`);
+      } else {
+        document.documentElement.style.removeProperty('--coloring-vv-bottom');
+      }
     };
 
     syncColoringLayoutClass();
     window.addEventListener('resize', syncColoringLayoutClass);
     window.addEventListener('orientationchange', syncColoringLayoutClass);
+    window.visualViewport?.addEventListener('resize', syncColoringLayoutClass);
+    window.visualViewport?.addEventListener('scroll', syncColoringLayoutClass);
 
     return () => {
       document.body.classList.remove('coloring-active-page', 'coloring-active-landscape');
+      document.documentElement.style.removeProperty('--coloring-vv-bottom');
       window.removeEventListener('resize', syncColoringLayoutClass);
       window.removeEventListener('orientationchange', syncColoringLayoutClass);
+      window.visualViewport?.removeEventListener('resize', syncColoringLayoutClass);
+      window.visualViewport?.removeEventListener('scroll', syncColoringLayoutClass);
     };
   }, [selectedPage]);
 

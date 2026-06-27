@@ -100,12 +100,14 @@ function splitMarkerPasses(points, lineWidth) {
 
   const cellSize = Math.max(6, lineWidth * 1.2);
   const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
-  const minIndexGap = Math.max(14, Math.ceil(lineWidth * 1.4));
+  const minIndexGap = Math.max(18, Math.ceil(lineWidth * 1.8));
   const cells = new Map();
   const passes = [];
   let currentPass = [points[0]];
   let insideOlderOverlap = false;
+  let pointsSinceSplit = Infinity;
   const directions = points.map((_, index) => getPointDirection(points, index));
+  const minPointsBetweenSplits = Math.max(18, Math.ceil(lineWidth * 2.2));
 
   const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
   const addPoint = (point, index) => {
@@ -129,7 +131,7 @@ function splitMarkerPasses(points, lineWidth) {
           const dx = point.x - entry.point.x;
           const dy = point.y - entry.point.y;
           const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
-          if (dot < 0.65 && dx * dx + dy * dy <= overlapDistanceSq) {
+          if (dot < 0.5 && dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
           }
         }
@@ -143,20 +145,32 @@ function splitMarkerPasses(points, lineWidth) {
     const point = points[i];
     const overlapsOlderPath = hasOlderOverlap(point, i);
 
-    if (overlapsOlderPath && !insideOlderOverlap && currentPass.length > 1) {
+    if (
+      overlapsOlderPath
+      && !insideOlderOverlap
+      && currentPass.length > 1
+      && pointsSinceSplit >= minPointsBetweenSplits
+    ) {
       passes.push(currentPass);
       currentPass = [];
       insideOlderOverlap = true;
+      pointsSinceSplit = 0;
       addPoint(point, i);
       continue;
     }
 
     if (overlapsOlderPath) {
-      currentPass.push(point);
+      if (passes.length > 0) {
+        currentPass.push(point);
+      } else {
+        currentPass.push(point);
+      }
     } else {
       currentPass.push(point);
       insideOlderOverlap = false;
     }
+
+    pointsSinceSplit += 1;
 
     insideOlderOverlap = overlapsOlderPath;
     addPoint(point, i);
@@ -225,12 +239,12 @@ export function renderMarkerStroke(ctx, stroke) {
     : livePreview
       ? Math.max(0.75, lineWidth * 0.09)
       : Math.max(0.4, lineWidth * 0.06);
-  const maxPoints = incremental ? 900 : mobileMode ? 5000 : livePreview ? 2400 : 9000;
+  const maxPoints = incremental ? 1400 : mobileMode ? 5000 : livePreview ? 2400 : 9000;
   const dense = downsamplePoints(densifyPath(points, spacing), maxPoints);
   const passes = incremental ? [dense] : splitMarkerPasses(dense, lineWidth);
 
   passes.forEach((pass) => {
-    if (!incremental && passes.length > 1 && pass.length < 2) return;
+    if (!incremental && passes.length > 1 && pass.length < 4) return;
     drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
   });
 }

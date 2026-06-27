@@ -929,9 +929,9 @@
 @media screen and (max-width: 768px) and (orientation: landscape) {
   body.coloring-active-landscape {
     overflow: hidden !important;
-    height: 100vh !important;
-    min-height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
   }
 
   body.coloring-active-landscape .main-content.main-content--coloring {
@@ -941,9 +941,9 @@
     right: auto !important;
     bottom: auto !important;
     width: 200vw !important;
-    height: 200vh !important;
-    min-height: 200vh !important;
-    max-height: 200vh !important;
+    height: 200dvh !important;
+    min-height: 200dvh !important;
+    max-height: 200dvh !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
@@ -965,23 +965,27 @@
     flex: 1 1 0 !important;
     min-height: 0 !important;
     overflow: hidden !important;
-    padding: 8px 12px 72px !important;
+    padding: 8px 12px 8px !important;
   }
 
   body.coloring-active-landscape .coloring-bottom {
-    position: fixed !important;
-    left: 0 !important;
+    position: relative !important;
+    left: auto !important;
     right: auto !important;
-    bottom: 0 !important;
-    width: 200vw !important;
+    bottom: auto !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0 !important;
     min-height: 58px !important;
-    z-index: 1000 !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 20 !important;
+    padding-bottom: max(
+      env(safe-area-inset-bottom, 0px),
+      var(--coloring-vv-bottom, 0px)
+    ) !important;
     gap: 0 !important;
     background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%) !important;
     border-top: 1px solid #ffcc00 !important;
