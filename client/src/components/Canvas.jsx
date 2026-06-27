@@ -194,15 +194,6 @@ const Canvas = observer(() => {
   }, [canvasState.isConnected, canvasState.currentRoomId]);
 
 
-  useEffect(() => {
-    if (!canvasState.isConnected) return;
-    const interval = setInterval(() => {
-      canvasState.saveThumbnail();
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [canvasState.isConnected]);
-
-
   const isMobileCanvas = isMobileCanvasView();
   const inRoom = Boolean(params.id);
   const showChat = canvasState.isConnected;

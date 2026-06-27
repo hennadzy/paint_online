@@ -146,7 +146,7 @@ class ToolState {
     if (selectionState.transformSessionActive) {
       const canvas = canvasState.canvas || this.tool?.canvas;
       if (canvas) {
-        commitSelectionSession(canvas);
+        void commitSelectionSession(canvas);
       } else {
         selectionState.clear();
       }

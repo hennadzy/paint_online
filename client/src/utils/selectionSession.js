@@ -170,7 +170,7 @@ export function cutSelectionFromBuffer(canvas) {
   canvasState.redrawCanvas();
 }
 
-export function commitSelectionSession(canvas) {
+export async function commitSelectionSession(canvas) {
   if (!selectionState.hasSelection) {
     selectionState.exitTransformSession();
     return;
@@ -214,12 +214,35 @@ export function commitSelectionSession(canvas) {
     mask: floatingOnly ? null : mask,
   };
 
-  void (async () => {
-    const stroke = buildSelectionTransformStroke(payload);
-    await canvasState.pushStroke(stroke);
-    selectionState.clear();
-    canvasState.redrawCanvas();
-  })();
+  const stroke = buildSelectionTransformStroke(payload);
+  await canvasState.pushStroke(stroke);
+  selectionState.clear();
+  canvasState.redrawCanvas();
+}
+
+export function selectionWasTransformed() {
+  const { x, y, previewX, previewY, transform, hasCut } = selectionState;
+  return (
+    hasCut ||
+    previewX !== x ||
+    previewY !== y ||
+    transform.angle !== 0 ||
+    transform.scaleX !== 1 ||
+    transform.scaleY !== 1 ||
+    transform.skewX !== 0 ||
+    transform.skewY !== 0
+  );
+}
+
+export async function finalizeSelectionOnRoomExit(canvas) {
+  if (!selectionState.hasSelection) return;
+
+  if (selectionState.transformSessionActive && canvas && selectionWasTransformed()) {
+    await commitSelectionSession(canvas);
+    return;
+  }
+
+  selectionState.clear();
 }
 
 export function createTransformSessionHandlers(tool) {

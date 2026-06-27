@@ -5,6 +5,8 @@ import WebSocketService from "../services/WebSocketService";
 import HistoryService from "../services/HistoryService";
 import AutoSaveService from "../services/AutoSaveService";
 import userState from "./userState";
+import selectionState from "./selectionState";
+import { finalizeSelectionOnRoomExit } from "../utils/selectionSession";
 
 import { API_URL, WS_URL } from '../config/urls';
 
@@ -91,6 +93,7 @@ WebSocketService.on('usersList', ({ users }) => {
       });
     });
 WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
+      selectionState.clear();
       HistoryService.clearStrokes();
 
       if (CanvasService.bufferCtx) {
@@ -474,6 +477,7 @@ sendChatMessage(message) {
   }
 
   prepareAndConnectRoom(roomId, username, token) {
+    this.clearRoomError();
     localStorage.setItem(`room_token_${roomId}`, token);
     this.joiningRoom = true;
     this._pendingRoomConnect = { roomId, username, token };
@@ -484,7 +488,7 @@ sendChatMessage(message) {
   }
 
   async tryConnectToRoom() {
-    if (this._connectInProgress || this.isConnected || this.roomError) {
+    if (this._connectInProgress || this.isConnected) {
       return;
     }
 
@@ -527,7 +531,13 @@ sendChatMessage(message) {
     this.setCurrentRoomId(roomId);
     this.setUsername(username);
     this.setupThumbnailInterval();
-    setTimeout(() => this.saveThumbnail(), 1500);
+    if (this._thumbnailInitialTimer) {
+      clearTimeout(this._thumbnailInitialTimer);
+    }
+    this._thumbnailInitialTimer = setTimeout(() => {
+      this._thumbnailInitialTimer = null;
+      this.saveThumbnail();
+    }, 1500);
 
     if (Notification.permission === "default") {
       Notification.requestPermission();
@@ -535,7 +545,7 @@ sendChatMessage(message) {
   }
 
   saveThumbnail() {
-    if (!this.currentRoomId) return;
+    if (!this.isConnected || !this.currentRoomId) return;
     const roomId = this.currentRoomId;
     const sourceCanvas = this.bufferCanvas || this.canvas;
     if (!sourceCanvas) return;
@@ -548,7 +558,7 @@ sendChatMessage(message) {
       thumbCtx.fillRect(0, 0, 240, 160);
       thumbCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, 240, 160);
       const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
-      const roomToken = localStorage.getItem(`room_token_${roomId}`);
+      const roomToken = WebSocketService.token || localStorage.getItem(`room_token_${roomId}`);
       if (!roomToken) return;
       fetch(`${API_URL}/api/image?id=${roomId}`, {
         method: 'POST',
@@ -557,6 +567,10 @@ sendChatMessage(message) {
           'Authorization': `Bearer ${roomToken}`
         },
         body: JSON.stringify({ img: dataUrl })
+      }).then((response) => {
+        if (response.status === 401) {
+          localStorage.removeItem(`room_token_${roomId}`);
+        }
       }).catch(() => { });
     } catch (_) { }
   }
@@ -591,10 +605,15 @@ setupThumbnailInterval() {
       clearTimeout(this._thumbnailDebounceTimer);
       this._thumbnailDebounceTimer = null;
     }
+    if (this._thumbnailInitialTimer) {
+      clearTimeout(this._thumbnailInitialTimer);
+      this._thumbnailInitialTimer = null;
+    }
   }
 
   async disconnect(keepLocalSave = false) {
     this.stopThumbnailInterval();
+    this.clearRoomError();
 
     if (this.titleInterval) {
       clearInterval(this.titleInterval);
@@ -602,6 +621,8 @@ setupThumbnailInterval() {
       document.title = 'Рисование онлайн';
       this.setFaviconBadge(false);
     }
+
+    await finalizeSelectionOnRoomExit(this.canvas);
 
     if (keepLocalSave && HistoryService.getStrokes().length > 0) {
       this.performAutoSave();
@@ -632,6 +653,7 @@ setupThumbnailInterval() {
     CanvasService.clearImageCache();
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
+    selectionState.clear();
     if (wasInRoom && !keepLocalSave) {
       AutoSaveService.clear(null);
     }

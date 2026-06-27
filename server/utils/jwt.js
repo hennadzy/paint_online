@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const JWT_EXPIRATION = '1h';
+const JWT_EXPIRATION = '24h';
 
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
