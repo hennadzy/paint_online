@@ -85,37 +85,77 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.restore();
 }
 
-function getPointDirection(points, index) {
-  const prev = points[Math.max(0, index - 1)];
-  const next = points[Math.min(points.length - 1, index + 1)];
-  const dx = next.x - prev.x;
-  const dy = next.y - prev.y;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 0.001) return { dx: 0, dy: 0 };
-  return { dx: dx / len, dy: dy / len };
+function getRotatedRectCorners(x, y, width, height, angleDeg) {
+  const angle = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const hw = width / 2;
+  const hh = height / 2;
+  return [
+    { x: -hw, y: -hh },
+    { x: hw, y: -hh },
+    { x: hw, y: hh },
+    { x: -hw, y: hh },
+  ].map((p) => ({
+    x: x + p.x * cos - p.y * sin,
+    y: y + p.x * sin + p.y * cos,
+  }));
 }
 
-function collectSelfOverlapPoints(points, lineWidth) {
+function getConvexHull(points) {
+  if (points.length <= 3) return points;
+
+  const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  const upper = [];
+
+  sorted.forEach((point) => {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+      lower.pop();
+    }
+    lower.push(point);
+  });
+
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const point = sorted[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+      upper.pop();
+    }
+    upper.push(point);
+  }
+
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function addPolygonToPath(ctx, polygon) {
+  if (!polygon.length) return;
+  ctx.moveTo(polygon[0].x, polygon[0].y);
+  for (let i = 1; i < polygon.length; i++) {
+    ctx.lineTo(polygon[i].x, polygon[i].y);
+  }
+  ctx.closePath();
+}
+
+function collectSelfOverlapRuns(points, lineWidth) {
   if (points.length < 4) return [];
 
   const cellSize = Math.max(6, lineWidth * 1.2);
-  const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
+  const overlapDistanceSq = Math.max(6, lineWidth * 0.7) ** 2;
   const minIndexGap = Math.max(18, Math.ceil(lineWidth * 1.8));
   const cells = new Map();
-  const directions = points.map((_, index) => getPointDirection(points, index));
-  const overlap = [];
+  const overlapFlags = new Array(points.length).fill(false);
 
   const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
   const addPoint = (point, index) => {
     const key = cellKey(point.x, point.y);
     const bucket = cells.get(key) || [];
-    bucket.push({ point, index, direction: directions[index] });
+    bucket.push({ point, index });
     cells.set(key, bucket);
   };
   const hasOlderOverlap = (point, index) => {
-    const direction = directions[index];
-    if (direction.dx === 0 && direction.dy === 0) return false;
-
     const cx = Math.floor(point.x / cellSize);
     const cy = Math.floor(point.y / cellSize);
     for (let yy = cy - 1; yy <= cy + 1; yy++) {
@@ -126,8 +166,7 @@ function collectSelfOverlapPoints(points, lineWidth) {
           if (index - entry.index < minIndexGap) continue;
           const dx = point.x - entry.point.x;
           const dy = point.y - entry.point.y;
-          const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
-          if (dot < 0.55 && dx * dx + dy * dy <= overlapDistanceSq) {
+          if (dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
           }
         }
@@ -139,35 +178,33 @@ function collectSelfOverlapPoints(points, lineWidth) {
   for (let i = 0; i < points.length; i++) {
     const point = points[i];
     if (i > 0 && hasOlderOverlap(point, i)) {
-      overlap.push(point);
+      overlapFlags[i] = true;
+      overlapFlags[i - 1] = true;
     }
     addPoint(point, i);
   }
 
-  return overlap;
+  const runs = [];
+  let current = null;
+  for (let i = 0; i < points.length; i++) {
+    if (!overlapFlags[i]) {
+      if (current?.length > 1) runs.push(current);
+      current = null;
+      continue;
+    }
+    if (!current) {
+      current = [];
+      if (i > 0) current.push(points[i - 1]);
+    }
+    current.push(points[i]);
+  }
+  if (current?.length > 1) runs.push(current);
+
+  return runs;
 }
 
 function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
-  const angle = (angleDeg * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  const hw = width / 2;
-  const hh = height / 2;
-  const corners = [
-    { x: -hw, y: -hh },
-    { x: hw, y: -hh },
-    { x: hw, y: hh },
-    { x: -hw, y: hh },
-  ].map((p) => ({
-    x: x + p.x * cos - p.y * sin,
-    y: y + p.x * sin + p.y * cos,
-  }));
-
-  ctx.moveTo(corners[0].x, corners[0].y);
-  ctx.lineTo(corners[1].x, corners[1].y);
-  ctx.lineTo(corners[2].x, corners[2].y);
-  ctx.lineTo(corners[3].x, corners[3].y);
-  ctx.closePath();
+  addPolygonToPath(ctx, getRotatedRectCorners(x, y, width, height, angleDeg));
 }
 
 function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
@@ -178,10 +215,22 @@ function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) 
   ctx.globalAlpha = strokeOpacity;
   ctx.fillStyle = color;
   ctx.beginPath();
-  points.forEach((p) => {
-    const size = p.w ?? lineWidth;
-    addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angleDeg);
-  });
+
+  if (points.length === 1) {
+    const size = points[0].w ?? lineWidth;
+    addRotatedRectToPath(ctx, points[0].x, points[0].y, size * 1.8, size * 0.35, angleDeg);
+  } else {
+    for (let i = 1; i < points.length; i++) {
+      const p0 = points[i - 1];
+      const p1 = points[i];
+      const s0 = p0.w ?? lineWidth;
+      const s1 = p1.w ?? lineWidth;
+      const c0 = getRotatedRectCorners(p0.x, p0.y, s0 * 1.8, s0 * 0.35, angleDeg);
+      const c1 = getRotatedRectCorners(p1.x, p1.y, s1 * 1.8, s1 * 0.35, angleDeg);
+      addPolygonToPath(ctx, getConvexHull([...c0, ...c1]));
+    }
+  }
+
   ctx.fill();
   ctx.restore();
 }
@@ -213,9 +262,11 @@ export function renderMarkerStroke(ctx, stroke) {
 
   drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
 
-  const overlapPoints = collectSelfOverlapPoints(dense, lineWidth);
-  if (overlapPoints.length) {
-    drawMarkerPass(ctx, overlapPoints, lineWidth, angle, color, strokeOpacity);
+  const overlapRuns = collectSelfOverlapRuns(dense, lineWidth);
+  if (overlapRuns.length) {
+    overlapRuns.forEach((run) => {
+      drawMarkerPass(ctx, run, lineWidth, angle, color, strokeOpacity);
+    });
   }
 }
 
