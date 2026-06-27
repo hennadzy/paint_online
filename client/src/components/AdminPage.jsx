@@ -273,6 +273,28 @@ const AdminPage = observer(() => {
   const [capEdit, setCapEdit] = useState(null);
   const [capSaveFeedback, setCapSaveFeedback] = useState(null);
 
+  const openRoomDetails = async (roomId) => {
+    const result = await adminState.fetchRoomDetails(roomId);
+    if (result.success) {
+      adminState.openRoomModal(result.room);
+    } else {
+      alert(result.error || 'Не удалось загрузить комнату');
+    }
+  };
+
+  const joinRoomAsAdmin = async (roomId) => {
+    const result = await adminState.joinRoom(roomId);
+    if (result.success) {
+      localStorage.setItem('adminJoinToken', result.data.token);
+      localStorage.setItem(`room_token_${roomId}`, result.data.token);
+      adminState.closeRoomModal();
+      navigate(`/${roomId}`);
+      return;
+    }
+
+    alert(result.error || 'Не удалось войти в комнату');
+  };
+
   useEffect(() => {
     const cfg = adminState.roleCapabilitiesPayload?.config;
     if (cfg) {
@@ -866,27 +888,21 @@ const AdminPage = observer(() => {
                         <div className="admin-actions">
                           <button 
                             className="admin-icon-btn"
-                            onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
+                            onClick={() => openRoomDetails(room.id)}
                             title="Подробнее"
                           >
                             <EyeIcon />
                           </button>
                           <button 
                             className="admin-icon-btn"
-                            onClick={() => adminState.fetchRoomDetails(room.id).then(() => adminState.openRoomModal(room))}
+                            onClick={() => openRoomDetails(room.id)}
                             title="Редактировать"
                           >
                             <EditIcon />
                           </button>
                           <button 
                             className="admin-icon-btn"
-                            onClick={async () => {
-                              const result = await adminState.joinRoom(room.id);
-                              if (result.success) {
-                                localStorage.setItem(`room_token_${room.id}`, result.data.token);
-                                navigate(`/${room.id}`);
-                              }
-                            }}
+                            onClick={() => joinRoomAsAdmin(room.id)}
                             title="Войти в комнату"
                           >
                             <UnlockIcon />
@@ -904,7 +920,7 @@ const AdminPage = observer(() => {
                   ))}
                   {adminState.rooms.length === 0 && (
                     <tr>
-                      <td colSpan="7" className="admin-empty">
+                      <td colSpan="8" className="admin-empty">
                         <div className="admin-empty__text">Комнаты не найдены</div>
                       </td>
                     </tr>
@@ -1094,7 +1110,7 @@ const AdminPage = observer(() => {
                 </div>
                 <div className="admin-room-details__item">
                   <label>Размер холста</label>
-                  <span>{(room.canvasWidth || 0)} x {(room.canvasHeight || 0)}</span>
+                  <span>{(room.canvasWidth || 720)} x {(room.canvasHeight || 480)}</span>
                 </div>
                 <div className="admin-room-details__item admin-room-details__full">
                   <label>Создана</label>
@@ -1120,13 +1136,7 @@ const AdminPage = observer(() => {
               <button 
                 type="button" 
                 className="admin-btn admin-btn--success"
-                onClick={async () => {
-                  const result = await adminState.joinRoom(room.id);
-                  if (result.success) {
-                    localStorage.setItem(`room_token_${room.id}`, result.data.token);
-                    navigate(`/${room.id}`);
-                  }
-                }}
+                onClick={() => joinRoomAsAdmin(room.id)}
                 style={{marginRight: 'auto'}}
               >
                 Войти в комнату

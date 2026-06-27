@@ -459,24 +459,6 @@ router.get('/rooms/:id', async (req, res) => {
       [req.params.id]
     );
 
-    const strokesData = await pgPool.query(
-      'SELECT stroke_data FROM strokes WHERE room_id = $1 LIMIT 100',
-      [req.params.id]
-    );
-
-    let maxX = 0, maxY = 0;
-    for (const row of strokesData.rows) {
-      try {
-        const data = typeof row.stroke_data === 'string' ? JSON.parse(row.stroke_data) : row.stroke_data;
-        if (data && data.points) {
-          for (const p of data.points) {
-            if (p.x > maxX) maxX = p.x;
-            if (p.y > maxY) maxY = p.y;
-          }
-        }
-      } catch (e) {}
-    }
-
     let weight = room.weight || 0;
     if (!weight) {
       weight = await DataStore.calculateRoomWeight(req.params.id);
@@ -489,8 +471,8 @@ router.get('/rooms/:id', async (req, res) => {
         lastActivity: toEpochMs(room.lastActivity),
         strokeCount: parseInt(strokeCount.rows[0].count, 10),
         uniqueUsers: parseInt(uniqueUsers.rows[0].count, 10),
-        canvasWidth: Math.ceil(maxX + 50),
-        canvasHeight: Math.ceil(maxY + 50),
+        canvasWidth: 720,
+        canvasHeight: 480,
         weight
       }
     });

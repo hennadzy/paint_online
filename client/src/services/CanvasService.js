@@ -707,7 +707,7 @@ drawPolygonStroke(ctx, stroke) {
       const aspectRatio = 720 / 480;
       let baseWidth;
       let baseHeight;
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 
       if (isMobile) {
         baseWidth = window.innerWidth;

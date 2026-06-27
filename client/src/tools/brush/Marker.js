@@ -10,6 +10,7 @@ export default class Marker extends BaseStrokeTool {
   }
 
   drawLive() {
+    this.clearLiveLayer();
     this.drawLiveFull(renderMarkerStroke);
   }
 }

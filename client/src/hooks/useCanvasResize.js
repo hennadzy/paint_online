@@ -44,7 +44,7 @@ export function useCanvasResize(canvasRef, cursorRef, containerRef, selectionOve
   }, []);
 
   useEffect(() => {
-    if (window.innerWidth > 768) return;
+    if (window.innerWidth > 768 || window.innerHeight <= window.innerWidth) return;
     if (initialMobileZoomDone.current) return;
     const timer = setTimeout(() => {
       const container = containerRef.current;

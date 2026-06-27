@@ -106,5 +106,5 @@ export function attachPinchPanGestures({
 }
 
 export function isMobileCanvasView() {
-  return window.innerWidth <= 768;
+  return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 }

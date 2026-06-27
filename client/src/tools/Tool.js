@@ -1,25 +1,27 @@
 import toolState from "../store/toolState";
 import { API_URL } from "../store/canvasState";
+import { createOpaqueCanvas } from "../utils/canvasExport";
 import axios from "axios";
 
 const SAVE_DEBOUNCE_MS = 1200;
 const pendingSaves = new Map();
 
 function canvasToDataUrl(canvas, type = 'image/jpeg', quality = 0.85) {
+  const exportCanvas = createOpaqueCanvas(canvas) || canvas;
   if (!canvas?.toBlob) {
-    return Promise.resolve(canvas.toDataURL(type, quality));
+    return Promise.resolve(exportCanvas.toDataURL(type, quality));
   }
 
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
+    exportCanvas.toBlob((blob) => {
       if (!blob) {
-        resolve(canvas.toDataURL(type, quality));
+        resolve(exportCanvas.toDataURL(type, quality));
         return;
       }
 
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(canvas.toDataURL(type, quality));
+      reader.onerror = () => resolve(exportCanvas.toDataURL(type, quality));
       reader.readAsDataURL(blob);
     }, type, quality);
   });

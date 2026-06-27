@@ -273,10 +273,15 @@ class AdminState {
         this.selectedRoom = response.data.room;
         this.roomDetailsLoading = false;
       });
+      return { success: true, room: response.data.room };
     } catch (error) {
       runInAction(() => {
         this.roomDetailsLoading = false;
       });
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to load room details'
+      };
     }
   }
 
@@ -396,7 +401,7 @@ class AdminState {
   }
 
   openRoomModal(room = null) {
-    this.selectedRoom = room;
+    this.selectedRoom = room || this.selectedRoom;
     this.modalMode = room ? 'edit' : 'create';
     this.showRoomModal = true;
   }

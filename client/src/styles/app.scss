@@ -196,7 +196,7 @@ body.modal-open {
   animation: messageBadgeBlink 1s ease-in-out infinite;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait) {
   .disconnect-room-btn.mobile-exit {
     min-width: 32px !important;
     width: 32px !important;
@@ -474,7 +474,7 @@ body.modal-open {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait) {
   :root {
     --mobile-topmenu-h: 50px;
     --mobile-toolbar-h: 50px;
@@ -926,7 +926,7 @@ body.modal-open {
   }
 }
 
-@media screen and (max-width: 768px) and (orientation: landscape) {
+@media screen and (max-width: 0px) and (orientation: landscape) {
 
   .about-btn {
     display: flex !important;
@@ -1061,7 +1061,7 @@ body.modal-open {
   }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 0px) and (orientation: landscape) {
   .main-content {
     margin-left: 185px;
     margin-top: 0;

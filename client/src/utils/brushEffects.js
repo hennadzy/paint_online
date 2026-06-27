@@ -85,6 +85,29 @@ export function drawMarkerStamp(ctx, x, y, size, angleDeg, color, opacity) {
   ctx.restore();
 }
 
+function createCanvasLike(sourceCanvas) {
+  if (typeof OffscreenCanvas !== 'undefined') {
+    return new OffscreenCanvas(sourceCanvas.width, sourceCanvas.height);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = sourceCanvas.width;
+  canvas.height = sourceCanvas.height;
+  return canvas;
+}
+
+function drawMarkerMaskStamp(ctx, x, y, size, angleDeg) {
+  const w = size * 1.8;
+  const h = size * 0.35;
+  const angle = (angleDeg * Math.PI) / 180;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillRect(-w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
 export function renderMarkerStroke(ctx, stroke) {
   const {
     points = [],
@@ -100,18 +123,32 @@ export function renderMarkerStroke(ctx, stroke) {
   const color = parseColor(strokeStyle, 1);
   const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
   const spacing = mobileMode
-    ? Math.max(2.4, lineWidth * 0.28)
+    ? Math.max(1.2, lineWidth * 0.12)
     : livePreview
       ? Math.max(0.6, lineWidth * 0.08)
       : Math.max(0.35, lineWidth * 0.05);
-  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 700 : 5000);
+  const dense = downsamplePoints(densifyPath(points, spacing), mobileMode ? 2200 : 5000);
+  const maskCanvas = createCanvasLike(ctx.canvas);
+  const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+  const colorCanvas = createCanvasLike(ctx.canvas);
+  const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+
+  maskCtx.fillStyle = '#000000';
+  maskCtx.globalCompositeOperation = 'source-over';
+  dense.forEach((p) => {
+    const size = p.w ?? lineWidth;
+    drawMarkerMaskStamp(maskCtx, p.x, p.y, size, angle);
+  });
+
+  colorCtx.fillStyle = color;
+  colorCtx.fillRect(0, 0, colorCanvas.width, colorCanvas.height);
+  colorCtx.globalCompositeOperation = 'destination-in';
+  colorCtx.drawImage(maskCanvas, 0, 0);
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
-  dense.forEach((p) => {
-    const size = p.w ?? lineWidth;
-    drawMarkerStamp(ctx, p.x, p.y, size, angle, color, strokeOpacity);
-  });
+  ctx.globalAlpha = strokeOpacity;
+  ctx.drawImage(colorCanvas, 0, 0);
   ctx.restore();
 }
 

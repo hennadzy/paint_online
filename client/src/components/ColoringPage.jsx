@@ -6,6 +6,7 @@ import { useSeo } from './SeoMeta';
 import { MAIN_COLORING_SEO_PARAGRAPHS, seoDescriptionFromText } from '../data/coloringSeoTexts';
 import { resolveAssetUrl } from '../utils/assetUrl';
 import { computeRegionMask, drawBrushStrokeInRegion } from '../utils/coloringRegion';
+import { createOpaqueCanvas } from '../utils/canvasExport';
 import '../styles/coloring.scss';
 import '../styles/modal.scss';
 
@@ -605,26 +606,18 @@ const ColoringPage = () => {
     if (!canvas) return;
 
     const filename = (saveFilename || '').trim() || `coloring-${selectedPage?.title || 'image'}`;
+    const exportCanvas = createOpaqueCanvas(canvas);
+    if (!exportCanvas) return;
+
     let href;
     let downloadName;
 
     if (saveFormat === 'png') {
-      href = canvas.toDataURL('image/png');
+      href = exportCanvas.toDataURL('image/png');
       downloadName = `${filename}.png`;
     } else if (saveFormat === 'jpg') {
-      href = canvas.toDataURL('image/jpeg', 0.95);
+      href = exportCanvas.toDataURL('image/jpeg', 0.95);
       downloadName = `${filename}.jpg`;
-    } else if (saveFormat === 'svg') {
-      const pngData = canvas.toDataURL('image/png');
-      const svgContent =
-        `<?xml version="1.0" encoding="UTF-8"?>\n` +
-        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-        `width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">\n` +
-        `<image href="${pngData}" width="${canvas.width}" height="${canvas.height}"/>\n` +
-        `</svg>`;
-      const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-      href = URL.createObjectURL(blob);
-      downloadName = `${filename}.svg`;
     }
 
     const a = document.createElement('a');
@@ -633,10 +626,6 @@ const ColoringPage = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-
-    if (saveFormat === 'svg') {
-      setTimeout(() => URL.revokeObjectURL(href), 1000);
-    }
 
     setShowSaveModal(false);
   }, [saveFilename, saveFormat, selectedPage]);
@@ -989,7 +978,6 @@ const ColoringPage = () => {
                 {[
                   { value: 'png', label: 'PNG', desc: 'Без потерь' },
                   { value: 'jpg', label: 'JPG', desc: 'Меньше размер' },
-                  { value: 'svg', label: 'SVG', desc: 'Векторный' },
                 ].map(({ value, label, desc }) => (
                   <label
                     key={value}

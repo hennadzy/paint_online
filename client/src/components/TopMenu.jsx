@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
 import canvasState, { API_URL } from '../store/canvasState';
 import userState from '../store/userState';
+import CanvasService from '../services/CanvasService';
+import { createOpaqueCanvas } from '../utils/canvasExport';
 import loginIcon from '../assets/img/login.png';
 import profileIcon from '../assets/img/profile.png';
 import logoutIcon from '../assets/img/logout.png';
@@ -215,25 +217,17 @@ const performExport = () => {
  if (!canvas) return;
 
  const filename = (exportFilename || '').trim() || canvasState.sessionId || 'drawing';
+ const exportCanvas = createOpaqueCanvas(CanvasService.bufferCanvas || canvas);
+ if (!exportCanvas) return;
+
  let href, downloadName;
 
  if (exportFormat === 'png') {
- href = canvas.toDataURL('image/png');
+ href = exportCanvas.toDataURL('image/png');
  downloadName = `${filename}.png`;
  } else if (exportFormat === 'jpg') {
- href = canvas.toDataURL('image/jpeg',0.95);
+ href = exportCanvas.toDataURL('image/jpeg',0.95);
  downloadName = `${filename}.jpg`;
- } else if (exportFormat === 'svg') {
- const pngData = canvas.toDataURL('image/png');
- const svgContent =
- `<?xml version="1.0" encoding="UTF-8"?>\n` +
- `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ` +
- `width="${canvas.width}" height="${canvas.height}" viewBox="00 ${canvas.width} ${canvas.height}">\n` +
- `<image href="${pngData}" width="${canvas.width}" height="${canvas.height}"/>\n` +
- `</svg>`;
- const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
- href = URL.createObjectURL(blob);
- downloadName = `${filename}.svg`;
  }
 
  const a = document.createElement('a');
@@ -242,10 +236,6 @@ const performExport = () => {
  document.body.appendChild(a);
  a.click();
  document.body.removeChild(a);
-
- if (exportFormat === 'svg') {
- setTimeout(() => URL.revokeObjectURL(href),1000);
- }
 
  setShowExportModal(false);
  };
@@ -601,8 +591,7 @@ const performExport = () => {
               <div className="export-format-options">
                 {[
                   { value: 'png', label: 'PNG', desc: 'Без потерь' },
-                  { value: 'jpg', label: 'JPG', desc: 'Меньше размер' },
-                  { value: 'svg', label: 'SVG', desc: 'Векторный' }
+                  { value: 'jpg', label: 'JPG', desc: 'Меньше размер' }
                 ].map(({ value, label, desc }) => (
                   <label
                     key={value}

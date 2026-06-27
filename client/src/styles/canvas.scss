@@ -601,7 +601,7 @@ button:active {
   }
 }
 
-@media screen and (max-width: 768px) and (orientation: landscape) {
+@media screen and (max-width: 0px) and (orientation: landscape) {
   .canvas {
     position: static !important;
     top: auto !important;
@@ -823,7 +823,7 @@ button:active {
   cursor: pointer;
   transition: all 0.3s ease;
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (orientation: portrait) {
     display: none;
   }
 }
@@ -840,7 +840,7 @@ button:active {
 .about-btns-mobile {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (orientation: portrait) {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -856,7 +856,7 @@ button:active {
 .about-btn-mobile {
   display: none;
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (orientation: portrait) {
     display: block !important;
     position: relative;
     width: calc(100% - 20px);
@@ -910,7 +910,7 @@ button:active {
   display: flex;
   flex-direction: row;
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px) and (orientation: portrait) {
     flex-direction: row;
     flex: 1;
     height: auto;
@@ -1013,7 +1013,7 @@ button:active {
     padding-right: 4px;
     margin-top: auto;
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (orientation: portrait) {
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-height, 0px));
     }
 
@@ -1179,7 +1179,7 @@ button:active {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait) {
   .invite-btn-desktop {
     display: none;
   }
