@@ -351,6 +351,126 @@ function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, stro
   ctx.restore();
 }
 
+function getExpandedBounds(bounds, padding, width, height) {
+  const x = Math.max(0, Math.floor(bounds.minX - padding));
+  const y = Math.max(0, Math.floor(bounds.minY - padding));
+  const maxX = Math.min(width, Math.ceil(bounds.maxX + padding));
+  const maxY = Math.min(height, Math.ceil(bounds.maxY + padding));
+  return {
+    x,
+    y,
+    width: Math.max(0, maxX - x),
+    height: Math.max(0, maxY - y),
+  };
+}
+
+function fillPolygon(ctx, polygon) {
+  ctx.beginPath();
+  addPolygonToPath(ctx, polygon);
+  ctx.fill();
+}
+
+let markerOverlapMaskLayers = null;
+
+function getMarkerOverlapMaskLayers(width, height) {
+  if (!markerOverlapMaskLayers) {
+    markerOverlapMaskLayers = {
+      coverage: document.createElement('canvas'),
+      scratch: document.createElement('canvas'),
+      overlap: document.createElement('canvas'),
+    };
+  }
+
+  const { coverage, scratch, overlap } = markerOverlapMaskLayers;
+  [coverage, scratch, overlap].forEach((canvas) => {
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+  });
+
+  const coverageCtx = coverage.getContext('2d');
+  const scratchCtx = scratch.getContext('2d');
+  const overlapCtx = overlap.getContext('2d');
+  if (!coverageCtx || !scratchCtx || !overlapCtx) return null;
+
+  coverageCtx.clearRect(0, 0, width, height);
+  scratchCtx.clearRect(0, 0, width, height);
+  overlapCtx.clearRect(0, 0, width, height);
+
+  return { coverage, scratch, overlap, coverageCtx, scratchCtx, overlapCtx };
+}
+
+function drawMarkerSelfOverlapMask(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+  if (points.length < 4 || typeof document === 'undefined') return false;
+
+  const width = ctx.canvas?.width;
+  const height = ctx.canvas?.height;
+  if (!width || !height) return false;
+
+  const layers = getMarkerOverlapMaskLayers(width, height);
+  if (!layers) return false;
+  const { coverage, scratch, overlap, coverageCtx, scratchCtx, overlapCtx } = layers;
+
+  const minPathGap = Math.max(lineWidth * 3.2, 24);
+  const distances = [0];
+  for (let i = 1; i < points.length; i++) {
+    distances[i] = distances[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+
+  const pendingSegments = [];
+  let pendingIndex = 0;
+  let scratchBounds = null;
+
+  coverageCtx.fillStyle = '#000';
+  scratchCtx.fillStyle = '#000';
+  overlapCtx.globalCompositeOperation = 'source-over';
+
+  for (let i = 1; i < points.length; i++) {
+    while (
+      pendingIndex < pendingSegments.length &&
+      distances[i] - pendingSegments[pendingIndex].distance >= minPathGap
+    ) {
+      fillPolygon(coverageCtx, pendingSegments[pendingIndex].polygon);
+      pendingIndex += 1;
+    }
+
+    const polygon = getMarkerSegmentPolygon(points[i - 1], points[i], lineWidth, angleDeg);
+    const bounds = getExpandedBounds(getPolygonBounds(polygon), 2, width, height);
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      pendingSegments.push({ polygon, distance: distances[i] });
+      continue;
+    }
+
+    if (scratchBounds) {
+      scratchCtx.clearRect(scratchBounds.x, scratchBounds.y, scratchBounds.width, scratchBounds.height);
+    }
+    scratchCtx.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+    fillPolygon(scratchCtx, polygon);
+    scratchCtx.globalCompositeOperation = 'destination-in';
+    scratchCtx.drawImage(coverage, 0, 0);
+    scratchCtx.globalCompositeOperation = 'source-over';
+    overlapCtx.drawImage(scratch, bounds.x, bounds.y, bounds.width, bounds.height, bounds.x, bounds.y, bounds.width, bounds.height);
+
+    scratchBounds = bounds;
+    pendingSegments.push({ polygon, distance: distances[i] });
+  }
+
+  overlapCtx.globalCompositeOperation = 'source-in';
+  overlapCtx.fillStyle = color;
+  overlapCtx.fillRect(0, 0, width, height);
+  overlapCtx.globalCompositeOperation = 'source-over';
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = strokeOpacity;
+  ctx.drawImage(overlap, 0, 0);
+  ctx.restore();
+
+  return true;
+}
+
 export function renderMarkerStroke(ctx, stroke) {
   const {
     points = [],
@@ -376,12 +496,11 @@ export function renderMarkerStroke(ctx, stroke) {
     ? mobileMode ? 700 : 1200
     : mobileMode ? 7000 : 12000;
   const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
-  const overlapPoints = previewMode
-    ? downsamplePointsStable(points, mobileMode ? 1200 : 2200)
-    : dense;
 
   drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
-  drawMarkerSelfOverlapPass(ctx, overlapPoints, lineWidth, angle, color, strokeOpacity);
+  if (!previewMode || !drawMarkerSelfOverlapMask(ctx, dense, lineWidth, angle, color, strokeOpacity)) {
+    drawMarkerSelfOverlapPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
+  }
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
