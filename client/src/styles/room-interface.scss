@@ -251,7 +251,7 @@
   }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 0px) and (orientation: landscape) {
   .room-card.created-room {
     padding: 15px;
     width: 100%;
@@ -1355,7 +1355,7 @@
   }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 0px) and (orientation: landscape) {
   .room-interface {
     max-width: 70%;
   }
@@ -1457,7 +1457,7 @@
   }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 0px) and (orientation: landscape) {
   .room-interface-overlay {
     padding: 0;
     align-items: center;

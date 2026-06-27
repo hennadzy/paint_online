@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import canvasState from '../store/canvasState';
 import toolState from '../store/toolState';
+import userState from '../store/userState';
 import Brush from '../tools/Brush';
 import Chat from './Chat';
 import RoomInterface from './RoomInterface';
@@ -80,6 +81,13 @@ const Canvas = observer(() => {
     canvasState.setCurrentRoomId(params.id);
     canvasState.setUsername('');
     canvasState.setModalOpen(false);
+
+    const isAdminUser = userState.isAuthenticated && ['admin', 'superadmin'].includes(userState.user?.role);
+    const storedRoomToken = localStorage.getItem(`room_token_${params.id}`);
+    if (isAdminUser && storedRoomToken) {
+      void canvasState.prepareAndConnectRoom(params.id, 'Admin', storedRoomToken);
+      return;
+    }
 
     const adminToken = localStorage.getItem('adminJoinToken');
     if (adminToken) {

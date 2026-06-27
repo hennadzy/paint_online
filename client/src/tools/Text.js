@@ -106,7 +106,7 @@ export default class Text extends Tool {
     const rect = this.canvas.getBoundingClientRect();
     const container = this.canvas.parentElement;
     const containerRect = container.getBoundingClientRect();
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 768 && window.innerHeight > window.innerWidth;
 
     const scaleX = rect.width / this.canvas.width;
     const scaleY = rect.height / this.canvas.height;

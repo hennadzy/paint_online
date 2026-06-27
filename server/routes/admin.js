@@ -538,7 +538,7 @@ router.post('/rooms/:id/join', async (req, res) => {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    const token = generateToken(id, username, false);
+    const token = generateToken(id, username, false, req.user.role, req.user.userId);
 
     res.json({
       token,

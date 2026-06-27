@@ -285,7 +285,6 @@ const AdminPage = observer(() => {
   const joinRoomAsAdmin = async (roomId) => {
     const result = await adminState.joinRoom(roomId);
     if (result.success) {
-      localStorage.setItem('adminJoinToken', result.data.token);
       localStorage.setItem(`room_token_${roomId}`, result.data.token);
       adminState.closeRoomModal();
       navigate(`/${roomId}`);

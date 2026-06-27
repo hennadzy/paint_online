@@ -28,7 +28,7 @@ html, body {
   z-index: 0;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
   .canvas {
     flex-direction: row;
     justify-content: center;
@@ -256,7 +256,7 @@ button:active {
   display: flex;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
   .canvas-layout {
     flex-direction: row;
     align-items: center;
@@ -922,7 +922,7 @@ button:active {
     margin-bottom: 0;
   }
 
-  @media (min-width: 769px) {
+  @media (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
     flex-direction: column;
     width: 300px;
     max-width: 250px;
@@ -969,7 +969,7 @@ button:active {
   min-height: 0;
   overflow: hidden;
 
-  @media (min-width: 769px) {
+  @media (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
     height: 100%;
   }
 }
@@ -1017,7 +1017,7 @@ button:active {
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-height, 0px));
     }
 
-    @media (min-width: 769px) {
+    @media (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
       flex-shrink: 0;
     }
   }

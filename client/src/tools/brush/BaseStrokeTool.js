@@ -12,7 +12,7 @@ const MOBILE_HEAVY_FRAME_DELAY = 48;
 const MOBILE_SMUDGE_FRAME_DELAY = 80;
 
 function isMobileBrushDevice() {
-  return window.innerWidth <= 768;
+  return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 }
 
 function supportsDelegatedInk() {

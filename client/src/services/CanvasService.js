@@ -522,7 +522,7 @@ drawPolygonStroke(ctx, stroke) {
   }
 
   isMobileRenderDevice() {
-    return typeof window !== 'undefined' && window.innerWidth <= 768;
+    return typeof window !== 'undefined' && window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
   }
 
   drawStrokesIncrementally(strokes, done, token) {

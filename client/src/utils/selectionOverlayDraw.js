@@ -3,7 +3,7 @@ import { drawMarchingAnts, imageDataToCanvas } from "./selectionUtils";
 import { drawTransformHandles, getTransformedBounds } from "../utils/selectionSession";
 
 export function isMobileSelectionComposite() {
-  return window.innerWidth <= 768;
+  return window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 }
 
 export function selectionNeedsVisual() {
