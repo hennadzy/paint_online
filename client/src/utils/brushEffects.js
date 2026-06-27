@@ -95,15 +95,17 @@ function getPointDirection(points, index) {
   return { dx: dx / len, dy: dy / len };
 }
 
-function markSelfCrossingStamps(points, lineWidth) {
-  if (points.length < 4) return points;
+function splitMarkerPasses(points, lineWidth) {
+  if (points.length < 4) return [points];
 
   const cellSize = Math.max(6, lineWidth * 1.2);
   const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
   const minIndexGap = Math.max(14, Math.ceil(lineWidth * 1.4));
   const cells = new Map();
-  const directions = points.map((_, index) => getPointDirection(points, index));
+  const passes = [];
+  let currentPass = [points[0]];
   let insideOlderOverlap = false;
+  const directions = points.map((_, index) => getPointDirection(points, index));
 
   const cellKey = (x, y) => `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
   const addPoint = (point, index) => {
@@ -136,54 +138,70 @@ function markSelfCrossingStamps(points, lineWidth) {
     return false;
   };
 
-  const result = [];
   addPoint(points[0], 0);
-  result.push(points[0]);
-
   for (let i = 1; i < points.length; i++) {
     const point = points[i];
     const overlapsOlderPath = hasOlderOverlap(point, i);
-    if (overlapsOlderPath && !insideOlderOverlap) {
-      result.push({ ...point, skipStamp: true });
-    } else {
-      result.push(point);
+
+    if (overlapsOlderPath && !insideOlderOverlap && currentPass.length > 1) {
+      passes.push(currentPass);
+      currentPass = [];
+      insideOlderOverlap = true;
+      addPoint(point, i);
+      continue;
     }
+
+    if (overlapsOlderPath) {
+      currentPass.push(point);
+    } else {
+      currentPass.push(point);
+      insideOlderOverlap = false;
+    }
+
     insideOlderOverlap = overlapsOlderPath;
     addPoint(point, i);
   }
 
-  return result;
+  if (currentPass.length) passes.push(currentPass);
+  return passes.length ? passes : [points];
 }
 
-function drawMarkerStamps(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
   const angle = (angleDeg * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
+  const hw = width / 2;
+  const hh = height / 2;
+  const corners = [
+    { x: -hw, y: -hh },
+    { x: hw, y: -hh },
+    { x: hw, y: hh },
+    { x: -hw, y: hh },
+  ].map((p) => ({
+    x: x + p.x * cos - p.y * sin,
+    y: y + p.x * sin + p.y * cos,
+  }));
+
+  ctx.moveTo(corners[0].x, corners[0].y);
+  ctx.lineTo(corners[1].x, corners[1].y);
+  ctx.lineTo(corners[2].x, corners[2].y);
+  ctx.lineTo(corners[3].x, corners[3].y);
+  ctx.closePath();
+}
+
+function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+  if (!points.length) return;
 
   ctx.save();
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = strokeOpacity;
   ctx.fillStyle = color;
-
+  ctx.beginPath();
   points.forEach((p) => {
-    if (p.skipStamp) return;
     const size = p.w ?? lineWidth;
-    const w = size * 1.8;
-    const h = size * 0.35;
-    const hw = w / 2;
-    const hh = h / 2;
-    const x = p.x;
-    const y = p.y;
-
-    ctx.beginPath();
-    ctx.moveTo(x + -hw * cos - -hh * sin, y + -hw * sin + -hh * cos);
-    ctx.lineTo(x + hw * cos - -hh * sin, y + hw * sin + -hh * cos);
-    ctx.lineTo(x + hw * cos - hh * sin, y + hw * sin + hh * cos);
-    ctx.lineTo(x + -hw * cos - hh * sin, y + -hw * sin + hh * cos);
-    ctx.closePath();
-    ctx.fill();
+    addRotatedRectToPath(ctx, p.x, p.y, size * 1.8, size * 0.35, angleDeg);
   });
-
+  ctx.fill();
   ctx.restore();
 }
 
@@ -196,20 +214,25 @@ export function renderMarkerStroke(ctx, stroke) {
     angle = 0,
     livePreview = false,
     mobilePreview = false,
+    incremental = false,
   } = stroke;
   if (!points.length) return;
 
   const color = parseColor(strokeStyle, 1);
   const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
   const spacing = mobileMode
-    ? Math.max(1.4, lineWidth * 0.14)
+    ? Math.max(1.2, lineWidth * 0.12)
     : livePreview
-      ? Math.max(0.9, lineWidth * 0.11)
-      : Math.max(0.55, lineWidth * 0.07);
-  const maxPoints = mobileMode ? 2800 : livePreview ? 1800 : 5000;
+      ? Math.max(0.75, lineWidth * 0.09)
+      : Math.max(0.4, lineWidth * 0.06);
+  const maxPoints = incremental ? 900 : mobileMode ? 5000 : livePreview ? 2400 : 9000;
   const dense = downsamplePoints(densifyPath(points, spacing), maxPoints);
-  const marked = markSelfCrossingStamps(dense, lineWidth);
-  drawMarkerStamps(ctx, marked, lineWidth, angle, color, strokeOpacity);
+  const passes = incremental ? [dense] : splitMarkerPasses(dense, lineWidth);
+
+  passes.forEach((pass) => {
+    if (!incremental && passes.length > 1 && pass.length < 2) return;
+    drawMarkerPass(ctx, pass, lineWidth, angle, color, strokeOpacity);
+  });
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {

@@ -20,6 +20,7 @@ export default class Marker extends BaseStrokeTool {
       ...this.buildStrokePayload(),
       points: segmentPoints,
       livePreview: true,
+      incremental: true,
       mobilePreview: window.innerWidth <= 768,
     };
 

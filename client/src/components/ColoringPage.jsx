@@ -280,6 +280,25 @@ const ColoringPage = () => {
     }
   }, [selectedPage, setSeoData]);
 
+  useEffect(() => {
+    const syncColoringLayoutClass = () => {
+      const isActivePage = Boolean(selectedPage);
+      const isLandscape = window.matchMedia('(max-width: 768px) and (orientation: landscape)').matches;
+      document.body.classList.toggle('coloring-active-page', isActivePage);
+      document.body.classList.toggle('coloring-active-landscape', isActivePage && isLandscape);
+    };
+
+    syncColoringLayoutClass();
+    window.addEventListener('resize', syncColoringLayoutClass);
+    window.addEventListener('orientationchange', syncColoringLayoutClass);
+
+    return () => {
+      document.body.classList.remove('coloring-active-page', 'coloring-active-landscape');
+      window.removeEventListener('resize', syncColoringLayoutClass);
+      window.removeEventListener('orientationchange', syncColoringLayoutClass);
+    };
+  }, [selectedPage]);
+
   const loadImageToCanvas = useCallback((page) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
