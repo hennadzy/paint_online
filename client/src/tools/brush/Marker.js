@@ -1,6 +1,7 @@
 import BaseStrokeTool from './BaseStrokeTool';
 import {
   addPolygonToPath,
+  clipConvexPolygons,
   getMarkerSegmentPolygon,
   getPolygonBounds,
   MARKER_MAX_COVERAGE_LEVELS,
@@ -26,9 +27,15 @@ export default class Marker extends BaseStrokeTool {
     const lineWidth = this.lineWidth || 10;
     return {
       distance: 0,
-      pendingSegments: [],
-      pendingIndex: 0,
+      baseGrid: new Map(),
+      coverageGrids: Array.from({ length: MARKER_MAX_COVERAGE_LEVELS }, () => new Map()),
+      pendingBase: { items: [], index: 0 },
+      pendingCoverage: Array.from(
+        { length: MARKER_MAX_COVERAGE_LEVELS },
+        () => ({ items: [], index: 0 })
+      ),
       minPathGap: Math.max(lineWidth * 3.2, 24),
+      cellSize: Math.max(8, lineWidth * 1.4),
     };
   }
 
@@ -38,7 +45,6 @@ export default class Marker extends BaseStrokeTool {
 
     if (!this._markerBaseMask) {
       this._markerBaseMask = document.createElement('canvas');
-      this._markerScratchMask = document.createElement('canvas');
       this._markerColorLayer = document.createElement('canvas');
       this._markerCoverageMasks = Array.from(
         { length: MARKER_MAX_COVERAGE_LEVELS },
@@ -48,7 +54,6 @@ export default class Marker extends BaseStrokeTool {
 
     const masks = [
       this._markerBaseMask,
-      this._markerScratchMask,
       this._markerColorLayer,
       ...this._markerCoverageMasks,
     ];
@@ -60,7 +65,6 @@ export default class Marker extends BaseStrokeTool {
     });
 
     this._markerBaseMaskCtx = this._markerBaseMask.getContext('2d');
-    this._markerScratchMaskCtx = this._markerScratchMask.getContext('2d');
     this._markerColorLayerCtx = this._markerColorLayer.getContext('2d');
     this._markerCoverageMaskCtxs = this._markerCoverageMasks.map((mask) => mask.getContext('2d'));
   }
@@ -68,7 +72,6 @@ export default class Marker extends BaseStrokeTool {
   clearMarkerMasks() {
     const masks = [
       this._markerBaseMask,
-      this._markerScratchMask,
       this._markerColorLayer,
       ...(this._markerCoverageMasks || []),
     ];
@@ -118,56 +121,89 @@ export default class Marker extends BaseStrokeTool {
     }
   }
 
-  getMaskRegion(polygon) {
-    const bounds = getPolygonBounds(polygon);
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const x = Math.max(0, Math.floor(bounds.minX - 2));
-    const y = Math.max(0, Math.floor(bounds.minY - 2));
-    const maxX = Math.min(width, Math.ceil(bounds.maxX + 2));
-    const maxY = Math.min(height, Math.ceil(bounds.maxY + 2));
+  getCellRange(bounds, cellSize) {
     return {
-      x,
-      y,
-      width: Math.max(0, maxX - x),
-      height: Math.max(0, maxY - y),
+      minX: Math.floor(bounds.minX / cellSize),
+      minY: Math.floor(bounds.minY / cellSize),
+      maxX: Math.floor(bounds.maxX / cellSize),
+      maxY: Math.floor(bounds.maxY / cellSize),
     };
   }
 
-  processLiveCoverageSegment(state, polygon) {
+  addLiveItemToGrid(grid, item, cellSize) {
+    const range = this.getCellRange(item.bounds, cellSize);
+    for (let y = range.minY; y <= range.maxY; y++) {
+      for (let x = range.minX; x <= range.maxX; x++) {
+        const key = `${x}:${y}`;
+        const bucket = grid.get(key) || [];
+        bucket.push(item);
+        grid.set(key, bucket);
+      }
+    }
+  }
+
+  getLiveCandidates(grid, bounds, cellSize) {
+    const range = this.getCellRange(bounds, cellSize);
+    const candidates = new Set();
+    for (let y = range.minY; y <= range.maxY; y++) {
+      for (let x = range.minX; x <= range.maxX; x++) {
+        const bucket = grid.get(`${x}:${y}`);
+        if (!bucket) continue;
+        bucket.forEach((item) => candidates.add(item));
+      }
+    }
+    return candidates;
+  }
+
+  matureLivePending(state, pending, grid) {
     while (
-      state.pendingIndex < state.pendingSegments.length &&
-      state.distance - state.pendingSegments[state.pendingIndex].distance >= state.minPathGap
+      pending.index < pending.items.length &&
+      state.distance - pending.items[pending.index].distance >= state.minPathGap
     ) {
-      this.fillMaskPolygon(this._markerCoverageMaskCtxs[0], state.pendingSegments[state.pendingIndex].polygon);
-      state.pendingIndex += 1;
+      this.addLiveItemToGrid(grid, pending.items[pending.index], state.cellSize);
+      pending.index += 1;
+    }
+  }
+
+  fillLiveIntersections(state, polygon, bounds, sourceGrid, targetLevel) {
+    const candidates = this.getLiveCandidates(sourceGrid, bounds, state.cellSize);
+    candidates.forEach((older) => {
+      const olderBounds = older.bounds;
+      if (
+        bounds.minX > olderBounds.maxX ||
+        bounds.maxX < olderBounds.minX ||
+        bounds.minY > olderBounds.maxY ||
+        bounds.maxY < olderBounds.minY
+      ) {
+        return;
+      }
+
+      const intersection = clipConvexPolygons(polygon, older.polygon);
+      if (!intersection.length) return;
+
+      this.fillMaskPolygon(this._markerCoverageMaskCtxs[targetLevel], intersection);
+      state.pendingCoverage[targetLevel].items.push({
+        polygon: intersection,
+        bounds: getPolygonBounds(intersection),
+        distance: state.distance,
+      });
+    });
+  }
+
+  processLiveCoverageSegment(state, polygon) {
+    this.matureLivePending(state, state.pendingBase, state.baseGrid);
+    for (let level = 1; level < state.pendingCoverage.length; level++) {
+      this.matureLivePending(state, state.pendingCoverage[level], state.coverageGrids[level]);
     }
 
-    const region = this.getMaskRegion(polygon);
-    if (region.width > 0 && region.height > 0) {
-      for (let level = this._markerCoverageMaskCtxs.length - 2; level >= 0; level--) {
-        this._markerScratchMaskCtx.clearRect(region.x, region.y, region.width, region.height);
-        this.fillMaskPolygon(this._markerScratchMaskCtx, polygon);
-        this._markerScratchMaskCtx.globalCompositeOperation = 'destination-in';
-        this._markerScratchMaskCtx.drawImage(this._markerCoverageMasks[level], 0, 0);
-        this._markerScratchMaskCtx.globalCompositeOperation = 'source-over';
-        this._markerCoverageMaskCtxs[level + 1].drawImage(
-          this._markerScratchMask,
-          region.x,
-          region.y,
-          region.width,
-          region.height,
-          region.x,
-          region.y,
-          region.width,
-          region.height
-        );
-      }
-      this._markerScratchMaskCtx.clearRect(region.x, region.y, region.width, region.height);
+    const bounds = getPolygonBounds(polygon);
+    this.fillLiveIntersections(state, polygon, bounds, state.baseGrid, 1);
+    for (let level = 2; level < this._markerCoverageMaskCtxs.length; level++) {
+      this.fillLiveIntersections(state, polygon, bounds, state.coverageGrids[level - 1], level);
     }
 
     this.fillMaskPolygon(this._markerBaseMaskCtx, polygon);
-    state.pendingSegments.push({ polygon, distance: state.distance });
+    state.pendingBase.items.push({ polygon, bounds, distance: state.distance });
   }
 
   drawLive() {
@@ -188,7 +224,7 @@ export default class Marker extends BaseStrokeTool {
       this._liveDrawnCount === 1 &&
       this.points.length > 1 &&
       state.distance === 0 &&
-      state.pendingSegments.length === 0
+      state.pendingBase.items.length === 0
     ) {
       super.clearLiveLayer();
       this.clearMarkerMasks();
