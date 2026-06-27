@@ -23,7 +23,7 @@ function isMobileRenderTarget(stroke) {
   return Boolean(stroke?.mobilePreview);
 }
 
-export const MARKER_MAX_COVERAGE_LEVELS = 5;
+export const MARKER_MAX_COVERAGE_LEVELS = 8;
 
 function downsamplePoints(points, maxPoints) {
   if (!Array.isArray(points) || points.length <= maxPoints || maxPoints < 2) {
@@ -181,6 +181,146 @@ export function getPolygonBounds(polygon) {
   });
 }
 
+function getClampedRegion(bounds, width, height, padding = 2) {
+  const x = Math.max(0, Math.floor(bounds.minX - padding));
+  const y = Math.max(0, Math.floor(bounds.minY - padding));
+  const maxX = Math.min(width, Math.ceil(bounds.maxX + padding));
+  const maxY = Math.min(height, Math.ceil(bounds.maxY + padding));
+  return {
+    x,
+    y,
+    width: Math.max(0, maxX - x),
+    height: Math.max(0, maxY - y),
+  };
+}
+
+function pointInConvexPolygon(x, y, polygon) {
+  if (polygon.length < 3) return false;
+
+  let sign = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i];
+    const b = polygon[(i + 1) % polygon.length];
+    const cross = (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x);
+    if (Math.abs(cross) < 0.0001) continue;
+    const currentSign = cross > 0 ? 1 : -1;
+    if (sign === 0) {
+      sign = currentSign;
+    } else if (sign !== currentSign) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export class MarkerCoverageRenderer {
+  constructor(width, height, lineWidth, maxLevels = MARKER_MAX_COVERAGE_LEVELS) {
+    this.width = width;
+    this.height = height;
+    this.lineWidth = lineWidth;
+    this.maxLevels = maxLevels;
+    this.coverage = new Uint8Array(width * height);
+    this.mature = new Uint8Array(width * height);
+    this.recent = new Uint16Array(width * height);
+    this.pending = [];
+    this.pendingIndex = 0;
+    this.minPathGap = Math.max(lineWidth * 3.2, 24);
+    this.scratchCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    if (this.scratchCanvas) {
+      this.scratchCanvas.width = width;
+      this.scratchCanvas.height = height;
+      this.scratchCtx = this.scratchCanvas.getContext('2d');
+    }
+  }
+
+  rasterizePolygon(polygon, visitor) {
+    const region = getClampedRegion(getPolygonBounds(polygon), this.width, this.height);
+    if (region.width <= 0 || region.height <= 0) return region;
+
+    const endX = region.x + region.width;
+    const endY = region.y + region.height;
+    for (let y = region.y; y < endY; y++) {
+      const py = y + 0.5;
+      let row = y * this.width;
+      for (let x = region.x; x < endX; x++) {
+        if (pointInConvexPolygon(x + 0.5, py, polygon)) {
+          visitor(row + x);
+        }
+      }
+    }
+
+    return region;
+  }
+
+  maturePending(distance) {
+    while (
+      this.pendingIndex < this.pending.length &&
+      distance - this.pending[this.pendingIndex].distance >= this.minPathGap
+    ) {
+      const item = this.pending[this.pendingIndex];
+      this.rasterizePolygon(item.polygon, (idx) => {
+        if (this.recent[idx] > 0) this.recent[idx] -= 1;
+        this.mature[idx] = 1;
+      });
+      this.pendingIndex += 1;
+    }
+  }
+
+  addPolygon(polygon, distance) {
+    this.maturePending(distance);
+
+    const region = this.rasterizePolygon(polygon, (idx) => {
+      if (this.mature[idx] && this.recent[idx] === 0) {
+        this.coverage[idx] = Math.min(this.maxLevels, Math.max(2, this.coverage[idx] + 1));
+      } else if (this.coverage[idx] === 0) {
+        this.coverage[idx] = 1;
+      }
+      if (this.recent[idx] < 65535) this.recent[idx] += 1;
+    });
+
+    this.pending.push({ polygon, distance });
+    return region;
+  }
+
+  renderTo(ctx, color, opacity, region = null, clearFirst = false) {
+    const target = region || { x: 0, y: 0, width: this.width, height: this.height };
+    if (target.width <= 0 || target.height <= 0 || !this.scratchCtx) return;
+
+    if (clearFirst) {
+      ctx.clearRect(target.x, target.y, target.width, target.height);
+    }
+
+    const imageData = this.scratchCtx.createImageData(target.width, target.height);
+    const data = imageData.data;
+    const r = parseInt(color.slice(1, 3), 16) || 0;
+    const g = parseInt(color.slice(3, 5), 16) || 0;
+    const b = parseInt(color.slice(5, 7), 16) || 0;
+    const alphaByLevel = Array.from({ length: this.maxLevels + 1 }, (_, level) => (
+      Math.round(255 * (1 - ((1 - opacity) ** level)))
+    ));
+
+    let out = 0;
+    for (let y = target.y; y < target.y + target.height; y++) {
+      let row = y * this.width;
+      for (let x = target.x; x < target.x + target.width; x++) {
+        const level = this.coverage[row + x];
+        data[out] = r;
+        data[out + 1] = g;
+        data[out + 2] = b;
+        data[out + 3] = alphaByLevel[level] || 0;
+        out += 4;
+      }
+    }
+
+    this.scratchCanvas.width = target.width;
+    this.scratchCanvas.height = target.height;
+    this.scratchCtx = this.scratchCanvas.getContext('2d');
+    this.scratchCtx.putImageData(imageData, 0, 0);
+    ctx.drawImage(this.scratchCanvas, target.x, target.y);
+  }
+}
+
 export function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
   if (!points.length) return;
 
@@ -203,151 +343,27 @@ export function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOp
   ctx.restore();
 }
 
-function fillMarkerMaskPolygon(ctx, polygon) {
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  addPolygonToPath(ctx, polygon);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawColoredMask(ctx, colorLayer, mask, color, opacity) {
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-  const colorCtx = colorLayer.getContext('2d');
-  if (!colorCtx) return;
-
-  colorCtx.clearRect(0, 0, width, height);
-  colorCtx.save();
-  colorCtx.globalCompositeOperation = 'source-over';
-  colorCtx.globalAlpha = opacity;
-  colorCtx.fillStyle = color;
-  colorCtx.fillRect(0, 0, width, height);
-  colorCtx.globalCompositeOperation = 'destination-in';
-  colorCtx.globalAlpha = 1;
-  colorCtx.drawImage(mask, 0, 0);
-  colorCtx.restore();
-  ctx.drawImage(colorLayer, 0, 0);
-}
-
-function processMarkerCoverageSegment(state, polygon, distance) {
-  const { scratch, scratchCtx, coverageCtxs, lineWidth } = state;
-  const width = scratch.width;
-  const height = scratch.height;
-  const minPathGap = Math.max(lineWidth * 3.2, 24);
-  const bounds = getPolygonBounds(polygon);
-  const region = {
-    x: Math.max(0, Math.floor(bounds.minX - 2)),
-    y: Math.max(0, Math.floor(bounds.minY - 2)),
-    maxX: Math.min(width, Math.ceil(bounds.maxX + 2)),
-    maxY: Math.min(height, Math.ceil(bounds.maxY + 2)),
-  };
-  region.width = Math.max(0, region.maxX - region.x);
-  region.height = Math.max(0, region.maxY - region.y);
-
-  while (
-    state.pendingBase.index < state.pendingBase.items.length &&
-    distance - state.pendingBase.items[state.pendingBase.index].distance >= minPathGap
-  ) {
-    fillMarkerMaskPolygon(coverageCtxs[0], state.pendingBase.items[state.pendingBase.index].polygon);
-    state.pendingBase.index += 1;
-  }
-
-  if (region.width > 0 && region.height > 0) {
-    for (let level = coverageCtxs.length - 2; level >= 0; level--) {
-      scratchCtx.clearRect(region.x, region.y, region.width, region.height);
-      fillMarkerMaskPolygon(scratchCtx, polygon);
-      scratchCtx.globalCompositeOperation = 'destination-in';
-      scratchCtx.drawImage(
-        coverageCtxs[level].canvas,
-        region.x,
-        region.y,
-        region.width,
-        region.height,
-        region.x,
-        region.y,
-        region.width,
-        region.height
-      );
-      scratchCtx.globalCompositeOperation = 'source-over';
-      coverageCtxs[level + 1].drawImage(
-        scratch,
-        region.x,
-        region.y,
-        region.width,
-        region.height,
-        region.x,
-        region.y,
-        region.width,
-        region.height
-      );
-    }
-    scratchCtx.clearRect(region.x, region.y, region.width, region.height);
-  }
-
-  fillMarkerMaskPolygon(state.baseCtx, polygon);
-  state.pendingBase.items.push({ polygon, distance });
-}
-
 function drawMarkerLayeredStroke(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
   if (!points.length || typeof document === 'undefined') {
     drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity);
     return;
   }
 
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-  const createLayer = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    return canvas;
-  };
-
-  const base = createLayer();
-  const scratch = createLayer();
-  const colorLayer = createLayer();
-  const coverage = Array.from({ length: MARKER_MAX_COVERAGE_LEVELS }, createLayer);
-  const baseCtx = base.getContext('2d');
-  const scratchCtx = scratch.getContext('2d');
-  const coverageCtxs = coverage.map((layer) => layer.getContext('2d'));
-  if (!baseCtx || !scratchCtx || coverageCtxs.some((layerCtx) => !layerCtx)) {
-    drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity);
-    return;
-  }
-
-  const state = {
-    baseCtx,
-    scratch,
-    scratchCtx,
-    coverageCtxs,
-    lineWidth,
-    pendingBase: { items: [], index: 0 },
-  };
+  const renderer = new MarkerCoverageRenderer(ctx.canvas.width, ctx.canvas.height, lineWidth);
 
   if (points.length === 1) {
-    drawMarkerPass(baseCtx, [points[0]], lineWidth, angleDeg, '#000', 1);
+    renderer.addPolygon(getMarkerSegmentPolygon(points[0], points[0], lineWidth, angleDeg), 0);
   } else {
     let distance = 0;
     for (let i = 1; i < points.length; i++) {
       const p0 = points[i - 1];
       const p1 = points[i];
       distance += Math.hypot(p1.x - p0.x, p1.y - p0.y);
-      processMarkerCoverageSegment(
-        state,
-        getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg),
-        distance
-      );
+      renderer.addPolygon(getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg), distance);
     }
   }
 
-  drawColoredMask(ctx, colorLayer, base, color, strokeOpacity);
-  for (let level = 1; level < coverage.length; level++) {
-    drawColoredMask(ctx, colorLayer, coverage[level], color, strokeOpacity);
-  }
+  renderer.renderTo(ctx, color, strokeOpacity);
 }
 
 export function renderMarkerStroke(ctx, stroke) {
@@ -363,7 +379,6 @@ export function renderMarkerStroke(ctx, stroke) {
   } = stroke;
   if (!points.length) return;
 
-  const color = parseColor(strokeStyle, 1);
   const mobileMode = mobilePreview || isMobileRenderTarget(stroke);
   const previewMode = incremental || livePreview;
   const spacing = mobileMode
@@ -376,7 +391,7 @@ export function renderMarkerStroke(ctx, stroke) {
     : mobileMode ? 7000 : 12000;
   const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
 
-  drawMarkerLayeredStroke(ctx, dense, lineWidth, angle, color, strokeOpacity);
+  drawMarkerLayeredStroke(ctx, dense, lineWidth, angle, strokeStyle, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
