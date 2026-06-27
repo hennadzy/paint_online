@@ -144,7 +144,7 @@ function getConvexHull(points) {
   return lower.concat(upper);
 }
 
-function addPolygonToPath(ctx, polygon) {
+export function addPolygonToPath(ctx, polygon) {
   if (!polygon.length) return;
   ctx.moveTo(polygon[0].x, polygon[0].y);
   for (let i = 1; i < polygon.length; i++) {
@@ -157,7 +157,7 @@ function addRotatedRectToPath(ctx, x, y, width, height, angleDeg) {
   addPolygonToPath(ctx, getRotatedRectCorners(x, y, width, height, angleDeg));
 }
 
-function getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg) {
+export function getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg) {
   const s0 = p0.w ?? lineWidth;
   const s1 = p1.w ?? lineWidth;
   const c0 = getRotatedRectCorners(p0.x, p0.y, s0 * 1.8, s0 * 0.35, angleDeg);
@@ -165,7 +165,7 @@ function getMarkerSegmentPolygon(p0, p1, lineWidth, angleDeg) {
   return getConvexHull([...c0, ...c1]);
 }
 
-function getPolygonBounds(polygon) {
+export function getPolygonBounds(polygon) {
   return polygon.reduce((bounds, point) => ({
     minX: Math.min(bounds.minX, point.x),
     minY: Math.min(bounds.minY, point.y),
@@ -179,7 +179,7 @@ function getPolygonBounds(polygon) {
   });
 }
 
-function boundsOverlap(a, b) {
+export function boundsOverlap(a, b) {
   return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 }
 
@@ -216,7 +216,7 @@ function lineIntersection(a, b, c, d) {
   };
 }
 
-function clipPolygon(subjectPolygon, clipPolygon) {
+export function clipPolygon(subjectPolygon, clipPolygon) {
   if (subjectPolygon.length < 3 || clipPolygon.length < 3) return [];
 
   let output = subjectPolygon;
@@ -253,7 +253,7 @@ function clipPolygon(subjectPolygon, clipPolygon) {
   return output.length >= 3 ? output : [];
 }
 
-function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
+export function drawMarkerPass(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
   if (!points.length) return;
 
   ctx.save();
@@ -351,126 +351,6 @@ function drawMarkerSelfOverlapPass(ctx, points, lineWidth, angleDeg, color, stro
   ctx.restore();
 }
 
-function getExpandedBounds(bounds, padding, width, height) {
-  const x = Math.max(0, Math.floor(bounds.minX - padding));
-  const y = Math.max(0, Math.floor(bounds.minY - padding));
-  const maxX = Math.min(width, Math.ceil(bounds.maxX + padding));
-  const maxY = Math.min(height, Math.ceil(bounds.maxY + padding));
-  return {
-    x,
-    y,
-    width: Math.max(0, maxX - x),
-    height: Math.max(0, maxY - y),
-  };
-}
-
-function fillPolygon(ctx, polygon) {
-  ctx.beginPath();
-  addPolygonToPath(ctx, polygon);
-  ctx.fill();
-}
-
-let markerOverlapMaskLayers = null;
-
-function getMarkerOverlapMaskLayers(width, height) {
-  if (!markerOverlapMaskLayers) {
-    markerOverlapMaskLayers = {
-      coverage: document.createElement('canvas'),
-      scratch: document.createElement('canvas'),
-      overlap: document.createElement('canvas'),
-    };
-  }
-
-  const { coverage, scratch, overlap } = markerOverlapMaskLayers;
-  [coverage, scratch, overlap].forEach((canvas) => {
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-  });
-
-  const coverageCtx = coverage.getContext('2d');
-  const scratchCtx = scratch.getContext('2d');
-  const overlapCtx = overlap.getContext('2d');
-  if (!coverageCtx || !scratchCtx || !overlapCtx) return null;
-
-  coverageCtx.clearRect(0, 0, width, height);
-  scratchCtx.clearRect(0, 0, width, height);
-  overlapCtx.clearRect(0, 0, width, height);
-
-  return { coverage, scratch, overlap, coverageCtx, scratchCtx, overlapCtx };
-}
-
-function drawMarkerSelfOverlapMask(ctx, points, lineWidth, angleDeg, color, strokeOpacity) {
-  if (points.length < 4 || typeof document === 'undefined') return false;
-
-  const width = ctx.canvas?.width;
-  const height = ctx.canvas?.height;
-  if (!width || !height) return false;
-
-  const layers = getMarkerOverlapMaskLayers(width, height);
-  if (!layers) return false;
-  const { coverage, scratch, overlap, coverageCtx, scratchCtx, overlapCtx } = layers;
-
-  const minPathGap = Math.max(lineWidth * 3.2, 24);
-  const distances = [0];
-  for (let i = 1; i < points.length; i++) {
-    distances[i] = distances[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
-  }
-
-  const pendingSegments = [];
-  let pendingIndex = 0;
-  let scratchBounds = null;
-
-  coverageCtx.fillStyle = '#000';
-  scratchCtx.fillStyle = '#000';
-  overlapCtx.globalCompositeOperation = 'source-over';
-
-  for (let i = 1; i < points.length; i++) {
-    while (
-      pendingIndex < pendingSegments.length &&
-      distances[i] - pendingSegments[pendingIndex].distance >= minPathGap
-    ) {
-      fillPolygon(coverageCtx, pendingSegments[pendingIndex].polygon);
-      pendingIndex += 1;
-    }
-
-    const polygon = getMarkerSegmentPolygon(points[i - 1], points[i], lineWidth, angleDeg);
-    const bounds = getExpandedBounds(getPolygonBounds(polygon), 2, width, height);
-    if (bounds.width <= 0 || bounds.height <= 0) {
-      pendingSegments.push({ polygon, distance: distances[i] });
-      continue;
-    }
-
-    if (scratchBounds) {
-      scratchCtx.clearRect(scratchBounds.x, scratchBounds.y, scratchBounds.width, scratchBounds.height);
-    }
-    scratchCtx.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
-
-    fillPolygon(scratchCtx, polygon);
-    scratchCtx.globalCompositeOperation = 'destination-in';
-    scratchCtx.drawImage(coverage, 0, 0);
-    scratchCtx.globalCompositeOperation = 'source-over';
-    overlapCtx.drawImage(scratch, bounds.x, bounds.y, bounds.width, bounds.height, bounds.x, bounds.y, bounds.width, bounds.height);
-
-    scratchBounds = bounds;
-    pendingSegments.push({ polygon, distance: distances[i] });
-  }
-
-  overlapCtx.globalCompositeOperation = 'source-in';
-  overlapCtx.fillStyle = color;
-  overlapCtx.fillRect(0, 0, width, height);
-  overlapCtx.globalCompositeOperation = 'source-over';
-
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = strokeOpacity;
-  ctx.drawImage(overlap, 0, 0);
-  ctx.restore();
-
-  return true;
-}
-
 export function renderMarkerStroke(ctx, stroke) {
   const {
     points = [],
@@ -498,9 +378,7 @@ export function renderMarkerStroke(ctx, stroke) {
   const dense = downsamplePointsStable(densifyPath(points, spacing), maxPoints);
 
   drawMarkerPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
-  if (!previewMode || !drawMarkerSelfOverlapMask(ctx, dense, lineWidth, angle, color, strokeOpacity)) {
-    drawMarkerSelfOverlapPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
-  }
+  drawMarkerSelfOverlapPass(ctx, dense, lineWidth, angle, color, strokeOpacity);
 }
 
 export function sprayAirbrush(ctx, x, y, radius, color, opacity, seed = 0, livePreview = false, mobilePreview = false) {
