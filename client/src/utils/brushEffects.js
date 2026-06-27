@@ -99,7 +99,7 @@ function splitMarkerPasses(points, lineWidth) {
   if (points.length < 4) return [points];
 
   const cellSize = Math.max(6, lineWidth * 1.2);
-  const overlapDistanceSq = Math.max(6, lineWidth * 0.55) ** 2;
+  const overlapDistanceSq = Math.max(6, lineWidth * 0.6) ** 2;
   const minIndexGap = Math.max(14, Math.ceil(lineWidth * 1.4));
   const cells = new Map();
   const passes = [];
@@ -127,7 +127,7 @@ function splitMarkerPasses(points, lineWidth) {
           const dy = point.y - entry.point.y;
           const direction = directions[index];
           const dot = direction.dx * entry.direction.dx + direction.dy * entry.direction.dy;
-          if (dot < 0.35 && dx * dx + dy * dy <= overlapDistanceSq) {
+          if (dot < 0.65 && dx * dx + dy * dy <= overlapDistanceSq) {
             return true;
           }
         }
@@ -142,7 +142,7 @@ function splitMarkerPasses(points, lineWidth) {
     const overlapsOlderPath = hasOlderOverlap(point, i);
     if (currentPass.length > 1 && overlapsOlderPath && !insideOlderOverlap) {
       passes.push(currentPass);
-      currentPass = [points[i - 1], point];
+      currentPass = [point];
     } else {
       currentPass.push(point);
     }

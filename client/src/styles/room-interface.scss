@@ -1573,9 +1573,23 @@
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
-  .room-interface-overlay {
+  .room-interface-overlay,
+  .room-interface-overlay.fullscreen,
+  .room-interface-overlay.input-dialog-overlay {
     width: 200vw !important;
     height: 200vh !important;
     min-height: 200vh !important;
+    padding: 20px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .room-interface {
+    margin: 0 auto;
+  }
+
+  .room-interface.fullscreen {
+    width: 90% !important;
+    max-width: 1200px !important;
   }
 }

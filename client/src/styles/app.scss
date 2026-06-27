@@ -508,6 +508,17 @@ body.modal-open {
     height: 200vh !important;
     min-height: 200vh !important;
   }
+
+  .export-modal-overlay,
+  .modal-overlay {
+    width: 200vw !important;
+    height: 200vh !important;
+    min-height: 200vh !important;
+  }
+
+  .export-modal {
+    width: min(90vw, 420px);
+  }
 }
 
 @media (max-width: 768px) and (orientation: portrait) {

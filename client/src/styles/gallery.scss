@@ -1152,3 +1152,28 @@
     padding: 12px;
   }
 }
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .gallery-page {
+    width: 200vw;
+    max-width: none;
+    min-height: 200vh;
+  }
+
+  .gallery-main {
+    width: 100%;
+    padding: 12px 10px 20px;
+  }
+
+  .gallery-feed {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 10px;
+  }
+
+  .gallery-detail {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0;
+  }
+}
