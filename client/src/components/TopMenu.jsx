@@ -51,7 +51,7 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (canvasState.currentRoomId && !canvasState.isConnected && !canvasState.modalOpen) {
+    if (canvasState.currentRoomId && !canvasState.isConnected && !canvasState.modalOpen && !canvasState.usernameReady) {
       const timer = setTimeout(() => {
         axios.get(`${API_URL}/api/rooms/${canvasState.currentRoomId}/exists`)
           .then(response => {

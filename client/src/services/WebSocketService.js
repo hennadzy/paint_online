@@ -97,10 +97,12 @@ connect(wsUrl, roomId, username, token) {
           if (connectionId !== this.connectionId) return;
           clearTimeout(connectionTimeout);
           this.isConnected = false;
-          this.emit('disconnected', {});
 
           const shouldRetry = event.code !== 1008 && event.code !== 4000;
-          if (shouldRetry && this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+          const willReconnect = shouldRetry && this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts;
+          this.emit('disconnected', { willReconnect });
+
+          if (willReconnect) {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1);
             
@@ -159,7 +161,7 @@ connect(wsUrl, roomId, username, token) {
     });
   }
 
-  sendSyncStrokes(strokes) {
+  sendSyncStrokes(strokes, { explicitClear = false } = {}) {
     return new Promise((resolve) => {
       if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
         resolve();
@@ -176,7 +178,7 @@ connect(wsUrl, roomId, username, token) {
       };
 
       this.on('message', onMessage);
-      const sent = this.send({ method: 'syncStrokes', strokes });
+      const sent = this.send({ method: 'syncStrokes', strokes, explicitClear });
       if (!sent) {
         clearTimeout(timeout);
         this.off('message', onMessage);

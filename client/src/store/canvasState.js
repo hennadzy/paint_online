@@ -44,6 +44,8 @@ class CanvasState {
   personalMessagesTargetUser = null;
   showInactiveModal = false;
   joiningRoom = false;
+  roomStrokesLoaded = false;
+  roomCanvasCleared = false;
   _connectInProgress = false;
   _pendingRoomConnect = null;
   viewPanX = 0;
@@ -62,8 +64,10 @@ class CanvasState {
     WebSocketService.on('connected', () => {
       this.isConnected = true;
     });
-    WebSocketService.on('disconnected', () => {
-      this.isConnected = false;
+    WebSocketService.on('disconnected', ({ willReconnect } = {}) => {
+      if (!willReconnect) {
+        this.isConnected = false;
+      }
     });
     WebSocketService.on('roomError', ({ message }) => {
       this.roomError = message;
@@ -124,6 +128,8 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         });
 
       HistoryService.setStrokes(filteredStrokes);
+      this.roomStrokesLoaded = true;
+      this.roomCanvasCleared = filteredStrokes.length === 0;
 
       CanvasService.rebuildBuffer(filteredStrokes, () => {
         if (this.zoom === 1) {
@@ -198,6 +204,7 @@ WebSocketService.on('drawsReceived', ({ strokes, cancelledStrokeIds }) => {
         HistoryService.clearStrokes();
         CanvasService.rebuildBuffer([]);
         CanvasService.redraw();
+        this.roomCanvasCleared = true;
         this.addChatMessage({ type: "system", username, message: `очистил холст` });
         this.scheduleThumbnailSave();
 
@@ -317,6 +324,7 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
   async pushStroke(stroke, options = {}) {
     const added = HistoryService.addStroke(stroke, this.username);
     if (added) {
+      this.roomCanvasCleared = false;
       if (!options.skipBufferDraw) {
         await CanvasService.drawStroke(CanvasService.bufferCtx, stroke);
       }
@@ -405,11 +413,16 @@ WebSocketService.on('chatReceived', ({ username, message, isVerified, userId }) 
     HistoryService.clearStrokes();
     CanvasService.rebuildBuffer([]);
     CanvasService.redraw();
+    this.roomCanvasCleared = true;
     if (WebSocketService.isConnected) {
       WebSocketService.sendClear();
     }
     AutoSaveService.clear(this.currentRoomId);
     this.scheduleThumbnailSave();
+  }
+
+  get sessionActive() {
+    return Boolean(this.currentRoomId && this.usernameReady);
   }
 
   setUsername(username) {
@@ -480,6 +493,8 @@ sendChatMessage(message) {
     this.clearRoomError();
     localStorage.setItem(`room_token_${roomId}`, token);
     this.joiningRoom = true;
+    this.roomStrokesLoaded = false;
+    this.roomCanvasCleared = false;
     this._pendingRoomConnect = { roomId, username, token };
     this.setUsername(username);
     this.setModalOpen(false);
@@ -629,8 +644,11 @@ setupThumbnailInterval() {
       this.returningFromRoom = true;
     }
 
-    if (WebSocketService.isConnected && this.currentRoomId) {
-      await WebSocketService.sendSyncStrokes(HistoryService.getStrokes());
+    if (WebSocketService.isConnected && this.currentRoomId && this.roomStrokesLoaded) {
+      const strokes = HistoryService.getStrokes();
+      if (strokes.length > 0 || this.roomCanvasCleared) {
+        await WebSocketService.sendSyncStrokes(strokes, { explicitClear: this.roomCanvasCleared });
+      }
     }
 
     this.saveThumbnail();
@@ -639,6 +657,8 @@ setupThumbnailInterval() {
     this.isConnected = false;
     const wasInRoom = this.currentRoomId !== null;
     this.currentRoomId = null;
+    this.roomStrokesLoaded = false;
+    this.roomCanvasCleared = false;
     this.username = "local";
     this.usernameReady = false;
     this._pendingRoomConnect = null;

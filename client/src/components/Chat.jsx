@@ -84,7 +84,7 @@ const Chat = observer(() => {
     container.scrollTop = container.scrollHeight;
   }, [canvasState.chatMessages.length]);
 
-  if (!canvasState.isConnected) return null;
+  if (!canvasState.sessionActive) return null;
 
   const sendMessage = (e) => {
     if (e && e.key === "Enter" && inputRef.current.value.trim()) {

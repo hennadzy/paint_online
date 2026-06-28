@@ -43,10 +43,10 @@ const Canvas = observer(() => {
   useSelectionOverlay(selectionOverlayRef, canvasRef);
   useCanvasKeyboard();
   useModalBodyClass();
-  useCustomScrollbars(containerRef, wrapperRef, canvasState.isConnected);
+  useCustomScrollbars(containerRef, wrapperRef, canvasState.sessionActive);
   const isVisible = usePageVisibility();
 
-  useMobileCanvasFit(containerRef, canvasState.isConnected, Boolean(params.id));
+  useMobileCanvasFit(containerRef, canvasState.sessionActive, Boolean(params.id));
 
   useEffect(() => {
     canvasState.setPageVisible(isVisible);
@@ -128,13 +128,13 @@ const Canvas = observer(() => {
   }, [params.id]);
 
   useEffect(() => {
-    if (canvasState.isConnected && params.id) {
+    if (canvasState.sessionActive && params.id) {
       toolState.setTool(
         new Brush(canvasState.canvas, canvasState.socket, canvasState.sessionId, canvasState.username || 'local'),
         'brush'
       );
     }
-  }, [canvasState.isConnected, params.id]);
+  }, [canvasState.sessionActive, params.id]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,7 +171,7 @@ const Canvas = observer(() => {
   }, []);
 
   useEffect(() => {
-    if (!canvasState.isConnected || !canvasState.currentRoomId) {
+    if (!canvasState.sessionActive) {
       const container = containerRef.current;
       if (container) {
         container.scrollTop = 0;
@@ -191,12 +191,12 @@ const Canvas = observer(() => {
       void containerRef.current?.offsetHeight;
       window.dispatchEvent(new Event('resize'));
     }
-  }, [canvasState.isConnected, canvasState.currentRoomId]);
+  }, [canvasState.sessionActive]);
 
 
   const isMobileCanvas = isMobileCanvasView();
   const inRoom = Boolean(params.id);
-  const showChat = canvasState.isConnected;
+  const showChat = canvasState.sessionActive;
 
   return (
     <div className={`canvas ${inRoom ? 'canvas--has-chat' : ''}`}>

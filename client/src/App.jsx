@@ -74,7 +74,7 @@ const App = observer(() => {
 
 return (
         <SeoProvider>
-        <div className={`app ${canvasState.isConnected ? 'connected' : ''}`}>
+        <div className={`app ${canvasState.sessionActive ? 'connected' : ''}`}>
             <SeoMeta />
             {!hideGlobalUI && <TopMenu />}
             {!hideGlobalUI && <Toolbar />}

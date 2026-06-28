@@ -292,6 +292,16 @@ async handleConnection(ws, msg) {
       .filter(s => s && typeof s === 'object' && s.id)
       .slice(-5000);
 
+    if (strokes.length === 0 && !msg.explicitClear) {
+      const existing = await RoomManager.getRoomStrokes(roomId);
+      if (existing.length > 0) {
+        if (ws.readyState === 1) {
+          ws.send(JSON.stringify({ method: 'syncAck' }));
+        }
+        return;
+      }
+    }
+
     await RoomManager.replaceActiveStrokes(roomId, strokes);
     await RoomManager.clearUserCancelledStrokes(roomId, username);
 
